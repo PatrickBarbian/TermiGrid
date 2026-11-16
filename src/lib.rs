@@ -1,0 +1,30 @@
+pub mod catalog;
+pub mod export;
+pub mod i18n;
+pub mod model;
+pub mod ui;
+
+/// Loads the embedded TermiGrid application window icon.
+pub fn load_app_icon() -> Option<egui::IconData> {
+    let bytes = include_bytes!("../assets/icon.png");
+    let img = image::load_from_memory(bytes).ok()?.to_rgba8();
+    let (width, height) = img.dimensions();
+    Some(egui::IconData {
+        rgba: img.into_raw(),
+        width,
+        height,
+    })
+}
+
+/// Android entry point invoked by `NativeActivity` (`cargo-apk`).
+#[cfg(target_os = "android")]
+#[unsafe(no_mangle)]
+pub extern "C" fn android_main(app: winit::platform::android::activity::AndroidApp) {
+    let mut options = eframe::NativeOptions::default();
+    options.android_app = Some(app);
+    let _ = eframe::run_native(
+        "TermiGrid",
+        options,
+        Box::new(|cc| Ok(Box::new(ui::TermiGridApp::new(cc)))),
+    );
+}
