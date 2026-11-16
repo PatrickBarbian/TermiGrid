@@ -181,11 +181,13 @@ jobs:
             TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
           fi
           gh release upload "$TAG" \
+            --repo "${{ github.repository }}" \
             dist/TermiGrid-windows/TermiGrid-windows-x86_64.exe \
             dist/TermiGrid-macos/TermiGrid-macos-universal.dmg \
             dist/TermiGrid-android/TermiGrid-android-universal.apk \
             --clobber || \
           gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
             dist/TermiGrid-windows/TermiGrid-windows-x86_64.exe \
             dist/TermiGrid-macos/TermiGrid-macos-universal.dmg \
             dist/TermiGrid-android/TermiGrid-android-universal.apk \
