@@ -70,12 +70,19 @@ pub fn show_new_strip_modal(
     let mut created: Option<TerminalStrip> = None;
     let mut should_close = false;
 
+    let screen_size = ctx.content_rect().size();
+    let max_w = (screen_size.x - 24.0).max(260.0);
+    let max_h = (screen_size.y - 48.0).max(220.0);
+
     egui::Window::new(strings.modal_new_strip_title)
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-        .min_width(440.0)
+        .min_width(440.0_f32.min(max_w))
+        .max_width(max_w)
+        .max_height(max_h)
         .show(ctx, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("new_strip_grid")
                 .num_columns(2)
                 .spacing([12.0, 8.0])
@@ -196,6 +203,7 @@ pub fn show_new_strip_modal(
                 if ui.button(strings.btn_cancel).clicked() {
                     should_close = true;
                 }
+            });
             });
         });
 

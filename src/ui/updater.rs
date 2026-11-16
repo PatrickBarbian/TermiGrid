@@ -4,6 +4,7 @@ pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GITHUB_REPO_URL: &str = "https://github.com/PatrickBarbian/TermiGrid";
 pub const GITHUB_RELEASES_URL: &str = "https://github.com/PatrickBarbian/TermiGrid/releases";
 pub const BUYMEACOFFEE_URL: &str = "https://buymeacoffee.com/02eOWKzm5W";
+#[cfg(not(target_os = "android"))]
 const LATEST_RELEASE_API: &str =
     "https://api.github.com/repos/PatrickBarbian/TermiGrid/releases/latest";
 

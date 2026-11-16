@@ -20,6 +20,7 @@ pub fn load_app_icon() -> Option<egui::IconData> {
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
 pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
+    ui::android_insets::init_android_refs(app.vm_as_ptr(), app.activity_as_ptr());
     let options = eframe::NativeOptions {
         android_app: Some(app),
         ..Default::default()

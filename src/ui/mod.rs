@@ -1,3 +1,4 @@
+pub mod android_insets;
 pub mod cad_canvas;
 pub mod guide_modal;
 pub mod logos;
@@ -15,6 +16,7 @@ use crate::catalog::TerminalCatalog;
 use crate::export::{csv::export_to_csv, xlsx::export_to_xlsx, ExportOptions, PrintOrder};
 use crate::i18n::{strings, Language};
 use crate::model::{NumberingOrder, Project, TerminalStrip};
+use crate::ui::android_insets::{current_safe_insets, SafeAreaInsets};
 use crate::ui::cad_canvas::{show_cad_canvas, CadCanvasState, TypeDisplayMode};
 use crate::ui::guide_modal::{show_database_tab, show_guide_tab, CustomSpecDraft};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
@@ -71,6 +73,11 @@ pub struct TermiGridApp {
     active_tab: ActiveTab,
     mobile_pane: MobilePane,
     updater: UpdateChecker,
+
+    // Cached Android system-bar / display-cutout safe area
+    safe_insets: SafeAreaInsets,
+    last_screen_size: egui::Vec2,
+    insets_frames: u32,
 }
 
 impl TermiGridApp {
@@ -109,6 +116,9 @@ impl TermiGridApp {
             active_tab: ActiveTab::Editor,
             mobile_pane: MobilePane::Cad,
             updater,
+            safe_insets: SafeAreaInsets::default(),
+            last_screen_size: egui::Vec2::ZERO,
+            insets_frames: 0,
         }
     }
 
@@ -215,44 +225,84 @@ impl eframe::App for TermiGridApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let s = strings(self.lang);
 
+        // Refresh Android safe-area insets on launch, orientation/fold change, or keyboard toggle
+        let screen_size = ui.ctx().content_rect().size();
+        self.insets_frames = self.insets_frames.saturating_add(1);
+        let size_changed = (screen_size - self.last_screen_size).length_sq() > 1.0;
+        let kb_focus = ui.ctx().egui_wants_keyboard_input();
+        if size_changed
+            || self.insets_frames <= 20
+            || self.insets_frames.is_multiple_of(30)
+            || (kb_focus && self.insets_frames.is_multiple_of(6))
+        {
+            self.safe_insets = current_safe_insets(ui.ctx().pixels_per_point());
+            self.last_screen_size = screen_size;
+        }
+
+        // Reserve physical safe areas so Android status bar, camera cutout, and nav pill never
+        // overlap interactive controls or text.
+        let panel_bg = ui.visuals().panel_fill;
+        if self.safe_insets.top > 0.5 {
+            egui::Panel::top("android_safe_top")
+                .exact_size(self.safe_insets.top)
+                .show_separator_line(false)
+                .frame(egui::Frame::NONE.fill(panel_bg))
+                .show(ui, |_| {});
+        }
+        if self.safe_insets.bottom > 0.5 {
+            egui::Panel::bottom("android_safe_bottom")
+                .exact_size(self.safe_insets.bottom)
+                .show_separator_line(false)
+                .frame(egui::Frame::NONE.fill(panel_bg))
+                .show(ui, |_| {});
+        }
+        if self.safe_insets.left > 0.5 {
+            egui::Panel::left("android_safe_left")
+                .exact_size(self.safe_insets.left)
+                .show_separator_line(false)
+                .frame(egui::Frame::NONE.fill(panel_bg))
+                .show(ui, |_| {});
+        }
+        if self.safe_insets.right > 0.5 {
+            egui::Panel::right("android_safe_right")
+                .exact_size(self.safe_insets.right)
+                .show_separator_line(false)
+                .frame(egui::Frame::NONE.fill(panel_bg))
+                .show(ui, |_| {});
+        }
+
         // Top Menu & Toolbar
         egui::Panel::top("top_bar").show(ui, |ui| {
+            let avail_w = ui.available_width();
+            let wide_header = avail_w >= 760.0;
             ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                ui.heading(egui::RichText::new("TermiGrid").strong());
-                ui.separator();
 
-                // Navigation Tabs
-                ui.selectable_value(&mut self.active_tab, ActiveTab::Editor, s.tab_editor);
-                ui.selectable_value(&mut self.active_tab, ActiveTab::Database, s.tab_database);
-                ui.selectable_value(&mut self.active_tab, ActiveTab::Guide, s.tab_guide);
+            if wide_header {
+                ui.horizontal(|ui| {
+                    ui.heading(egui::RichText::new("TermiGrid").strong());
+                    ui.separator();
 
-                // Right-aligned theme & language controls
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    egui::ComboBox::from_id_salt("language_selector")
-                        .width(130.0)
-                        .selected_text(format!("🌐 {}", self.lang.code()))
-                        .show_ui(ui, |ui| {
-                            for lang_opt in Language::ALL {
-                                ui.selectable_value(
-                                    &mut self.lang,
-                                    lang_opt,
-                                    lang_opt.display_name(),
-                                );
-                            }
-                        });
+                    ui.selectable_value(&mut self.active_tab, ActiveTab::Editor, s.tab_editor);
+                    ui.selectable_value(&mut self.active_tab, ActiveTab::Database, s.tab_database);
+                    ui.selectable_value(&mut self.active_tab, ActiveTab::Guide, s.tab_guide);
 
-                    let theme_btn = if self.dark_mode {
-                        format!("☀ {}", s.theme_light)
-                    } else {
-                        format!("🌙 {}", s.theme_dark)
-                    };
-                    if ui.button(theme_btn).clicked() {
-                        self.dark_mode = !self.dark_mode;
-                        apply_termi_theme(ui.ctx(), self.dark_mode);
-                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        self.show_header_prefs(ui, 120.0);
+                    });
                 });
-            });
+            } else {
+                ui.horizontal(|ui| {
+                    ui.heading(egui::RichText::new("TermiGrid").strong());
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        self.show_header_prefs(ui, 92.0);
+                    });
+                });
+                ui.horizontal_wrapped(|ui| {
+                    ui.selectable_value(&mut self.active_tab, ActiveTab::Editor, s.tab_editor);
+                    ui.selectable_value(&mut self.active_tab, ActiveTab::Database, s.tab_database);
+                    ui.selectable_value(&mut self.active_tab, ActiveTab::Guide, s.tab_guide);
+                });
+            }
 
             ui.separator();
             ui.horizontal_wrapped(|ui| {
@@ -280,58 +330,75 @@ impl eframe::App for TermiGridApp {
                     self.export_csv();
                 }
 
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button(s.btn_coffee).clicked() {
-                        open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
-                    }
-                    if ui.button(s.btn_github).clicked() {
-                        open_external_url(ui.ctx(), GITHUB_REPO_URL);
-                    }
-                    match self.updater.status() {
-                        UpdateStatus::UpdateAvailable {
-                            latest_tag,
-                            release_url,
-                        } => {
-                            if ui
-                                .button(
-                                    egui::RichText::new(format!("⬆ {latest_tag}"))
-                                        .strong(),
-                                )
-                                .on_hover_text(s.update_open_release)
-                                .clicked()
-                            {
-                                open_external_url(ui.ctx(), &release_url);
-                            }
-                        }
-                        UpdateStatus::Checking => {
-                            ui.label(s.update_checking);
-                        }
-                        _ => {
-                            if ui.button(format!("↻ {}", s.btn_check_update)).clicked() {
-                                self.updater.check_async(ui.ctx().clone());
-                            }
+                ui.separator();
+
+                match self.updater.status() {
+                    UpdateStatus::UpdateAvailable {
+                        latest_tag,
+                        release_url,
+                    } => {
+                        if ui
+                            .button(egui::RichText::new(format!("Update: {latest_tag}")).strong())
+                            .on_hover_text(s.update_open_release)
+                            .clicked()
+                        {
+                            open_external_url(ui.ctx(), &release_url);
                         }
                     }
+                    UpdateStatus::Checking => {
+                        ui.label(s.update_checking);
+                    }
+                    _ => {
+                        if ui.button(s.btn_check_update).clicked() {
+                            self.updater.check_async(ui.ctx().clone());
+                        }
+                    }
+                }
+                if ui.button(s.btn_github).clicked() {
+                    open_external_url(ui.ctx(), GITHUB_REPO_URL);
+                }
+                if ui.button(s.btn_coffee).clicked() {
+                    open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
+                }
+
+                if avail_w >= 1180.0 {
                     ui.separator();
-                    ui.label(egui::RichText::new(s.app_subtitle).color(secondary_text_color(ui)));
-                });
+                    ui.label(
+                        egui::RichText::new(s.app_subtitle).color(secondary_text_color(ui)),
+                    );
+                }
             });
             ui.add_space(4.0);
         });
 
-        // Bottom Status Bar
+        // Bottom Status Bar (never overlapping on narrow screens)
         egui::Panel::bottom("status_bar").show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(&self.status_message);
-                if self.active_tab == ActiveTab::Editor {
+            let avail_w = ui.available_width();
+            if self.active_tab == ActiveTab::Editor && avail_w >= 1020.0 {
+                ui.horizontal(|ui| {
+                    let left_max = (avail_w - 580.0).max(160.0);
+                    ui.allocate_ui_with_layout(
+                        egui::Vec2::new(left_max, 18.0),
+                        egui::Layout::left_to_right(egui::Align::Center),
+                        |ui| {
+                            ui.add(egui::Label::new(&self.status_message).truncate());
+                        },
+                    );
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(
-                            egui::RichText::new(s.cad_footer_hint)
-                                .color(secondary_text_color(ui)),
+                        ui.add(
+                            egui::Label::new(
+                                egui::RichText::new(s.cad_footer_hint)
+                                    .color(secondary_text_color(ui)),
+                            )
+                            .truncate(),
                         );
                     });
-                }
-            });
+                });
+            } else {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Label::new(&self.status_message).truncate());
+                });
+            }
         });
 
         match self.active_tab {
@@ -378,15 +445,40 @@ impl eframe::App for TermiGridApp {
 }
 
 impl TermiGridApp {
+    fn show_header_prefs(&mut self, ui: &mut egui::Ui, combo_width: f32) {
+        let s = strings(self.lang);
+        egui::ComboBox::from_id_salt("language_selector")
+            .width(combo_width)
+            .selected_text(format!("🌐 {}", self.lang.code()))
+            .show_ui(ui, |ui| {
+                for lang_opt in Language::ALL {
+                    ui.selectable_value(&mut self.lang, lang_opt, lang_opt.display_name());
+                }
+            });
+
+        let theme_btn = if self.dark_mode {
+            format!("☀ {}", s.theme_light)
+        } else {
+            format!("🌙 {}", s.theme_dark)
+        };
+        if ui.button(theme_btn).clicked() {
+            self.dark_mode = !self.dark_mode;
+            apply_termi_theme(ui.ctx(), self.dark_mode);
+        }
+    }
+
     fn show_editor_panels(&mut self, ui: &mut egui::Ui) {
         let s = strings(self.lang);
-        let is_compact = ui.available_width() < 820.0;
+        let avail = ui.available_size();
+        // Use tabbed mobile panes on phones (both Portrait and Landscape) and folded screens;
+        // use 3-column workspace on Desktop, large Tablets, and unfolded Foldables.
+        let is_compact = avail.x < 960.0 || avail.y < 460.0;
 
         if is_compact {
             // Smartphone / Folded Cover layout: adaptive sub-pane bar
             egui::Panel::bottom("mobile_nav_bar").show(ui, |ui| {
                 ui.add_space(4.0);
-                ui.horizontal(|ui| {
+                ui.horizontal_wrapped(|ui| {
                     ui.selectable_value(&mut self.mobile_pane, MobilePane::Strips, s.strips_heading);
                     ui.selectable_value(&mut self.mobile_pane, MobilePane::Cad, s.tab_editor);
                     let insp_label = if self.selected_blocks.is_empty() {
@@ -821,7 +913,10 @@ impl TermiGridApp {
 
             ui.separator();
             ui.label(s.zoom_label);
-            ui.add(egui::Slider::new(&mut self.canvas_state.zoom, 0.5..=2.2).show_value(false));
+            ui.add_sized(
+                [80.0, 20.0],
+                egui::Slider::new(&mut self.canvas_state.zoom, 0.5..=2.2).show_value(false),
+            );
             if ui.button(s.btn_fit_zoom).clicked() {
                 self.canvas_state.zoom = 1.0;
             }

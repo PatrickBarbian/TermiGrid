@@ -85,11 +85,11 @@ pub fn show_cad_canvas(
     let tier_gap = 5.0 * z;
     let block_gap = 3.0 * z;
     let margin_x = 46.0 * z;
-    let margin_top = 42.0 * z;
+    let margin_top = 34.0 * z;
     let footer_height = match state.type_display {
-        TypeDisplayMode::Off => 42.0 * z,
-        TypeDisplayMode::HorizontalGroups => 82.0 * z,
-        TypeDisplayMode::VerticalPerBlock => 195.0 * z,
+        TypeDisplayMode::Off => 36.0 * z,
+        TypeDisplayMode::HorizontalGroups => 74.0 * z,
+        TypeDisplayMode::VerticalPerBlock => 155.0 * z,
     };
 
     let mut max_visual_row: isize = 0;

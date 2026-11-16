@@ -2798,11 +2798,12 @@ dependencies = [
 
 [[package]]
 name = "termigrid"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "eframe",
  "egui",
  "image",
+ "jni",
  "rfd",
  "rust_xlsxwriter",
  "serde",

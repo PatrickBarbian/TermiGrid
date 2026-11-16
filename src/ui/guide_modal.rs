@@ -113,7 +113,7 @@ pub fn show_guide_tab(ui: &mut Ui, updater: &UpdateChecker, strings: &Strings) {
                         } => {
                             ui.label(
                                 egui::RichText::new(format!(
-                                    "⬆ {}: {latest_tag}",
+                                    "{}: {latest_tag}",
                                     strings.update_available
                                 ))
                                 .strong(),
