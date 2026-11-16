@@ -84,7 +84,7 @@ jobs:
           sips -z 512 512   assets/icon.png --out TermiGrid.iconset/icon_512x512.png
           iconutil -c icns TermiGrid.iconset -o TermiGrid.app/Contents/Resources/TermiGrid.icns
 
-          cat > TermiGrid.app/Contents/Info.plist <<'EOF'
+          cat > TermiGrid.app/Contents/Info.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -96,9 +96,9 @@ jobs:
             <key>CFBundleIdentifier</key>
             <string>com.patrickbarbian.termigrid</string>
             <key>CFBundleVersion</key>
-            <string>1.0.0</string>
+            <string>${GITHUB_REF_NAME#v}</string>
             <key>CFBundleShortVersionString</key>
-            <string>1.0.0</string>
+            <string>${GITHUB_REF_NAME#v}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleExecutable</key>
@@ -139,7 +139,7 @@ jobs:
           echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/27.2.12479018" >> "$GITHUB_ENV"
       - name: Install cargo-apk
         run: cargo install cargo-apk --locked
-      - name: Build universal multi-ABI APK
+      - name: Build universal multi-ABI APK (16KB page-aligned + v2/v3 signed)
         run: |
           keytool -genkeypair -v \
             -keystore android-release.keystore \
@@ -155,10 +155,22 @@ jobs:
           keystore_password = "termigrid_release"
           EOF
 
-          cargo apk build --release --lib
-          APK_PATH=$(find target -name "*.apk" | head -n 1)
-          echo "Built APK: $APK_PATH"
-          cp "$APK_PATH" TermiGrid-android-universal.apk
+          RUSTFLAGS="-C link-arg=-Wl,-z,max-page-size=16384" cargo apk build --release --lib
+          RAW_APK=$(find target -name "*.apk" | head -n 1)
+          echo "Raw APK: $RAW_APK"
+
+          BT="${ANDROID_HOME}/build-tools/35.0.0"
+          "${BT}/zipalign" -P 16 -f -v 4 "$RAW_APK" TermiGrid-aligned.apk
+          "${BT}/apksigner" sign \
+            --ks android-release.keystore \
+            --ks-pass pass:termigrid_release \
+            --key-pass pass:termigrid_release \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out TermiGrid-android-universal.apk \
+            TermiGrid-aligned.apk
+          "${BT}/apksigner" verify --verbose TermiGrid-android-universal.apk
       - uses: actions/upload-artifact@v4
         with:
           name: TermiGrid-android

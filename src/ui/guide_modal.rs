@@ -4,6 +4,11 @@ use crate::catalog::{TerminalCatalog, TerminalSpec, TierSpec};
 use crate::i18n::{Language, Strings};
 use crate::model::{NumberingOrder, TierBehavior, TierColor};
 use crate::ui::logos::{logo_filter_button, show_logo_badge, BrandLogos};
+use crate::ui::theme::secondary_text_color;
+use crate::ui::updater::{
+    open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, CURRENT_VERSION,
+    GITHUB_REPO_URL,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CustomTierKind {
@@ -46,8 +51,9 @@ impl Default for CustomSpecDraft {
     }
 }
 
-/// Renders the dedicated "Anleitung" (Instructions) tab explaining selection, multi-level logic, and export.
-pub fn show_guide_tab(ui: &mut Ui, strings: &Strings) {
+/// Renders the dedicated "Anleitung" (Instructions) tab explaining selection, multi-level logic,
+/// export, updates, and project links.
+pub fn show_guide_tab(ui: &mut Ui, updater: &UpdateChecker, strings: &Strings) {
     egui::ScrollArea::vertical().show(ui, |ui| {
         ui.add_space(6.0);
         ui.heading(strings.guide_title);
@@ -58,12 +64,70 @@ pub fn show_guide_tab(ui: &mut Ui, strings: &Strings) {
                 .inner_margin(egui::Margin::same(12))
                 .show(ui, |ui| {
                     ui.set_min_width(ui.available_width().min(860.0));
-                    ui.label(egui::RichText::new(*title).strong().size(15.0));
+                    ui.label(egui::RichText::new(*title).strong().size(16.0));
                     ui.add_space(4.0);
                     ui.label(*body);
                 });
             ui.add_space(8.0);
         }
+
+        // About, VibeCoded notice, Update Checker, GitHub & BuyMeACoffee card
+        egui::Frame::group(ui.style())
+            .inner_margin(egui::Margin::same(12))
+            .show(ui, |ui| {
+                ui.set_min_width(ui.available_width().min(860.0));
+                ui.label(
+                    egui::RichText::new(format!("TermiGrid v{CURRENT_VERSION}"))
+                        .strong()
+                        .size(16.0),
+                );
+                ui.add_space(4.0);
+                ui.label(
+                    egui::RichText::new(strings.about_vibecoded)
+                        .color(secondary_text_color(ui)),
+                );
+                ui.add_space(8.0);
+
+                ui.horizontal_wrapped(|ui| {
+                    if ui.button(strings.btn_github).clicked() {
+                        open_external_url(ui.ctx(), GITHUB_REPO_URL);
+                    }
+                    if ui.button(strings.btn_coffee).clicked() {
+                        open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
+                    }
+                    if ui.button(strings.btn_check_update).clicked() {
+                        updater.check_async(ui.ctx().clone());
+                    }
+
+                    match updater.status() {
+                        UpdateStatus::Idle => {}
+                        UpdateStatus::Checking => {
+                            ui.label(strings.update_checking);
+                        }
+                        UpdateStatus::UpToDate(tag) => {
+                            ui.label(format!("✓ {} ({tag})", strings.update_up_to_date));
+                        }
+                        UpdateStatus::UpdateAvailable {
+                            latest_tag,
+                            release_url,
+                        } => {
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "⬆ {}: {latest_tag}",
+                                    strings.update_available
+                                ))
+                                .strong(),
+                            );
+                            if ui.button(strings.update_open_release).clicked() {
+                                open_external_url(ui.ctx(), &release_url);
+                            }
+                        }
+                        UpdateStatus::Error(err) => {
+                            ui.label(format!("{}: {err}", strings.update_error));
+                        }
+                    }
+                });
+            });
     });
 }
 

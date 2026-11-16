@@ -4,6 +4,7 @@ pub mod logos;
 pub mod new_strip_modal;
 pub mod platform_io;
 pub mod theme;
+pub mod updater;
 
 use std::collections::BTreeSet;
 use std::path::PathBuf;
@@ -22,6 +23,9 @@ use crate::ui::platform_io::{
     pick_export_csv_path, pick_export_xlsx_path, pick_open_project_path, pick_save_project_path,
 };
 use crate::ui::theme::{apply_termi_theme, install_system_fonts, secondary_text_color};
+use crate::ui::updater::{
+    open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, GITHUB_REPO_URL,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ActiveTab {
@@ -66,6 +70,7 @@ pub struct TermiGridApp {
     dark_mode: bool,
     active_tab: ActiveTab,
     mobile_pane: MobilePane,
+    updater: UpdateChecker,
 }
 
 impl TermiGridApp {
@@ -77,6 +82,10 @@ impl TermiGridApp {
         // Load native Windows fonts (Segoe UI / Consolas) & apply high-contrast theme
         install_system_fonts(&cc.egui_ctx);
         apply_termi_theme(&cc.egui_ctx, true);
+
+        let updater = UpdateChecker::default();
+        #[cfg(not(target_os = "android"))]
+        updater.check_async(cc.egui_ctx.clone());
 
         Self {
             catalog,
@@ -99,6 +108,7 @@ impl TermiGridApp {
             dark_mode: true,
             active_tab: ActiveTab::Editor,
             mobile_pane: MobilePane::Cad,
+            updater,
         }
     }
 
@@ -271,6 +281,38 @@ impl eframe::App for TermiGridApp {
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button(s.btn_coffee).clicked() {
+                        open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
+                    }
+                    if ui.button(s.btn_github).clicked() {
+                        open_external_url(ui.ctx(), GITHUB_REPO_URL);
+                    }
+                    match self.updater.status() {
+                        UpdateStatus::UpdateAvailable {
+                            latest_tag,
+                            release_url,
+                        } => {
+                            if ui
+                                .button(
+                                    egui::RichText::new(format!("⬆ {latest_tag}"))
+                                        .strong(),
+                                )
+                                .on_hover_text(s.update_open_release)
+                                .clicked()
+                            {
+                                open_external_url(ui.ctx(), &release_url);
+                            }
+                        }
+                        UpdateStatus::Checking => {
+                            ui.label(s.update_checking);
+                        }
+                        _ => {
+                            if ui.button(format!("↻ {}", s.btn_check_update)).clicked() {
+                                self.updater.check_async(ui.ctx().clone());
+                            }
+                        }
+                    }
+                    ui.separator();
                     ui.label(egui::RichText::new(s.app_subtitle).color(secondary_text_color(ui)));
                 });
             });
@@ -295,7 +337,7 @@ impl eframe::App for TermiGridApp {
         match self.active_tab {
             ActiveTab::Guide => {
                 egui::CentralPanel::default().show(ui, |ui| {
-                    show_guide_tab(ui, s);
+                    show_guide_tab(ui, &self.updater, s);
                 });
             }
             ActiveTab::Database => {

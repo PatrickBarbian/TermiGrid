@@ -154,6 +154,17 @@ pub struct Strings {
     pub guide_title: &'static str,
     pub guide_sections: &'static [(&'static str, &'static str)],
 
+    // Updates & Links / VibeCoded
+    pub btn_check_update: &'static str,
+    pub update_checking: &'static str,
+    pub update_up_to_date: &'static str,
+    pub update_available: &'static str,
+    pub update_open_release: &'static str,
+    pub update_error: &'static str,
+    pub about_vibecoded: &'static str,
+    pub btn_github: &'static str,
+    pub btn_coffee: &'static str,
+
     // Status messages
     pub status_ready: &'static str,
     pub status_saved: &'static str,
@@ -277,6 +288,16 @@ pub static DE: Strings = Strings {
         ),
     ],
 
+    btn_check_update: "Updates prüfen",
+    update_checking: "Suche Updates...",
+    update_up_to_date: "Aktuell",
+    update_available: "Update verfügbar",
+    update_open_release: "Download öffnen",
+    update_error: "Update-Prüfung fehlgeschlagen",
+    about_vibecoded: "VibeCoded mit KI-Unterstützung (Google Antigravity / Gemini) — Open Source",
+    btn_github: "GitHub",
+    btn_coffee: "☕ Buy Me a Coffee",
+
     status_ready: "Bereit.",
     status_saved: "Projekt gespeichert",
     status_loaded: "Projekt geladen",
@@ -399,6 +420,16 @@ pub static EN: Strings = Strings {
         ),
     ],
 
+    btn_check_update: "Check Updates",
+    update_checking: "Checking...",
+    update_up_to_date: "Up to date",
+    update_available: "Update available",
+    update_open_release: "Open Download",
+    update_error: "Update check failed",
+    about_vibecoded: "VibeCoded with AI assistance (Google Antigravity / Gemini) — Open Source",
+    btn_github: "GitHub",
+    btn_coffee: "☕ Buy Me a Coffee",
+
     status_ready: "Ready.",
     status_saved: "Project saved",
     status_loaded: "Project loaded",
@@ -502,7 +533,34 @@ pub static FR: Strings = Strings {
     custom_spec_tier_fixed: "Texte fixe (ex. N)",
 
     guide_title: "Guide d'utilisation – TermiGrid",
-    guide_sections: EN.guide_sections,
+    guide_sections: &[
+        (
+            "1. Créer un bornier",
+            "Cliquez sur '+ Nouveau bornier' dans la barre latérale gauche. Saisissez le repère (ex. -X1), la plage de numéros (ex. 1 à 50) et le type de borne par défaut.",
+        ),
+        (
+            "2. Numérotation multi-étages (Étages, PE & Neutre)",
+            "TermiGrid répartit automatiquement la séquence linéaire de bas en haut sur les étages séquentiels :\n• Double étage standard (L/L) : Bas 1, 3, 5, 7 – Haut 2, 4, 6, 8.\n• Avec Neutre (L/N) : Les étages fixes comme 'N' ne consomment pas de numéro.\n• Terre (PE) : Affichée dans la ligne PE dédiée sous la ligne principale et ignorée pour la numérotation.",
+        ),
+        (
+            "3. Sélection CAO, double-clic & accessoires",
+            "• Double-cliquez sur une étiquette dans la vue CAO pour modifier son texte directement.\n• Glissez pour sélectionner par cadre ou utilisez Ctrl/Shift+Clic.\n• La colonne de droite affiche automatiquement les flasques, peignes, repères et butées compatibles.",
+        ),
+        (
+            "4. Export Excel & CSV",
+            "Exporte trois feuilles Excel ('Print Sequence', 'Tier Columns', 'Tier Matrix') avec toutes les cellules strictement au format Texte ('@').",
+        ),
+    ],
+
+    btn_check_update: "Vérifier MàJ",
+    update_checking: "Vérification...",
+    update_up_to_date: "À jour",
+    update_available: "Mise à jour disponible",
+    update_open_release: "Télécharger",
+    update_error: "Échec de vérification",
+    about_vibecoded: "VibeCoded avec l'aide de l'IA (Google Antigravity / Gemini) — Open Source",
+    btn_github: "GitHub",
+    btn_coffee: "☕ Buy Me a Coffee",
 
     status_ready: "Prêt.",
     status_saved: "Projet enregistré",
@@ -607,7 +665,34 @@ pub static IT: Strings = Strings {
     custom_spec_tier_fixed: "Testo fisso (es. N)",
 
     guide_title: "Istruzioni – TermiGrid",
-    guide_sections: EN.guide_sections,
+    guide_sections: &[
+        (
+            "1. Creare una morsettiera",
+            "Clicca '+ Nuova morsettiera' a sinistra, inserisci la sigla (es. -X1), i numeri iniziale/finale (es. 1..50) e il tipo di morsetto predefinito.",
+        ),
+        (
+            "2. Numerazione multi-livello (Livelli, PE & Neutro)",
+            "TermiGrid distribuisce la sequenza lineare dal basso verso l'alto sui livelli sequenziali:\n• Doppio livello standard (L/L): Basso 1, 3, 5, 7 – Alto 2, 4, 6, 8.\n• Con Neutro (L/N): I livelli fissi come 'N' non consumano numeri.\n• Terra (PE): Posizionata nella riga PE dedicata sotto la riga principale ed esclusa dalla numerazione.",
+        ),
+        (
+            "3. Selezione CAD, doppio clic & accessori",
+            "• Doppio clic su qualsiasi numero nel CAD per modificarlo direttamente.\n• Trascina un riquadro o usa Ctrl/Shift+Clic.\n• A destra vengono mostrati automaticamente piastre terminali, ponticelli, targhette e fermamorsetti compatibili.",
+        ),
+        (
+            "4. Esportazione Excel & CSV",
+            "Esporta tre fogli Excel con ordine continuo per livello e tutte le celle formattate rigorosamente come Testo ('@').",
+        ),
+    ],
+
+    btn_check_update: "Cerca aggiornamenti",
+    update_checking: "Controllo...",
+    update_up_to_date: "Aggiornato",
+    update_available: "Aggiornamento disponibile",
+    update_open_release: "Apri download",
+    update_error: "Controllo fallito",
+    about_vibecoded: "VibeCoded con supporto IA (Google Antigravity / Gemini) — Open Source",
+    btn_github: "GitHub",
+    btn_coffee: "☕ Buy Me a Coffee",
 
     status_ready: "Pronto.",
     status_saved: "Progetto salvato",
@@ -712,7 +797,34 @@ pub static ES: Strings = Strings {
     custom_spec_tier_fixed: "Texto fijo (ej. N)",
 
     guide_title: "Instrucciones – TermiGrid",
-    guide_sections: EN.guide_sections,
+    guide_sections: &[
+        (
+            "1. Crear un regletero",
+            "Haz clic en '+ Nuevo regletero' a la izquierda, introduce la designación (ej. -X1), el rango de números (ej. 1..50) y el tipo de borne predeterminado.",
+        ),
+        (
+            "2. Numeración multinivel (Niveles, PE y Neutro)",
+            "TermiGrid distribuye la secuencia lineal de abajo hacia arriba en los niveles secuenciales:\n• Doble nivel estándar (L/L): Inferior 1, 3, 5, 7 – Superior 2, 4, 6, 8.\n• Con Neutro (L/N): Los niveles fijos como 'N' no consumen número.\n• Tierra (PE): Se ubica en su propia fila PE debajo de la línea principal y no se numera.",
+        ),
+        (
+            "3. Selección CAD, doble clic y accesorios",
+            "• Haz doble clic en cualquier etiqueta del CAD para editar el texto directamente.\n• Arrastra para seleccionar en bloque o usa Ctrl/Shift+Clic.\n• La columna derecha muestra automáticamente tapas finales, puentes, señalización y topes compatibles.",
+        ),
+        (
+            "4. Exportación a Excel y CSV",
+            "Genera un archivo .xlsx con todas las celdas estrictamente en formato Texto ('@') y orden continuo por nivel.",
+        ),
+    ],
+
+    btn_check_update: "Buscar actualizaciones",
+    update_checking: "Comprobando...",
+    update_up_to_date: "Actualizado",
+    update_available: "Actualización disponible",
+    update_open_release: "Abrir descarga",
+    update_error: "Error al comprobar",
+    about_vibecoded: "VibeCoded con asistencia de IA (Google Antigravity / Gemini) — Código abierto",
+    btn_github: "GitHub",
+    btn_coffee: "☕ Buy Me a Coffee",
 
     status_ready: "Listo.",
     status_saved: "Proyecto guardado",
@@ -817,7 +929,34 @@ pub static PL: Strings = Strings {
     custom_spec_tier_fixed: "Stały tekst (np. N)",
 
     guide_title: "Instrukcja – TermiGrid",
-    guide_sections: EN.guide_sections,
+    guide_sections: &[
+        (
+            "1. Tworzenie listwy zaciskowej",
+            "Kliknij '+ Nowa listwa' po lewej stronie, wpisz oznaczenie (np. -X1), zakres numerów (np. 1..50) oraz domyślny typ złączki.",
+        ),
+        (
+            "2. Numeracja wielopoziomowa (Poziomy, PE i N)",
+            "TermiGrid automatycznie rozdziela sekwencję liczb od dołu do góry na kolejne poziomy:\n• Standardowa dwupoziomowa (L/L): Dolny 1, 3, 5, 7 – Górny 2, 4, 6, 8.\n• Z przewodem neutralnym (L/N): Stałe oznaczenia jak 'N' nie zużywają kolejnego numeru.\n• Przewód ochronny (PE): Umieszczany w osobnym wierszu PE poniżej głównej linii i pomijany w numeracji.",
+        ),
+        (
+            "3. Wybór CAD, dwuklik i akcesoria",
+            "• Kliknij dwukrotnie dowolny numer w widoku CAD, aby go bezpośrednio zmienić.\n• Przeciągnij ramkę lub użyj Ctrl/Shift+Klik.\n• Prawy panel automatycznie wyświetla pasujące płytki końcowe, mostki, oznaczniki i trzymacze.",
+        ),
+        (
+            "4. Eksport do Excel i CSV",
+            "Eksportuje ciągłe listy wg poziomów ze wszystkimi komórkami sformatowanymi ściśle jako Tekst ('@').",
+        ),
+    ],
+
+    btn_check_update: "Sprawdź aktualizacje",
+    update_checking: "Sprawdzanie...",
+    update_up_to_date: "Aktualna wersja",
+    update_available: "Dostępna aktualizacja",
+    update_open_release: "Pobierz",
+    update_error: "Błąd sprawdzania",
+    about_vibecoded: "VibeCoded z pomocą AI (Google Antigravity / Gemini) — Open Source",
+    btn_github: "GitHub",
+    btn_coffee: "☕ Buy Me a Coffee",
 
     status_ready: "Gotowy.",
     status_saved: "Zapisano projekt",
@@ -922,7 +1061,34 @@ pub static NL: Strings = Strings {
     custom_spec_tier_fixed: "Vaste tekst (bijv. N)",
 
     guide_title: "Handleiding – TermiGrid",
-    guide_sections: EN.guide_sections,
+    guide_sections: &[
+        (
+            "1. Klemmenstrook aanmaken",
+            "Klik links op '+ Nieuwe strook', vul de codering in (bijv. -X1), het start-/eindnummer (bijv. 1..50) en kies het standaard klemtype.",
+        ),
+        (
+            "2. Meerlaagse nummering (Etages, PE & N)",
+            "TermiGrid verdeelt de oplopende nummerreeks van onder naar boven over alle sequentiële etages:\n• Standaard dubbele etage (L/L): Onder 1, 3, 5, 7 – Boven 2, 4, 6, 8.\n• Met Nul (L/N): Vaste etages zoals 'N' verbruiken geen nummer.\n• Aarde (PE): Wordt in de aparte PE-rij onder de hoofdlijn geplaatst en overgeslagen bij het nummeren.",
+        ),
+        (
+            "3. CAD-selectie, dubbelklik & toebehoren",
+            "• Dubbelklik op een nummer in de CAD-weergave om de tekst direct aan te passen.\n• Sleep een selectiekader of gebruik Ctrl/Shift+Klik.\n• De rechterkolom toont automatisch bijpassende afsluitplaten, bruggen, codering en eindsteunen.",
+        ),
+        (
+            "4. Excel- & CSV-export",
+            "Exporteert doorlopende lijsten per etage met alle cellen strikt opgemaakt als Tekst ('@').",
+        ),
+    ],
+
+    btn_check_update: "Controleer updates",
+    update_checking: "Controleren...",
+    update_up_to_date: "Up-to-date",
+    update_available: "Update beschikbaar",
+    update_open_release: "Download openen",
+    update_error: "Updatecontrole mislukt",
+    about_vibecoded: "VibeCoded met AI-ondersteuning (Google Antigravity / Gemini) — Open Source",
+    btn_github: "GitHub",
+    btn_coffee: "☕ Buy Me a Coffee",
 
     status_ready: "Gereed.",
     status_saved: "Project opgeslagen",

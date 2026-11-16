@@ -1,6 +1,6 @@
 [package]
 name = "termigrid"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 description = "TermiGrid - Cross-platform Terminal Block Strip Designer & Labeling Exporter for Control Cabinet Manufacturing"
 authors = ["Patrick Barbian"]
@@ -27,6 +27,7 @@ eframe = { version = "0.37", default-features = false, features = [
     "clipboard",
     "default_fonts",
     "glow",
+    "links",
     "system_fonts",
 ] }
 rfd = "0.18"
@@ -64,6 +65,6 @@ config_changes = "orientation|screenSize|screenLayout|smallestScreenSize|density
 
 [profile.release]
 opt-level = "s"
-lto = true
+lto = "thin"
 codegen-units = 1
 strip = true
