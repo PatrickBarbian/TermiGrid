@@ -141,6 +141,20 @@ jobs:
         run: cargo install cargo-apk --locked
       - name: Build universal multi-ABI APK
         run: |
+          keytool -genkeypair -v \
+            -keystore android-release.keystore \
+            -alias termigrid \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass termigrid_release -keypass termigrid_release \
+            -dname "CN=TermiGrid, O=PatrickBarbian, C=DE"
+
+          cat >> Cargo.toml <<'EOF'
+
+          [package.metadata.android.signing.release]
+          path = "android-release.keystore"
+          keystore_password = "termigrid_release"
+          EOF
+
           cargo apk build --release --lib
           APK_PATH=$(find target -name "*.apk" | head -n 1)
           echo "Built APK: $APK_PATH"

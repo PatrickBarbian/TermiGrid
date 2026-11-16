@@ -19,9 +19,11 @@ pub fn load_app_icon() -> Option<egui::IconData> {
 /// Android entry point invoked by `NativeActivity` (`cargo-apk`).
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
-pub extern "C" fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    let mut options = eframe::NativeOptions::default();
-    options.android_app = Some(app);
+pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
+    let options = eframe::NativeOptions {
+        android_app: Some(app),
+        ..Default::default()
+    };
     let _ = eframe::run_native(
         "TermiGrid",
         options,
