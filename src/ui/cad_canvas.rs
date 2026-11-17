@@ -161,7 +161,7 @@ pub fn show_cad_canvas(
     let z = state.zoom.clamp(0.4, 2.5);
     let px_per_mm = 8.2 * z;
     let tier_height = 56.0 * z;
-    let tier_gap = 22.0 * z;
+    let tier_gap = 34.0 * z;
     let block_gap = 3.0 * z;
     let margin_x = 46.0 * z;
     let margin_top = 42.0 * z;
@@ -1094,89 +1094,78 @@ fn draw_bridge_overlay(
         };
 
         let pot_color = Color32::from_rgb(seg.color_rgb[0], seg.color_rgb[1], seg.color_rgb[2]);
-        let y_off = if seg.channel_slot == 0 {
-            7.5 * zoom
+        let (bar_y, bar_half_h, leg_dx) = if seg.channel_slot == 0 {
+            (start_r.max.y + 15.5 * zoom, 6.5 * zoom, 0.0)
         } else {
-            15.5 * zoom
+            (start_r.max.y + 28.5 * zoom, 5.0 * zoom, 4.0 * zoom)
         };
-        let bar_y = start_r.max.y + y_off;
         let x0 = start_r.center().x;
         let x1 = end_r.center().x;
 
-        // Metallic pin legs rising UP from the comb jumper into actively connected tier bottoms
-        let leg_top = start_r.max.y + 0.5 * zoom;
-        let leg_bottom = bar_y - 2.0 * zoom;
-        let leg_h = (leg_bottom - leg_top).max(2.5 * zoom);
+        // Bold metallic pin legs bridging clearly from tier bottom down into comb jumper bar
+        let leg_top = start_r.max.y;
+        let leg_bottom = bar_y - bar_half_h + 1.0 * zoom;
+        let leg_h = (leg_bottom - leg_top).max(4.0 * zoom);
         let leg_cy = (leg_top + leg_bottom) * 0.5;
-        let leg_dx = if seg.channel_slot == 0 {
-            0.0
-        } else {
-            3.5 * zoom
-        };
+        let leg_w = (5.4 * zoom).max(3.6);
         for &pin_b in &seg.pin_blocks {
             if let Some(pr) = row_block_rects.get(&(pin_b, seg.visual_row)) {
                 let cx = pr.center().x + leg_dx;
-                let prong = Rect::from_center_size(
-                    Pos2::new(cx, leg_cy),
-                    Vec2::new(3.6 * zoom, leg_h),
-                );
-                painter.rect_filled(prong, CornerRadius::same(1), Color32::from_rgb(226, 232, 240));
+                let prong = Rect::from_center_size(Pos2::new(cx, leg_cy), Vec2::new(leg_w, leg_h));
+                painter.rect_filled(prong, CornerRadius::same(1), Color32::from_rgb(203, 213, 225));
                 painter.rect_stroke(
                     prong,
                     CornerRadius::same(1),
-                    Stroke::new(0.8, Color32::from_rgb(15, 23, 42)),
+                    Stroke::new(1.1, Color32::from_rgb(15, 23, 42)),
                     StrokeKind::Inside,
                 );
             }
         }
 
         // Insulated comb jumper bar housing underneath the connected tier row
-        let bar_half_h = 3.2 * zoom;
         let bar_rect = Rect::from_min_max(
-            Pos2::new(x0 - 4.5 * zoom, bar_y - bar_half_h),
-            Pos2::new(x1 + 4.5 * zoom, bar_y + bar_half_h),
+            Pos2::new(x0 - 6.0 * zoom, bar_y - bar_half_h),
+            Pos2::new(x1 + 6.0 * zoom, bar_y + bar_half_h),
         );
-        painter.rect_filled(bar_rect, CornerRadius::same(2), pot_color);
+        painter.rect_filled(bar_rect, CornerRadius::same(3), pot_color);
         painter.rect_stroke(
             bar_rect,
-            CornerRadius::same(2),
-            Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 200)),
+            CornerRadius::same(3),
+            Stroke::new(1.1, Color32::from_rgba_unmultiplied(15, 23, 42, 160)),
             StrokeKind::Inside,
         );
 
-        // Visually highlight removed / cut-out pins (`Pin entfernen`) with red X right on the comb bar
+        // Visually highlight removed / cut-out pins (`Pin entfernen`) in the missing pin gap
+        // right between the bar and the terminal so bar label text remains completely legible.
+        let cut_y = if seg.channel_slot == 0 {
+            start_r.max.y + 4.8 * zoom
+        } else {
+            bar_y - bar_half_h - 4.5 * zoom
+        };
         for &cut_b in &seg.cut_pins {
             if let Some(cr) = row_block_rects.get(&(cut_b, seg.visual_row)) {
-                let cx = cr.center().x;
-                let r = 4.8 * zoom;
-                painter.circle_filled(
-                    Pos2::new(cx, bar_y),
-                    r,
-                    Color32::from_rgb(220, 38, 38),
-                );
-                painter.circle_stroke(
-                    Pos2::new(cx, bar_y),
-                    r,
-                    Stroke::new(1.1, Color32::WHITE),
-                );
+                let cx = cr.center().x + leg_dx;
+                let r = (4.8 * zoom).max(3.6);
+                painter.circle_filled(Pos2::new(cx, cut_y), r, Color32::from_rgb(220, 38, 38));
+                painter.circle_stroke(Pos2::new(cx, cut_y), r, Stroke::new(1.1, Color32::WHITE));
                 painter.line_segment(
                     [
-                        Pos2::new(cx - r * 0.48, bar_y - r * 0.48),
-                        Pos2::new(cx + r * 0.48, bar_y + r * 0.48),
+                        Pos2::new(cx - r * 0.48, cut_y - r * 0.48),
+                        Pos2::new(cx + r * 0.48, cut_y + r * 0.48),
                     ],
                     Stroke::new(1.6, Color32::WHITE),
                 );
                 painter.line_segment(
                     [
-                        Pos2::new(cx - r * 0.48, bar_y + r * 0.48),
-                        Pos2::new(cx + r * 0.48, bar_y - r * 0.48),
+                        Pos2::new(cx - r * 0.48, cut_y + r * 0.48),
+                        Pos2::new(cx + r * 0.48, cut_y - r * 0.48),
                     ],
                     Stroke::new(1.6, Color32::WHITE),
                 );
             }
         }
 
-        if zoom >= 0.75 {
+        if zoom >= 0.7 {
             let pot_name = strip
                 .potentials
                 .iter()
@@ -1188,35 +1177,33 @@ fn draw_bridge_overlay(
             } else {
                 format!("{}p", seg.pole_count)
             };
-            // Paint pill badge behind label if text could hit a cut pin, or centered cleanly on bar
-            let lbl_font = FontId::proportional((7.5 * zoom).max(6.5));
-            let text_col = if (seg.color_rgb[0] as u16 * 3
+            let lbl_font = FontId::proportional((bar_half_h * 1.45).clamp(7.5, 13.0));
+            let lum = (seg.color_rgb[0] as u16 * 3
                 + seg.color_rgb[1] as u16 * 6
                 + seg.color_rgb[2] as u16)
-                / 10
-                > 175
-            {
+                / 10;
+            let text_col = if lum > 175 {
                 Color32::BLACK
             } else {
                 Color32::WHITE
             };
-            if seg.cut_pins.is_empty() {
+            if lum <= 175 {
+                // Crisp subtle dark shadow for extra contrast on bright red/orange/green bars
                 painter.text(
-                    Pos2::new((x0 + x1) * 0.5, bar_y),
+                    Pos2::new((x0 + x1) * 0.5 + 0.8, bar_y + 0.8),
                     Align2::CENTER_CENTER,
-                    bar_label,
-                    lbl_font,
-                    text_col,
-                );
-            } else {
-                painter.text(
-                    Pos2::new(x0 + 2.0 * zoom, bar_y),
-                    Align2::LEFT_CENTER,
-                    bar_label,
-                    lbl_font,
-                    text_col,
+                    &bar_label,
+                    lbl_font.clone(),
+                    Color32::from_rgba_unmultiplied(15, 23, 42, 180),
                 );
             }
+            painter.text(
+                Pos2::new((x0 + x1) * 0.5, bar_y),
+                Align2::CENTER_CENTER,
+                bar_label,
+                lbl_font,
+                text_col,
+            );
         }
     }
 
