@@ -227,6 +227,11 @@ pub struct Strings {
     pub welcome_new_project: &'static str,
     pub welcome_load_project: &'static str,
     pub welcome_demo_project: &'static str,
+
+    // Mode Tooltips
+    pub mode_pan_tip: &'static str,
+    pub mode_select_tip: &'static str,
+    pub mode_bridge_tip: &'static str,
 }
 
 pub static DE: Strings = Strings {
@@ -409,6 +414,10 @@ pub static DE: Strings = Strings {
     welcome_new_project: "+ Neues Projekt erstellen",
     welcome_load_project: "Bestehendes Projekt laden (.termi / .json)",
     welcome_demo_project: "Beispielprojekt (-X1) ansehen",
+
+    mode_pan_tip: "Ziehen verschiebt den CAD-Ausschnitt (wie Hand-Werkzeug). Tippen/Klick wählt eine Klemme aus, Doppelklick ändert den Text.",
+    mode_select_tip: "Ziehen spannt ein Auswahlrechteck (Rahmen) auf, um mehrere Klemmen gleichzeitig zu markieren.",
+    mode_bridge_tip: "Klick/Tipp auf eine Klemmen-Ebene ordnet sie direkt dem aktiven Potential (+24V, GND ...) für Kamm- & Drahtbrücken zu.",
 };
 
 pub static EN: Strings = Strings {
@@ -591,6 +600,10 @@ pub static EN: Strings = Strings {
     welcome_new_project: "+ Create New Project",
     welcome_load_project: "Open Existing Project (.termi / .json)",
     welcome_demo_project: "Open Sample Project (-X1)",
+
+    mode_pan_tip: "Drag to pan/scroll the CAD canvas freely. Single tap/click still selects a terminal; double-click edits text.",
+    mode_select_tip: "Drag a selection rectangle (marquee box) around multiple terminals to select and edit them together.",
+    mode_bridge_tip: "Click/tap terminal tiers to assign them to the active electrical potential for automatic comb/wire jumper calculation.",
 };
 
 pub static FR: Strings = Strings {
@@ -773,6 +786,10 @@ pub static FR: Strings = Strings {
     welcome_new_project: "+ Créer un nouveau projet",
     welcome_load_project: "Charger un projet existant (.termi / .json)",
     welcome_demo_project: "Voir le projet exemple (-X1)",
+
+    mode_pan_tip: "Faites glisser pour déplacer la vue CAO. Un clic simple sélectionne une borne ; un double-clic modifie le texte.",
+    mode_select_tip: "Tracez un rectangle de sélection autour de plusieurs bornes pour les modifier ensemble.",
+    mode_bridge_tip: "Cliquez/touchez un étage pour l'affecter au potentiel actif et calculer les peignes/ponts.",
 };
 
 pub static IT: Strings = Strings {
@@ -955,6 +972,10 @@ pub static IT: Strings = Strings {
     welcome_new_project: "+ Crea nuovo progetto",
     welcome_load_project: "Carica progetto esistente (.termi / .json)",
     welcome_demo_project: "Apri progetto di esempio (-X1)",
+
+    mode_pan_tip: "Trascina per spostare la vista CAD. Un clic seleziona un morsetto; doppio clic modifica il testo.",
+    mode_select_tip: "Trascina un riquadro attorno a più morsetti per selezionarli e modificarli insieme.",
+    mode_bridge_tip: "Clicca/tocca i piani per assegnarli al potenziale attivo e calcolare i ponticelli.",
 };
 
 pub static ES: Strings = Strings {
@@ -1137,6 +1158,10 @@ pub static ES: Strings = Strings {
     welcome_new_project: "+ Crear nuevo proyecto",
     welcome_load_project: "Abrir proyecto existente (.termi / .json)",
     welcome_demo_project: "Ver proyecto de ejemplo (-X1)",
+
+    mode_pan_tip: "Arrastra para mover la vista CAD. Un clic selecciona un borne; doble clic edita el texto.",
+    mode_select_tip: "Dibuja un recuadro alrededor de varios bornes para seleccionarlos y editarlos juntos.",
+    mode_bridge_tip: "Pulsa un nivel del borne para asignarlo al potencial activo y calcular puentes.",
 };
 
 pub static PL: Strings = Strings {
@@ -1319,6 +1344,10 @@ pub static PL: Strings = Strings {
     welcome_new_project: "+ Utwórz nowy projekt",
     welcome_load_project: "Wczytaj istniejący projekt (.termi / .json)",
     welcome_demo_project: "Zobacz projekt przykładowy (-X1)",
+
+    mode_pan_tip: "Przeciągnij, aby przesuwać widok CAD. Kliknięcie wybiera złączkę, dwuklik edytuje opis.",
+    mode_select_tip: "Zaznacz ramką wiele złączek naraz, aby wspólnie zmienić ich typ lub dodać znaki.",
+    mode_bridge_tip: "Kliknij poziom złączki, aby przypisać go do aktywnego potencjału i obliczyć mostki.",
 };
 
 pub static NL: Strings = Strings {
@@ -1501,6 +1530,10 @@ pub static NL: Strings = Strings {
     welcome_new_project: "+ Nieuw project maken",
     welcome_load_project: "Bestaand project laden (.termi / .json)",
     welcome_demo_project: "Voorbeeldproject (-X1) openen",
+
+    mode_pan_tip: "Sleep om het CAD-overzicht te verschuiven. Klikken selecteert één klem; dubbelklik bewerkt tekst.",
+    mode_select_tip: "Trek een kader rond meerdere klemmen om ze tegelijk te selecteren en aan te passen.",
+    mode_bridge_tip: "Klik/tik op klemniveaus om ze aan het actieve potentiaal toe te wijzen voor bruggen.",
 };
 
 pub fn strings(lang: Language) -> &'static Strings {

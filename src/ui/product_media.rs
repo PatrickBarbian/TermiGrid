@@ -234,6 +234,9 @@ pub fn show_product_preview_card(
                     ))
                     .small(),
                 );
+                if let Some(art) = &spec.article_number {
+                    ui.label(egui::RichText::new(format!("Art.-Nr.: {art}")).color(sec).small());
+                }
                 ui.label(
                     egui::RichText::new(format!("{slots}× {chambers_label} (max. {max_poles}p)"))
                         .color(sec)

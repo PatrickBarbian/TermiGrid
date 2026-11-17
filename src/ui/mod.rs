@@ -69,6 +69,7 @@ pub struct TermiGridApp {
     inspector_mfg_filter: Option<String>,
     inspector_search: String,
     inspector_spec_id: String,
+    last_selection_sync: Option<(usize, usize, String)>,
 
     // Database tab filter state
     db_mfg_filter: Option<String>,
@@ -128,6 +129,7 @@ impl TermiGridApp {
             inspector_mfg_filter: None,
             inspector_search: String::new(),
             inspector_spec_id: "wago-2002-2204".to_string(),
+            last_selection_sync: None,
             db_mfg_filter: None,
             db_search: String::new(),
             custom_spec_draft: CustomSpecDraft::default(),
@@ -725,6 +727,21 @@ impl TermiGridApp {
 
                     let has_strip = self.active_strip < self.project.strips.len();
                     if has_strip {
+                        // Sync "Reassign type" manufacturer + type picker when canvas selection changes
+                        if let Some(&first_idx) = self.selected_blocks.iter().next()
+                            && let Some(block) = self.project.strips[self.active_strip].blocks.get(first_idx)
+                        {
+                            let sync_key = (self.active_strip, first_idx, block.spec_id.clone());
+                            if self.last_selection_sync.as_ref() != Some(&sync_key) {
+                                self.inspector_mfg_filter = Some(block.manufacturer.clone());
+                                self.inspector_spec_id = block.spec_id.clone();
+                                self.inspector_search.clear();
+                                self.last_selection_sync = Some(sync_key);
+                            }
+                        } else {
+                            self.last_selection_sync = None;
+                        }
+
                         // Selection & Mixed-strip reassignment
                         if self.selected_blocks.is_empty() {
                             ui.label(
@@ -1306,23 +1323,26 @@ impl TermiGridApp {
         let mut append_spec_id: Option<String> = None;
 
         ui.horizontal_wrapped(|ui| {
-            // CAD Tool Switcher (Pan/Tap vs Box Select vs Bridge Mode)
+            // CAD Tool Switcher (Pan/Tap vs Box Select vs Bridge Mode) with tooltips
             ui.selectable_value(
                 &mut self.canvas_state.interaction_mode,
                 CanvasInteractionMode::Pan,
                 s.mode_pan,
-            );
+            )
+            .on_hover_text(s.mode_pan_tip);
             ui.selectable_value(
                 &mut self.canvas_state.interaction_mode,
                 CanvasInteractionMode::SelectBox,
                 s.mode_select,
-            );
+            )
+            .on_hover_text(s.mode_select_tip);
             if ui
                 .selectable_value(
                     &mut self.canvas_state.interaction_mode,
                     CanvasInteractionMode::BridgeAssign,
                     s.mode_bridge,
                 )
+                .on_hover_text(s.mode_bridge_tip)
                 .clicked()
             {
                 let strip = &mut self.project.strips[self.active_strip];

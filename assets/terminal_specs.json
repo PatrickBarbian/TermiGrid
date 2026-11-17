@@ -911,7 +911,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3208100",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-3208100"
   },
   {
     "id": "phoenix-pt-15s-bu",
@@ -930,7 +932,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "3208126",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-bu-3208126"
   },
   {
     "id": "phoenix-pt-15s-pe",
@@ -947,7 +951,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "3208139",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-15s-pe-3208139"
   },
   {
     "id": "phoenix-pttb-15s",
@@ -968,7 +974,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3208511",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-15s-3208511"
   },
   {
     "id": "phoenix-pttb-15s-pe",
@@ -1006,7 +1014,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3209510",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-3209510"
   },
   {
     "id": "phoenix-pt-25-bu",
@@ -1025,7 +1035,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "3209523",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-bu-3209523"
   },
   {
     "id": "phoenix-pt-25-pe",
@@ -1042,7 +1054,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "3209536",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-pe-3209536"
   },
   {
     "id": "phoenix-pt-25-mt",
@@ -1080,7 +1094,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3210567",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-25-3210567"
   },
   {
     "id": "phoenix-pttb-25-ln",
@@ -1124,7 +1140,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3210596",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pttb-25-pe-3210596"
   },
   {
     "id": "phoenix-pt-25-3l",
@@ -1176,7 +1194,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "3213946",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-peln-3213946"
   },
   {
     "id": "phoenix-pti-25-pell",
@@ -1201,7 +1221,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3213949",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-pell-3213949"
   },
   {
     "id": "phoenix-pti-25-ll",
@@ -1272,7 +1294,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "3214047",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-peln-3214047"
   },
   {
     "id": "phoenix-pti-4-pell",
@@ -1297,7 +1321,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3214050",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pell-3214050"
   },
   {
     "id": "phoenix-pt-4",
@@ -1314,7 +1340,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3211757",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-3211757"
   },
   {
     "id": "phoenix-pt-4-bu",
@@ -1333,7 +1361,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "3211760",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-bu-3211760"
   },
   {
     "id": "phoenix-pt-4-pe",
@@ -1350,7 +1380,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "3211766",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-4-pe-3211766"
   },
   {
     "id": "phoenix-pttb-4",
@@ -1371,7 +1403,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3211755",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-4-3211755"
   },
   {
     "id": "phoenix-pt-6",
@@ -1388,7 +1422,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3211813",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-6-3211813"
   },
   {
     "id": "phoenix-pt-6-pe",
@@ -1405,7 +1441,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "3211822",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-6-pe-3211822"
   },
   {
     "id": "phoenix-pt-10",
@@ -1422,7 +1460,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3212120",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-10-3212120"
   },
   {
     "id": "phoenix-pt-16n",
@@ -1439,7 +1479,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3212138",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-16-n-3212138"
   },
   {
     "id": "phoenix-ut-25",
@@ -1456,7 +1498,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3044076",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-25-3044076"
   },
   {
     "id": "phoenix-ut-4",
@@ -1473,7 +1517,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3044102",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-4-3044102"
   },
   {
     "id": "phoenix-uttb-25",
@@ -1494,7 +1540,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3044636",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-uttb-25-3044636"
   },
   {
     "id": "weidmuller-a2c-25",
@@ -1511,7 +1559,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1521850000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-2-5/p/1521850000"
   },
   {
     "id": "weidmuller-a2c-25-bl",
@@ -1530,7 +1580,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "1521880000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-2-5-bl/p/1521880000"
   },
   {
     "id": "weidmuller-a2c-25-pe",
@@ -1547,7 +1599,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "1521680000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-2-5-pe/p/1521680000"
   },
   {
     "id": "weidmuller-a2c-4",
@@ -1564,7 +1618,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "2051180000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-4/p/2051180000"
   },
   {
     "id": "weidmuller-a2c-6",
@@ -1581,7 +1637,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1992110000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-6/p/1992110000"
   },
   {
     "id": "weidmuller-a2c-10",
@@ -1598,7 +1656,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "2490360000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-10/p/2490360000"
   },
   {
     "id": "weidmuller-a2t-25",
@@ -1619,7 +1679,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1547610000",
+    "product_url": "https://eshop.weidmueller.com/de/a2t-2-5/p/1547610000"
   },
   {
     "id": "weidmuller-a2t-25-n",
@@ -1688,7 +1750,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "2428510000",
+    "product_url": "https://eshop.weidmueller.com/de/a3t-2-5/p/2428510000"
   },
   {
     "id": "weidmuller-aitb-25-nlp",
@@ -1715,7 +1779,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "2668940000",
+    "product_url": "https://eshop.weidmueller.com/de/aitb-2-5-n-l-pe/p/2668940000"
   },
   {
     "id": "weidmuller-aitb-25-llp",
@@ -1767,7 +1833,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "2669090000",
+    "product_url": "https://eshop.weidmueller.com/de/aitb-4-n-l-pe/p/2669090000"
   },
   {
     "id": "weidmuller-wdu-25",
@@ -1784,7 +1852,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1020000000",
+    "product_url": "https://eshop.weidmueller.com/de/wdu-2-5/p/1020000000"
   },
   {
     "id": "weidmuller-wdu-25-bl",
@@ -1803,7 +1873,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "1020080000",
+    "product_url": "https://eshop.weidmueller.com/de/wdu-2-5-bl/p/1020080000"
   },
   {
     "id": "weidmuller-wpe-25",
@@ -1820,7 +1892,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "1010000000",
+    "product_url": "https://eshop.weidmueller.com/de/wpe-2-5/p/1010000000"
   },
   {
     "id": "weidmuller-wdu-4",
@@ -1837,7 +1911,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1020100000",
+    "product_url": "https://eshop.weidmueller.com/de/wdu-4/p/1020100000"
   },
   {
     "id": "weidmuller-wdk-25",
@@ -1858,7 +1934,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1021500000",
+    "product_url": "https://eshop.weidmueller.com/de/wdk-2-5/p/1021500000"
   },
   {
     "id": "weidmuller-wdk-25-n",
@@ -1908,7 +1986,9 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "article_number": "1783820000",
+    "product_url": "https://eshop.weidmueller.com/de/dli-2-5/p/1783820000"
   },
   {
     "id": "weidmuller-dli-25-pell",
@@ -2056,7 +2136,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3209549",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-twin-3209549"
   },
   {
     "id": "phoenix-pt-25-quattro",
@@ -2073,7 +2155,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3209578",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-quattro-3209578"
   },
   {
     "id": "phoenix-pt-25-peln",
@@ -2117,7 +2201,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3031212",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-st-25-3031212"
   },
   {
     "id": "phoenix-sttb-25",
@@ -2138,7 +2224,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3031270",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-sttb-25-3031270"
   },
   {
     "id": "phoenix-sti-25-peln",
@@ -2216,7 +2304,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1608510000",
+    "product_url": "https://eshop.weidmueller.com/de/zdu-2-5/p/1608510000"
   },
   {
     "id": "weidmuller-zpe-25",
@@ -2233,7 +2323,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "1608640000",
+    "product_url": "https://eshop.weidmueller.com/de/zpe-2-5/p/1608640000"
   },
   {
     "id": "weidmuller-zdk-25",
@@ -2254,7 +2346,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1674300000",
+    "product_url": "https://eshop.weidmueller.com/de/zdk-2-5/p/1674300000"
   },
   {
     "id": "weidmuller-zdk-25-n",
@@ -3028,7 +3122,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3209604",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttbs-25-3209604"
   },
   {
     "id": "phoenix-pt-4-twin",
@@ -3045,7 +3141,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3211771",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-twin-3211771"
   },
   {
     "id": "phoenix-pt-4-quattro",
@@ -3062,7 +3160,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3211797",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-quattro-3211797"
   },
   {
     "id": "phoenix-pttb-4-pe",
@@ -3127,7 +3227,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1078960",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ptv-25-1078960"
   },
   {
     "id": "phoenix-ptv-25-pe",
@@ -3178,7 +3280,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3260050",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ptpower-50-3260050"
   },
   {
     "id": "phoenix-ut-25-pe",
@@ -3212,7 +3316,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3044131",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-6-3044131"
   },
   {
     "id": "phoenix-ut-10",
@@ -3229,7 +3335,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3044160",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-10-3044160"
   },
   {
     "id": "phoenix-ut-16",
@@ -3246,7 +3354,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "3044199",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-16-3044199"
   },
   {
     "id": "phoenix-uttb-25-pe",
@@ -3284,7 +3394,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1552790000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-1-5/p/1552790000"
   },
   {
     "id": "weidmuller-a2c-15-pe",
@@ -3301,7 +3413,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "1552680000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-1-5-pe/p/1552680000"
   },
   {
     "id": "weidmuller-a3c-25",
@@ -3318,7 +3432,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1521740000",
+    "product_url": "https://eshop.weidmueller.com/de/a3c-2-5/p/1521740000"
   },
   {
     "id": "weidmuller-a4c-25",
@@ -3335,7 +3451,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1521690000",
+    "product_url": "https://eshop.weidmueller.com/de/a4c-2-5/p/1521690000"
   },
   {
     "id": "weidmuller-a3t-25-peln",
@@ -3379,7 +3497,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "2051360000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-4-pe/p/2051360000"
   },
   {
     "id": "weidmuller-a2t-4",
@@ -3400,7 +3520,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "2539970000",
+    "product_url": "https://eshop.weidmueller.com/de/a2t-4/p/2539970000"
   },
   {
     "id": "weidmuller-a2c-6-pe",
@@ -3417,7 +3539,9 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "article_number": "1991810000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-6-pe/p/1991810000"
   },
   {
     "id": "weidmuller-a2c-16",
@@ -3434,7 +3558,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "2494000000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-16/p/2494000000"
   },
   {
     "id": "weidmuller-a2c-35",
@@ -3451,7 +3577,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "2551510000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-35/p/2551510000"
   },
   {
     "id": "weidmuller-amc-25",
@@ -3550,7 +3678,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1020200000",
+    "product_url": "https://eshop.weidmueller.com/de/wdu-6/p/1020200000"
   },
   {
     "id": "weidmuller-wdu-10",
@@ -3567,7 +3697,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1020300000",
+    "product_url": "https://eshop.weidmueller.com/de/wdu-10/p/1020300000"
   },
   {
     "id": "weidmuller-wdu-16",
@@ -3584,7 +3716,9 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "article_number": "1020400000",
+    "product_url": "https://eshop.weidmueller.com/de/wdu-16/p/1020400000"
   },
   {
     "id": "weidmuller-wdk-25-pe",
@@ -4562,7 +4696,9 @@
       }
     ],
     "jumper_slots_per_tier": 1,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "3211861",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-hesi-3211861"
   },
   {
     "id": "phoenix-pt-4-mt",
@@ -4811,7 +4947,9 @@
       }
     ],
     "jumper_slots_per_tier": 2,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "1088728",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ptv-4-1088728"
   },
   {
     "id": "phoenix-ptv-4-pe",
@@ -4975,7 +5113,9 @@
       }
     ],
     "jumper_slots_per_tier": 1,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "3004362",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-uk-5-n-3004362"
   },
   {
     "id": "phoenix-uslkg-5",
@@ -4994,7 +5134,9 @@
       }
     ],
     "jumper_slots_per_tier": 1,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "0441504",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uslkg-5-0441504"
   },
   {
     "id": "weidmuller-a2c-15-bl",
@@ -5154,7 +5296,9 @@
       }
     ],
     "jumper_slots_per_tier": 2,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "2051210000",
+    "product_url": "https://eshop.weidmueller.com/de/a2c-4-bl/p/2051210000"
   },
   {
     "id": "weidmuller-a3c-4",
@@ -5351,7 +5495,9 @@
       }
     ],
     "jumper_slots_per_tier": 1,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "2669080000",
+    "product_url": "https://eshop.weidmueller.com/de/aitb-4-l-l-pe/p/2669080000"
   },
   {
     "id": "weidmuller-wdu-4-bl",
@@ -5372,7 +5518,9 @@
       }
     ],
     "jumper_slots_per_tier": 2,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "1020180000",
+    "product_url": "https://eshop.weidmueller.com/de/wdu-4-bl/p/1020180000"
   },
   {
     "id": "weidmuller-wpe-4",
@@ -5391,7 +5539,9 @@
       }
     ],
     "jumper_slots_per_tier": 2,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "1010100000",
+    "product_url": "https://eshop.weidmueller.com/de/wpe-4/p/1010100000"
   },
   {
     "id": "weidmuller-wdu-6-bl",
@@ -5431,7 +5581,9 @@
       }
     ],
     "jumper_slots_per_tier": 1,
-    "max_jumper_poles": 5
+    "max_jumper_poles": 5,
+    "article_number": "1010200000",
+    "product_url": "https://eshop.weidmueller.com/de/wpe-6/p/1010200000"
   },
   {
     "id": "weidmuller-wdu-35",
@@ -5488,7 +5640,9 @@
       }
     ],
     "jumper_slots_per_tier": 2,
-    "max_jumper_poles": 10
+    "max_jumper_poles": 10,
+    "article_number": "1632050000",
+    "product_url": "https://eshop.weidmueller.com/de/zdu-4/p/1632050000"
   },
   {
     "id": "weidmuller-zpe-4",
