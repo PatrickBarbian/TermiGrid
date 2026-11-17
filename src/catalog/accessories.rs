@@ -40,7 +40,9 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
     let markers_strip = "2009-110 (Beschriftungsstreifen) / 2009-115 (WMB)".to_string();
 
     if id.starts_with("wago-2000") || id.starts_with("wago-2200") {
-        let end_plate = if spec.levels >= 2 {
+        let end_plate = if spec.levels >= 3 {
+            "2000-3291 (3-Etagen)"
+        } else if spec.levels == 2 {
             "2000-2291 (2-Etagen)"
         } else if id.contains("-140") {
             "2000-1491 (4-Leiter)"
@@ -98,12 +100,18 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     if id.starts_with("wago-2002") || id.starts_with("wago-2202") || id.starts_with("wago-2102") {
-        let end_plate = if spec.levels == 3 {
+        let end_plate = if id.contains("-261") {
+            "2002-2691 (Doppelstock-Trenn)"
+        } else if id.contains("-296") {
+            "2002-2991 (4-Leiter Doppelstock)"
+        } else if spec.levels == 3 {
             "2002-3291 (3-Etagen)"
         } else if spec.levels == 2 {
             "2002-2291 (2-Etagen)"
-        } else if id.contains("-161") || id.contains("-181") {
+        } else if id.contains("-161") || id.contains("-166") || id.contains("-181") {
             "2002-1691 (Sicherung/Trenn)"
+        } else if id.contains("-198") {
+            "2002-1991 (4-Leiter Trenn)"
         } else if id.contains("-140") {
             "2002-1491 (4-Leiter)"
         } else if id.contains("-130") || id.contains("-171") {
@@ -165,8 +173,13 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     if id.starts_with("wago-2010") || id.starts_with("wago-2210") || id.starts_with("wago-2110") {
+        let end_plate = if id.contains("-130") {
+            "2010-1391 (3-Leiter 10mm²)"
+        } else {
+            "2010-1291 (2-Leiter 10mm²)"
+        };
         return TerminalAccessories {
-            end_plate: "2010-1291 (2-Leiter) / 2010-1391 (3-Leiter)".to_string(),
+            end_plate: end_plate.to_string(),
             jumpers: "2010-402 (2-fach) .. 2010-405 (5-fach)".to_string(),
             markers: markers_strip,
             end_bracket,
@@ -175,8 +188,13 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     if id.starts_with("wago-2016") || id.starts_with("wago-2216") || id.starts_with("wago-2116") {
+        let end_plate = if id.contains("-130") {
+            "2016-1391 (3-Leiter 16mm²)"
+        } else {
+            "2016-1291 (2-Leiter 16mm²)"
+        };
         return TerminalAccessories {
-            end_plate: "2016-1291 (2-Leiter) / 2016-1391 (3-Leiter)".to_string(),
+            end_plate: end_plate.to_string(),
             jumpers: "2016-402 (2-fach) .. 2016-405 (5-fach)".to_string(),
             markers: markers_strip,
             end_bracket,
@@ -214,8 +232,19 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
+    let end_plate_280 = if id.starts_with("wago-281") {
+        "281-317 (Sicherung 4mm²)"
+    } else if id.contains("-560") {
+        "280-320 (Sensor/Aktor)"
+    } else if id.contains("-833") {
+        "280-314 (4-Leiter)"
+    } else if id.contains("-681") {
+        "280-324 (3-Leiter)"
+    } else {
+        "280-308 (2-Leiter)"
+    };
     TerminalAccessories {
-        end_plate: "280-308 (Abschlussplatte)".to_string(),
+        end_plate: end_plate_280.to_string(),
         jumpers: "280-402 (2-fach) / 280-409 (9-fach)".to_string(),
         markers: "793-5501 (WMB 5mm)".to_string(),
         end_bracket,
@@ -230,8 +259,12 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
     if id.contains("pt-15s") || id.contains("pttb-15s") || id.contains("ptio-15s") {
         let end_plate = if id.contains("ptio") {
             "D-PTIO 1,5/S (3244575)"
-        } else if spec.levels >= 2 {
+        } else if spec.levels >= 3 {
+            "D-PT 1,5/S-3L (3113771)"
+        } else if spec.levels == 2 {
             "D-PTTB 1,5/S (3208579)"
+        } else if id.contains("-mt") {
+            "D-PT 1,5/S-MT-0,8 (3210303)"
         } else if id.contains("quattro") {
             "D-PT 1,5/S-QUATTRO (3208375)"
         } else if id.contains("twin") {
@@ -248,8 +281,10 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
-    if id.contains("pti-25") || id.contains("sti-25") {
-        let end_plate = if id.contains("sti") {
+    if id.contains("pti-25") || id.contains("sti-25") || id.contains("uti-25") {
+        let end_plate = if id.contains("uti") {
+            "D-UTI 2,5 (3076038)"
+        } else if id.contains("sti") {
             "D-STI/3 (3038626)"
         } else if spec.levels >= 3 {
             "D-PTI/3 (3213975)"
@@ -343,10 +378,14 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     if id.contains("pt-4") || id.contains("pttb-4") {
-        let end_plate = if spec.levels >= 2 {
+        let end_plate = if id.contains("hesi") {
+            "Geschlossenes Sicherungsgehäuse (kein Enddeckel nötig)"
+        } else if spec.levels >= 2 {
             "D-PTTB 4 (3211867)"
+        } else if id.contains("-mt") {
+            "D-PT 4-MT (3211940)"
         } else if id.contains("quattro") {
-            "D-PT 4-QUATTRO (3208977)"
+            "D-PT 4-QUATTRO (3208979)"
         } else if id.contains("twin") {
             "D-PT 4-TWIN (3208977)"
         } else {
@@ -361,9 +400,16 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
-    if id.contains("pt-6") {
+    if id.contains("pt-6") || id.contains("ptme-6") {
+        let end_plate = if id.contains("ptme") {
+            "D-PTME 6 (3212169)"
+        } else if id.contains("-t") || id.contains("-mt") {
+            "D-PT 6-MT (3212173)"
+        } else {
+            "D-PT 6 (3212044)"
+        };
         return TerminalAccessories {
-            end_plate: "D-PT 6 (3212044)".to_string(),
+            end_plate: end_plate.to_string(),
             jumpers: "FBS 2-8 (3030284) .. FBS 5-8 (3030307)".to_string(),
             markers: "ZBF 8 / UCT-TM 8".to_string(),
             end_bracket,
@@ -391,7 +437,21 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
-    if id.contains("pt-35") || id.contains("ptpower") || id.contains("ut-16") || id.contains("ut-35")
+    if id.contains("uk-5") {
+        return TerminalAccessories {
+            end_plate: "D-UK 4/10 (3003020)".to_string(),
+            jumpers: "FBRI 10-5 N (2770642)".to_string(),
+            markers: "ZB 5 / UCT-TM 5".to_string(),
+            end_bracket,
+            extra: None,
+        };
+    }
+
+    if id.contains("pt-35")
+        || id.contains("ptpower")
+        || id.contains("ut-16")
+        || id.contains("ut-35")
+        || id.contains("uslkg")
     {
         return TerminalAccessories {
             end_plate: "Geschlossenes Gehäuse (kein Enddeckel nötig)".to_string(),
@@ -403,11 +463,13 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     // Default PT 2,5 / PTTB 2,5 / ST 2,5 family (5.2 mm)
-    let end_plate = if spec.levels == 3 {
+    let end_plate = if id.contains("hesi") {
+        "Geschlossenes Sicherungsgehäuse (kein Enddeckel nötig)"
+    } else if spec.levels == 3 {
         "D-PT 2,5-3L (3211647)"
     } else if spec.levels == 2 {
         if id.contains("pttbs") {
-            "D-PTTBS 2,5 (3209604)"
+            "D-PTTBS 2,5 (3209617)"
         } else if id.contains("sttb") {
             "D-STTB 2,5 (3030459)"
         } else {
@@ -415,10 +477,8 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
         }
     } else if id.contains("quattro") {
         "D-ST 2,5-QUATTRO (3030514)"
-    } else if id.contains("twin") {
+    } else if id.contains("twin") || id.contains("-mt") || id.contains("-tg") {
         "D-ST 2,5-TWIN (3030488)"
-    } else if id.contains("-mt") || id.contains("-tg") || id.contains("hesi") {
-        "D-ST 2,5-MT / D-PT 2,5-TWIN (3030488)"
     } else {
         "D-ST 2,5 (3030417)"
     };
@@ -469,9 +529,18 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
-    if id.contains("a2c-15") || id.contains("a3c-15") || id.contains("a4c-15") {
+    if id.contains("a2c-15") || id.contains("a3c-15") || id.contains("a4c-15") || id.contains("aio21") {
+        let end_plate = if id.contains("aio21") {
+            "AEP IO21 (1993580000)"
+        } else if id.contains("a4c-15") {
+            "AEP 4C 1.5 (1552640000)"
+        } else if id.contains("a3c-15") {
+            "AEP 3C 1.5 (1552620000)"
+        } else {
+            "AEP 2C 1.5 (1552600000)"
+        };
         return TerminalAccessories {
-            end_plate: "AEP 2C 1.5 (1552600000)".to_string(),
+            end_plate: end_plate.to_string(),
             jumpers: "ZQV 1.5N/2 (1985410000) .. ZQV 1.5N/10".to_string(),
             markers: "DEK 5/3.5 / WS 10/3.5".to_string(),
             end_bracket,
@@ -485,8 +554,13 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
         || id.contains("a2t-25")
         || id.contains("a3t-25")
         || id.contains("amc-25")
+        || id.contains("adt-25")
     {
-        let end_plate = if spec.levels == 3 {
+        let end_plate = if id.contains("amc-25") {
+            "AEP MC 2.5 (2434380000)"
+        } else if id.contains("adt-25") {
+            "AEP DT 2.5 2C (1989880000)"
+        } else if spec.levels == 3 {
             "AEP 3T 2.5 (1547700000)"
         } else if spec.levels == 2 {
             "AEP 2T 2.5 (1547690000)"
@@ -512,7 +586,9 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
         || id.contains("a2t-4")
         || id.contains("afs-4")
     {
-        let end_plate = if spec.levels == 2 {
+        let end_plate = if id.contains("afs-4") {
+            "Geschlossenes Sicherungsgehäuse (kein Enddeckel nötig)"
+        } else if spec.levels == 2 {
             "AEP 2T 4 (2540030000)"
         } else if id.contains("a4c") {
             "AEP 4C 4 (2051920000)"
@@ -533,11 +609,11 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
     if id.contains("a2c-6") || id.contains("a2c-10") || id.contains("a2c-16") || id.contains("a2c-35")
     {
         let (end_plate, jumpers, markers) = if id.contains("a2c-35") {
-            ("AEP 2C 35", "ZQV 35N/2", "DEK 5/8")
+            ("Geschlossenes Gehäuse (kein Enddeckel nötig)", "ZQV 35N/2", "DEK 5/8")
         } else if id.contains("a2c-16") {
             ("AEP 2C 16 (2490430000)", "ZQV 16N/2 (2497290000)", "DEK 5/8")
         } else if id.contains("a2c-10") {
-            ("AEP 2C 10 (2490360000)", "ZQV 10N/2 (2497250000)", "DEK 5/8")
+            ("AEP 2C 10 (2490380000)", "ZQV 10N/2 (2497250000)", "DEK 5/8")
         } else {
             ("AEP 2C 6 (1991970000)", "ZQV 6N/2 (1985740000) .. ZQV 6N/6", "DEK 5/8")
         };
@@ -555,12 +631,19 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
             "ZAP/TW ZDL 2.5 (1720910000)"
         } else if spec.levels >= 2 {
             "ZAP/TW ZDK2.5 (1674730000)"
+        } else if id.contains("-4") {
+            "ZAP/TW 4 (1632090000)"
         } else {
             "ZAP/TW 1 (1608740000)"
         };
+        let jumpers = if id.contains("-4") {
+            "ZQV 4/2 (1608950000) .. ZQV 4/10"
+        } else {
+            "ZQV 2.5/2 (1608860000) .. ZQV 2.5/10"
+        };
         return TerminalAccessories {
             end_plate: end_plate.to_string(),
-            jumpers: "ZQV 2.5/2 (1608860000) .. ZQV 2.5/10".to_string(),
+            jumpers: jumpers.to_string(),
             markers: "DEK 5/5 / WS 12/5".to_string(),
             end_bracket,
             extra: None,
@@ -568,11 +651,13 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     // W-Series (WDU / WPE / WDK / DLI / WTR / WSI)
-    let end_plate = if id.contains("dli") {
+    let end_plate = if id.contains("wsi") || id.contains("wdu-35") {
+        "Geschlossenes Gehäuse (kein Enddeckel nötig)"
+    } else if id.contains("dli") {
         "WAP DLI 2.5 (1783550000)"
     } else if id.contains("wdk") {
         "WAP WDK2.5 (1059100000)"
-    } else if id.contains("wdu-16") || id.contains("wdu-35") || id.contains("wpe-16") {
+    } else if id.contains("wdu-16") || id.contains("wpe-16") {
         "WAP 16+35 WTW 2.5-10 (1050100000)"
     } else {
         "WAP 2.5-10 (1050000000)"
@@ -638,6 +723,8 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
                 || id.contains("hesi")
             {
                 0
+            } else if id.contains("pt-15s-mt") {
+                8 // 0.8 mm (D-PT 1,5/S-MT-0,8)
             } else if id.contains("uk-") {
                 15 // 1.5 mm (D-UK 4/10)
             } else {
