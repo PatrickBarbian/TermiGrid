@@ -77,9 +77,10 @@ impl ProductMediaCache {
             };
         }
 
-        // Only WAGO openly serves product pages + /medias/ photos without WAF bot-blocking;
-        // for other manufacturers, avoid futile blocked requests unless an explicit direct URL is set.
-        let can_fetch = spec.manufacturer == "WAGO" || spec.product_url.is_some();
+        let direct_image_url = spec.effective_image_url();
+        let can_fetch = direct_image_url.is_some()
+            || spec.manufacturer == "WAGO"
+            || spec.product_url.is_some();
         if !can_fetch {
             if let Ok(mut entries) = self.entries.lock() {
                 entries.insert(spec.id.clone(), PhotoEntry::Unavailable);
@@ -108,7 +109,10 @@ impl ProductMediaCache {
         let ctx_clone = ctx.clone();
 
         std::thread::spawn(move || {
-            let image_opt = fetch_product_color_image(&page_url);
+            let image_opt = direct_image_url
+                .as_deref()
+                .and_then(fetch_direct_color_image)
+                .or_else(|| fetch_product_color_image(&page_url));
             if let Ok(mut q) = queue.lock() {
                 q.completed.insert(spec_id.clone(), image_opt);
             }
@@ -122,20 +126,26 @@ impl ProductMediaCache {
     }
 }
 
-fn fetch_product_color_image(page_url: &str) -> Option<ColorImage> {
-    let html = http_get_text(page_url).ok()?;
-    let img_url = extract_product_image_url(&html, page_url)?;
-    let bytes = http_get_bytes(&img_url).ok()?;
+fn fetch_direct_color_image(img_url: &str) -> Option<ColorImage> {
+    let bytes = http_get_bytes(img_url).ok()?;
     let dyn_img = image::load_from_memory(&bytes).ok()?;
     let rgba = dyn_img.to_rgba8();
     let size = [rgba.width() as usize, rgba.height() as usize];
     Some(ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()))
 }
 
+fn fetch_product_color_image(page_url: &str) -> Option<ColorImage> {
+    let html = http_get_text(page_url).ok()?;
+    let img_url = extract_product_image_url(&html, page_url)?;
+    fetch_direct_color_image(&img_url)
+}
+
 fn extract_product_image_url(html: &str, base_url: &str) -> Option<String> {
-    // 1. WAGO /medias/ medium resolution JPEG (`480-...jpg` or `768-...jpg`) or JSON-LD product-image contentUrl
+    // 1. WAGO /medias/, Phoenix Contact CaaS, Weidmüller DAM, or JSON-LD/OpenGraph product image
     for marker in [
         "https://www.wago.com/medias/",
+        "https://caas.phoenixcontact.com/caas/v1/stable/media/",
+        "https://assets.dam.weidmueller.com/assets/api/",
         "/medias/480-",
         "/medias/768-",
         "/medias/200-",
@@ -163,6 +173,8 @@ fn extract_product_image_url(html: &str, base_url: &str) -> Option<String> {
                 || candidate.contains(".jpeg")
                 || candidate.contains(".png")
                 || candidate.contains("/medias/")
+                || candidate.contains("caas.phoenixcontact.com")
+                || candidate.contains("assets.dam.weidmueller.com")
             {
                 if candidate.starts_with("http") {
                     return Some(candidate.to_string());
@@ -234,7 +246,7 @@ pub fn show_product_preview_card(
                     ))
                     .small(),
                 );
-                if let Some(art) = &spec.article_number {
+                if let Some(art) = spec.effective_article_number() {
                     ui.label(egui::RichText::new(format!("Art.-Nr.: {art}")).color(sec).small());
                 }
                 ui.label(

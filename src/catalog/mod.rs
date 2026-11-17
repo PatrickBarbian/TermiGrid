@@ -42,6 +42,9 @@ pub struct TerminalSpec {
     /// Optional explicit manufacturer product page URL.
     #[serde(default)]
     pub product_url: Option<String>,
+    /// Optional explicit direct manufacturer image CDN URL.
+    #[serde(default)]
+    pub image_url: Option<String>,
 }
 
 impl TerminalSpec {
@@ -282,6 +285,16 @@ impl TerminalSpec {
         }
     }
 
+    /// Effective manufacturer article / order number (`Art.-Nr.`).
+    pub fn effective_article_number(&self) -> Option<&str> {
+        if let Some(art) = self.article_number.as_deref()
+            && !art.is_empty()
+        {
+            return Some(art);
+        }
+        resolve_manufacturer_meta(&self.id).map(|(art, _, _)| art)
+    }
+
     /// Clean manufacturer product lookup URL for opening in desktop or mobile browser.
     pub fn effective_product_url(&self) -> String {
         if let Some(url) = &self.product_url
@@ -289,12 +302,12 @@ impl TerminalSpec {
         {
             return url.clone();
         }
+        if let Some((_, url, _)) = resolve_manufacturer_meta(&self.id) {
+            return url.to_string();
+        }
+
         let short = self.name.split(" (").next().unwrap_or(&self.name).trim();
-        let article = self
-            .article_number
-            .as_deref()
-            .filter(|a| !a.is_empty())
-            .unwrap_or(short);
+        let article = self.effective_article_number().unwrap_or(short);
 
         match self.manufacturer.as_str() {
             "WAGO" => {
@@ -312,6 +325,231 @@ impl TerminalSpec {
             _ => format!("https://www.google.com/search?q={}", url_encode(short)),
         }
     }
+
+    /// Direct, unblocked manufacturer media CDN URL (`caas.phoenixcontact.com` / `assets.dam.weidmueller.com`)
+    /// when available so product photos load directly without HTML scraping or WAF blocks.
+    pub fn effective_image_url(&self) -> Option<String> {
+        if let Some(url) = &self.image_url
+            && !url.is_empty()
+        {
+            return Some(url.clone());
+        }
+        if let Some((_, _, img)) = resolve_manufacturer_meta(&self.id) {
+            return Some(img.to_string());
+        }
+        // Fallback by manufacturer + series/color for user-created custom specs
+        match self.manufacturer.as_str() {
+            "Phoenix Contact" => Some(phoenix_caas_fallback(self)),
+            "Weidmüller" => Some(weidmuller_dam_fallback(self)),
+            _ => None,
+        }
+    }
+}
+
+/// Verified `(article_number, direct_product_url, direct_cdn_image_url)` table for Phoenix Contact
+/// (`caas.phoenixcontact.com`) and Weidmüller (`assets.dam.weidmueller.com`) catalog items.
+fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static str, &'static str)> {
+    match spec_id {
+        // --- PHOENIX CONTACT (84 specs) ---
+        "phoenix-pt-15s" => Some(("3208100", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-3208100", "https://caas.phoenixcontact.com/caas/v1/stable/media/213926/full/b408?format=jpg")),
+        "phoenix-pt-15s-bu" => Some(("3208126", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-bu-3208126", "https://caas.phoenixcontact.com/caas/v1/stable/media/254872/full/b408?format=jpg")),
+        "phoenix-pt-15s-pe" => Some(("3208139", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-15s-pe-3208139", "https://caas.phoenixcontact.com/caas/v1/stable/media/212966/full/b408?format=jpg")),
+        "phoenix-pt-15s-twin" => Some(("3208155", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-twin-3208155", "https://caas.phoenixcontact.com/caas/v1/stable/media/265146/full/b408?format=jpg")),
+        "phoenix-pt-15s-twin-pe" => Some(("3208171", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-15s-twin-pe-3208171", "https://caas.phoenixcontact.com/caas/v1/stable/media/212966/full/b408?format=jpg")),
+        "phoenix-pt-15s-quattro" => Some(("3208197", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-quattro-3208197", "https://caas.phoenixcontact.com/caas/v1/stable/media/213926/full/b408?format=jpg")),
+        "phoenix-pt-15s-mt" => Some(("3210301", "https://www.phoenixcontact.com/de-de/produkte/messertrennklemme-pt-15s-mt-3210301", "https://caas.phoenixcontact.com/caas/v1/stable/media/31502/full/b408?format=jpg")),
+        "phoenix-pt-15s-3l" => Some(("3213713", "https://www.phoenixcontact.com/de-de/produkte/dreistockklemme-pt-15s-3l-3213713", "https://caas.phoenixcontact.com/caas/v1/stable/media/220810/full/b408?format=jpg")),
+        "phoenix-pttb-15s" => Some(("3208511", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-15s-3208511", "https://caas.phoenixcontact.com/caas/v1/stable/media/220810/full/b408?format=jpg")),
+        "phoenix-pttb-15s-pe" => Some(("3208537", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pttb-15s-pe-3208537", "https://caas.phoenixcontact.com/caas/v1/stable/media/235702/full/b408?format=jpg")),
+        "phoenix-ptio-15s-3" => Some(("3244410", "https://www.phoenixcontact.com/de-de/produkte/initiatoraektorklemme-ptio-15s3-3244410", "https://caas.phoenixcontact.com/caas/v1/stable/media/210966/full/b408?format=jpg")),
+        "phoenix-pt-25" => Some(("3209510", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-3209510", "https://caas.phoenixcontact.com/caas/v1/stable/media/231482/full/b408?format=jpg")),
+        "phoenix-pt-25-bu" => Some(("3209523", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-bu-3209523", "https://caas.phoenixcontact.com/caas/v1/stable/media/117936/full/b408?format=jpg")),
+        "phoenix-pt-25-pe" => Some(("3209536", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-pe-3209536", "https://caas.phoenixcontact.com/caas/v1/stable/media/121018/full/b408?format=jpg")),
+        "phoenix-pt-25-twin" => Some(("3209549", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-twin-3209549", "https://caas.phoenixcontact.com/caas/v1/stable/media/226530/full/b408?format=jpg")),
+        "phoenix-pt-25-twin-bu" => Some(("3209552", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-twin-bu-3209552", "https://caas.phoenixcontact.com/caas/v1/stable/media/117936/full/b408?format=jpg")),
+        "phoenix-pt-25-twin-pe" => Some(("3209565", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-twin-pe-3209565", "https://caas.phoenixcontact.com/caas/v1/stable/media/127104/full/b408?format=jpg")),
+        "phoenix-pt-25-quattro" => Some(("3209578", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-quattro-3209578", "https://caas.phoenixcontact.com/caas/v1/stable/media/200178/full/b408?format=jpg")),
+        "phoenix-pt-25-quattro-bu" => Some(("3209581", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-25-quattro-bu-3209581", "https://caas.phoenixcontact.com/caas/v1/stable/media/117936/full/b408?format=jpg")),
+        "phoenix-pt-25-quattro-pe" => Some(("3209594", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-quattro-pe-3209594", "https://caas.phoenixcontact.com/caas/v1/stable/media/127104/full/b408?format=jpg")),
+        "phoenix-pt-25-mt" => Some(("3210156", "https://www.phoenixcontact.com/de-de/produkte/messertrennklemme-pt-25-mt-3210156", "https://caas.phoenixcontact.com/caas/v1/stable/media/31502/full/b408?format=jpg")),
+        "phoenix-pt-25-tg" => Some(("3210185", "https://www.phoenixcontact.com/de-de/produkte/trenngrundklemme-pt-25-tg-3210185", "https://caas.phoenixcontact.com/caas/v1/stable/media/31696/full/b408?format=jpg")),
+        "phoenix-pt-25-hesi" => Some(("3210224", "https://www.phoenixcontact.com/de-de/produkte/sicherungsreihenklemme-pt-25-hesi-5x20-3210224", "https://caas.phoenixcontact.com/caas/v1/stable/media/31572/full/b408?format=jpg")),
+        "phoenix-pttb-25" => Some(("3210567", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-25-3210567", "https://caas.phoenixcontact.com/caas/v1/stable/media/212446/full/b408?format=jpg")),
+        "phoenix-pttb-25-ln" => Some(("3210570", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-25-pv-3210570", "https://caas.phoenixcontact.com/caas/v1/stable/media/212446/full/b408?format=jpg")),
+        "phoenix-pttb-25-pe" => Some(("3210596", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pttb-25-pe-3210596", "https://caas.phoenixcontact.com/caas/v1/stable/media/235702/full/b408?format=jpg")),
+        "phoenix-pttbs-25" => Some(("3209604", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttbs-25-3209604", "https://caas.phoenixcontact.com/caas/v1/stable/media/262156/full/b408?format=jpg")),
+        "phoenix-pt-25-3l" => Some(("3210499", "https://www.phoenixcontact.com/de-de/produkte/dreistockklemme-pt-25-3l-3210499", "https://caas.phoenixcontact.com/caas/v1/stable/media/212446/full/b408?format=jpg")),
+        "phoenix-pt-25-peln" => Some(("3210525", "https://www.phoenixcontact.com/de-de/produkte/dreistockklemme-pt-25-3pe-3210525", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
+        "phoenix-pt-25-pell" => Some(("3210499", "https://www.phoenixcontact.com/de-de/produkte/dreistockklemme-pt-25-3l-3210499", "https://caas.phoenixcontact.com/caas/v1/stable/media/212236/full/b408?format=jpg")),
+        "phoenix-pti-25-peln" => Some(("3213946", "https://www.phoenixcontact.com/de-de/produkte/installationsschutzleiterklemme-pti-25-pelnt-3213946", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
+        "phoenix-pti-25-pell" => Some(("3213949", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-pell-3213949", "https://caas.phoenixcontact.com/caas/v1/stable/media/212236/full/b408?format=jpg")),
+        "phoenix-pti-25-ll" => Some(("3213953", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-25-ll-3213953", "https://caas.phoenixcontact.com/caas/v1/stable/media/212236/full/b408?format=jpg")),
+        "phoenix-pti-25-ln" => Some(("3213952", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-25-ln-3213952", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
+        "phoenix-pti-25-lnt" => Some(("3213948", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-25-lnt-3213948", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
+        "phoenix-pti-4-peln" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/installationsschutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
+        "phoenix-pti-4-pell" => Some(("3214050", "https://www.phoenixcontact.com/de-de/produkte/installationsschutzleiterklemme-pti-4-pell-3214050", "https://caas.phoenixcontact.com/caas/v1/stable/media/227746/full/b408?format=jpg")),
+        "phoenix-pti-4-ln" => Some(("3214052", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-4-ln-3214052", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
+        "phoenix-pti-6-peln" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/installationsschutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
+        "phoenix-pti-6-pell" => Some(("3214050", "https://www.phoenixcontact.com/de-de/produkte/installationsschutzleiterklemme-pti-4-pell-3214050", "https://caas.phoenixcontact.com/caas/v1/stable/media/227746/full/b408?format=jpg")),
+        "phoenix-pt-4" => Some(("3211757", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-3211757", "https://caas.phoenixcontact.com/caas/v1/stable/media/270446/full/b408?format=jpg")),
+        "phoenix-pt-4-bu" => Some(("3211760", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-bu-3211760", "https://caas.phoenixcontact.com/caas/v1/stable/media/203340/full/b408?format=jpg")),
+        "phoenix-pt-4-pe" => Some(("3211766", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-4-pe-3211766", "https://caas.phoenixcontact.com/caas/v1/stable/media/223636/full/b408?format=jpg")),
+        "phoenix-pt-4-twin" => Some(("3211771", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-twin-3211771", "https://caas.phoenixcontact.com/caas/v1/stable/media/257492/full/b408?format=jpg")),
+        "phoenix-pt-4-twin-pe" => Some(("3211775", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-4-twin-pe-3211775", "https://caas.phoenixcontact.com/caas/v1/stable/media/223636/full/b408?format=jpg")),
+        "phoenix-pt-4-quattro" => Some(("3211797", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-quattro-3211797", "https://caas.phoenixcontact.com/caas/v1/stable/media/231084/full/b408?format=jpg")),
+        "phoenix-pt-4-hesi" => Some(("3211861", "https://www.phoenixcontact.com/de-de/produkte/sicherungsreihenklemme-pt-4-hesi-5x20-3211861", "https://caas.phoenixcontact.com/caas/v1/stable/media/31572/full/b408?format=jpg")),
+        "phoenix-pt-4-mt" => Some(("3211933", "https://www.phoenixcontact.com/de-de/produkte/messertrennklemme-pt-4-mt-3211933", "https://caas.phoenixcontact.com/caas/v1/stable/media/31502/full/b408?format=jpg")),
+        "phoenix-pttb-4" => Some(("3211786", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-4-3211786", "https://caas.phoenixcontact.com/caas/v1/stable/media/230754/full/b408?format=jpg")),
+        "phoenix-pttb-4-bu" => Some(("3211799", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-4-bu-3211799", "https://caas.phoenixcontact.com/caas/v1/stable/media/230754/full/b408?format=jpg")),
+        "phoenix-pttb-4-pe" => Some(("3211854", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pttb-4-pe-3211854", "https://caas.phoenixcontact.com/caas/v1/stable/media/262544/full/b408?format=jpg")),
+        "phoenix-pt-6" => Some(("3211813", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-6-3211813", "https://caas.phoenixcontact.com/caas/v1/stable/media/231218/full/b408?format=jpg")),
+        "phoenix-pt-6-bu" => Some(("3211819", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-6-bu-3211819", "https://caas.phoenixcontact.com/caas/v1/stable/media/203340/full/b408?format=jpg")),
+        "phoenix-pt-6-pe" => Some(("3211822", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-6-pe-3211822", "https://caas.phoenixcontact.com/caas/v1/stable/media/269426/full/b408?format=jpg")),
+        "phoenix-pt-6-t" => Some(("3211844", "https://www.phoenixcontact.com/de-de/produkte/messertrennklemme-pt-6-mt-3211844", "https://caas.phoenixcontact.com/caas/v1/stable/media/263612/full/b408?format=jpg")),
+        "phoenix-ptme-6" => Some(("3212170", "https://www.phoenixcontact.com/de-de/produkte/messwandlerreihenklemme-ptme-6-3212170", "https://caas.phoenixcontact.com/caas/v1/stable/media/263612/full/b408?format=jpg")),
+        "phoenix-pt-10" => Some(("3212120", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-10-3212120", "https://caas.phoenixcontact.com/caas/v1/stable/media/214944/full/b408?format=jpg")),
+        "phoenix-pt-16n" => Some(("3212138", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-16-n-3212138", "https://caas.phoenixcontact.com/caas/v1/stable/media/229934/full/b408?format=jpg")),
+        "phoenix-pt-35" => Some(("3212064", "https://www.phoenixcontact.com/de-de/produkte/hochstromklemme-ptpower-35-3212064", "https://caas.phoenixcontact.com/caas/v1/stable/media/228830/full/b408?format=jpg")),
+        "phoenix-ptpower-35" => Some(("3212064", "https://www.phoenixcontact.com/de-de/produkte/hochstromklemme-ptpower-35-3212064", "https://caas.phoenixcontact.com/caas/v1/stable/media/228830/full/b408?format=jpg")),
+        "phoenix-ptpower-50" => Some(("3260050", "https://www.phoenixcontact.com/de-de/produkte/hochstromklemme-ptpower-50-3260050", "https://caas.phoenixcontact.com/caas/v1/stable/media/251280/full/b408?format=jpg")),
+        "phoenix-ptpower-95" => Some(("3260100", "https://www.phoenixcontact.com/de-de/produkte/hochstromklemme-ptpower-95-3260100", "https://caas.phoenixcontact.com/caas/v1/stable/media/251280/full/b408?format=jpg")),
+        "phoenix-ptv-25" => Some(("1078960", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ptv-25-1078960", "https://caas.phoenixcontact.com/caas/v1/stable/media/125318/full/b408?format=jpg")),
+        "phoenix-ptv-25-bu" => Some(("1078961", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ptv-25-bu-1078961", "https://caas.phoenixcontact.com/caas/v1/stable/media/125318/full/b408?format=jpg")),
+        "phoenix-ptv-25-pe" => Some(("1078962", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-ptv-25-pe-1078962", "https://caas.phoenixcontact.com/caas/v1/stable/media/125318/full/b408?format=jpg")),
+        "phoenix-ptv-4" => Some(("1088728", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ptv-4-1088728", "https://caas.phoenixcontact.com/caas/v1/stable/media/108504/full/b408?format=jpg")),
+        "phoenix-ptv-4-pe" => Some(("1088730", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-ptv-4-pe-1088730", "https://caas.phoenixcontact.com/caas/v1/stable/media/108504/full/b408?format=jpg")),
+        "phoenix-st-25" => Some(("3031212", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-st-25-3031212", "https://caas.phoenixcontact.com/caas/v1/stable/media/246770/full/b408?format=jpg")),
+        "phoenix-st-25-bu" => Some(("3031225", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-st-25-bu-3031225", "https://caas.phoenixcontact.com/caas/v1/stable/media/246770/full/b408?format=jpg")),
+        "phoenix-st-25-pe" => Some(("3031238", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-st-25-pe-3031238", "https://caas.phoenixcontact.com/caas/v1/stable/media/246770/full/b408?format=jpg")),
+        "phoenix-sttb-25" => Some(("3031270", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-sttb-25-3031270", "https://caas.phoenixcontact.com/caas/v1/stable/media/229202/full/b408?format=jpg")),
+        "phoenix-sti-25-peln" => Some(("3031827", "https://www.phoenixcontact.com/de-de/produkte/installationsschutzleiterklemme-sti-25-pelnt-3031827", "https://caas.phoenixcontact.com/caas/v1/stable/media/124280/full/b408?format=jpg")),
+        "phoenix-ut-25" => Some(("3044076", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-25-3044076", "https://caas.phoenixcontact.com/caas/v1/stable/media/209542/full/b408?format=jpg")),
+        "phoenix-ut-25-pe" => Some(("3044092", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-ut-25-pe-3044092", "https://caas.phoenixcontact.com/caas/v1/stable/media/253550/full/b408?format=jpg")),
+        "phoenix-ut-4" => Some(("3044102", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-4-3044102", "https://caas.phoenixcontact.com/caas/v1/stable/media/195454/full/b408?format=jpg")),
+        "phoenix-ut-4-hesi" => Some(("3046032", "https://www.phoenixcontact.com/de-de/produkte/sicherungsreihenklemme-ut-4-hesi-5x20-3046032", "https://caas.phoenixcontact.com/caas/v1/stable/media/31572/full/b408?format=jpg")),
+        "phoenix-ut-6" => Some(("3044131", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-6-3044131", "https://caas.phoenixcontact.com/caas/v1/stable/media/195702/full/b408?format=jpg")),
+        "phoenix-ut-10" => Some(("3044160", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-10-3044160", "https://caas.phoenixcontact.com/caas/v1/stable/media/119830/full/b408?format=jpg")),
+        "phoenix-ut-16" => Some(("3044199", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-16-3044199", "https://caas.phoenixcontact.com/caas/v1/stable/media/49680/full/b408?format=jpg")),
+        "phoenix-uttb-25" => Some(("3044636", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-uttb-25-3044636", "https://caas.phoenixcontact.com/caas/v1/stable/media/255718/full/b408?format=jpg")),
+        "phoenix-uttb-25-pe" => Some(("3044665", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uttb-25-pe-3044665", "https://caas.phoenixcontact.com/caas/v1/stable/media/255718/full/b408?format=jpg")),
+        "phoenix-uti-25-peln" => Some(("3076028", "https://www.phoenixcontact.com/de-de/produkte/installationsschutzleiterklemme-uti-25-pelnt-3076028", "https://caas.phoenixcontact.com/caas/v1/stable/media/236244/full/b408?format=jpg")),
+        "phoenix-uk-5n" => Some(("3004362", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-uk-5-n-3004362", "https://caas.phoenixcontact.com/caas/v1/stable/media/268498/full/b408?format=jpg")),
+        "phoenix-uslkg-5" => Some(("0441504", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uslkg-5-0441504", "https://caas.phoenixcontact.com/caas/v1/stable/media/253550/full/b408?format=jpg")),
+
+        // --- WEIDMÜLLER (71 specs) ---
+        "weidmuller-a2c-15" => Some(("1552790000", "https://eshop.weidmueller.com/de/a2c-1-5/p/1552790000", "https://assets.dam.weidmueller.com/assets/api/e97bfd80-8178-485e-b52e-869943c7b95c/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-15-bl" => Some(("1552740000", "https://eshop.weidmueller.com/de/a2c-1-5-bl/p/1552740000", "https://assets.dam.weidmueller.com/assets/api/80a54677-0c4a-41a5-865f-fbd26c3ae934/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-15-pe" => Some(("1552680000", "https://eshop.weidmueller.com/de/a2c-1-5-pe/p/1552680000", "https://assets.dam.weidmueller.com/assets/api/24634b68-2c52-4973-a8b2-39f4369157f1/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3c-15" => Some(("1552710000", "https://eshop.weidmueller.com/de/a3c-1-5/p/1552710000", "https://assets.dam.weidmueller.com/assets/api/ad53394d-84ad-4f47-91bd-49fcf385a87c/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a4c-15" => Some(("1552690000", "https://eshop.weidmueller.com/de/a4c-1-5/p/1552690000", "https://assets.dam.weidmueller.com/assets/api/88ff371f-0680-453c-b9b7-a634a3667b96/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-25" => Some(("1521850000", "https://eshop.weidmueller.com/de/a2c-2-5/p/1521850000", "https://assets.dam.weidmueller.com/assets/api/2d76620f-5915-4c72-afd5-0fffe2de88ab/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-25-bl" => Some(("1521880000", "https://eshop.weidmueller.com/de/a2c-2-5-bl/p/1521880000", "https://assets.dam.weidmueller.com/assets/api/80a54677-0c4a-41a5-865f-fbd26c3ae934/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-25-pe" => Some(("1521680000", "https://eshop.weidmueller.com/de/a2c-2-5-pe/p/1521680000", "https://assets.dam.weidmueller.com/assets/api/e4f70efa-ed27-42a1-98c6-372ac81cbe30/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3c-25" => Some(("1521740000", "https://eshop.weidmueller.com/de/a3c-2-5/p/1521740000", "https://assets.dam.weidmueller.com/assets/api/ad53394d-84ad-4f47-91bd-49fcf385a87c/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3c-25-bl" => Some(("1521780000", "https://eshop.weidmueller.com/de/a3c-2-5-bl/p/1521780000", "https://assets.dam.weidmueller.com/assets/api/80a54677-0c4a-41a5-865f-fbd26c3ae934/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3c-25-pe" => Some(("1521510000", "https://eshop.weidmueller.com/de/a3c-2-5-pe/p/1521510000", "https://assets.dam.weidmueller.com/assets/api/e4f70efa-ed27-42a1-98c6-372ac81cbe30/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a4c-25" => Some(("1521690000", "https://eshop.weidmueller.com/de/a4c-2-5/p/1521690000", "https://assets.dam.weidmueller.com/assets/api/88ff371f-0680-453c-b9b7-a634a3667b96/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a4c-25-bl" => Some(("1521710000", "https://eshop.weidmueller.com/de/a4c-2-5-bl/p/1521710000", "https://assets.dam.weidmueller.com/assets/api/80a54677-0c4a-41a5-865f-fbd26c3ae934/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a4c-25-pe" => Some(("1521540000", "https://eshop.weidmueller.com/de/a4c-2-5-pe/p/1521540000", "https://assets.dam.weidmueller.com/assets/api/e4f70efa-ed27-42a1-98c6-372ac81cbe30/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2t-25" => Some(("1547610000", "https://eshop.weidmueller.com/de/a2t-2-5/p/1547610000", "https://assets.dam.weidmueller.com/assets/api/d2054db7-d5a2-42b1-80ce-c5e41a701c86/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2t-25-n" => Some(("1547650000", "https://eshop.weidmueller.com/de/a2t-2-5-vl/p/1547650000", "https://assets.dam.weidmueller.com/assets/api/d2054db7-d5a2-42b1-80ce-c5e41a701c86/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2t-25-pe" => Some(("1547680000", "https://eshop.weidmueller.com/de/a2t-2-5-pe/p/1547680000", "https://assets.dam.weidmueller.com/assets/api/d2054db7-d5a2-42b1-80ce-c5e41a701c86/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3t-25" => Some(("2428510000", "https://eshop.weidmueller.com/de/a3t-2-5/p/2428510000", "https://assets.dam.weidmueller.com/assets/api/b22971ca-7cfb-40f7-b90e-89872195a387/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3t-25-peln" => Some(("2428560000", "https://eshop.weidmueller.com/de/a3t-2-5-n-l-pe/p/2428560000", "https://assets.dam.weidmueller.com/assets/api/b22971ca-7cfb-40f7-b90e-89872195a387/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-4" => Some(("2051180000", "https://eshop.weidmueller.com/de/a2c-4/p/2051180000", "https://assets.dam.weidmueller.com/assets/api/9fb65787-f740-4082-816c-95507b13365b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-4-bl" => Some(("2051210000", "https://eshop.weidmueller.com/de/a2c-4-bl/p/2051210000", "https://assets.dam.weidmueller.com/assets/api/9fb65787-f740-4082-816c-95507b13365b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-4-pe" => Some(("2051360000", "https://eshop.weidmueller.com/de/a2c-4-pe/p/2051360000", "https://assets.dam.weidmueller.com/assets/api/28026b79-d38b-406a-9bd6-b853f9a1fdf8/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3c-4" => Some(("2051240000", "https://eshop.weidmueller.com/de/a3c-4/p/2051240000", "https://assets.dam.weidmueller.com/assets/api/3d70aacc-4cef-404f-a4f6-16bcb207700f/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3c-4-pe" => Some(("2051380000", "https://eshop.weidmueller.com/de/a3c-4-pe/p/2051380000", "https://assets.dam.weidmueller.com/assets/api/28026b79-d38b-406a-9bd6-b853f9a1fdf8/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2t-4" => Some(("2539970000", "https://eshop.weidmueller.com/de/a2t-4/p/2539970000", "https://assets.dam.weidmueller.com/assets/api/5cda7b26-655c-46d3-bb03-5e43816e57ac/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-6" => Some(("1992110000", "https://eshop.weidmueller.com/de/a2c-6/p/1992110000", "https://assets.dam.weidmueller.com/assets/api/73f75663-597b-42df-8b20-cfeb0d8e26c6/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-6-bl" => Some(("1992120000", "https://eshop.weidmueller.com/de/a2c-6-bl/p/1992120000", "https://assets.dam.weidmueller.com/assets/api/73f75663-597b-42df-8b20-cfeb0d8e26c6/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-6-pe" => Some(("1991810000", "https://eshop.weidmueller.com/de/a2c-6-pe/p/1991810000", "https://assets.dam.weidmueller.com/assets/api/27c0e626-d361-4552-98e5-3a883e588c43/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-10" => Some(("2490360000", "https://eshop.weidmueller.com/de/a2c-10/p/2490360000", "https://assets.dam.weidmueller.com/assets/api/0c4ad510-744d-4b30-be81-d4c6af5fbf5f/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-10-bl" => Some(("2490370000", "https://eshop.weidmueller.com/de/a2c-10-bl/p/2490370000", "https://assets.dam.weidmueller.com/assets/api/0c4ad510-744d-4b30-be81-d4c6af5fbf5f/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-10-pe" => Some(("2490390000", "https://eshop.weidmueller.com/de/a2c-10-pe/p/2490390000", "https://assets.dam.weidmueller.com/assets/api/27c0e626-d361-4552-98e5-3a883e588c43/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-16" => Some(("2494000000", "https://eshop.weidmueller.com/de/a2c-16/p/2494000000", "https://assets.dam.weidmueller.com/assets/api/b095a3d6-2f03-431c-b533-183241e1913c/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2c-35" => Some(("2551510000", "https://eshop.weidmueller.com/de/a2c-35/p/2551510000", "https://assets.dam.weidmueller.com/assets/api/0821071c-e508-4d31-bd3a-acc38d69e453/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-amc-25" => Some(("2434340000", "https://eshop.weidmueller.com/de/amc-2-5/p/2434340000", "https://assets.dam.weidmueller.com/assets/api/617cbd15-c168-4f24-b8f7-657d3c3c19b5/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-adt-25" => Some(("1989820000", "https://eshop.weidmueller.com/de/adt-2-5-2c/p/1989820000", "https://assets.dam.weidmueller.com/assets/api/617cbd15-c168-4f24-b8f7-657d3c3c19b5/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-afs-4" => Some(("2429860000", "https://eshop.weidmueller.com/de/afs-4-2c-bk/p/2429860000", "https://assets.dam.weidmueller.com/assets/api/7c4b5800-6c04-4b32-a267-63f4c09c89c6/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aio21" => Some(("1992260000", "https://eshop.weidmueller.com/de/aio21-1-5-si/p/1992260000", "https://assets.dam.weidmueller.com/assets/api/07381d74-59de-4526-8590-ef8cfab48422/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-25-nlp" => Some(("2668940000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-n-l-pe/p/2668940000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-25-llp" => Some(("2668930000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-l-l-pe/p/2668930000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-25-ll" => Some(("2668970000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-l-l/p/2668970000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-25-nl" => Some(("2668960000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-n-l/p/2668960000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-4-nlp" => Some(("2669090000", "https://eshop.weidmueller.com/de/aitb-4-bb-n-l-pe/p/2669090000", "https://assets.dam.weidmueller.com/assets/api/d763a83c-329c-4358-bb01-a2dffa7b157b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-4-llp" => Some(("2669080000", "https://eshop.weidmueller.com/de/aitb-4-bb-l-l-pe/p/2669080000", "https://assets.dam.weidmueller.com/assets/api/ad0808fe-accb-4a1b-ae29-c579cd18f80b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-6-nlp" => Some(("2669090000", "https://eshop.weidmueller.com/de/aitb-4-bb-n-l-pe/p/2669090000", "https://assets.dam.weidmueller.com/assets/api/d763a83c-329c-4358-bb01-a2dffa7b157b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-25" => Some(("1020000000", "https://eshop.weidmueller.com/de/wdu-2-5/p/1020000000", "https://assets.dam.weidmueller.com/assets/api/39e06f09-d8ee-4912-beb4-700715a2acf1/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-25-bl" => Some(("1020080000", "https://eshop.weidmueller.com/de/wdu-2-5-bl/p/1020080000", "https://assets.dam.weidmueller.com/assets/api/953044f8-26dc-4809-87f3-3d76eee0107b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wpe-25" => Some(("1010000000", "https://eshop.weidmueller.com/de/wpe-2-5/p/1010000000", "https://assets.dam.weidmueller.com/assets/api/8fdcddfc-2a0e-47db-8a7b-025cd551ecce/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-4" => Some(("1020100000", "https://eshop.weidmueller.com/de/wdu-4/p/1020100000", "https://assets.dam.weidmueller.com/assets/api/14db5102-fbfb-4b13-bcd3-afb8cdf5e16d/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-4-bl" => Some(("1020180000", "https://eshop.weidmueller.com/de/wdu-4-bl/p/1020180000", "https://assets.dam.weidmueller.com/assets/api/243b3997-cbb2-4996-8161-77f5ab935a69/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wpe-4" => Some(("1010100000", "https://eshop.weidmueller.com/de/wpe-4/p/1010100000", "https://assets.dam.weidmueller.com/assets/api/06ebc68a-59a5-4aef-ad33-d664be533d82/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-6" => Some(("1020200000", "https://eshop.weidmueller.com/de/wdu-6/p/1020200000", "https://assets.dam.weidmueller.com/assets/api/748df442-2268-4cc8-a823-c247cb16b75c/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-6-bl" => Some(("1020280000", "https://eshop.weidmueller.com/de/wdu-6-bl/p/1020280000", "https://assets.dam.weidmueller.com/assets/api/243b3997-cbb2-4996-8161-77f5ab935a69/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wpe-6" => Some(("1010200000", "https://eshop.weidmueller.com/de/wpe-6/p/1010200000", "https://assets.dam.weidmueller.com/assets/api/4b44dec8-d063-4a5d-8f7f-c182fcf8c356/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-10" => Some(("1020300000", "https://eshop.weidmueller.com/de/wdu-10/p/1020300000", "https://assets.dam.weidmueller.com/assets/api/9819ba81-56c6-48bf-9104-ecf827e950a8/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-16" => Some(("1020400000", "https://eshop.weidmueller.com/de/wdu-16/p/1020400000", "https://assets.dam.weidmueller.com/assets/api/5c783010-f1ec-44e6-b6a8-bd24e8df60bc/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdu-35" => Some(("1020500000", "https://eshop.weidmueller.com/de/wdu-35/p/1020500000", "https://assets.dam.weidmueller.com/assets/api/04aa8d0b-1ae7-43b1-a6c3-c7ecd78e3136/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdk-25" => Some(("1021500000", "https://eshop.weidmueller.com/de/wdk-2-5/p/1021500000", "https://assets.dam.weidmueller.com/assets/api/e78a7db7-cca5-4f7e-b43e-93c9d20a79ab/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdk-25-n" => Some(("1021580000", "https://eshop.weidmueller.com/de/wdk-2-5-bl/p/1021580000", "https://assets.dam.weidmueller.com/assets/api/e78a7db7-cca5-4f7e-b43e-93c9d20a79ab/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wdk-25-pe" => Some(("1036300000", "https://eshop.weidmueller.com/de/wdk-2-5-pe/p/1036300000", "https://assets.dam.weidmueller.com/assets/api/e78a7db7-cca5-4f7e-b43e-93c9d20a79ab/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-dli-25" => Some(("1783820000", "https://eshop.weidmueller.com/de/dli-2-5/p/1783820000", "https://assets.dam.weidmueller.com/assets/api/986a5bb7-ca57-4e14-9c59-9fc5492655c6/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-dli-25-pell" => Some(("1783820000", "https://eshop.weidmueller.com/de/dli-2-5/p/1783820000", "https://assets.dam.weidmueller.com/assets/api/986a5bb7-ca57-4e14-9c59-9fc5492655c6/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wtr-25" => Some(("1855610000", "https://eshop.weidmueller.com/de/wtr-2-5/p/1855610000", "https://assets.dam.weidmueller.com/assets/api/908ccf95-2dca-4a86-91d7-b68d52aa0fde/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wtr-4" => Some(("7910180000", "https://eshop.weidmueller.com/de/wtr-4/p/7910180000", "https://assets.dam.weidmueller.com/assets/api/908ccf95-2dca-4a86-91d7-b68d52aa0fde/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-wsi-6" => Some(("1011000000", "https://eshop.weidmueller.com/de/wsi-6/p/1011000000", "https://assets.dam.weidmueller.com/assets/api/b53a71f7-6f24-4252-89ce-b718e0d8cd6b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zdu-25" => Some(("1608510000", "https://eshop.weidmueller.com/de/zdu-2-5/p/1608510000", "https://assets.dam.weidmueller.com/assets/api/bb83d5f1-0304-4ee6-baf9-aefd6df87aec/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zpe-25" => Some(("1608640000", "https://eshop.weidmueller.com/de/zpe-2-5/p/1608640000", "https://assets.dam.weidmueller.com/assets/api/20dbdc64-2c36-4806-89fe-28cd650bc6b8/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zdk-25" => Some(("1674300000", "https://eshop.weidmueller.com/de/zdk-2-5/p/1674300000", "https://assets.dam.weidmueller.com/assets/api/46401129-1a26-4206-825c-25fc0676e8bd/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zdk-25-n" => Some(("1678630000", "https://eshop.weidmueller.com/de/zdk-2-5-v/p/1678630000", "https://assets.dam.weidmueller.com/assets/api/46401129-1a26-4206-825c-25fc0676e8bd/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zdu-4" => Some(("1632050000", "https://eshop.weidmueller.com/de/zdu-4/p/1632050000", "https://assets.dam.weidmueller.com/assets/api/9e643106-5f17-4374-b941-e9f49e6fa908/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zpe-4" => Some(("1632080000", "https://eshop.weidmueller.com/de/zpe-4/p/1632080000", "https://assets.dam.weidmueller.com/assets/api/20dbdc64-2c36-4806-89fe-28cd650bc6b8/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zdl-25" => Some(("1698780000", "https://eshop.weidmueller.com/de/zdl-2-5-s-l-nt-pe/p/1698780000", "https://assets.dam.weidmueller.com/assets/api/46401129-1a26-4206-825c-25fc0676e8bd/DAP_Master_PP,w_800,q_80")),
+        _ => None,
+    }
+}
+
+fn phoenix_caas_fallback(spec: &TerminalSpec) -> String {
+    let has_pe = spec
+        .tiers
+        .iter()
+        .any(|t| matches!(t.behavior, TierBehavior::ProtectiveEarth));
+    let has_blue = spec.tiers.iter().any(|t| t.color == TierColor::BlueNeutral);
+    let media_id = if spec.levels >= 3 {
+        "123154"
+    } else if spec.levels == 2 {
+        if has_pe { "235702" } else { "212446" }
+    } else if has_pe {
+        "121018"
+    } else if has_blue {
+        "117936"
+    } else {
+        "231482"
+    };
+    format!("https://caas.phoenixcontact.com/caas/v1/stable/media/{media_id}/full/b408?format=jpg")
+}
+
+fn weidmuller_dam_fallback(spec: &TerminalSpec) -> String {
+    let has_pe = spec
+        .tiers
+        .iter()
+        .any(|t| matches!(t.behavior, TierBehavior::ProtectiveEarth));
+    let has_blue = spec.tiers.iter().any(|t| t.color == TierColor::BlueNeutral);
+    let uuid = if spec.levels >= 3 {
+        "e281c782-7fa1-4d4f-b663-47c8fcd43a7a"
+    } else if spec.levels == 2 {
+        "d2054db7-d5a2-42b1-80ce-c5e41a701c86"
+    } else if has_pe {
+        "e4f70efa-ed27-42a1-98c6-372ac81cbe30"
+    } else if has_blue {
+        "80a54677-0c4a-41a5-865f-fbd26c3ae934"
+    } else {
+        "2d76620f-5915-4c72-afd5-0fffe2de88ab"
+    };
+    format!("https://assets.dam.weidmueller.com/assets/api/{uuid}/DAP_Master_PP,w_800,q_80")
 }
 
 fn url_encode(s: &str) -> String {
@@ -501,5 +739,37 @@ mod tests {
             prev_mfg = &a.manufacturer;
         }
         assert!(!prev_mfg.is_empty());
+    }
+
+    #[test]
+    fn every_phoenix_and_weidmuller_spec_has_direct_product_and_image_url() {
+        let catalog = TerminalCatalog::load_embedded();
+        for spec in catalog.all() {
+            if spec.manufacturer == "Phoenix Contact" || spec.manufacturer == "Weidmüller" {
+                let art = spec.effective_article_number();
+                assert!(
+                    art.is_some_and(|a| !a.is_empty()),
+                    "Missing article number for {}",
+                    spec.id
+                );
+                let prod_url = spec.effective_product_url();
+                assert!(
+                    !prod_url.contains("/suche?") && !prod_url.contains("/search/"),
+                    "Product URL for {} fell back to search overview: {}",
+                    spec.id,
+                    prod_url
+                );
+                let img_url = spec.effective_image_url();
+                assert!(
+                    img_url.as_deref().is_some_and(|u| {
+                        u.starts_with("https://caas.phoenixcontact.com/")
+                            || u.starts_with("https://assets.dam.weidmueller.com/")
+                    }),
+                    "Missing direct CDN image URL for {}: {:?}",
+                    spec.id,
+                    img_url
+                );
+            }
+        }
     }
 }

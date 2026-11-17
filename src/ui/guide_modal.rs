@@ -255,6 +255,7 @@ pub fn show_database_tab(
                     max_jumper_poles: Some(10),
                     article_number: None,
                     product_url: None,
+                    image_url: None,
                 };
 
                 custom_specs.push(spec.clone());
@@ -314,7 +315,10 @@ pub fn show_database_tab(
                         || spec.series.to_lowercase().contains(&q)
                         || spec.pattern_summary().to_lowercase().contains(&q)
                         || spec.description_de.to_lowercase().contains(&q)
-                        || spec.description_en.to_lowercase().contains(&q);
+                        || spec.description_en.to_lowercase().contains(&q)
+                        || spec
+                            .effective_article_number()
+                            .is_some_and(|a| a.to_lowercase().contains(&q));
                     if !mfg_ok || !q_ok {
                         continue;
                     }
