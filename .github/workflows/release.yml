@@ -31,9 +31,28 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
 
+  prepare-release:
+    name: Prepare GitHub Release
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure GitHub Release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
+          fi
+          gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1 || \
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "TermiGrid $TAG" \
+            --notes "Cross-platform Release für Windows (.exe), macOS Universal Intel + Apple Silicon (.dmg) und Android Smartphones/Foldables/Tablets (.apk)."
+
   build-windows:
     name: Build Windows (x86_64 .exe)
-    needs: test
+    needs: prepare-release
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +63,14 @@ jobs:
       - name: Stage artifact
         shell: pwsh
         run: Copy-Item target\release\termigrid.exe TermiGrid-windows-x86_64.exe
+      - name: Upload Windows asset immediately to Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ("${{ github.ref_type }}" -ne "tag") { $tag = "${{ github.event.inputs.tag }}" }
+          gh release upload "$tag" TermiGrid-windows-x86_64.exe --repo "${{ github.repository }}" --clobber
       - uses: actions/upload-artifact@v4
         with:
           name: TermiGrid-windows
@@ -51,7 +78,7 @@ jobs:
 
   build-macos:
     name: Build macOS Universal (Intel + Apple Silicon)
-    needs: test
+    needs: prepare-release
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -114,6 +141,15 @@ jobs:
           EOF
 
           hdiutil create -volname "TermiGrid" -srcfolder TermiGrid.app -ov -format UDZO TermiGrid-macos-universal.dmg
+      - name: Upload macOS asset immediately to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
+          fi
+          gh release upload "$TAG" TermiGrid-macos-universal.dmg --repo "${{ github.repository }}" --clobber
       - uses: actions/upload-artifact@v4
         with:
           name: TermiGrid-macos
@@ -121,7 +157,7 @@ jobs:
 
   build-android:
     name: Build Android (Phones, Foldables & Tablets .apk)
-    needs: test
+    needs: prepare-release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -171,20 +207,7 @@ jobs:
             --out TermiGrid-android-universal.apk \
             TermiGrid-aligned.apk
           "${BT}/apksigner" verify --verbose TermiGrid-android-universal.apk
-      - uses: actions/upload-artifact@v4
-        with:
-          name: TermiGrid-android
-          path: TermiGrid-android-universal.apk
-
-  publish-release:
-    name: Publish GitHub Release
-    needs: [build-windows, build-macos, build-android]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist
-      - name: Create or update GitHub Release
+      - name: Upload Android asset immediately to Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -192,16 +215,8 @@ jobs:
           if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
             TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
           fi
-          gh release upload "$TAG" \
-            --repo "${{ github.repository }}" \
-            dist/TermiGrid-windows/TermiGrid-windows-x86_64.exe \
-            dist/TermiGrid-macos/TermiGrid-macos-universal.dmg \
-            dist/TermiGrid-android/TermiGrid-android-universal.apk \
-            --clobber || \
-          gh release create "$TAG" \
-            --repo "${{ github.repository }}" \
-            dist/TermiGrid-windows/TermiGrid-windows-x86_64.exe \
-            dist/TermiGrid-macos/TermiGrid-macos-universal.dmg \
-            dist/TermiGrid-android/TermiGrid-android-universal.apk \
-            --title "TermiGrid $TAG" \
-            --notes "Cross-platform Release für Windows (.exe), macOS Universal Intel + Apple Silicon (.dmg) und Android Smartphones/Foldables/Tablets (.apk)."
+          gh release upload "$TAG" TermiGrid-android-universal.apk --repo "${{ github.repository }}" --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TermiGrid-android
+          path: TermiGrid-android-universal.apk
