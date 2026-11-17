@@ -53,6 +53,13 @@ pub struct CadCanvasState {
     pub is_marquee_active: bool,
     pub selection_anchor: Option<usize>,
     pub pre_drag_selection: BTreeSet<usize>,
+    /// Tracks middle-mouse / touch drag panning smoothly across frames.
+    pub middle_panning: bool,
+    pub pan_last_pos: Option<Pos2>,
+    /// Active left-drag mass-bridging state (`Some(true)` = adding, `Some(false)` = removing).
+    pub bridge_drag_action: Option<bool>,
+    pub bridge_painted: BTreeSet<(usize, usize)>,
+    pub bridge_last_pos: Option<Pos2>,
     /// Active inline label edit `(block_idx, tier_idx)` triggered by double-click.
     pub editing_tier: Option<(usize, usize)>,
     pub edit_buffer: String,
@@ -95,21 +102,66 @@ pub fn show_cad_canvas(
         state.editing_tier = None;
     }
 
-    // Handle Ctrl+Scroll zoom when pointer is inside the canvas area.
+    // Handle Ctrl+Scroll zoom and middle-mouse pan gating when pointer is inside the canvas area.
+    let canvas_avail = ui.available_rect_before_wrap();
+    let pointer_in_canvas = ui.input(|i| {
+        i.pointer
+            .hover_pos()
+            .or_else(|| i.pointer.interact_pos())
+            .is_some_and(|p| canvas_avail.contains(p))
+    });
     let ctrl_held = ui.input(|i| i.modifiers.ctrl || i.modifiers.mac_cmd);
     let shift_held = ui.input(|i| i.modifiers.shift);
-    if ctrl_held {
-        let scroll_delta = ui.input(|i| i.smooth_scroll_delta.y);
-        if scroll_delta.abs() > 0.1 {
-            let factor = if scroll_delta > 0.0 { 1.08 } else { 1.0 / 1.08 };
-            state.zoom = (state.zoom * factor).clamp(0.5, 2.2);
+    if pointer_in_canvas {
+        let zoom_mul = ui.input(|i| {
+            let zd = i.zoom_delta();
+            if (zd - 1.0).abs() > 0.001 {
+                zd
+            } else if ctrl_held {
+                let dy = i.smooth_scroll_delta.y;
+                if dy > 0.05 {
+                    1.09
+                } else if dy < -0.05 {
+                    1.0 / 1.09
+                } else {
+                    1.0
+                }
+            } else {
+                1.0
+            }
+        });
+        if (zoom_mul - 1.0).abs() > 0.001 {
+            state.zoom = (state.zoom * zoom_mul).clamp(0.4, 2.5);
+            // Consume scroll delta so ScrollArea does not jump vertically while zooming.
+            ui.ctx().input_mut(|i| {
+                i.smooth_scroll_delta = Vec2::ZERO;
+            });
         }
     }
 
-    let z = state.zoom.clamp(0.5, 2.2);
+    // Track middle-mouse drag panning across the CAD canvas smoothly.
+    let (mid_pressed, mid_down, ptr_pos) = ui.input(|i| {
+        (
+            i.pointer.button_pressed(egui::PointerButton::Middle),
+            i.pointer.button_down(egui::PointerButton::Middle),
+            i.pointer.latest_pos().or_else(|| i.pointer.hover_pos()),
+        )
+    });
+    if mid_pressed && pointer_in_canvas {
+        state.middle_panning = true;
+        state.pan_last_pos = ptr_pos;
+    }
+    if !mid_down {
+        state.middle_panning = false;
+        if state.interaction_mode != CanvasInteractionMode::Pan {
+            state.pan_last_pos = None;
+        }
+    }
+
+    let z = state.zoom.clamp(0.4, 2.5);
     let px_per_mm = 8.2 * z;
     let tier_height = 56.0 * z;
-    let tier_gap = 5.0 * z;
+    let tier_gap = 22.0 * z;
     let block_gap = 3.0 * z;
     let margin_x = 46.0 * z;
     let margin_top = 42.0 * z;
@@ -354,19 +406,28 @@ pub fn show_cad_canvas(
 
             // 4. Handle Pointer Interactions (Double-Click, Pan/Scroll, Bridge Assign, Click, Marquee)
             let space_pan = ui.input(|i| i.key_down(egui::Key::Space));
-            if response.dragged_by(egui::PointerButton::Middle)
-                || response.dragged_by(egui::PointerButton::Secondary)
+            if state.middle_panning {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+                if let Some(pos) = ptr_pos {
+                    let prev = state.pan_last_pos.unwrap_or(pos);
+                    let delta = pos - prev;
+                    state.pan_last_pos = Some(pos);
+                    if delta.length_sq() > 0.0 {
+                        ui.scroll_with_delta(delta);
+                    }
+                }
+            } else if response.dragged_by(egui::PointerButton::Secondary)
                 || (response.dragged_by(egui::PointerButton::Primary)
-                    && (space_pan
-                        || matches!(
-                            state.interaction_mode,
-                            CanvasInteractionMode::Pan | CanvasInteractionMode::BridgeAssign
-                        )))
+                    && (space_pan || state.interaction_mode == CanvasInteractionMode::Pan))
             {
                 let delta = response.drag_delta();
                 if delta.length_sq() > 0.0 {
                     ui.scroll_with_delta(delta);
                 }
+            } else if state.interaction_mode == CanvasInteractionMode::BridgeAssign
+                && response.hovered()
+            {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
             }
 
             if state.interaction_mode != CanvasInteractionMode::BridgeAssign
@@ -393,6 +454,8 @@ pub fn show_cad_canvas(
             if state.editing_tier.is_none() {
                 let use_marquee =
                     state.interaction_mode == CanvasInteractionMode::SelectBox && !space_pan;
+                let use_bridge =
+                    state.interaction_mode == CanvasInteractionMode::BridgeAssign && !space_pan;
 
                 if use_marquee
                     && response.drag_started_by(egui::PointerButton::Primary)
@@ -426,17 +489,66 @@ pub fn show_cad_canvas(
                     }
                 }
 
-                if response.drag_stopped_by(egui::PointerButton::Primary) {
+                // Left-drag mass-bridging across consecutive terminals (`massenbrücken`)
+                if use_bridge && let Some(pot_id) = active_potential_id {
+                    if response.drag_started_by(egui::PointerButton::Primary)
+                        && let Some(pos) = response.interact_pointer_pos()
+                    {
+                        let initial_present = tier_hit_rects
+                            .iter()
+                            .find(|(_, _, tier_rect, _)| tier_rect.contains(pos))
+                            .is_some_and(|&(b_idx, t_idx, _, _)| {
+                                strip.blocks.get(b_idx).is_some_and(|b| {
+                                    strip
+                                        .potentials
+                                        .iter()
+                                        .find(|p| p.id == pot_id)
+                                        .is_some_and(|p| p.members.contains(&(b.id, t_idx)))
+                                })
+                            });
+                        state.bridge_drag_action = Some(!initial_present);
+                        state.bridge_painted.clear();
+                        state.bridge_last_pos = Some(pos);
+                    }
+
+                    if response.dragged_by(egui::PointerButton::Primary)
+                        && let Some(action) = state.bridge_drag_action
+                        && let Some(curr) = response.interact_pointer_pos()
+                    {
+                        let prev = state.bridge_last_pos.unwrap_or(curr);
+                        let dist = (curr - prev).length();
+                        let steps = (dist / 6.0).ceil().clamp(1.0, 24.0) as usize;
+                        for step in 0..=steps {
+                            let t = step as f32 / steps as f32;
+                            let sample = prev.lerp(curr, t);
+                            for &(b_idx, t_idx, tier_rect, _) in &tier_hit_rects {
+                                if tier_rect.contains(sample)
+                                    && state.bridge_painted.insert((b_idx, t_idx))
+                                {
+                                    strip.set_potential_member(pot_id, b_idx, t_idx, action);
+                                }
+                            }
+                        }
+                        state.bridge_last_pos = Some(curr);
+                    }
+                }
+
+                if response.drag_stopped_by(egui::PointerButton::Primary)
+                    || !ui.input(|i| i.pointer.button_down(egui::PointerButton::Primary))
+                {
                     state.is_marquee_active = false;
                     state.drag_start = None;
                     state.drag_current = None;
                     state.pre_drag_selection.clear();
+                    state.bridge_drag_action = None;
+                    state.bridge_painted.clear();
+                    state.bridge_last_pos = None;
                 }
 
                 if response.clicked_by(egui::PointerButton::Primary)
                     && let Some(pos) = response.interact_pointer_pos()
                 {
-                    if state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+                    if use_bridge {
                         if let Some((b_idx, t_idx, _, _)) = tier_hit_rects
                             .iter()
                             .find(|(_, _, tier_rect, _)| tier_rect.contains(pos))
@@ -949,7 +1061,7 @@ fn draw_bridge_overlay(
     plan: &BridgePlan,
     tier_hit_rects: &[(usize, usize, Rect, Rect)],
     zoom: f32,
-    dark: bool,
+    _dark: bool,
 ) {
     let mut tier_rects: BTreeMap<(usize, usize), Rect> = BTreeMap::new();
     let mut row_block_rects: BTreeMap<(usize, isize), Rect> = BTreeMap::new();
@@ -961,26 +1073,18 @@ fn draw_bridge_overlay(
         }
     }
 
-    // 1. Assigned potential indicator pills on each member tier
-    for (&(b_idx, l_idx), &(_, ref pot_name, rgb)) in &plan.point_assignments {
+    // 1. Assigned potential indicator dots cleanly in top-left tier header (never overlapping E1/E2 or marker text)
+    for (&(b_idx, l_idx), &(_, ref _pot_name, rgb)) in &plan.point_assignments {
         if let Some(t_rect) = tier_rects.get(&(b_idx, l_idx)) {
             let pot_color = Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
-            let dot_center = Pos2::new(t_rect.min.x + 6.0 * zoom, t_rect.max.y - 6.0 * zoom);
-            painter.circle_filled(dot_center, 3.8 * zoom, pot_color);
-            painter.circle_stroke(dot_center, 3.8 * zoom, Stroke::new(1.0, Color32::WHITE));
-            if zoom >= 0.85 {
-                painter.text(
-                    Pos2::new(dot_center.x + 5.5 * zoom, dot_center.y),
-                    Align2::LEFT_CENTER,
-                    pot_name,
-                    FontId::proportional((8.5 * zoom).max(7.0)),
-                    if dark { Color32::WHITE } else { Color32::BLACK },
-                );
-            }
+            let dot_center = Pos2::new(t_rect.min.x + 6.5 * zoom, t_rect.min.y + 8.5 * zoom);
+            painter.circle_filled(dot_center, 3.6 * zoom, pot_color);
+            painter.circle_stroke(dot_center, 3.6 * zoom, Stroke::new(1.0, Color32::WHITE));
         }
     }
 
-    // 2. Comb jumper segments (`Kammbrücken`), slot-1 vs slot-2 offset, and cut-out pins (`X`)
+    // 2. Comb jumper segments (`Kammbrücken`) drawn strictly BELOW their respective tier housing
+    // inside `tier_gap` so no E1/E2 badges, marker tags, or block numbers overlap.
     for seg in &plan.comb_segments {
         let Some(start_r) = row_block_rects.get(&(seg.start_block_idx, seg.visual_row)) else {
             continue;
@@ -991,34 +1095,30 @@ fn draw_bridge_overlay(
 
         let pot_color = Color32::from_rgb(seg.color_rgb[0], seg.color_rgb[1], seg.color_rgb[2]);
         let y_off = if seg.channel_slot == 0 {
-            6.5 * zoom
+            7.5 * zoom
         } else {
-            13.5 * zoom
+            15.5 * zoom
         };
-        let bar_y = start_r.min.y + y_off;
+        let bar_y = start_r.max.y + y_off;
         let x0 = start_r.center().x;
         let x1 = end_r.center().x;
 
-        // Insulated comb jumper bar housing along spanned blocks
-        let bar_rect = Rect::from_min_max(
-            Pos2::new(x0 - 4.0 * zoom, bar_y - 3.0 * zoom),
-            Pos2::new(x1 + 4.0 * zoom, bar_y + 3.0 * zoom),
-        );
-        painter.rect_filled(bar_rect, CornerRadius::same(2), pot_color);
-        painter.rect_stroke(
-            bar_rect,
-            CornerRadius::same(2),
-            Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 190)),
-            StrokeKind::Inside,
-        );
-
-        // Metallic pin legs descending into actively connected blocks
+        // Metallic pin legs rising UP from the comb jumper into actively connected tier bottoms
+        let leg_top = start_r.max.y + 0.5 * zoom;
+        let leg_bottom = bar_y - 2.0 * zoom;
+        let leg_h = (leg_bottom - leg_top).max(2.5 * zoom);
+        let leg_cy = (leg_top + leg_bottom) * 0.5;
+        let leg_dx = if seg.channel_slot == 0 {
+            0.0
+        } else {
+            3.5 * zoom
+        };
         for &pin_b in &seg.pin_blocks {
             if let Some(pr) = row_block_rects.get(&(pin_b, seg.visual_row)) {
-                let cx = pr.center().x;
+                let cx = pr.center().x + leg_dx;
                 let prong = Rect::from_center_size(
-                    Pos2::new(cx, bar_y + 5.5 * zoom),
-                    Vec2::new(4.0 * zoom, 7.0 * zoom),
+                    Pos2::new(cx, leg_cy),
+                    Vec2::new(3.6 * zoom, leg_h),
                 );
                 painter.rect_filled(prong, CornerRadius::same(1), Color32::from_rgb(226, 232, 240));
                 painter.rect_stroke(
@@ -1030,46 +1130,93 @@ fn draw_bridge_overlay(
             }
         }
 
-        // Visually highlight removed / cut-out pins (`Pin entfernen`) with clear gap + red X
+        // Insulated comb jumper bar housing underneath the connected tier row
+        let bar_half_h = 3.2 * zoom;
+        let bar_rect = Rect::from_min_max(
+            Pos2::new(x0 - 4.5 * zoom, bar_y - bar_half_h),
+            Pos2::new(x1 + 4.5 * zoom, bar_y + bar_half_h),
+        );
+        painter.rect_filled(bar_rect, CornerRadius::same(2), pot_color);
+        painter.rect_stroke(
+            bar_rect,
+            CornerRadius::same(2),
+            Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 200)),
+            StrokeKind::Inside,
+        );
+
+        // Visually highlight removed / cut-out pins (`Pin entfernen`) with red X right on the comb bar
         for &cut_b in &seg.cut_pins {
             if let Some(cr) = row_block_rects.get(&(cut_b, seg.visual_row)) {
                 let cx = cr.center().x;
-                let r = 6.0 * zoom;
+                let r = 4.8 * zoom;
                 painter.circle_filled(
-                    Pos2::new(cx, bar_y + 1.5 * zoom),
+                    Pos2::new(cx, bar_y),
                     r,
                     Color32::from_rgb(220, 38, 38),
                 );
                 painter.circle_stroke(
-                    Pos2::new(cx, bar_y + 1.5 * zoom),
+                    Pos2::new(cx, bar_y),
                     r,
-                    Stroke::new(1.2, Color32::WHITE),
+                    Stroke::new(1.1, Color32::WHITE),
                 );
                 painter.line_segment(
                     [
-                        Pos2::new(cx - r * 0.5, bar_y + 1.5 * zoom - r * 0.5),
-                        Pos2::new(cx + r * 0.5, bar_y + 1.5 * zoom + r * 0.5),
+                        Pos2::new(cx - r * 0.48, bar_y - r * 0.48),
+                        Pos2::new(cx + r * 0.48, bar_y + r * 0.48),
                     ],
-                    Stroke::new(1.8, Color32::WHITE),
+                    Stroke::new(1.6, Color32::WHITE),
                 );
                 painter.line_segment(
                     [
-                        Pos2::new(cx - r * 0.5, bar_y + 1.5 * zoom + r * 0.5),
-                        Pos2::new(cx + r * 0.5, bar_y + 1.5 * zoom - r * 0.5),
+                        Pos2::new(cx - r * 0.48, bar_y + r * 0.48),
+                        Pos2::new(cx + r * 0.48, bar_y - r * 0.48),
                     ],
-                    Stroke::new(1.8, Color32::WHITE),
+                    Stroke::new(1.6, Color32::WHITE),
                 );
             }
         }
 
-        if zoom >= 0.85 {
-            painter.text(
-                Pos2::new((x0 + x1) * 0.5, bar_y),
-                Align2::CENTER_CENTER,
-                format!("{}p", seg.pole_count),
-                FontId::proportional((8.0 * zoom).max(7.0)),
-                Color32::WHITE,
-            );
+        if zoom >= 0.75 {
+            let pot_name = strip
+                .potentials
+                .iter()
+                .find(|p| p.id == seg.potential_id)
+                .map(|p| p.name.as_str())
+                .unwrap_or("");
+            let bar_label = if (x1 - x0) >= 68.0 * zoom && !pot_name.is_empty() {
+                format!("{}p · {pot_name}", seg.pole_count)
+            } else {
+                format!("{}p", seg.pole_count)
+            };
+            // Paint pill badge behind label if text could hit a cut pin, or centered cleanly on bar
+            let lbl_font = FontId::proportional((7.5 * zoom).max(6.5));
+            let text_col = if (seg.color_rgb[0] as u16 * 3
+                + seg.color_rgb[1] as u16 * 6
+                + seg.color_rgb[2] as u16)
+                / 10
+                > 175
+            {
+                Color32::BLACK
+            } else {
+                Color32::WHITE
+            };
+            if seg.cut_pins.is_empty() {
+                painter.text(
+                    Pos2::new((x0 + x1) * 0.5, bar_y),
+                    Align2::CENTER_CENTER,
+                    bar_label,
+                    lbl_font,
+                    text_col,
+                );
+            } else {
+                painter.text(
+                    Pos2::new(x0 + 2.0 * zoom, bar_y),
+                    Align2::LEFT_CENTER,
+                    bar_label,
+                    lbl_font,
+                    text_col,
+                );
+            }
         }
     }
 
@@ -1083,13 +1230,13 @@ fn draw_bridge_overlay(
         };
 
         let pot_color = Color32::from_rgb(wb.color_rgb[0], wb.color_rgb[1], wb.color_rgb[2]);
-        let p0 = Pos2::new(r_from.center().x + 5.0 * zoom, r_from.center().y - 8.0 * zoom);
-        let p1 = Pos2::new(r_to.center().x - 5.0 * zoom, r_to.center().y - 8.0 * zoom);
+        let p0 = Pos2::new(r_from.min.x + 8.0 * zoom, r_from.max.y - 3.0 * zoom);
+        let p1 = Pos2::new(r_to.min.x + 8.0 * zoom, r_to.max.y - 3.0 * zoom);
         let arch = if wb.from.0 == wb.to.0 {
             Pos2::new(r_from.max.x + 9.0 * zoom, (p0.y + p1.y) * 0.5)
         } else {
-            let lane = (wb_idx % 3) as f32 * 8.0 * zoom;
-            Pos2::new((p0.x + p1.x) * 0.5, p0.y.min(p1.y) - 18.0 * zoom - lane)
+            let lane = (wb_idx % 3) as f32 * 5.0 * zoom;
+            Pos2::new((p0.x + p1.x) * 0.5, p0.y.max(p1.y) + 12.0 * zoom + lane)
         };
 
         // Two-segment polyline with clear DB badge
@@ -1099,13 +1246,13 @@ fn draw_bridge_overlay(
         painter.circle_filled(p0, 3.0 * zoom, pot_color);
         painter.circle_filled(p1, 3.0 * zoom, pot_color);
 
-        let badge_rect = Rect::from_center_size(arch, Vec2::new(18.0 * zoom, 12.0 * zoom));
+        let badge_rect = Rect::from_center_size(arch, Vec2::new(18.0 * zoom, 11.0 * zoom));
         painter.rect_filled(badge_rect, CornerRadius::same(3), pot_color);
         painter.text(
             arch,
             Align2::CENTER_CENTER,
             "DB",
-            FontId::proportional((8.0 * zoom).max(7.0)),
+            FontId::proportional((7.5 * zoom).max(6.5)),
             Color32::WHITE,
         );
     }

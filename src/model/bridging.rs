@@ -126,6 +126,32 @@ impl TerminalStrip {
             pot.members.push(target_key);
         }
     }
+
+    /// Explicitly adds (`present = true`) or removes (`present = false`) `(block_idx, level_index)`
+    /// for `potential_id` (used by continuous drag-painting in Bridge Mode).
+    pub fn set_potential_member(
+        &mut self,
+        potential_id: u64,
+        block_idx: usize,
+        level_index: usize,
+        present: bool,
+    ) {
+        let Some(block) = self.blocks.get(block_idx) else {
+            return;
+        };
+        if level_index >= block.tiers.len() {
+            return;
+        }
+        let target_key = (block.id, level_index);
+
+        for p in &mut self.potentials {
+            p.members.retain(|&m| m != target_key);
+        }
+
+        if present && let Some(pot) = self.potentials.iter_mut().find(|p| p.id == potential_id) {
+            pot.members.push(target_key);
+        }
+    }
 }
 
 /// Calculates comb jumpers (`Kammbrücken`), cut-out pins (`Pin entfernen`),

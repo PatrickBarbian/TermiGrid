@@ -997,11 +997,17 @@ impl TermiGridApp {
                     if has_strip {
                         ui.add_space(6.0);
                         ui.separator();
-                        let bridge_open = self.canvas_state.interaction_mode
-                            == CanvasInteractionMode::BridgeAssign
+                        let bridge_mode_active =
+                            self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign;
+                        let bridge_open = bridge_mode_active
                             || !self.project.strips[self.active_strip].potentials.is_empty();
                         egui::CollapsingHeader::new(s.bridge_heading)
                             .default_open(bridge_open)
+                            .open(if bridge_mode_active {
+                                Some(true)
+                            } else {
+                                None
+                            })
                             .show(ui, |ui| {
                         ui.label(
                             egui::RichText::new(s.bridge_assign_hint)
@@ -1323,7 +1329,8 @@ impl TermiGridApp {
         let mut append_spec_id: Option<String> = None;
 
         ui.horizontal_wrapped(|ui| {
-            // CAD Tool Switcher (Pan/Tap vs Box Select vs Bridge Mode) with tooltips
+            // CAD Tool Switcher: Pan/Tap (mobile only) vs Box Select vs Bridge Mode
+            #[cfg(any(target_os = "android", target_os = "ios"))]
             ui.selectable_value(
                 &mut self.canvas_state.interaction_mode,
                 CanvasInteractionMode::Pan,
@@ -1413,7 +1420,7 @@ impl TermiGridApp {
             ui.label(s.zoom_label);
             ui.add_sized(
                 [80.0, 20.0],
-                egui::Slider::new(&mut self.canvas_state.zoom, 0.5..=2.2).show_value(false),
+                egui::Slider::new(&mut self.canvas_state.zoom, 0.4..=2.5).show_value(false),
             );
             if ui.button(s.btn_fit_zoom).clicked() {
                 self.canvas_state.zoom = 1.0;
@@ -1467,6 +1474,79 @@ impl TermiGridApp {
             && let Some(spec) = self.catalog.find_by_id(&spec_id)
         {
             self.project.strips[self.active_strip].append_blocks(1, spec);
+        }
+
+        // Inline Potential Quick-Bar directly inside CAD workspace when Bridge Mode is active
+        if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+            let strip = &mut self.project.strips[self.active_strip];
+            if strip.potentials.is_empty() {
+                let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
+                self.active_potential_id = Some(id);
+            } else if self
+                .active_potential_id
+                .is_none_or(|id| !strip.potentials.iter().any(|p| p.id == id))
+            {
+                self.active_potential_id = strip.potentials.first().map(|p| p.id);
+            }
+
+            ui.separator();
+            ui.horizontal_wrapped(|ui| {
+                ui.label(
+                    egui::RichText::new(s.bridge_heading)
+                        .strong()
+                        .small(),
+                );
+                let mut remove_id: Option<u64> = None;
+                for pot in &strip.potentials {
+                    let is_active = self.active_potential_id == Some(pot.id);
+                    let rgb = pot.color_rgb;
+                    let col = egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
+                    let lbl = egui::RichText::new(format!("{} ({})", pot.name, pot.members.len()))
+                        .small();
+                    let btn = egui::Button::new(lbl)
+                        .selected(is_active)
+                        .stroke(egui::Stroke::new(
+                            if is_active { 2.0 } else { 1.0 },
+                            col,
+                        ));
+                    if ui.add(btn).clicked() {
+                        self.active_potential_id = Some(pot.id);
+                    }
+                    if is_active && strip.potentials.len() > 1 && ui.small_button("×").clicked() {
+                        remove_id = Some(pot.id);
+                    }
+                }
+                if let Some(id) = remove_id {
+                    strip.remove_potential(id);
+                    if self.active_potential_id == Some(id) {
+                        self.active_potential_id = strip.potentials.first().map(|p| p.id);
+                    }
+                }
+
+                ui.separator();
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.new_potential_name)
+                        .hint_text(s.bridge_new_potential)
+                        .desired_width(110.0),
+                );
+                if success_button(ui, s.bridge_add_btn).clicked() {
+                    let name = if self.new_potential_name.trim().is_empty() {
+                        format!("P{}", strip.potentials.len() + 1)
+                    } else {
+                        self.new_potential_name.trim().to_string()
+                    };
+                    let color = POTENTIAL_PALETTE[strip.potentials.len() % POTENTIAL_PALETTE.len()];
+                    let id = strip.add_potential(&name, color);
+                    self.active_potential_id = Some(id);
+                    self.new_potential_name.clear();
+                }
+
+                ui.label(
+                    egui::RichText::new(s.bridge_assign_hint)
+                        .color(secondary_text_color(ui))
+                        .small(),
+                );
+            });
         }
 
         ui.separator();
