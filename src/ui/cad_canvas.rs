@@ -108,7 +108,7 @@ pub fn show_cad_canvas(
 
     let z = state.zoom.clamp(0.5, 2.2);
     let px_per_mm = 8.2 * z;
-    let tier_height = 52.0 * z;
+    let tier_height = 56.0 * z;
     let tier_gap = 5.0 * z;
     let block_gap = 3.0 * z;
     let margin_x = 46.0 * z;
@@ -787,8 +787,11 @@ fn draw_terminal_block(
             painter.rect_filled(pe_bar, CornerRadius::same(1), Color32::from_rgb(250, 204, 21));
         }
 
-        // Inner marker tag box showing the computed print label
-        let tag_rect = tier_rect.shrink2(Vec2::new(3.5 * zoom, 10.0 * zoom));
+        // Inner marker tag box placed cleanly below the header/corner-badge zone
+        let tag_rect = Rect::from_min_max(
+            Pos2::new(tier_rect.min.x + 3.5 * zoom, tier_rect.min.y + 15.5 * zoom),
+            Pos2::new(tier_rect.max.x - 3.5 * zoom, tier_rect.max.y - 6.5 * zoom),
+        );
         tier_hit_rects.push((block_idx, level, tier_rect, tag_rect));
 
         let is_being_edited = editing_tier == Some((block_idx, level));
@@ -822,29 +825,40 @@ fn draw_terminal_block(
             }
         }
 
-        // Small tier level indicator at top-right corner
-        if zoom >= 0.7 {
+        // High-contrast tier level pill (E1, E2, E3, PE) in dedicated top-right header strip
+        if zoom >= 0.65 {
             let row_tag = if tier.behavior.is_pe() && vrow < 0 {
                 "PE".to_string()
             } else {
                 format!("E{}", (vrow.max(0) + 1))
             };
-            let corner_color = match tier.color {
-                TierColor::StandardGray => {
-                    if dark {
-                        Color32::from_rgb(241, 245, 249)
-                    } else {
-                        Color32::from_rgb(15, 23, 42)
-                    }
-                }
-                _ => Color32::WHITE,
+            let (pill_bg, pill_fg) = if tier.behavior.is_pe() {
+                (
+                    Color32::from_rgba_unmultiplied(20, 83, 45, 235),
+                    Color32::from_rgb(254, 240, 138),
+                )
+            } else {
+                (
+                    Color32::from_rgba_unmultiplied(15, 23, 42, 225),
+                    Color32::from_rgb(248, 250, 252),
+                )
             };
+            let pill_w = (row_tag.len() as f32 * 6.5 + 6.0) * zoom;
+            let pill_h = 11.5 * zoom;
+            let pill_rect = Rect::from_min_size(
+                Pos2::new(
+                    tier_rect.max.x - pill_w - 2.0 * zoom,
+                    tier_rect.min.y + 3.5 * zoom,
+                ),
+                Vec2::new(pill_w, pill_h),
+            );
+            painter.rect_filled(pill_rect, CornerRadius::same(2), pill_bg);
             painter.text(
-                Pos2::new(tier_rect.max.x - 3.0 * zoom, tier_rect.min.y + 5.0 * zoom),
-                Align2::RIGHT_TOP,
+                pill_rect.center(),
+                Align2::CENTER_CENTER,
                 row_tag,
-                FontId::proportional((9.5 * zoom).max(8.0)),
-                corner_color,
+                FontId::proportional((9.0 * zoom).max(8.0)),
+                pill_fg,
             );
         }
 
@@ -979,49 +993,83 @@ fn draw_bridge_overlay(
         let y_off = if seg.channel_slot == 0 {
             6.5 * zoom
         } else {
-            13.0 * zoom
+            13.5 * zoom
         };
         let bar_y = start_r.min.y + y_off;
         let x0 = start_r.center().x;
         let x1 = end_r.center().x;
 
-        // Main comb bar spine
-        painter.line_segment(
-            [Pos2::new(x0, bar_y), Pos2::new(x1, bar_y)],
-            Stroke::new((3.4 * zoom).max(2.2), pot_color),
+        // Insulated comb jumper bar housing along spanned blocks
+        let bar_rect = Rect::from_min_max(
+            Pos2::new(x0 - 4.0 * zoom, bar_y - 3.0 * zoom),
+            Pos2::new(x1 + 4.0 * zoom, bar_y + 3.0 * zoom),
+        );
+        painter.rect_filled(bar_rect, CornerRadius::same(2), pot_color);
+        painter.rect_stroke(
+            bar_rect,
+            CornerRadius::same(2),
+            Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 190)),
+            StrokeKind::Inside,
         );
 
-        // Pin drops for actively connected blocks
+        // Metallic pin legs descending into actively connected blocks
         for &pin_b in &seg.pin_blocks {
             if let Some(pr) = row_block_rects.get(&(pin_b, seg.visual_row)) {
                 let cx = pr.center().x;
-                painter.line_segment(
-                    [Pos2::new(cx, bar_y), Pos2::new(cx, bar_y + 5.0 * zoom)],
-                    Stroke::new((2.4 * zoom).max(1.6), pot_color),
+                let prong = Rect::from_center_size(
+                    Pos2::new(cx, bar_y + 5.5 * zoom),
+                    Vec2::new(4.0 * zoom, 7.0 * zoom),
                 );
-                painter.circle_filled(Pos2::new(cx, bar_y), 3.0 * zoom, pot_color);
+                painter.rect_filled(prong, CornerRadius::same(1), Color32::from_rgb(226, 232, 240));
+                painter.rect_stroke(
+                    prong,
+                    CornerRadius::same(1),
+                    Stroke::new(0.8, Color32::from_rgb(15, 23, 42)),
+                    StrokeKind::Inside,
+                );
             }
         }
 
-        // Visually highlight removed / cut-out pins (`Pin entfernen`)
+        // Visually highlight removed / cut-out pins (`Pin entfernen`) with clear gap + red X
         for &cut_b in &seg.cut_pins {
             if let Some(cr) = row_block_rects.get(&(cut_b, seg.visual_row)) {
                 let cx = cr.center().x;
-                let r = 5.5 * zoom;
+                let r = 6.0 * zoom;
                 painter.circle_filled(
-                    Pos2::new(cx, bar_y),
+                    Pos2::new(cx, bar_y + 1.5 * zoom),
                     r,
-                    Color32::from_rgb(239, 68, 68),
+                    Color32::from_rgb(220, 38, 38),
+                );
+                painter.circle_stroke(
+                    Pos2::new(cx, bar_y + 1.5 * zoom),
+                    r,
+                    Stroke::new(1.2, Color32::WHITE),
                 );
                 painter.line_segment(
-                    [Pos2::new(cx - r * 0.55, bar_y - r * 0.55), Pos2::new(cx + r * 0.55, bar_y + r * 0.55)],
+                    [
+                        Pos2::new(cx - r * 0.5, bar_y + 1.5 * zoom - r * 0.5),
+                        Pos2::new(cx + r * 0.5, bar_y + 1.5 * zoom + r * 0.5),
+                    ],
                     Stroke::new(1.8, Color32::WHITE),
                 );
                 painter.line_segment(
-                    [Pos2::new(cx - r * 0.55, bar_y + r * 0.55), Pos2::new(cx + r * 0.55, bar_y - r * 0.55)],
+                    [
+                        Pos2::new(cx - r * 0.5, bar_y + 1.5 * zoom + r * 0.5),
+                        Pos2::new(cx + r * 0.5, bar_y + 1.5 * zoom - r * 0.5),
+                    ],
                     Stroke::new(1.8, Color32::WHITE),
                 );
             }
+        }
+
+        if zoom >= 0.85 {
+            painter.text(
+                Pos2::new((x0 + x1) * 0.5, bar_y),
+                Align2::CENTER_CENTER,
+                format!("{}p", seg.pole_count),
+                FontId::proportional((8.0 * zoom).max(7.0)),
+                Color32::WHITE,
+            );
         }
     }
 

@@ -53,8 +53,8 @@
   - Toont **productfoto (indien beschikbaar) of technisch profiel**, **aantal brugkamers**, **directe link naar de fabrikantpagina** en **eindplaten, bruggen, markers, eindsteunen en N-rails**.
 - **Printklare export (`.xlsx` & `.csv`) & Projectbestanden (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 werkbladen (`Druckfolge` / `ByTierStrip` standaard, `Ebenen-Spalten`, `Ebenen-Matrix`), alle cellen strikt als **Excel-tekst (`@`)**.
-- **7 talen, thema's & live Update Checker:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Licht/Donker met hoog contrast, live GitHub-check op Desktop & Android plus links naar **GitHub** & **Buy Me a Coffee**.
+- **Begeleide start, 7 talen & Systeemthema:**
+  - Stappenplan bij openen: *Nieuw project / Laden* -> *Eerste klemmenstrook* -> *CAD-editor*. **DE, EN, FR, IT, ES, PL, NL** – volgt standaard het **Systeemthema** (handmatig Systeem/Licht/Donker), contrastrijke actieknoppen, live GitHub-check op Desktop & Android, **GitHub** & **Buy Me a Coffee**.
 
 ---
 

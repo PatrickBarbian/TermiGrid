@@ -53,8 +53,8 @@
   - Pokazuje **zdjęcie produktu (jeśli dostępne) lub profil techniczny**, **liczbę komór**, **link do strony produktu producenta** oraz **płytki końcowe, mostki, oznaczniki, trzymacze końcowe i szyny N**.
 - **Eksport gotowy do druku (`.xlsx` i `.csv`) i Pliki projektu (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 arkusze (`Druckfolge` / domyślnie `ByTierStrip`, `Ebenen-Spalten`, `Ebenen-Matrix`), wszystkie komórki jako **Tekst Excel (`@`)**.
-- **7 języków, motywy i sprawdzanie aktualizacji na żywo:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Jasny/Ciemny o wysokim kontraście, sprawdzanie GitHub na Desktop & Android oraz linki **GitHub** i **Buy Me a Coffee**.
+- **Kreator startowy, 7 języków i Motyw Systemowy:**
+  - Kreator krok po kroku: *Nowy projekt / Wczytaj* -> *Pierwsza listwa* -> *Edytor CAD*. **DE, EN, FR, IT, ES, PL, NL** – domyślnie używa **motywu Systemowego** (przełączanego System/Jasny/Ciemny), kontrastowe przyciski akcji, sprawdzanie GitHub na Desktop & Android, **GitHub** i **Buy Me a Coffee**.
 
 ---
 

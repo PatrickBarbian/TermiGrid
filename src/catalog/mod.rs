@@ -339,11 +339,13 @@ impl Default for TerminalCatalog {
 }
 
 impl TerminalCatalog {
-    /// Loads the embedded JSON terminal catalog.
+    /// Loads the embedded JSON terminal catalog sorted by manufacturer and then by type name.
     pub fn load_embedded() -> Self {
         let specs: Vec<TerminalSpec> = serde_json::from_str(EMBEDDED_SPECS_JSON)
             .expect("Embedded terminal_specs.json must be valid JSON");
-        Self { specs }
+        let mut catalog = Self { specs };
+        catalog.sort_by_manufacturer_and_type();
+        catalog
     }
 
     /// Rebuilds the catalog from embedded specs plus project-specific custom specs.
@@ -352,15 +354,28 @@ impl TerminalCatalog {
         for spec in custom_specs {
             self.add_custom_spec(spec.clone());
         }
+        self.sort_by_manufacturer_and_type();
     }
 
-    /// Adds or replaces a custom terminal specification in the active catalog.
+    /// Adds or replaces a custom terminal specification in the active catalog, keeping sort order.
     pub fn add_custom_spec(&mut self, spec: TerminalSpec) {
         if let Some(existing) = self.specs.iter_mut().find(|s| s.id == spec.id) {
             *existing = spec;
         } else {
             self.specs.push(spec);
         }
+        self.sort_by_manufacturer_and_type();
+    }
+
+    /// Sorts all specifications alphabetically by manufacturer and naturally by terminal type name.
+    pub fn sort_by_manufacturer_and_type(&mut self) {
+        self.specs.sort_by(|a, b| {
+            a.manufacturer
+                .to_lowercase()
+                .cmp(&b.manufacturer.to_lowercase())
+                .then_with(|| natural_cmp(&a.name, &b.name))
+                .then_with(|| a.id.cmp(&b.id))
+        });
     }
 
     /// Returns all available terminal specifications.
@@ -404,5 +419,87 @@ impl TerminalCatalog {
             .enumerate()
             .map(|(idx, ts)| ConnectionPoint::new(idx, ts.behavior.clone(), ts.color))
             .collect();
+    }
+}
+
+/// Natural case-insensitive comparison (`PT 2,5` < `PT 4` < `PT 10`, `280` < `2001`).
+fn natural_cmp(a: &str, b: &str) -> std::cmp::Ordering {
+    let mut ia = a.chars().peekable();
+    let mut ib = b.chars().peekable();
+
+    loop {
+        match (ia.peek().copied(), ib.peek().copied()) {
+            (None, None) => return std::cmp::Ordering::Equal,
+            (None, Some(_)) => return std::cmp::Ordering::Less,
+            (Some(_), None) => return std::cmp::Ordering::Greater,
+            (Some(ca), Some(cb)) if ca.is_ascii_digit() && cb.is_ascii_digit() => {
+                let mut na = String::new();
+                while let Some(&c) = ia.peek() {
+                    if c.is_ascii_digit() {
+                        na.push(c);
+                        ia.next();
+                    } else {
+                        break;
+                    }
+                }
+                let mut nb = String::new();
+                while let Some(&c) = ib.peek() {
+                    if c.is_ascii_digit() {
+                        nb.push(c);
+                        ib.next();
+                    } else {
+                        break;
+                    }
+                }
+                let va: u64 = na.parse().unwrap_or(0);
+                let vb: u64 = nb.parse().unwrap_or(0);
+                let ord = va.cmp(&vb).then_with(|| na.len().cmp(&nb.len()));
+                if ord != std::cmp::Ordering::Equal {
+                    return ord;
+                }
+            }
+            (Some(_), Some(_)) => {
+                let ca = ia.next().unwrap().to_ascii_lowercase();
+                let cb = ib.next().unwrap().to_ascii_lowercase();
+                let ord = ca.cmp(&cb);
+                if ord != std::cmp::Ordering::Equal {
+                    return ord;
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn catalog_is_sorted_by_manufacturer_then_natural_type() {
+        let catalog = TerminalCatalog::load_embedded();
+        let mut prev_mfg = "";
+        for w in catalog.all().windows(2) {
+            let a = &w[0];
+            let b = &w[1];
+            let ma = a.manufacturer.to_lowercase();
+            let mb = b.manufacturer.to_lowercase();
+            assert!(
+                ma <= mb,
+                "Manufacturer out of order: {} vs {}",
+                a.manufacturer,
+                b.manufacturer
+            );
+            if ma == mb {
+                assert!(
+                    natural_cmp(&a.name, &b.name) != std::cmp::Ordering::Greater,
+                    "Type out of order in {}: '{}' before '{}'",
+                    a.manufacturer,
+                    a.name,
+                    b.name
+                );
+            }
+            prev_mfg = &a.manufacturer;
+        }
+        assert!(!prev_mfg.is_empty());
     }
 }

@@ -62,8 +62,8 @@
 - **Druckerfertiger Export (`.xlsx` & `.csv`):**
   - **Excel (`.xlsx`):** 3 Arbeitsblätter (`Druckfolge` mit `ByTierStrip`-Standard, `Ebenen-Spalten`, `Ebenen-Matrix`) – alle Zellen strikt als **Excel-Text (`@`)**.
   - **CSV (`.csv`) & Projektdateien (`.termi` / `.json`)** inklusive Potentialen, Sonderzeichen und eigenen Klemmen.
-- **7 Sprachen, Themes & integrierter Update-Checker:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Hell/Dunkel mit hohem Kontrast, nativer Update-Check auf Desktop & Android sowie direkte Links zu **GitHub** und **Buy Me a Coffee**.
+- **Geführter Projekt-Start („Projekt-Line“), 7 Sprachen & System-Theme:**
+  - Startbildschirm führt Schritt für Schritt von *Neues Projekt / Laden* -> *Erste Klemmleiste* -> *CAD-Editor*. **DE, EN, FR, IT, ES, PL, NL** – Theme folgt standardmäßig dem **System-Modus** (manuell auf Hell/Dunkel umschaltbar) mit klaren Kontrast-Aktionsfarben, nativem Update-Check auf Desktop & Android sowie **GitHub** & **Buy Me a Coffee**.
 
 ---
 
@@ -168,8 +168,8 @@ Klicke auf eine Sprache, um die vollständige Dokumentation direkt hier aufzukla
   - Displays **product photo (when reachable) / technical profile preview**, **jumper chamber count**, clickable **manufacturer product page link**, plus **end plates, jumpers, markers, end brackets, and N-busbars**.
 - **Printer-ready Export (`.xlsx` & `.csv`) & Project files (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 worksheets (`Druckfolge` / `ByTierStrip` default, `Ebenen-Spalten`, `Ebenen-Matrix`), strictly formatted as **Excel Text (`@`)**.
-- **7 Languages, High-Contrast Themes & Live Update Checker:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Light & Dark themes, live GitHub update check on Desktop & Android, plus **GitHub** and **Buy Me a Coffee** links.
+- **Guided Project Start, 7 Languages & System Theme:**
+  - Startup pipeline guides from *New Project / Open* -> *First Terminal Strip* -> *CAD Editor*. **DE, EN, FR, IT, ES, PL, NL** – follows **OS System Theme** by default (toggle System/Light/Dark), high-contrast action buttons, live GitHub update check on Desktop & Android, plus **GitHub** and **Buy Me a Coffee**.
 
 ### Downloads & Portability
 
@@ -260,8 +260,8 @@ Licensed under the **MIT License**.
   - Affiche **photo produit (si accessible) ou profil technique**, **nombre de chambres**, **lien direct vers la page produit fabricant**, plus **flasques, peignes, repères, butées et barres N**.
 - **Export prêt pour l'impression (`.xlsx` & `.csv`) & Fichiers projet (`.termi` / `.json`) :**
   - **Excel (`.xlsx`) :** 3 feuilles (`Druckfolge` / `ByTierStrip` par défaut, `Ebenen-Spalten`, `Ebenen-Matrix`), toutes les cellules formatées en **Texte Excel (`@`)**.
-- **7 langues, thèmes & vérificateur de mises à jour en direct :**
-  - **DE, EN, FR, IT, ES, PL, NL** – Clair/Sombre contraste élevé, vérification GitHub sur Bureau & Android, liens directs **GitHub** & **Buy Me a Coffee**.
+- **Démarrage guidé, 7 langues & Thème Système :**
+  - Assistant de démarrage *Nouveau projet / Charger* -> *Premier bornier* -> *Éditeur CAO*. **DE, EN, FR, IT, ES, PL, NL** – suit le **thème Système** par défaut (commutable Système/Clair/Sombre), boutons d'action contrastés, vérification GitHub sur Bureau & Android, **GitHub** & **Buy Me a Coffee**.
 
 ### Téléchargements & Portabilité
 
@@ -352,8 +352,8 @@ Publié sous **licence MIT**.
   - Mostra **foto prodotto (se raggiungibile) o profilo tecnico**, **numero camere**, **link diretto alla pagina prodotto del produttore**, più **piastre, ponticelli, targhette, fermamorsetti e barre N**.
 - **Esportazione pronta per la stampa (`.xlsx` & `.csv`) & File di progetto (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 fogli (`Druckfolge` / `ByTierStrip` predefinito, `Ebenen-Spalten`, `Ebenen-Matrix`), tutte le celle formattate in **Testo Excel (`@`)**.
-- **7 lingue, temi & controllo aggiornamenti live:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Chiaro/Scuro ad alto contrasto, verifica GitHub live su Desktop & Android, link diretti a **GitHub** & **Buy Me a Coffee**.
+- **Avvio guidato, 7 lingue & Tema di Sistema:**
+  - Procedura guidata *Nuovo progetto / Carica* -> *Prima morsettiera* -> *Editor CAD*. **DE, EN, FR, IT, ES, PL, NL** – segue il **tema di Sistema** predefinito (commutabile Sistema/Chiaro/Scuro), pulsanti ad alto contrasto, controllo GitHub su Desktop & Android, **GitHub** & **Buy Me a Coffee**.
 
 ### Download & Portabilità
 
@@ -444,8 +444,8 @@ Distribuito con **licenza MIT**.
   - Muestra **foto del producto (cuando está disponible) o perfil técnico**, **número de cámaras**, **enlace directo a la página del fabricante**, además de **tapas, puentes, marcadores, topes finales y barras N**.
 - **Exportación lista para impresora (`.xlsx` & `.csv`) y Proyectos (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 hojas (`Druckfolge` / `ByTierStrip` por defecto, `Ebenen-Spalten`, `Ebenen-Matrix`), todas las celdas formateadas como **Texto Excel (`@`)**.
-- **7 idiomas, temas y comprobador de actualizaciones en vivo:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Claro/Oscuro de alto contraste, comprobación de GitHub en Escritorio y Android, enlaces directos a **GitHub** y **Buy Me a Coffee**.
+- **Inicio guiado, 7 idiomas y Tema del Sistema:**
+  - Asistente *Nuevo proyecto / Abrir* -> *Primer regletero* -> *Editor CAD*. **DE, EN, FR, IT, ES, PL, NL** – sigue el **tema del Sistema** por defecto (cambiable Sistema/Claro/Oscuro), botones destacados de alto contraste, comprobación de GitHub en Escritorio y Android, **GitHub** y **Buy Me a Coffee**.
 
 ### Descargas y portabilidad
 
@@ -536,8 +536,8 @@ Publicado bajo la **licencia MIT**.
   - Pokazuje **zdjęcie produktu (jeśli dostępne) lub profil techniczny**, **liczbę komór**, **link do strony produktu producenta** oraz **płytki końcowe, mostki, oznaczniki, trzymacze końcowe i szyny N**.
 - **Eksport gotowy do druku (`.xlsx` i `.csv`) i Pliki projektu (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 arkusze (`Druckfolge` / domyślnie `ByTierStrip`, `Ebenen-Spalten`, `Ebenen-Matrix`), wszystkie komórki jako **Tekst Excel (`@`)**.
-- **7 języków, motywy i sprawdzanie aktualizacji na żywo:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Jasny/Ciemny o wysokim kontraście, sprawdzanie GitHub na Desktop & Android oraz linki **GitHub** i **Buy Me a Coffee**.
+- **Kreator startowy, 7 języków i Motyw Systemowy:**
+  - Kreator krok po kroku: *Nowy projekt / Wczytaj* -> *Pierwsza listwa* -> *Edytor CAD*. **DE, EN, FR, IT, ES, PL, NL** – domyślnie używa **motywu Systemowego** (przełączanego System/Jasny/Ciemny), kontrastowe przyciski akcji, sprawdzanie GitHub na Desktop & Android, **GitHub** i **Buy Me a Coffee**.
 
 ### Pobieranie i przenośność
 
@@ -628,8 +628,8 @@ Udostępniono na **licencji MIT**.
   - Toont **productfoto (indien beschikbaar) of technisch profiel**, **aantal brugkamers**, **directe link naar de fabrikantpagina** en **eindplaten, bruggen, markers, eindsteunen en N-rails**.
 - **Printklare export (`.xlsx` & `.csv`) & Projectbestanden (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 werkbladen (`Druckfolge` / `ByTierStrip` standaard, `Ebenen-Spalten`, `Ebenen-Matrix`), alle cellen strikt als **Excel-tekst (`@`)**.
-- **7 talen, thema's & live Update Checker:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Licht/Donker met hoog contrast, live GitHub-check op Desktop & Android plus links naar **GitHub** & **Buy Me a Coffee**.
+- **Begeleide start, 7 talen & Systeemthema:**
+  - Stappenplan bij openen: *Nieuw project / Laden* -> *Eerste klemmenstrook* -> *CAD-editor*. **DE, EN, FR, IT, ES, PL, NL** – volgt standaard het **Systeemthema** (handmatig Systeem/Licht/Donker), contrastrijke actieknoppen, live GitHub-check op Desktop & Android, **GitHub** & **Buy Me a Coffee**.
 
 ### Downloads & Draagbaarheid
 

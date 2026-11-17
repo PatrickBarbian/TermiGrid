@@ -53,8 +53,8 @@
   - Displays **product photo (when reachable) / technical profile preview**, **jumper chamber count**, clickable **manufacturer product page link**, plus **end plates, jumpers, markers, end brackets, and N-busbars**.
 - **Printer-ready Export (`.xlsx` & `.csv`) & Project files (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 worksheets (`Druckfolge` / `ByTierStrip` default, `Ebenen-Spalten`, `Ebenen-Matrix`), strictly formatted as **Excel Text (`@`)**.
-- **7 Languages, High-Contrast Themes & Live Update Checker:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Light & Dark themes, live GitHub update check on Desktop & Android, plus **GitHub** and **Buy Me a Coffee** links.
+- **Guided Project Start, 7 Languages & System Theme:**
+  - Startup pipeline guides from *New Project / Open* -> *First Terminal Strip* -> *CAD Editor*. **DE, EN, FR, IT, ES, PL, NL** – follows **OS System Theme** by default (toggle System/Light/Dark), high-contrast action buttons, live GitHub update check on Desktop & Android, plus **GitHub** and **Buy Me a Coffee**.
 
 ---
 

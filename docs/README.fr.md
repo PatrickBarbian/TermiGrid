@@ -53,8 +53,8 @@
   - Affiche **photo produit (si accessible) ou profil technique**, **nombre de chambres**, **lien direct vers la page produit fabricant**, plus **flasques, peignes, repères, butées et barres N**.
 - **Export prêt pour l'impression (`.xlsx` & `.csv`) & Fichiers projet (`.termi` / `.json`) :**
   - **Excel (`.xlsx`) :** 3 feuilles (`Druckfolge` / `ByTierStrip` par défaut, `Ebenen-Spalten`, `Ebenen-Matrix`), toutes les cellules formatées en **Texte Excel (`@`)**.
-- **7 langues, thèmes & vérificateur de mises à jour en direct :**
-  - **DE, EN, FR, IT, ES, PL, NL** – Clair/Sombre contraste élevé, vérification GitHub sur Bureau & Android, liens directs **GitHub** & **Buy Me a Coffee**.
+- **Démarrage guidé, 7 langues & Thème Système :**
+  - Assistant de démarrage *Nouveau projet / Charger* -> *Premier bornier* -> *Éditeur CAO*. **DE, EN, FR, IT, ES, PL, NL** – suit le **thème Système** par défaut (commutable Système/Clair/Sombre), boutons d'action contrastés, vérification GitHub sur Bureau & Android, **GitHub** & **Buy Me a Coffee**.
 
 ---
 

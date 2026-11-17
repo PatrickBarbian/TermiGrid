@@ -54,7 +54,40 @@ pub fn install_system_fonts(ctx: &egui::Context) {
     ctx.set_fonts(fonts);
 }
 
-/// Applies a high-contrast, legible typography and color theme for both Light and Dark mode.
+/// User-selectable color theme mode; defaults to OS/System setting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ThemeMode {
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
+impl ThemeMode {
+    pub fn next(self) -> Self {
+        match self {
+            Self::System => Self::Light,
+            Self::Light => Self::Dark,
+            Self::Dark => Self::System,
+        }
+    }
+}
+
+/// Applies high-contrast visuals for BOTH Light and Dark mode plus `ThemeMode` preference
+/// (defaulting to OS/System theme).
+pub fn apply_theme_mode(ctx: &egui::Context, mode: ThemeMode) {
+    apply_termi_theme(ctx, true);
+    apply_termi_theme(ctx, false);
+
+    let pref = match mode {
+        ThemeMode::System => egui::ThemePreference::System,
+        ThemeMode::Light => egui::ThemePreference::Light,
+        ThemeMode::Dark => egui::ThemePreference::Dark,
+    };
+    ctx.set_theme(pref);
+}
+
+/// Applies a high-contrast, legible typography and color theme for either Light or Dark mode.
 pub fn apply_termi_theme(ctx: &egui::Context, dark: bool) {
     let theme = if dark { Theme::Dark } else { Theme::Light };
     let mut visuals = if dark {
@@ -154,7 +187,6 @@ pub fn apply_termi_theme(ctx: &egui::Context, dark: bool) {
         style.spacing.item_spacing = Vec2::new(8.0, 6.0);
         style.spacing.button_padding = Vec2::new(10.0, 5.0);
     });
-    ctx.set_theme(theme);
 }
 
 /// High-contrast secondary text color (replaces faint `.weak()`).
@@ -164,4 +196,43 @@ pub fn secondary_text_color(ui: &egui::Ui) -> Color32 {
     } else {
         Color32::from_rgb(51, 65, 85)
     }
+}
+
+/// High-contrast primary accent button (Start/Create/Apply/Primary action).
+pub fn primary_button(ui: &mut egui::Ui, label: &str) -> egui::Response {
+    let fill = if ui.visuals().dark_mode {
+        Color32::from_rgb(2, 132, 199)
+    } else {
+        Color32::from_rgb(3, 105, 161)
+    };
+    let btn = egui::Button::new(egui::RichText::new(label).color(Color32::WHITE).strong())
+        .fill(fill)
+        .stroke(Stroke::new(1.0, Color32::from_rgb(56, 189, 248)));
+    ui.add(btn)
+}
+
+/// High-contrast positive/export accent button (Export / Save / Add).
+pub fn success_button(ui: &mut egui::Ui, label: &str) -> egui::Response {
+    let fill = if ui.visuals().dark_mode {
+        Color32::from_rgb(21, 128, 61)
+    } else {
+        Color32::from_rgb(22, 163, 74)
+    };
+    let btn = egui::Button::new(egui::RichText::new(label).color(Color32::WHITE).strong())
+        .fill(fill)
+        .stroke(Stroke::new(1.0, Color32::from_rgb(74, 222, 128)));
+    ui.add(btn)
+}
+
+/// High-contrast destructive accent button (Delete).
+pub fn danger_button(ui: &mut egui::Ui, label: &str) -> egui::Response {
+    let fill = if ui.visuals().dark_mode {
+        Color32::from_rgb(185, 28, 28)
+    } else {
+        Color32::from_rgb(220, 38, 38)
+    };
+    let btn = egui::Button::new(egui::RichText::new(label).color(Color32::WHITE).strong())
+        .fill(fill)
+        .stroke(Stroke::new(1.0, Color32::from_rgb(248, 113, 113)));
+    ui.add(btn)
 }

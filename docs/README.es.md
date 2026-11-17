@@ -53,8 +53,8 @@
   - Muestra **foto del producto (cuando está disponible) o perfil técnico**, **número de cámaras**, **enlace directo a la página del fabricante**, además de **tapas, puentes, marcadores, topes finales y barras N**.
 - **Exportación lista para impresora (`.xlsx` & `.csv`) y Proyectos (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 hojas (`Druckfolge` / `ByTierStrip` por defecto, `Ebenen-Spalten`, `Ebenen-Matrix`), todas las celdas formateadas como **Texto Excel (`@`)**.
-- **7 idiomas, temas y comprobador de actualizaciones en vivo:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Claro/Oscuro de alto contraste, comprobación de GitHub en Escritorio y Android, enlaces directos a **GitHub** y **Buy Me a Coffee**.
+- **Inicio guiado, 7 idiomas y Tema del Sistema:**
+  - Asistente *Nuevo proyecto / Abrir* -> *Primer regletero* -> *Editor CAD*. **DE, EN, FR, IT, ES, PL, NL** – sigue el **tema del Sistema** por defecto (cambiable Sistema/Claro/Oscuro), botones destacados de alto contraste, comprobación de GitHub en Escritorio y Android, **GitHub** y **Buy Me a Coffee**.
 
 ---
 

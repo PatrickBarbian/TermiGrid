@@ -53,8 +53,8 @@
   - Mostra **foto prodotto (se raggiungibile) o profilo tecnico**, **numero camere**, **link diretto alla pagina prodotto del produttore**, più **piastre, ponticelli, targhette, fermamorsetti e barre N**.
 - **Esportazione pronta per la stampa (`.xlsx` & `.csv`) & File di progetto (`.termi` / `.json`):**
   - **Excel (`.xlsx`):** 3 fogli (`Druckfolge` / `ByTierStrip` predefinito, `Ebenen-Spalten`, `Ebenen-Matrix`), tutte le celle formattate in **Testo Excel (`@`)**.
-- **7 lingue, temi & controllo aggiornamenti live:**
-  - **DE, EN, FR, IT, ES, PL, NL** – Chiaro/Scuro ad alto contrasto, verifica GitHub live su Desktop & Android, link diretti a **GitHub** & **Buy Me a Coffee**.
+- **Avvio guidato, 7 lingue & Tema di Sistema:**
+  - Procedura guidata *Nuovo progetto / Carica* -> *Prima morsettiera* -> *Editor CAD*. **DE, EN, FR, IT, ES, PL, NL** – segue il **tema di Sistema** predefinito (commutabile Sistema/Chiaro/Scuro), pulsanti ad alto contrasto, controllo GitHub su Desktop & Android, **GitHub** & **Buy Me a Coffee**.
 
 ---
 

@@ -216,6 +216,17 @@ pub struct Strings {
     // Product Preview & Custom Spec
     pub open_product_page: &'static str,
     pub custom_spec_chambers: &'static str,
+
+    // Theme System Auto & Guided Start Pipeline
+    pub theme_system: &'static str,
+    pub welcome_heading: &'static str,
+    pub welcome_subtitle: &'static str,
+    pub welcome_step_1: &'static str,
+    pub welcome_step_2: &'static str,
+    pub welcome_step_3: &'static str,
+    pub welcome_new_project: &'static str,
+    pub welcome_load_project: &'static str,
+    pub welcome_demo_project: &'static str,
 }
 
 pub static DE: Strings = Strings {
@@ -388,6 +399,16 @@ pub static DE: Strings = Strings {
 
     open_product_page: "Produktseite öffnen",
     custom_spec_chambers: "Brückerkammern",
+
+    theme_system: "System",
+    welcome_heading: "Willkommen bei TermiGrid",
+    welcome_subtitle: "Geführter Einstieg: Projekt starten oder laden -> erste Klemmleiste konfigurieren -> im CAD beschriften & exportieren.",
+    welcome_step_1: "1. Projekt",
+    welcome_step_2: "2. Klemmleiste",
+    welcome_step_3: "3. CAD-Editor",
+    welcome_new_project: "+ Neues Projekt erstellen",
+    welcome_load_project: "Bestehendes Projekt laden (.termi / .json)",
+    welcome_demo_project: "Beispielprojekt (-X1) ansehen",
 };
 
 pub static EN: Strings = Strings {
@@ -560,6 +581,16 @@ pub static EN: Strings = Strings {
 
     open_product_page: "Open Product Page",
     custom_spec_chambers: "Jumper chambers",
+
+    theme_system: "System",
+    welcome_heading: "Welcome to TermiGrid",
+    welcome_subtitle: "Guided start: create or load a project -> configure your first terminal strip -> design & export in CAD.",
+    welcome_step_1: "1. Project",
+    welcome_step_2: "2. Terminal Strip",
+    welcome_step_3: "3. CAD Editor",
+    welcome_new_project: "+ Create New Project",
+    welcome_load_project: "Open Existing Project (.termi / .json)",
+    welcome_demo_project: "Open Sample Project (-X1)",
 };
 
 pub static FR: Strings = Strings {
@@ -732,6 +763,16 @@ pub static FR: Strings = Strings {
 
     open_product_page: "Page produit fabricant",
     custom_spec_chambers: "Chambres de pontage",
+
+    theme_system: "Système",
+    welcome_heading: "Bienvenue dans TermiGrid",
+    welcome_subtitle: "Démarrage guidé : créer ou charger un projet -> configurer le premier bornier -> concevoir & exporter en CAO.",
+    welcome_step_1: "1. Projet",
+    welcome_step_2: "2. Bornier",
+    welcome_step_3: "3. Éditeur CAO",
+    welcome_new_project: "+ Créer un nouveau projet",
+    welcome_load_project: "Charger un projet existant (.termi / .json)",
+    welcome_demo_project: "Voir le projet exemple (-X1)",
 };
 
 pub static IT: Strings = Strings {
@@ -904,6 +945,16 @@ pub static IT: Strings = Strings {
 
     open_product_page: "Pagina prodotto produttore",
     custom_spec_chambers: "Camere ponticello",
+
+    theme_system: "Sistema",
+    welcome_heading: "Benvenuti in TermiGrid",
+    welcome_subtitle: "Avvio guidato: crea o carica un progetto -> configura la prima morsettiera -> progetta ed esporta nel CAD.",
+    welcome_step_1: "1. Progetto",
+    welcome_step_2: "2. Morsettiera",
+    welcome_step_3: "3. Editor CAD",
+    welcome_new_project: "+ Crea nuovo progetto",
+    welcome_load_project: "Carica progetto esistente (.termi / .json)",
+    welcome_demo_project: "Apri progetto di esempio (-X1)",
 };
 
 pub static ES: Strings = Strings {
@@ -1076,6 +1127,16 @@ pub static ES: Strings = Strings {
 
     open_product_page: "Ver página del producto",
     custom_spec_chambers: "Cámaras de puente",
+
+    theme_system: "Sistema",
+    welcome_heading: "Bienvenido a TermiGrid",
+    welcome_subtitle: "Inicio guiado: crea o carga un proyecto -> configura el primer regletero -> diseña y exporta en el editor CAD.",
+    welcome_step_1: "1. Proyecto",
+    welcome_step_2: "2. Regletero",
+    welcome_step_3: "3. Editor CAD",
+    welcome_new_project: "+ Crear nuevo proyecto",
+    welcome_load_project: "Abrir proyecto existente (.termi / .json)",
+    welcome_demo_project: "Ver proyecto de ejemplo (-X1)",
 };
 
 pub static PL: Strings = Strings {
@@ -1248,6 +1309,16 @@ pub static PL: Strings = Strings {
 
     open_product_page: "Strona produktu producenta",
     custom_spec_chambers: "Komory mostka",
+
+    theme_system: "Systemowy",
+    welcome_heading: "Witamy w TermiGrid",
+    welcome_subtitle: "Kreator startowy: utwórz lub wczytaj projekt -> skonfiguruj pierwszą listwę -> projektuj i eksportuj w CAD.",
+    welcome_step_1: "1. Projekt",
+    welcome_step_2: "2. Listwa zacisków",
+    welcome_step_3: "3. Edytor CAD",
+    welcome_new_project: "+ Utwórz nowy projekt",
+    welcome_load_project: "Wczytaj istniejący projekt (.termi / .json)",
+    welcome_demo_project: "Zobacz projekt przykładowy (-X1)",
 };
 
 pub static NL: Strings = Strings {
@@ -1420,6 +1491,16 @@ pub static NL: Strings = Strings {
 
     open_product_page: "Productpagina fabrikant",
     custom_spec_chambers: "Brugkamers",
+
+    theme_system: "Systeem",
+    welcome_heading: "Welkom bij TermiGrid",
+    welcome_subtitle: "Begeleide start: maak of open een project -> stel de eerste klemmenstrook in -> bewerk & exporteer in CAD.",
+    welcome_step_1: "1. Project",
+    welcome_step_2: "2. Klemmenstrook",
+    welcome_step_3: "3. CAD-editor",
+    welcome_new_project: "+ Nieuw project maken",
+    welcome_load_project: "Bestaand project laden (.termi / .json)",
+    welcome_demo_project: "Voorbeeldproject (-X1) openen",
 };
 
 pub fn strings(lang: Language) -> &'static Strings {

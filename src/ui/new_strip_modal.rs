@@ -4,7 +4,7 @@ use crate::catalog::TerminalCatalog;
 use crate::i18n::{Language, Strings};
 use crate::model::TerminalStrip;
 use crate::ui::logos::{logo_filter_button, show_logo_badge, BrandLogos};
-use crate::ui::theme::secondary_text_color;
+use crate::ui::theme::{primary_button, secondary_text_color};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NewStripMode {
@@ -172,7 +172,7 @@ pub fn show_new_strip_modal(
 
             ui.add_space(8.0);
             ui.horizontal(|ui| {
-                if ui.button(strings.btn_create_strip).clicked()
+                if primary_button(ui, strings.btn_create_strip).clicked()
                     && let Some(spec) = catalog.find_by_id(&state.selected_spec_id)
                 {
                     let clean_name = if state.name.trim().is_empty() {

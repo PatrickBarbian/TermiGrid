@@ -18,7 +18,7 @@ use crate::catalog::TerminalCatalog;
 use crate::export::{csv::export_to_csv, xlsx::export_to_xlsx, ExportOptions, PrintOrder};
 use crate::i18n::{strings, Language};
 use crate::model::bridging::{
-    calculate_bridges, WireBridgeReason, POTENTIAL_PALETTE,
+    calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
 };
 use crate::model::{
     NeutralLabelMode, NumberingOrder, PeLabelMode, Project, TerminalStrip,
@@ -34,7 +34,10 @@ use crate::ui::platform_io::{
     pick_export_csv_path, pick_export_xlsx_path, pick_open_project_path, pick_save_project_path,
 };
 use crate::ui::product_media::{show_product_preview_card, ProductMediaCache};
-use crate::ui::theme::{apply_termi_theme, install_system_fonts, secondary_text_color};
+use crate::ui::theme::{
+    apply_theme_mode, danger_button, install_system_fonts, primary_button, secondary_text_color,
+    success_button, ThemeMode,
+};
 use crate::ui::updater::{
     open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, GITHUB_REPO_URL,
 };
@@ -77,9 +80,10 @@ pub struct TermiGridApp {
     current_file: Option<PathBuf>,
     status_message: String,
 
-    // UX preferences
+    // UX preferences & Guided Project Pipeline
     lang: Language,
-    dark_mode: bool,
+    theme_mode: ThemeMode,
+    show_welcome: bool,
     active_tab: ActiveTab,
     mobile_pane: MobilePane,
     updater: UpdateChecker,
@@ -104,11 +108,11 @@ impl TermiGridApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let catalog = TerminalCatalog::load_embedded();
         let logos = BrandLogos::load(&cc.egui_ctx);
-        let project = create_demo_project(&catalog);
+        let project = Project::default();
 
-        // Load native Windows fonts (Segoe UI / Consolas) & apply high-contrast theme
+        // Load native system fonts & apply high-contrast Light+Dark themes with System default
         install_system_fonts(&cc.egui_ctx);
-        apply_termi_theme(&cc.egui_ctx, true);
+        apply_theme_mode(&cc.egui_ctx, ThemeMode::System);
 
         let updater = UpdateChecker::default();
         updater.check_async(cc.egui_ctx.clone());
@@ -131,7 +135,8 @@ impl TermiGridApp {
             current_file: None,
             status_message: strings(Language::De).status_ready.to_string(),
             lang: Language::De,
-            dark_mode: true,
+            theme_mode: ThemeMode::System,
+            show_welcome: true,
             active_tab: ActiveTab::Editor,
             mobile_pane: MobilePane::Cad,
             updater,
@@ -186,6 +191,8 @@ impl TermiGridApp {
                         self.active_strip = 0;
                         self.selected_blocks.clear();
                         self.current_file = Some(path.clone());
+                        self.show_welcome = false;
+                        self.active_tab = ActiveTab::Editor;
                         self.status_message = format!("{}: {}", s.status_loaded, path.display());
                     }
                     Err(e) => {
@@ -331,24 +338,26 @@ impl eframe::App for TermiGridApp {
 
             ui.separator();
             ui.horizontal_wrapped(|ui| {
-                if ui.button(s.menu_new_project).clicked() {
+                if primary_button(ui, s.menu_new_project).clicked() {
                     self.project = Project::default();
                     self.catalog = TerminalCatalog::load_embedded();
                     self.current_file = None;
                     self.active_strip = 0;
                     self.selected_blocks.clear();
+                    self.show_welcome = true;
+                    self.active_tab = ActiveTab::Editor;
                     self.new_strip_modal.open_for_next_strip(0);
                 }
                 if ui.button(s.menu_open_project).clicked() {
                     self.open_project();
                 }
-                if ui.button(s.menu_save_project).clicked() {
+                if success_button(ui, s.menu_save_project).clicked() {
                     self.save_project();
                 }
 
                 ui.separator();
 
-                if ui.button(s.menu_export_xlsx).clicked() {
+                if primary_button(ui, s.menu_export_xlsx).clicked() {
                     self.export_xlsx();
                 }
                 if ui.button(s.menu_export_csv).clicked() {
@@ -448,7 +457,11 @@ impl eframe::App for TermiGridApp {
                 });
             }
             ActiveTab::Editor => {
-                self.show_editor_panels(ui);
+                if self.show_welcome {
+                    self.show_welcome_pipeline(ui);
+                } else {
+                    self.show_editor_panels(ui);
+                }
             }
         }
 
@@ -464,6 +477,7 @@ impl eframe::App for TermiGridApp {
             self.project.strips.push(new_strip);
             self.active_strip = self.project.strips.len().saturating_sub(1);
             self.selected_blocks.clear();
+            self.show_welcome = false;
             self.active_tab = ActiveTab::Editor;
         }
     }
@@ -481,15 +495,103 @@ impl TermiGridApp {
                 }
             });
 
-        let theme_btn = if self.dark_mode {
-            format!("☀ {}", s.theme_light)
-        } else {
-            format!("🌙 {}", s.theme_dark)
+        let theme_btn = match self.theme_mode {
+            ThemeMode::System => format!("◐ {}", s.theme_system),
+            ThemeMode::Light => format!("☀ {}", s.theme_light),
+            ThemeMode::Dark => format!("🌙 {}", s.theme_dark),
         };
         if ui.button(theme_btn).clicked() {
-            self.dark_mode = !self.dark_mode;
-            apply_termi_theme(ui.ctx(), self.dark_mode);
+            self.theme_mode = self.theme_mode.next();
+            apply_theme_mode(ui.ctx(), self.theme_mode);
         }
+    }
+
+    /// Guided startup pipeline ("Projekt-Line"): Choose New Project -> Configure First Strip -> CAD.
+    fn show_welcome_pipeline(&mut self, ui: &mut egui::Ui) {
+        let s = strings(self.lang);
+        egui::CentralPanel::default().show(ui, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.add_space(24.0);
+                let card_w = (ui.available_width() - 32.0).clamp(280.0, 560.0);
+                ui.vertical_centered(|ui| {
+                    egui::Frame::group(ui.style())
+                        .inner_margin(egui::Margin::same(20))
+                        .show(ui, |ui| {
+                            ui.set_width(card_w);
+                            ui.heading(egui::RichText::new(s.welcome_heading).size(24.0).strong());
+                            ui.add_space(4.0);
+                            ui.label(
+                                egui::RichText::new(s.welcome_subtitle)
+                                    .color(secondary_text_color(ui)),
+                            );
+                            ui.add_space(12.0);
+
+                            // Visual 3-step pipeline indicator
+                            let step2_active = self.new_strip_modal.open;
+                            ui.horizontal_wrapped(|ui| {
+                                let step_chip = |ui: &mut egui::Ui, label: &str, active: bool| {
+                                    let bg = if active {
+                                        egui::Color32::from_rgb(2, 132, 199)
+                                    } else {
+                                        ui.visuals().faint_bg_color
+                                    };
+                                    let fg = if active {
+                                        egui::Color32::WHITE
+                                    } else {
+                                        secondary_text_color(ui)
+                                    };
+                                    egui::Frame::NONE
+                                        .fill(bg)
+                                        .corner_radius(egui::CornerRadius::same(4))
+                                        .inner_margin(egui::Margin::symmetric(8, 4))
+                                        .show(ui, |ui| {
+                                            ui.label(egui::RichText::new(label).color(fg).strong());
+                                        });
+                                };
+                                step_chip(ui, s.welcome_step_1, !step2_active);
+                                ui.label("->");
+                                step_chip(ui, s.welcome_step_2, step2_active);
+                                ui.label("->");
+                                step_chip(ui, s.welcome_step_3, false);
+                            });
+
+                            ui.separator();
+                            ui.add_space(8.0);
+                            ui.label(egui::RichText::new(s.project_name).strong());
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.project.project_name)
+                                    .desired_width(card_w - 16.0),
+                            );
+                            ui.add_space(14.0);
+
+                            // High-contrast primary actions
+                            ui.horizontal_wrapped(|ui| {
+                                if primary_button(ui, s.welcome_new_project).clicked() {
+                                    self.project.strips.clear();
+                                    self.catalog = TerminalCatalog::load_embedded();
+                                    self.current_file = None;
+                                    self.active_strip = 0;
+                                    self.selected_blocks.clear();
+                                    self.new_strip_modal.open_for_next_strip(0);
+                                }
+                                if success_button(ui, s.welcome_load_project).clicked() {
+                                    self.open_project();
+                                }
+                            });
+
+                            ui.add_space(12.0);
+                            ui.separator();
+                            ui.add_space(6.0);
+                            if ui.button(s.welcome_demo_project).clicked() {
+                                self.project = create_demo_project(&self.catalog);
+                                self.active_strip = 0;
+                                self.selected_blocks.clear();
+                                self.show_welcome = false;
+                            }
+                        });
+                });
+            });
+        });
     }
 
     fn show_editor_panels(&mut self, ui: &mut egui::Ui) {
@@ -560,7 +662,7 @@ impl TermiGridApp {
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(s.strips_heading).strong());
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button(s.btn_new_strip).clicked() {
+                if success_button(ui, s.btn_new_strip).clicked() {
                     self.new_strip_modal
                         .open_for_next_strip(self.project.strips.len());
                 }
@@ -598,7 +700,7 @@ impl TermiGridApp {
 
         if !self.project.strips.is_empty() {
             ui.add_space(8.0);
-            if ui.button(s.btn_delete_strip).clicked() {
+            if danger_button(ui, s.btn_delete_strip).clicked() {
                 delete_idx = Some(self.active_strip);
             }
         }
@@ -657,7 +759,7 @@ impl TermiGridApp {
                                 );
                                 ui.add_space(4.0);
 
-                                if ui.button(s.btn_apply_type).clicked()
+                                if primary_button(ui, s.btn_apply_type).clicked()
                                     && let Some(spec) =
                                         self.catalog.find_by_id(&self.inspector_spec_id)
                                 {
@@ -692,7 +794,7 @@ impl TermiGridApp {
                                     }
                                 });
 
-                                if ui.button(s.btn_delete_selected).clicked() {
+                                if danger_button(ui, s.btn_delete_selected).clicked() {
                                     let indices: Vec<usize> =
                                         self.selected_blocks.iter().copied().collect();
                                     self.project.strips[self.active_strip]
@@ -796,10 +898,11 @@ impl TermiGridApp {
                                 }
                             }
 
-                            // Batch prefix / suffix / special characters for all selected terminals
+                            // Batch prefix / suffix / special characters for all selected terminals (collapsible for cleaner UI)
                             ui.add_space(6.0);
-                            ui.group(|ui| {
-                                ui.label(egui::RichText::new(s.affix_heading).strong());
+                            egui::CollapsingHeader::new(s.affix_heading)
+                                .default_open(false)
+                                .show(ui, |ui| {
                                 ui.horizontal(|ui| {
                                     ui.label(s.affix_prefix);
                                     ui.add(
@@ -844,7 +947,7 @@ impl TermiGridApp {
                                     );
                                 });
                                 ui.horizontal_wrapped(|ui| {
-                                    if ui.button(s.affix_apply).clicked() {
+                                    if primary_button(ui, s.affix_apply).clicked() {
                                         let indices: Vec<usize> =
                                             self.selected_blocks.iter().copied().collect();
                                         self.project.strips[self.active_strip]
@@ -873,11 +976,16 @@ impl TermiGridApp {
                         }
                     }
 
-                    // Bridge Mode / Potentials & Calculated Jumper BOM
+                    // Bridge Mode / Potentials & Calculated Jumper BOM + Virtual Pin Preview
                     if has_strip {
-                        ui.add_space(8.0);
+                        ui.add_space(6.0);
                         ui.separator();
-                        ui.label(egui::RichText::new(s.bridge_heading).strong());
+                        let bridge_open = self.canvas_state.interaction_mode
+                            == CanvasInteractionMode::BridgeAssign
+                            || !self.project.strips[self.active_strip].potentials.is_empty();
+                        egui::CollapsingHeader::new(s.bridge_heading)
+                            .default_open(bridge_open)
+                            .show(ui, |ui| {
                         ui.label(
                             egui::RichText::new(s.bridge_assign_hint)
                                 .color(secondary_text_color(ui))
@@ -893,7 +1001,7 @@ impl TermiGridApp {
                                         .hint_text(s.bridge_new_potential)
                                         .desired_width(120.0),
                                 );
-                                if ui.button(s.bridge_add_btn).clicked() {
+                                if success_button(ui, s.bridge_add_btn).clicked() {
                                     let name = if self.new_potential_name.trim().is_empty() {
                                         format!("P{}", strip.potentials.len() + 1)
                                     } else {
@@ -1005,6 +1113,7 @@ impl TermiGridApp {
                                             .small(),
                                         );
                                     }
+                                    draw_virtual_jumper_strip(ui, seg);
                                     if seg.uses_double_chamber_cascade {
                                         ui.label(
                                             egui::RichText::new(format!("  {}", s.bridge_double_cascade))
@@ -1012,6 +1121,7 @@ impl TermiGridApp {
                                                 .small(),
                                         );
                                     }
+                                    ui.add_space(4.0);
                                 }
                                 for wb in &bridge_plan.wire_bridges {
                                     let col = egui::Color32::from_rgb(
@@ -1048,6 +1158,7 @@ impl TermiGridApp {
                                 }
                             });
                         }
+                        });
                     }
 
                     // Product Photo / Profile Preview + Accessories
@@ -1137,11 +1248,11 @@ impl TermiGridApp {
                         }
                     }
 
-                    ui.add_space(10.0);
+                    ui.add_space(6.0);
                     ui.separator();
-                    ui.label(egui::RichText::new(s.export_settings_heading).strong());
-                    ui.add_space(4.0);
-
+                    egui::CollapsingHeader::new(s.export_settings_heading)
+                        .default_open(false)
+                        .show(ui, |ui| {
                     ui.label(s.print_order_label);
                     let order_text = match self.export_options.print_order {
                         PrintOrder::ByBlockBottomToTop => s.print_order_block_btt,
@@ -1177,6 +1288,7 @@ impl TermiGridApp {
                         &mut self.export_options.all_strips,
                         s.export_all_strips_checkbox,
                     );
+                    });
         });
     }
 
@@ -1296,7 +1408,7 @@ impl TermiGridApp {
             }
 
             ui.separator();
-            if ui.button(s.btn_append_block).clicked() {
+            if success_button(ui, s.btn_append_block).clicked() {
                 append_spec_id = Some(strip.default_spec_id.clone());
             }
 
@@ -1398,5 +1510,87 @@ fn sanitize_filename(name: &str) -> String {
         "TermiGrid".to_string()
     } else {
         clean
+    }
+}
+
+/// Renders a crisp virtual side-profile of a comb jumper bar (`Kammbrücke`),
+/// showing every single pin position (`#start..#end`), active copper/silver legs,
+/// and clearly crossed-out (`×`) removed pins directly in the inspector sidebar.
+fn draw_virtual_jumper_strip(ui: &mut egui::Ui, seg: &CombJumperSegment) {
+    let poles = seg.pole_count.max(2);
+    let cell_w = ((ui.available_width() - 12.0) / (poles as f32)).clamp(14.0, 26.0);
+    let total_w = (cell_w * poles as f32).min((ui.available_width() - 8.0).max(120.0));
+    let height = 38.0;
+
+    let (rect, _) = ui.allocate_exact_size(egui::Vec2::new(total_w, height), egui::Sense::hover());
+    let painter = ui.painter_at(rect);
+    let pot_color =
+        egui::Color32::from_rgb(seg.color_rgb[0], seg.color_rgb[1], seg.color_rgb[2]);
+    let dark = ui.visuals().dark_mode;
+
+    // Insulated upper grip spine
+    let spine = egui::Rect::from_min_max(
+        egui::Pos2::new(rect.min.x + 2.0, rect.min.y + 3.0),
+        egui::Pos2::new(rect.max.x - 2.0, rect.min.y + 13.0),
+    );
+    painter.rect_filled(spine, egui::CornerRadius::same(2), pot_color);
+    painter.rect_stroke(
+        spine,
+        egui::CornerRadius::same(2),
+        egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 180)),
+        egui::StrokeKind::Inside,
+    );
+
+    let step = rect.width() / (poles as f32);
+    for offset in 0..poles {
+        let block_idx = seg.start_block_idx + offset;
+        let cx = rect.min.x + (offset as f32 + 0.5) * step;
+        let is_cut = seg.cut_pins.contains(&block_idx);
+
+        if is_cut {
+            // Broken/removed pin marked with red circle & white X
+            let r = 5.5;
+            let c = egui::Pos2::new(cx, rect.min.y + 20.0);
+            painter.circle_filled(c, r, egui::Color32::from_rgb(220, 38, 38));
+            painter.line_segment(
+                [egui::Pos2::new(c.x - 3.0, c.y - 3.0), egui::Pos2::new(c.x + 3.0, c.y + 3.0)],
+                egui::Stroke::new(1.6, egui::Color32::WHITE),
+            );
+            painter.line_segment(
+                [egui::Pos2::new(c.x - 3.0, c.y + 3.0), egui::Pos2::new(c.x + 3.0, c.y - 3.0)],
+                egui::Stroke::new(1.6, egui::Color32::WHITE),
+            );
+        } else {
+            // Solid metallic contact pin descending from spine
+            let pin_rect = egui::Rect::from_min_max(
+                egui::Pos2::new(cx - 2.2, rect.min.y + 13.0),
+                egui::Pos2::new(cx + 2.2, rect.min.y + 25.5),
+            );
+            painter.rect_filled(
+                pin_rect,
+                egui::CornerRadius::same(1),
+                egui::Color32::from_rgb(203, 213, 225),
+            );
+            painter.rect_stroke(
+                pin_rect,
+                egui::CornerRadius::same(1),
+                egui::Stroke::new(0.8, egui::Color32::from_rgb(15, 23, 42)),
+                egui::StrokeKind::Inside,
+            );
+        }
+
+        painter.text(
+            egui::Pos2::new(cx, rect.max.y - 1.0),
+            egui::Align2::CENTER_BOTTOM,
+            format!("{}", block_idx + 1),
+            egui::FontId::proportional(8.5),
+            if is_cut {
+                egui::Color32::from_rgb(239, 68, 68)
+            } else if dark {
+                egui::Color32::from_rgb(203, 213, 225)
+            } else {
+                egui::Color32::from_rgb(51, 65, 85)
+            },
+        );
     }
 }
