@@ -9,11 +9,12 @@ pub mod product_media;
 pub mod theme;
 pub mod updater;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 use eframe::egui;
 
+use crate::catalog::accessories::{calculate_end_plates, end_plate_width_tenths_mm};
 use crate::catalog::TerminalCatalog;
 use crate::export::{csv::export_to_csv, xlsx::export_to_xlsx, ExportOptions, PrintOrder};
 use crate::i18n::{strings, Language};
@@ -103,6 +104,11 @@ pub struct TermiGridApp {
     new_potential_name: String,
     active_potential_id: Option<u64>,
     product_media: ProductMediaCache,
+
+    // Undo / Redo history snapshots
+    undo_stack: Vec<Project>,
+    redo_stack: Vec<Project>,
+    last_snapshot: Project,
 }
 
 impl TermiGridApp {
@@ -110,6 +116,7 @@ impl TermiGridApp {
         let catalog = TerminalCatalog::load_embedded();
         let logos = BrandLogos::load(&cc.egui_ctx);
         let project = Project::default();
+        let last_snapshot = project.clone();
 
         // Load native system fonts & apply high-contrast Light+Dark themes with System default
         install_system_fonts(&cc.egui_ctx);
@@ -151,6 +158,35 @@ impl TermiGridApp {
             new_potential_name: "+24V".to_string(),
             active_potential_id: None,
             product_media: ProductMediaCache::default(),
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
+            last_snapshot,
+        }
+    }
+
+    fn perform_undo(&mut self) {
+        if let Some(prev) = self.undo_stack.pop() {
+            self.redo_stack.push(self.project.clone());
+            self.project = prev;
+            self.catalog.reload_with_custom(&self.project.custom_specs);
+            self.last_snapshot = self.project.clone();
+            self.active_strip = self
+                .active_strip
+                .min(self.project.strips.len().saturating_sub(1));
+            self.selected_blocks.clear();
+        }
+    }
+
+    fn perform_redo(&mut self) {
+        if let Some(next) = self.redo_stack.pop() {
+            self.undo_stack.push(self.project.clone());
+            self.project = next;
+            self.catalog.reload_with_custom(&self.project.custom_specs);
+            self.last_snapshot = self.project.clone();
+            self.active_strip = self
+                .active_strip
+                .min(self.project.strips.len().saturating_sub(1));
+            self.selected_blocks.clear();
         }
     }
 
@@ -190,6 +226,9 @@ impl TermiGridApp {
                         proj.normalize();
                         self.catalog.reload_with_custom(&proj.custom_specs);
                         self.project = proj;
+                        self.undo_stack.clear();
+                        self.redo_stack.clear();
+                        self.last_snapshot = self.project.clone();
                         self.active_strip = 0;
                         self.selected_blocks.clear();
                         self.current_file = Some(path.clone());
@@ -258,6 +297,42 @@ impl TermiGridApp {
 impl eframe::App for TermiGridApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let s = strings(self.lang);
+
+        // Global keyboard shortcuts when no text field is active
+        if !ui.ctx().egui_wants_keyboard_input() && self.canvas_state.editing_tier.is_none() {
+            let (undo_pressed, redo_pressed, move_left, move_right, duplicate_pressed) =
+                ui.input(|i| {
+                    let ctrl = i.modifiers.ctrl || i.modifiers.mac_cmd;
+                    let shift = i.modifiers.shift;
+                    let alt = i.modifiers.alt;
+                    (
+                        ctrl && !shift && i.key_pressed(egui::Key::Z),
+                        ctrl && ((shift && i.key_pressed(egui::Key::Z))
+                            || i.key_pressed(egui::Key::Y)),
+                        alt && i.key_pressed(egui::Key::ArrowLeft),
+                        alt && i.key_pressed(egui::Key::ArrowRight),
+                        ctrl && i.key_pressed(egui::Key::D),
+                    )
+                });
+            if undo_pressed {
+                self.perform_undo();
+            } else if redo_pressed {
+                self.perform_redo();
+            } else if self.active_strip < self.project.strips.len()
+                && !self.selected_blocks.is_empty()
+            {
+                if move_left {
+                    self.selected_blocks = self.project.strips[self.active_strip]
+                        .move_selected_blocks(&self.selected_blocks, -1);
+                } else if move_right {
+                    self.selected_blocks = self.project.strips[self.active_strip]
+                        .move_selected_blocks(&self.selected_blocks, 1);
+                } else if duplicate_pressed {
+                    self.selected_blocks = self.project.strips[self.active_strip]
+                        .duplicate_selected_blocks(&self.selected_blocks);
+                }
+            }
+        }
 
         // Refresh Android safe-area insets on launch, orientation/fold change, or keyboard toggle
         let screen_size = ui.ctx().content_rect().size();
@@ -343,6 +418,9 @@ impl eframe::App for TermiGridApp {
                 if primary_button(ui, s.menu_new_project).clicked() {
                     self.project = Project::default();
                     self.catalog = TerminalCatalog::load_embedded();
+                    self.undo_stack.clear();
+                    self.redo_stack.clear();
+                    self.last_snapshot = self.project.clone();
                     self.current_file = None;
                     self.active_strip = 0;
                     self.selected_blocks.clear();
@@ -355,6 +433,23 @@ impl eframe::App for TermiGridApp {
                 }
                 if success_button(ui, s.menu_save_project).clicked() {
                     self.save_project();
+                }
+
+                ui.separator();
+
+                if ui
+                    .add_enabled(!self.undo_stack.is_empty(), egui::Button::new("↩"))
+                    .on_hover_text("Rückgängig / Undo (Strg+Z)")
+                    .clicked()
+                {
+                    self.perform_undo();
+                }
+                if ui
+                    .add_enabled(!self.redo_stack.is_empty(), egui::Button::new("↪"))
+                    .on_hover_text("Wiederholen / Redo (Strg+Y)")
+                    .clicked()
+                {
+                    self.perform_redo();
                 }
 
                 ui.separator();
@@ -481,6 +576,16 @@ impl eframe::App for TermiGridApp {
             self.selected_blocks.clear();
             self.show_welcome = false;
             self.active_tab = ActiveTab::Editor;
+        }
+
+        // Automatically record project state changes onto the Undo stack once pointer drag finishes
+        if !ui.input(|i| i.pointer.any_down()) && self.project != self.last_snapshot {
+            if self.undo_stack.len() >= 50 {
+                self.undo_stack.remove(0);
+            }
+            self.undo_stack.push(self.last_snapshot.clone());
+            self.redo_stack.clear();
+            self.last_snapshot = self.project.clone();
         }
     }
 }
@@ -811,13 +916,42 @@ impl TermiGridApp {
                                     }
                                 });
 
-                                if danger_button(ui, s.btn_delete_selected).clicked() {
-                                    let indices: Vec<usize> =
-                                        self.selected_blocks.iter().copied().collect();
-                                    self.project.strips[self.active_strip]
-                                        .delete_blocks(&indices);
-                                    self.selected_blocks.clear();
-                                }
+                                ui.horizontal_wrapped(|ui| {
+                                    if ui
+                                        .button("◀")
+                                        .on_hover_text("Nach links verschieben (Alt+Links)")
+                                        .clicked()
+                                    {
+                                        self.selected_blocks = self.project.strips
+                                            [self.active_strip]
+                                            .move_selected_blocks(&self.selected_blocks, -1);
+                                    }
+                                    if ui
+                                        .button("▶")
+                                        .on_hover_text("Nach rechts verschieben (Alt+Rechts)")
+                                        .clicked()
+                                    {
+                                        self.selected_blocks = self.project.strips
+                                            [self.active_strip]
+                                            .move_selected_blocks(&self.selected_blocks, 1);
+                                    }
+                                    if ui
+                                        .button("⧉ Duplizieren")
+                                        .on_hover_text("Auswahl klonen (Strg+D)")
+                                        .clicked()
+                                    {
+                                        self.selected_blocks = self.project.strips
+                                            [self.active_strip]
+                                            .duplicate_selected_blocks(&self.selected_blocks);
+                                    }
+                                    if danger_button(ui, s.btn_delete_selected).clicked() {
+                                        let indices: Vec<usize> =
+                                            self.selected_blocks.iter().copied().collect();
+                                        self.project.strips[self.active_strip]
+                                            .delete_blocks(&indices);
+                                        self.selected_blocks.clear();
+                                    }
+                                });
                             });
 
                             // Single block fine-tuning (Tier order & custom overrides)
@@ -1184,11 +1318,63 @@ impl TermiGridApp {
                         });
                     }
 
-                    // Product Photo / Profile Preview + Accessories
+                    // Product Photo / Profile Preview + Accessories & Automatic End Plates
                     ui.add_space(10.0);
                     ui.separator();
                     ui.label(egui::RichText::new(s.accessories_heading).strong());
                     ui.add_space(4.0);
+
+                    if has_strip {
+                        let strip = &self.project.strips[self.active_strip];
+                        let plates = calculate_end_plates(strip, &self.catalog);
+                        if !plates.is_empty() {
+                            let mut plate_groups: BTreeMap<String, (String, u16, Vec<usize>)> =
+                                BTreeMap::new();
+                            for p in &plates {
+                                let entry = plate_groups.entry(p.end_plate.clone()).or_insert_with(
+                                    || (p.manufacturer.clone(), p.width_tenths_mm, Vec::new()),
+                                );
+                                entry.2.push(p.after_block_idx + 1);
+                            }
+                            ui.group(|ui| {
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "{} ({})",
+                                        s.acc_end_plate,
+                                        plates.len()
+                                    ))
+                                    .strong()
+                                    .small(),
+                                );
+                                let sec = secondary_text_color(ui);
+                                for (plate_name, (mfg, w10, positions)) in plate_groups {
+                                    let pos_str = positions
+                                        .iter()
+                                        .map(|i| format!("#{i}"))
+                                        .collect::<Vec<_>>()
+                                        .join(", ");
+                                    ui.horizontal_wrapped(|ui| {
+                                        show_logo_badge(ui, &self.logos, &mfg, 16.0);
+                                        ui.label(
+                                            egui::RichText::new(format!(
+                                                "{}× {} ({:.1} mm)",
+                                                positions.len(),
+                                                plate_name,
+                                                f32::from(w10) / 10.0
+                                            ))
+                                            .small(),
+                                        );
+                                        ui.label(
+                                            egui::RichText::new(format!("[{pos_str}]"))
+                                                .color(sec)
+                                                .small(),
+                                        );
+                                    });
+                                }
+                            });
+                            ui.add_space(4.0);
+                        }
+                    }
 
                     if !has_strip || self.selected_blocks.is_empty() {
                         ui.label(
@@ -1245,7 +1431,19 @@ impl TermiGridApp {
                                         .spacing([10.0, 5.0])
                                         .show(ui, |ui| {
                                             ui.label(egui::RichText::new(s.acc_end_plate).color(sec));
-                                            ui.label(egui::RichText::new(&acc.end_plate).strong());
+                                            let pw = end_plate_width_tenths_mm(spec);
+                                            if pw > 0 {
+                                                ui.label(
+                                                    egui::RichText::new(format!(
+                                                        "{} ({:.1} mm)",
+                                                        acc.end_plate,
+                                                        f32::from(pw) / 10.0
+                                                    ))
+                                                    .strong(),
+                                                );
+                                            } else {
+                                                ui.label(egui::RichText::new(&acc.end_plate).strong());
+                                            }
                                             ui.end_row();
 
                                             ui.label(egui::RichText::new(s.acc_jumpers).color(sec));
@@ -1557,6 +1755,7 @@ impl TermiGridApp {
         } else {
             Some(calculate_bridges(strip, &self.catalog))
         };
+        let end_plates = calculate_end_plates(strip, &self.catalog);
         show_cad_canvas(
             ui,
             strip,
@@ -1565,6 +1764,7 @@ impl TermiGridApp {
             s,
             bridge_plan.as_ref(),
             self.active_potential_id,
+            &end_plates,
         );
     }
 }

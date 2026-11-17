@@ -5,6 +5,7 @@ use egui::{
     Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, StrokeKind, Ui, Vec2,
 };
 
+use crate::catalog::accessories::EndPlatePlacement;
 use crate::i18n::Strings;
 use crate::model::bridging::BridgePlan;
 use crate::model::{TerminalBlock, TerminalStrip, TierColor};
@@ -88,6 +89,7 @@ pub fn show_cad_canvas(
     strings: &Strings,
     bridge_plan: Option<&BridgePlan>,
     active_potential_id: Option<u64>,
+    end_plates: &[EndPlatePlacement],
 ) {
     let dark = ui.visuals().dark_mode;
 
@@ -193,9 +195,18 @@ pub fn show_cad_canvas(
         .iter()
         .map(|b| (f32::from(b.width_tenths_mm) / 10.0) * px_per_mm + block_gap)
         .sum();
+    let total_plates_width: f32 = end_plates
+        .iter()
+        .map(|p| ((f32::from(p.width_tenths_mm) / 10.0) * px_per_mm).max(5.5 * z) + block_gap)
+        .sum();
+    let plates_mm: f32 = end_plates
+        .iter()
+        .map(|p| f32::from(p.width_tenths_mm) / 10.0)
+        .sum();
 
     let stack_height = (above_rows + below_rows) * (tier_height + tier_gap);
-    let content_width = (margin_x * 2.0 + total_blocks_width).max(ui.available_width());
+    let content_width =
+        (margin_x * 2.0 + total_blocks_width + total_plates_width).max(ui.available_width());
     let content_height =
         (margin_top + stack_height + footer_height + 24.0).max(ui.available_height());
 
@@ -223,16 +234,31 @@ pub fn show_cad_canvas(
             } else {
                 Color32::from_rgb(30, 41, 59)
             };
-            painter.text(
-                canvas_rect.min + Vec2::new(14.0, 10.0),
-                Align2::LEFT_TOP,
+            let header_text = if end_plates.is_empty() {
                 format!(
                     "{}  |  {} {}  |  {:.1} mm",
                     strip.name,
                     strip.blocks.len(),
                     strings.blocks_unit,
                     strip.total_width_mm()
-                ),
+                )
+            } else {
+                format!(
+                    "{}  |  {} {}  |  {:.1} mm ({:.1} + {:.1} mm {}× {})",
+                    strip.name,
+                    strip.blocks.len(),
+                    strings.blocks_unit,
+                    strip.total_width_mm() + plates_mm,
+                    strip.total_width_mm(),
+                    plates_mm,
+                    end_plates.len(),
+                    strings.acc_end_plate
+                )
+            };
+            painter.text(
+                canvas_rect.min + Vec2::new(14.0, 10.0),
+                Align2::LEFT_TOP,
+                header_text,
                 FontId::proportional(15.0),
                 title_color,
             );
@@ -271,10 +297,11 @@ pub fn show_cad_canvas(
                 );
             }
 
-            // 2. Compute block & tier bounding boxes and render each terminal block
+            // 2. Compute block & tier bounding boxes and render each terminal block + end plates
             let mut block_rects: Vec<Rect> = Vec::with_capacity(strip.blocks.len());
             let mut block_x_spans: Vec<(f32, f32)> = Vec::with_capacity(strip.blocks.len());
             let mut tier_hit_rects: Vec<(usize, usize, Rect, Rect)> = Vec::new();
+            let mut plate_hit_rects: Vec<(Rect, &EndPlatePlacement)> = Vec::new();
             let mut cursor_x = canvas_rect.min.x + margin_x;
 
             for (idx, block) in strip.blocks.iter().enumerate() {
@@ -320,6 +347,52 @@ pub fn show_cad_canvas(
                 );
 
                 cursor_x += w + block_gap;
+
+                // Render end/partition plate immediately after block `idx` at its real width in mm
+                if let Some(plate) = end_plates.iter().find(|p| p.after_block_idx == idx) {
+                    let plate_px =
+                        ((f32::from(plate.width_tenths_mm) / 10.0) * px_per_mm).max(5.5 * z);
+                    let p_top = baseline_bottom_y
+                        - ((plate.max_visual_row + 1) as f32) * (tier_height + tier_gap)
+                        - 2.0 * z;
+                    let p_bottom = baseline_bottom_y
+                        - (plate.min_visual_row as f32) * (tier_height + tier_gap)
+                        - tier_gap
+                        + 2.0 * z;
+                    let plate_rect = Rect::from_min_max(
+                        Pos2::new(cursor_x, p_top),
+                        Pos2::new(cursor_x + plate_px, p_bottom),
+                    );
+                    let plate_fill = if plate.end_plate.contains("orange") {
+                        Color32::from_rgb(234, 88, 12)
+                    } else if dark {
+                        Color32::from_rgb(217, 119, 6)
+                    } else {
+                        Color32::from_rgb(245, 158, 11)
+                    };
+                    painter.rect_filled(plate_rect, CornerRadius::same(2), plate_fill);
+                    painter.rect_stroke(
+                        plate_rect,
+                        CornerRadius::same(2),
+                        Stroke::new(1.0, Color32::from_rgb(120, 53, 15)),
+                        StrokeKind::Inside,
+                    );
+                    if z >= 0.75 {
+                        painter.text(
+                            Pos2::new(plate_rect.center().x, lowest_bottom_y + 6.0 * z),
+                            Align2::CENTER_TOP,
+                            format!("{:.1}", f32::from(plate.width_tenths_mm) / 10.0),
+                            FontId::proportional((8.0 * z).max(6.5)),
+                            if dark {
+                                Color32::from_rgb(251, 191, 36)
+                            } else {
+                                Color32::from_rgb(180, 83, 9)
+                            },
+                        );
+                    }
+                    plate_hit_rects.push((plate_rect, plate));
+                    cursor_x += plate_px + block_gap;
+                }
             }
 
             // Draw terminal type annotations below the block numbers (#1, #2, ...)
@@ -614,44 +687,58 @@ pub fn show_cad_canvas(
                 );
             }
 
-            // 5. Hover tooltip with detailed block & tier info
+            // 5. Hover tooltip with detailed block, tier, or end-plate info
             if !state.is_marquee_active
                 && state.editing_tier.is_none()
                 && let Some(hover_pos) = response.hover_pos()
-                && let Some(hovered_idx) = block_rects.iter().position(|r| r.contains(hover_pos))
             {
-                let block = &strip.blocks[hovered_idx];
-                let mut lines = vec![format!(
-                    "#{} — {} ({})",
-                    hovered_idx + 1,
-                    block.spec_name,
-                    block.manufacturer
-                )];
-                lines.push(format!(
-                    "{:.1} mm | {} {}",
-                    f32::from(block.width_tenths_mm) / 10.0,
-                    block.tiers.len(),
-                    if block.tiers.len() == 1 {
-                        "Ebene"
-                    } else {
-                        "Ebenen"
-                    }
-                ));
-                for (t_idx, tier) in block.tiers.iter().enumerate().rev() {
-                    let lbl = if tier.computed_label.is_empty() {
-                        if tier.behavior.is_pe() {
-                            "PE (unbeschriftet / unlabeled)".to_string()
+                if let Some((_, plate)) = plate_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
+                {
+                    let tip = format!(
+                        "{}: {}\n{} (#{}) | {:.1} mm",
+                        strings.acc_end_plate,
+                        plate.end_plate,
+                        plate.manufacturer,
+                        plate.after_block_idx + 1,
+                        f32::from(plate.width_tenths_mm) / 10.0
+                    );
+                    response.on_hover_text_at_pointer(tip);
+                } else if let Some(hovered_idx) =
+                    block_rects.iter().position(|r| r.contains(hover_pos))
+                {
+                    let block = &strip.blocks[hovered_idx];
+                    let mut lines = vec![format!(
+                        "#{} — {} ({})",
+                        hovered_idx + 1,
+                        block.spec_name,
+                        block.manufacturer
+                    )];
+                    lines.push(format!(
+                        "{:.1} mm | {} {}",
+                        f32::from(block.width_tenths_mm) / 10.0,
+                        block.tiers.len(),
+                        if block.tiers.len() == 1 {
+                            "Ebene"
                         } else {
-                            "—".to_string()
+                            "Ebenen"
                         }
-                    } else if tier.custom_override.is_some() {
-                        format!("{} *", tier.computed_label)
-                    } else {
-                        tier.computed_label.clone()
-                    };
-                    lines.push(format!("  E{}: {}", t_idx + 1, lbl));
+                    ));
+                    for (t_idx, tier) in block.tiers.iter().enumerate().rev() {
+                        let lbl = if tier.computed_label.is_empty() {
+                            if tier.behavior.is_pe() {
+                                "PE (unbeschriftet / unlabeled)".to_string()
+                            } else {
+                                "—".to_string()
+                            }
+                        } else if tier.custom_override.is_some() {
+                            format!("{} *", tier.computed_label)
+                        } else {
+                            tier.computed_label.clone()
+                        };
+                        lines.push(format!("  E{}: {}", t_idx + 1, lbl));
+                    }
+                    response.on_hover_text_at_pointer(lines.join("\n"));
                 }
-                response.on_hover_text_at_pointer(lines.join("\n"));
             }
         });
 }

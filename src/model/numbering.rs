@@ -241,6 +241,70 @@ impl TerminalStrip {
         }
         self.recalculate_labels();
     }
+
+    /// Moves all selected blocks by `delta` (`-1` = one position left, `+1` = one position right),
+    /// preserving block IDs (so assigned jumper potentials stay attached) and returns the new selection.
+    pub fn move_selected_blocks(
+        &mut self,
+        selected: &std::collections::BTreeSet<usize>,
+        delta: isize,
+    ) -> std::collections::BTreeSet<usize> {
+        let len = self.blocks.len();
+        if selected.is_empty() || len <= 1 || delta == 0 {
+            return selected.clone();
+        }
+        let mut sel: Vec<usize> = selected.iter().copied().filter(|&i| i < len).collect();
+        sel.sort_unstable();
+        if sel.is_empty() {
+            return selected.clone();
+        }
+
+        let mut next_set: std::collections::BTreeSet<usize> = sel.iter().copied().collect();
+        if delta < 0 {
+            for idx in sel {
+                if idx > 0 && !next_set.contains(&(idx - 1)) {
+                    self.blocks.swap(idx, idx - 1);
+                    next_set.remove(&idx);
+                    next_set.insert(idx - 1);
+                }
+            }
+        } else {
+            for idx in sel.into_iter().rev() {
+                if idx + 1 < len && !next_set.contains(&(idx + 1)) {
+                    self.blocks.swap(idx, idx + 1);
+                    next_set.remove(&idx);
+                    next_set.insert(idx + 1);
+                }
+            }
+        }
+        self.recalculate_labels();
+        next_set
+    }
+
+    /// Duplicates all selected blocks immediately after the last selected block, allocating
+    /// fresh block IDs and recalculating labels. Returns the indices of the newly created blocks.
+    pub fn duplicate_selected_blocks(
+        &mut self,
+        selected: &std::collections::BTreeSet<usize>,
+    ) -> std::collections::BTreeSet<usize> {
+        let len = self.blocks.len();
+        let mut sel: Vec<usize> = selected.iter().copied().filter(|&i| i < len).collect();
+        sel.sort_unstable();
+        if sel.is_empty() {
+            return std::collections::BTreeSet::new();
+        }
+        let insert_at = (sel.last().copied().unwrap_or(0) + 1).min(len);
+        let mut clones = Vec::with_capacity(sel.len());
+        for &idx in &sel {
+            let mut blk = self.blocks[idx].clone();
+            blk.id = self.allocate_block_id();
+            clones.push(blk);
+        }
+        let count = clones.len();
+        self.blocks.splice(insert_at..insert_at, clones);
+        self.recalculate_labels();
+        (insert_at..insert_at + count).collect()
+    }
 }
 
 #[cfg(test)]
@@ -393,5 +457,47 @@ mod tests {
         assert_eq!(strip.blocks[0].tiers[0].computed_label, "10PE");
         assert_eq!(strip.blocks[0].tiers[1].computed_label, "+11~");
         assert_eq!(strip.blocks[0].tiers[2].computed_label, "12N");
+    }
+
+    #[test]
+    fn end_plates_and_block_move_duplicate_work() {
+        use std::collections::BTreeSet;
+        use crate::catalog::accessories::calculate_end_plates;
+
+        let catalog = TerminalCatalog::load_embedded();
+        let wago_3l = catalog.find_by_id("wago-2003-7641").unwrap();
+        let wago_1l_gray = catalog.find_by_id("wago-2002-1201").unwrap();
+        let wago_1l_blue = catalog.find_by_id("wago-2002-1204").unwrap();
+        let phx_pt25 = catalog.find_by_id("phoenix-pt-25").unwrap();
+
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 10, 4, wago_1l_gray);
+        strip.reassign_blocks(&[0], wago_3l);
+        strip.reassign_blocks(&[2], wago_1l_blue);
+        strip.reassign_blocks(&[3], phx_pt25);
+
+        // Block 0 (2003-7641) transitions to Block 1 (2002-1201) -> needs 0.8 mm plate after #0
+        // Block 1 (2002-1201) & Block 2 (2002-1204) share contour 2002-1291 -> no plate after #1, plate after #2 (0.8 mm)
+        // Block 3 (phoenix-pt-25) at end of strip -> needs 2.2 mm plate after #3
+        let plates = calculate_end_plates(&strip, &catalog);
+        assert_eq!(plates.len(), 3);
+        assert_eq!(plates[0].after_block_idx, 0);
+        assert_eq!(plates[0].width_tenths_mm, 8);
+        assert_eq!(plates[1].after_block_idx, 2);
+        assert_eq!(plates[1].width_tenths_mm, 8);
+        assert_eq!(plates[2].after_block_idx, 3);
+        assert_eq!(plates[2].width_tenths_mm, 22);
+
+        // Move block 3 left to index 2 and duplicate it
+        let mut sel = BTreeSet::new();
+        sel.insert(3);
+        let sel = strip.move_selected_blocks(&sel, -1);
+        assert_eq!(sel, BTreeSet::from([2]));
+        assert_eq!(strip.blocks[2].spec_id, "phoenix-pt-25");
+
+        let dup_sel = strip.duplicate_selected_blocks(&sel);
+        assert_eq!(dup_sel, BTreeSet::from([3]));
+        assert_eq!(strip.blocks.len(), 5);
+        assert_eq!(strip.blocks[3].spec_id, "phoenix-pt-25");
+        assert_ne!(strip.blocks[2].id, strip.blocks[3].id);
     }
 }

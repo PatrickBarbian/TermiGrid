@@ -599,3 +599,139 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
         },
     }
 }
+
+/// Real physical thickness of the end/partition plate for `spec` in tenths of a millimeter (`0.1 mm`),
+/// or `0` if the terminal block has a closed housing requiring no separate end plate.
+pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
+    let id = spec.id.as_str();
+    match spec.manufacturer.as_str() {
+        "WAGO" => {
+            if id.starts_with("wago-285") {
+                0
+            } else if id.starts_with("wago-2000") || id.starts_with("wago-2200") {
+                7 // 0.7 mm (2000-1291 / 2000-2291)
+            } else if id.starts_with("wago-2006")
+                || id.starts_with("wago-2106")
+                || id.starts_with("wago-2206")
+                || id.starts_with("wago-2007")
+                || id.starts_with("wago-2010")
+                || id.starts_with("wago-2110")
+                || id.starts_with("wago-2210")
+                || id.starts_with("wago-2016")
+                || id.starts_with("wago-2116")
+                || id.starts_with("wago-2216")
+                || id.starts_with("wago-202")
+            {
+                10 // 1.0 mm (2006-1291 / 2010-1291 / 2016-1291)
+            } else if id.starts_with("wago-28") {
+                25 // 2.5 mm (280-308 / 281-317)
+            } else {
+                8 // 0.8 mm (TOPJOB S 2001..2005 / 2102..2104 / 2201..2204)
+            }
+        }
+        "Phoenix Contact" => {
+            if id.contains("pt-35")
+                || id.contains("ptpower")
+                || id.contains("ut-16")
+                || id.contains("ut-35")
+                || id.contains("uslkg")
+                || id.contains("hesi")
+            {
+                0
+            } else if id.contains("uk-") {
+                15 // 1.5 mm (D-UK 4/10)
+            } else {
+                22 // 2.2 mm (CLIPLINE complete D-PT / D-PTTB / D-PTI / D-ST / D-UT)
+            }
+        }
+        "Weidmüller" => {
+            if id.contains("a2c-35")
+                || id.contains("wdu-35")
+                || id.contains("wsi")
+                || id.contains("afs")
+            {
+                0
+            } else if id.contains("wdu")
+                || id.contains("wpe")
+                || id.contains("wdk")
+                || id.contains("dli")
+                || id.contains("wtr")
+                || id.contains("a2c-15")
+                || id.contains("a3c-15")
+                || id.contains("a4c-15")
+            {
+                15 // 1.5 mm (WAP 2.5-10 / WAP WDK2.5 / AEP 2C 1.5)
+            } else {
+                20 // 2.0 mm (AEP 2C 2.5..16 / AEP 2T/3T / AEP ITB / ZAP/TW)
+            }
+        }
+        _ => 15,
+    }
+}
+
+/// Automatically detected end/partition plate placement after block `after_block_idx`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EndPlatePlacement {
+    /// 0-based index of the block immediately to the left of this end plate.
+    pub after_block_idx: usize,
+    /// Manufacturer of the terminal block requiring this plate.
+    pub manufacturer: String,
+    /// End plate part designation (e.g., "2003-7692 (orange) / 2003-7691 (grau)").
+    pub end_plate: String,
+    /// Real physical width of the end plate in tenths of a millimeter (e.g., 8 = 0.8 mm, 22 = 2.2 mm).
+    pub width_tenths_mm: u16,
+    /// Minimum visual row covered by this plate (`-1` if PE, `0` if E1).
+    pub min_visual_row: isize,
+    /// Maximum visual row covered by this plate (`0` = E1, `1` = E2, `2` = E3).
+    pub max_visual_row: isize,
+}
+
+/// Computes all required end/partition plates (`Abschlussdeckel`) along `strip`
+/// at contour transitions (where adjacent blocks do not share the same end-plate profile)
+/// and at the right-most end of the strip.
+pub fn calculate_end_plates(
+    strip: &crate::model::TerminalStrip,
+    catalog: &crate::catalog::TerminalCatalog,
+) -> Vec<EndPlatePlacement> {
+    let mut plates = Vec::new();
+    for (idx, block) in strip.blocks.iter().enumerate() {
+        let Some(spec) = catalog.find_by_id(&block.spec_id) else {
+            continue;
+        };
+        let plate_w = end_plate_width_tenths_mm(spec);
+        if plate_w == 0 {
+            continue;
+        }
+        let acc = catalog.accessories_for(spec);
+        let need_plate = match strip.blocks.get(idx + 1) {
+            None => true,
+            Some(next_block) => {
+                if let Some(next_spec) = catalog.find_by_id(&next_block.spec_id) {
+                    let next_acc = catalog.accessories_for(next_spec);
+                    next_acc.end_plate != acc.end_plate || next_block.manufacturer != block.manufacturer
+                } else {
+                    true
+                }
+            }
+        };
+        if need_plate {
+            let min_row = (0..block.tiers.len())
+                .map(|l| block.tier_visual_row(l))
+                .min()
+                .unwrap_or(0);
+            let max_row = (0..block.tiers.len())
+                .map(|l| block.tier_visual_row(l))
+                .max()
+                .unwrap_or(0);
+            plates.push(EndPlatePlacement {
+                after_block_idx: idx,
+                manufacturer: block.manufacturer.clone(),
+                end_plate: acc.end_plate,
+                width_tenths_mm: plate_w,
+                min_visual_row: min_row,
+                max_visual_row: max_row,
+            });
+        }
+    }
+    plates
+}

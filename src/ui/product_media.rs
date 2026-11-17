@@ -109,10 +109,15 @@ impl ProductMediaCache {
         let ctx_clone = ctx.clone();
 
         std::thread::spawn(move || {
-            let image_opt = direct_image_url
-                .as_deref()
-                .and_then(fetch_direct_color_image)
-                .or_else(|| fetch_product_color_image(&page_url));
+            let image_opt = load_cached_color_image(&spec_id).or_else(|| {
+                let bytes = direct_image_url
+                    .as_deref()
+                    .and_then(|u| http_get_bytes(u).ok())
+                    .or_else(|| fetch_product_image_bytes(&page_url))?;
+                let img = decode_color_image(&bytes)?;
+                save_cached_image_bytes(&spec_id, &bytes);
+                Some(img)
+            });
             if let Ok(mut q) = queue.lock() {
                 q.completed.insert(spec_id.clone(), image_opt);
             }
@@ -126,18 +131,70 @@ impl ProductMediaCache {
     }
 }
 
-fn fetch_direct_color_image(img_url: &str) -> Option<ColorImage> {
-    let bytes = http_get_bytes(img_url).ok()?;
-    let dyn_img = image::load_from_memory(&bytes).ok()?;
+fn photo_cache_dir() -> std::path::PathBuf {
+    #[cfg(target_os = "windows")]
+    if let Ok(local) = std::env::var("LOCALAPPDATA") {
+        return std::path::PathBuf::from(local)
+            .join("TermiGrid")
+            .join("photo_cache");
+    }
+    #[cfg(target_os = "macos")]
+    if let Ok(home) = std::env::var("HOME") {
+        return std::path::PathBuf::from(home)
+            .join("Library")
+            .join("Caches")
+            .join("TermiGrid")
+            .join("photo_cache");
+    }
+    #[cfg(target_os = "android")]
+    {
+        let pkg_cache = std::path::PathBuf::from("/data/user/0/de.patrickbarbian.termigrid/cache/photo_cache");
+        if pkg_cache.exists() || std::fs::create_dir_all(&pkg_cache).is_ok() {
+            return pkg_cache;
+        }
+    }
+    std::env::temp_dir().join("termigrid_photo_cache")
+}
+
+fn cache_file_path(spec_id: &str) -> std::path::PathBuf {
+    let clean: String = spec_id
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    photo_cache_dir().join(format!("{clean}.img"))
+}
+
+fn load_cached_color_image(spec_id: &str) -> Option<ColorImage> {
+    let path = cache_file_path(spec_id);
+    let bytes = std::fs::read(path).ok()?;
+    decode_color_image(&bytes)
+}
+
+fn save_cached_image_bytes(spec_id: &str, bytes: &[u8]) {
+    let path = cache_file_path(spec_id);
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::write(path, bytes);
+}
+
+fn decode_color_image(bytes: &[u8]) -> Option<ColorImage> {
+    let dyn_img = image::load_from_memory(bytes).ok()?;
     let rgba = dyn_img.to_rgba8();
     let size = [rgba.width() as usize, rgba.height() as usize];
     Some(ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()))
 }
 
-fn fetch_product_color_image(page_url: &str) -> Option<ColorImage> {
+fn fetch_product_image_bytes(page_url: &str) -> Option<Vec<u8>> {
     let html = http_get_text(page_url).ok()?;
     let img_url = extract_product_image_url(&html, page_url)?;
-    fetch_direct_color_image(&img_url)
+    http_get_bytes(&img_url).ok()
 }
 
 fn extract_product_image_url(html: &str, base_url: &str) -> Option<String> {

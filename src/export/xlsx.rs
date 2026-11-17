@@ -1,8 +1,12 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use rust_xlsxwriter::{Format, Workbook, XlsxError};
 
+use crate::catalog::accessories::calculate_end_plates;
+use crate::catalog::TerminalCatalog;
 use crate::export::{build_print_rows, build_tier_columns, ExportOptions};
+use crate::model::bridging::calculate_bridges;
 use crate::model::{Project, TerminalStrip};
 
 /// Exports the labeling sequence, contiguous per-tier columns, and a tier-matrix overview
@@ -163,7 +167,7 @@ pub fn export_to_xlsx(
     }
 
     let mut row_idx = 1u32;
-    for strip in strips {
+    for &strip in &strips {
         for (b_idx, block) in strip.blocks.iter().enumerate() {
             ws3.write_string_with_format(row_idx, 0, &strip.name, &cell_text_fmt)?;
             ws3.write_string_with_format(row_idx, 1, (b_idx + 1).to_string(), &cell_text_fmt)?;
@@ -221,6 +225,289 @@ pub fn export_to_xlsx(
     for c in 4..headers3.len() {
         ws3.set_column_width(c as u16, 14)?;
     }
+
+    // Sheet 4: Workshop Assembly Plan & Bill of Materials (Stückliste & Montage)
+    let sheet4_name = if german_headers {
+        "Stückliste & Montage"
+    } else {
+        "BOM & Assembly"
+    };
+    let ws4 = workbook.add_worksheet();
+    ws4.set_name(sheet4_name)?;
+
+    let mut catalog = TerminalCatalog::load_embedded();
+    catalog.reload_with_custom(&project.custom_specs);
+
+    let bom_headers = if german_headers {
+        [
+            "Kategorie",
+            "Klemmleiste",
+            "Hersteller",
+            "Bezeichnung / Typ",
+            "Art.-Nr.",
+            "Breite (mm)",
+            "Menge",
+            "Einbauort / Montagehinweis",
+        ]
+    } else {
+        [
+            "Category",
+            "Strip",
+            "Manufacturer",
+            "Designation / Type",
+            "Article No.",
+            "Width (mm)",
+            "Qty",
+            "Placement / Assembly Note",
+        ]
+    };
+    for (c, h) in bom_headers.iter().enumerate() {
+        ws4.write_string_with_format(0, c as u16, *h, &header_text_fmt)?;
+    }
+
+    let mut r4 = 1u32;
+    for &strip in &strips {
+        let plates = calculate_end_plates(strip, &catalog);
+        let bridges = calculate_bridges(strip, &catalog);
+        let blocks_mm = strip.total_width_mm();
+        let plates_mm: f32 = plates
+            .iter()
+            .map(|p| f32::from(p.width_tenths_mm) / 10.0)
+            .sum();
+
+        // 1. Strip dimension summary row
+        ws4.write_string_with_format(
+            r4,
+            0,
+            if german_headers {
+                "Klemmleiste (Maße)"
+            } else {
+                "Strip (Dimensions)"
+            },
+            &header_text_fmt,
+        )?;
+        ws4.write_string_with_format(r4, 1, &strip.name, &cell_text_fmt)?;
+        ws4.write_string_with_format(r4, 2, "TS35", &cell_text_fmt)?;
+        ws4.write_string_with_format(r4, 3, &strip.description, &cell_text_fmt)?;
+        ws4.write_string_with_format(r4, 4, "-", &cell_text_fmt)?;
+        ws4.write_string_with_format(
+            r4,
+            5,
+            format!("{:.1}", blocks_mm + plates_mm),
+            &cell_text_fmt,
+        )?;
+        ws4.write_string_with_format(r4, 6, strip.blocks.len().to_string(), &cell_text_fmt)?;
+        ws4.write_string_with_format(
+            r4,
+            7,
+            format!(
+                "Klemmen: {:.1} mm + {}× Deckel: {:.1} mm = {:.1} mm",
+                blocks_mm,
+                plates.len(),
+                plates_mm,
+                blocks_mm + plates_mm
+            ),
+            &cell_text_fmt,
+        )?;
+        r4 += 1;
+
+        // 2. Aggregated terminal blocks per strip
+        let mut block_counts: BTreeMap<String, (String, String, String, u16, usize)> =
+            BTreeMap::new();
+        for blk in &strip.blocks {
+            let art = catalog
+                .find_by_id(&blk.spec_id)
+                .and_then(|s| s.effective_article_number())
+                .unwrap_or("-")
+                .to_string();
+            let entry = block_counts.entry(blk.spec_id.clone()).or_insert_with(|| {
+                (
+                    blk.manufacturer.clone(),
+                    blk.spec_name.clone(),
+                    art,
+                    blk.width_tenths_mm,
+                    0,
+                )
+            });
+            entry.4 += 1;
+        }
+        for (_, (mfg, name, art, w10, qty)) in block_counts {
+            ws4.write_string_with_format(
+                r4,
+                0,
+                if german_headers {
+                    "Reihenklemme"
+                } else {
+                    "Terminal Block"
+                },
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 1, &strip.name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 2, &mfg, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 3, &name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 4, &art, &cell_text_fmt)?;
+            ws4.write_string_with_format(
+                r4,
+                5,
+                format!("{:.1}", f32::from(w10) / 10.0),
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 6, qty.to_string(), &cell_text_fmt)?;
+            ws4.write_string_with_format(
+                r4,
+                7,
+                format!(
+                    "Gesamt: {:.1} mm",
+                    (f32::from(w10) / 10.0) * (qty as f32)
+                ),
+                &cell_text_fmt,
+            )?;
+            r4 += 1;
+        }
+
+        // 3. Automatically calculated end plates with real width and positions
+        let mut plate_groups: BTreeMap<String, (String, u16, Vec<usize>)> = BTreeMap::new();
+        for p in &plates {
+            let entry = plate_groups
+                .entry(p.end_plate.clone())
+                .or_insert_with(|| (p.manufacturer.clone(), p.width_tenths_mm, Vec::new()));
+            entry.2.push(p.after_block_idx + 1);
+        }
+        for (plate_name, (mfg, w10, positions)) in plate_groups {
+            let pos_str = positions
+                .iter()
+                .map(|i| format!("nach #{i}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            ws4.write_string_with_format(
+                r4,
+                0,
+                if german_headers {
+                    "Abschlussdeckel"
+                } else {
+                    "End Plate"
+                },
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 1, &strip.name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 2, &mfg, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 3, &plate_name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 4, "-", &cell_text_fmt)?;
+            ws4.write_string_with_format(
+                r4,
+                5,
+                format!("{:.1}", f32::from(w10) / 10.0),
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 6, positions.len().to_string(), &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 7, &pos_str, &cell_text_fmt)?;
+            r4 += 1;
+        }
+
+        // 4. Comb jumpers & cut-out pin instructions
+        for seg in &bridges.comb_segments {
+            let pot_name = seg.potential_name.as_str();
+            let seg_mfg = strip
+                .blocks
+                .get(seg.start_block_idx)
+                .map(|b| b.manufacturer.as_str())
+                .unwrap_or("-");
+            let row_lbl = if seg.visual_row == -1 {
+                "PE".to_string()
+            } else {
+                format!("E{}", seg.visual_row + 1)
+            };
+            let cut_note = if seg.cut_pins.is_empty() {
+                format!(
+                    "Potential {pot_name}: #{}..#{} ({row_lbl})",
+                    seg.start_block_idx + 1,
+                    seg.end_block_idx + 1
+                )
+            } else {
+                let cuts = seg
+                    .cut_pins
+                    .iter()
+                    .map(|i| format!("#{}", i + 1))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!(
+                    "Potential {pot_name}: #{}..#{} ({row_lbl}) — PIN ENTFERNEN BEI: {cuts}",
+                    seg.start_block_idx + 1,
+                    seg.end_block_idx + 1
+                )
+            };
+            ws4.write_string_with_format(
+                r4,
+                0,
+                if german_headers {
+                    "Kammbrücke"
+                } else {
+                    "Comb Jumper"
+                },
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 1, &strip.name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 2, seg_mfg, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 3, &seg.part_hint, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 4, "-", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 5, "-", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 6, "1", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 7, &cut_note, &cell_text_fmt)?;
+            r4 += 1;
+        }
+
+        // 5. Wire bridges
+        for wb in &bridges.wire_bridges {
+            let reason_txt = match wb.reason {
+                crate::model::bridging::WireBridgeReason::CrossTier => "Etagenwechsel",
+                crate::model::bridging::WireBridgeReason::ExceedsMaxPolesSingleSlot => {
+                    "1-Kammer max. Polzahl überschritten"
+                }
+                crate::model::bridging::WireBridgeReason::SingleChannelOccupied => {
+                    "Brückungskanal belegt"
+                }
+                crate::model::bridging::WireBridgeReason::IncompatiblePitchOrGap => {
+                    "Raster-/Typ-Sprung"
+                }
+            };
+            let note = format!(
+                "Potential {}: #{} (E{}) -> #{} (E{}) ({})",
+                wb.potential_name,
+                wb.from.0 + 1,
+                wb.from.1 + 1,
+                wb.to.0 + 1,
+                wb.to.1 + 1,
+                reason_txt
+            );
+            ws4.write_string_with_format(
+                r4,
+                0,
+                if german_headers {
+                    "Drahtbrücke"
+                } else {
+                    "Wire Bridge"
+                },
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 1, &strip.name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 2, "-", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 3, "Drahtbrücke / Schaltlitze", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 4, "-", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 5, "-", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 6, "1", &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 7, &note, &cell_text_fmt)?;
+            r4 += 1;
+        }
+    }
+
+    ws4.set_column_width(0, 20)?;
+    ws4.set_column_width(1, 14)?;
+    ws4.set_column_width(2, 18)?;
+    ws4.set_column_width(3, 34)?;
+    ws4.set_column_width(4, 16)?;
+    ws4.set_column_width(5, 14)?;
+    ws4.set_column_width(6, 10)?;
+    ws4.set_column_width(7, 52)?;
 
     workbook.save(path)?;
     Ok(rows.len())
