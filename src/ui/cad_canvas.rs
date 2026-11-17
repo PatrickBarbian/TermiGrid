@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::f32::consts::FRAC_PI_2;
 
 use egui::{
@@ -6,6 +6,7 @@ use egui::{
 };
 
 use crate::i18n::Strings;
+use crate::model::bridging::BridgePlan;
 use crate::model::{TerminalBlock, TerminalStrip, TierColor};
 
 /// Controls how terminal block type names are displayed underneath the CAD strip.
@@ -20,11 +21,33 @@ pub enum TypeDisplayMode {
     Off,
 }
 
+/// Active pointer/touch interaction tool inside the CAD editor canvas.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CanvasInteractionMode {
+    /// Tap/Click selects blocks; Drag anywhere pans/scrolls (default on touch/Android).
+    Pan,
+    /// Left-drag draws marquee selection box; Middle/Right-drag pans (default on desktop).
+    SelectBox,
+    /// Tap/Click any tier connection point to assign/toggle it in the active jumper potential; Drag pans.
+    BridgeAssign,
+}
+
+impl Default for CanvasInteractionMode {
+    fn default() -> Self {
+        if cfg!(target_os = "android") {
+            Self::Pan
+        } else {
+            Self::SelectBox
+        }
+    }
+}
+
 /// Persistent interaction state for the 2D CAD terminal strip canvas.
 #[derive(Debug, Default)]
 pub struct CadCanvasState {
     pub zoom: f32,
     pub type_display: TypeDisplayMode,
+    pub interaction_mode: CanvasInteractionMode,
     pub drag_start: Option<Pos2>,
     pub drag_current: Option<Pos2>,
     pub is_marquee_active: bool,
@@ -41,19 +64,23 @@ impl CadCanvasState {
         Self {
             zoom: 1.0,
             type_display: TypeDisplayMode::VerticalPerBlock,
+            interaction_mode: CanvasInteractionMode::default(),
             ..Default::default()
         }
     }
 }
 
-/// Renders the interactive 2D CAD view of `strip`, updating `selected` indices and handling
-/// inline double-click label editing.
+/// Renders the interactive 2D CAD view of `strip`, updating `selected` indices, handling
+/// inline double-click label editing, panning, and optional jumper bridge overlay/assignment.
+#[allow(clippy::too_many_arguments)]
 pub fn show_cad_canvas(
     ui: &mut Ui,
     strip: &mut TerminalStrip,
     selected: &mut BTreeSet<usize>,
     state: &mut CadCanvasState,
     strings: &Strings,
+    bridge_plan: Option<&BridgePlan>,
+    active_potential_id: Option<u64>,
 ) {
     let dark = ui.visuals().dark_mode;
 
@@ -85,7 +112,7 @@ pub fn show_cad_canvas(
     let tier_gap = 5.0 * z;
     let block_gap = 3.0 * z;
     let margin_x = 46.0 * z;
-    let margin_top = 34.0 * z;
+    let margin_top = 42.0 * z;
     let footer_height = match state.type_display {
         TypeDisplayMode::Off => 36.0 * z,
         TypeDisplayMode::HorizontalGroups => 74.0 * z,
@@ -269,6 +296,11 @@ pub fn show_cad_canvas(
                 }
             }
 
+            // 2b. Render jumper bridge overlay (comb jumpers, cut-out pins, dual-chamber tracks, wire bridges)
+            if let Some(plan) = bridge_plan {
+                draw_bridge_overlay(&painter, strip, plan, &tier_hit_rects, z, dark);
+            }
+
             // 3. Inline text editor if user double-clicked a tier label
             let mut commit_edit: Option<(usize, usize, String)> = None;
             let mut cancel_edit = false;
@@ -320,8 +352,25 @@ pub fn show_cad_canvas(
                 state.editing_tier = None;
             }
 
-            // 4. Handle Pointer Interactions (Double-Click, Click, Ctrl/Shift, Drag Marquee)
-            if response.double_clicked_by(egui::PointerButton::Primary)
+            // 4. Handle Pointer Interactions (Double-Click, Pan/Scroll, Bridge Assign, Click, Marquee)
+            let space_pan = ui.input(|i| i.key_down(egui::Key::Space));
+            if response.dragged_by(egui::PointerButton::Middle)
+                || response.dragged_by(egui::PointerButton::Secondary)
+                || (response.dragged_by(egui::PointerButton::Primary)
+                    && (space_pan
+                        || matches!(
+                            state.interaction_mode,
+                            CanvasInteractionMode::Pan | CanvasInteractionMode::BridgeAssign
+                        )))
+            {
+                let delta = response.drag_delta();
+                if delta.length_sq() > 0.0 {
+                    ui.scroll_with_delta(delta);
+                }
+            }
+
+            if state.interaction_mode != CanvasInteractionMode::BridgeAssign
+                && response.double_clicked_by(egui::PointerButton::Primary)
                 && let Some(pos) = response.interact_pointer_pos()
                 && let Some((b_idx, t_idx, _, _)) = tier_hit_rects
                     .iter()
@@ -342,7 +391,11 @@ pub fn show_cad_canvas(
             }
 
             if state.editing_tier.is_none() {
-                if response.drag_started_by(egui::PointerButton::Primary)
+                let use_marquee =
+                    state.interaction_mode == CanvasInteractionMode::SelectBox && !space_pan;
+
+                if use_marquee
+                    && response.drag_started_by(egui::PointerButton::Primary)
                     && let Some(pos) = response.interact_pointer_pos()
                 {
                     state.drag_start = Some(pos);
@@ -355,7 +408,8 @@ pub fn show_cad_canvas(
                     };
                 }
 
-                if response.dragged_by(egui::PointerButton::Primary)
+                if use_marquee
+                    && response.dragged_by(egui::PointerButton::Primary)
                     && state.is_marquee_active
                     && let Some(pos) = response.interact_pointer_pos()
                 {
@@ -382,37 +436,48 @@ pub fn show_cad_canvas(
                 if response.clicked_by(egui::PointerButton::Primary)
                     && let Some(pos) = response.interact_pointer_pos()
                 {
-                    let hit = block_rects.iter().position(|r| r.contains(pos));
-                    match hit {
-                        Some(idx) => {
-                            if shift_held {
-                                let anchor = state.selection_anchor.unwrap_or(idx);
-                                let (lo, hi) = if anchor <= idx {
-                                    (anchor, idx)
-                                } else {
-                                    (idx, anchor)
-                                };
-                                if !ctrl_held {
-                                    selected.clear();
-                                }
-                                for i in lo..=hi {
-                                    selected.insert(i);
-                                }
-                            } else if ctrl_held {
-                                if !selected.remove(&idx) {
-                                    selected.insert(idx);
-                                }
-                                state.selection_anchor = Some(idx);
-                            } else {
-                                selected.clear();
-                                selected.insert(idx);
-                                state.selection_anchor = Some(idx);
-                            }
+                    if state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+                        if let Some((b_idx, t_idx, _, _)) = tier_hit_rects
+                            .iter()
+                            .find(|(_, _, tier_rect, _)| tier_rect.contains(pos))
+                            .copied()
+                            && let Some(pot_id) = active_potential_id
+                        {
+                            strip.toggle_potential_member(pot_id, b_idx, t_idx);
                         }
-                        None => {
-                            if !ctrl_held && !shift_held {
-                                selected.clear();
-                                state.selection_anchor = None;
+                    } else {
+                        let hit = block_rects.iter().position(|r| r.contains(pos));
+                        match hit {
+                            Some(idx) => {
+                                if shift_held {
+                                    let anchor = state.selection_anchor.unwrap_or(idx);
+                                    let (lo, hi) = if anchor <= idx {
+                                        (anchor, idx)
+                                    } else {
+                                        (idx, anchor)
+                                    };
+                                    if !ctrl_held {
+                                        selected.clear();
+                                    }
+                                    for i in lo..=hi {
+                                        selected.insert(i);
+                                    }
+                                } else if ctrl_held {
+                                    if !selected.remove(&idx) {
+                                        selected.insert(idx);
+                                    }
+                                    state.selection_anchor = Some(idx);
+                                } else {
+                                    selected.clear();
+                                    selected.insert(idx);
+                                    state.selection_anchor = Some(idx);
+                                }
+                            }
+                            None => {
+                                if !ctrl_held && !shift_held {
+                                    selected.clear();
+                                    state.selection_anchor = None;
+                                }
                             }
                         }
                     }
@@ -861,5 +926,139 @@ fn tier_palette(color: TierColor, dark: bool) -> (Color32, Color32, Color32) {
             Color32::from_rgb(124, 45, 18),
             Color32::from_rgb(255, 247, 237),
         ),
+    }
+}
+
+fn draw_bridge_overlay(
+    painter: &egui::Painter,
+    strip: &TerminalStrip,
+    plan: &BridgePlan,
+    tier_hit_rects: &[(usize, usize, Rect, Rect)],
+    zoom: f32,
+    dark: bool,
+) {
+    let mut tier_rects: BTreeMap<(usize, usize), Rect> = BTreeMap::new();
+    let mut row_block_rects: BTreeMap<(usize, isize), Rect> = BTreeMap::new();
+
+    for &(b_idx, l_idx, rect, _) in tier_hit_rects {
+        tier_rects.insert((b_idx, l_idx), rect);
+        if let Some(block) = strip.blocks.get(b_idx) {
+            row_block_rects.insert((b_idx, block.tier_visual_row(l_idx)), rect);
+        }
+    }
+
+    // 1. Assigned potential indicator pills on each member tier
+    for (&(b_idx, l_idx), &(_, ref pot_name, rgb)) in &plan.point_assignments {
+        if let Some(t_rect) = tier_rects.get(&(b_idx, l_idx)) {
+            let pot_color = Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
+            let dot_center = Pos2::new(t_rect.min.x + 6.0 * zoom, t_rect.max.y - 6.0 * zoom);
+            painter.circle_filled(dot_center, 3.8 * zoom, pot_color);
+            painter.circle_stroke(dot_center, 3.8 * zoom, Stroke::new(1.0, Color32::WHITE));
+            if zoom >= 0.85 {
+                painter.text(
+                    Pos2::new(dot_center.x + 5.5 * zoom, dot_center.y),
+                    Align2::LEFT_CENTER,
+                    pot_name,
+                    FontId::proportional((8.5 * zoom).max(7.0)),
+                    if dark { Color32::WHITE } else { Color32::BLACK },
+                );
+            }
+        }
+    }
+
+    // 2. Comb jumper segments (`Kammbrücken`), slot-1 vs slot-2 offset, and cut-out pins (`X`)
+    for seg in &plan.comb_segments {
+        let Some(start_r) = row_block_rects.get(&(seg.start_block_idx, seg.visual_row)) else {
+            continue;
+        };
+        let Some(end_r) = row_block_rects.get(&(seg.end_block_idx, seg.visual_row)) else {
+            continue;
+        };
+
+        let pot_color = Color32::from_rgb(seg.color_rgb[0], seg.color_rgb[1], seg.color_rgb[2]);
+        let y_off = if seg.channel_slot == 0 {
+            6.5 * zoom
+        } else {
+            13.0 * zoom
+        };
+        let bar_y = start_r.min.y + y_off;
+        let x0 = start_r.center().x;
+        let x1 = end_r.center().x;
+
+        // Main comb bar spine
+        painter.line_segment(
+            [Pos2::new(x0, bar_y), Pos2::new(x1, bar_y)],
+            Stroke::new((3.4 * zoom).max(2.2), pot_color),
+        );
+
+        // Pin drops for actively connected blocks
+        for &pin_b in &seg.pin_blocks {
+            if let Some(pr) = row_block_rects.get(&(pin_b, seg.visual_row)) {
+                let cx = pr.center().x;
+                painter.line_segment(
+                    [Pos2::new(cx, bar_y), Pos2::new(cx, bar_y + 5.0 * zoom)],
+                    Stroke::new((2.4 * zoom).max(1.6), pot_color),
+                );
+                painter.circle_filled(Pos2::new(cx, bar_y), 3.0 * zoom, pot_color);
+            }
+        }
+
+        // Visually highlight removed / cut-out pins (`Pin entfernen`)
+        for &cut_b in &seg.cut_pins {
+            if let Some(cr) = row_block_rects.get(&(cut_b, seg.visual_row)) {
+                let cx = cr.center().x;
+                let r = 5.5 * zoom;
+                painter.circle_filled(
+                    Pos2::new(cx, bar_y),
+                    r,
+                    Color32::from_rgb(239, 68, 68),
+                );
+                painter.line_segment(
+                    [Pos2::new(cx - r * 0.55, bar_y - r * 0.55), Pos2::new(cx + r * 0.55, bar_y + r * 0.55)],
+                    Stroke::new(1.8, Color32::WHITE),
+                );
+                painter.line_segment(
+                    [Pos2::new(cx - r * 0.55, bar_y + r * 0.55), Pos2::new(cx + r * 0.55, bar_y - r * 0.55)],
+                    Stroke::new(1.8, Color32::WHITE),
+                );
+            }
+        }
+    }
+
+    // 3. Wire bridges (`Drahtbrücken`) for cross-tier, single-chamber overflow, or pitch jumps
+    for (wb_idx, wb) in plan.wire_bridges.iter().enumerate() {
+        let Some(r_from) = tier_rects.get(&wb.from) else {
+            continue;
+        };
+        let Some(r_to) = tier_rects.get(&wb.to) else {
+            continue;
+        };
+
+        let pot_color = Color32::from_rgb(wb.color_rgb[0], wb.color_rgb[1], wb.color_rgb[2]);
+        let p0 = Pos2::new(r_from.center().x + 5.0 * zoom, r_from.center().y - 8.0 * zoom);
+        let p1 = Pos2::new(r_to.center().x - 5.0 * zoom, r_to.center().y - 8.0 * zoom);
+        let arch = if wb.from.0 == wb.to.0 {
+            Pos2::new(r_from.max.x + 9.0 * zoom, (p0.y + p1.y) * 0.5)
+        } else {
+            let lane = (wb_idx % 3) as f32 * 8.0 * zoom;
+            Pos2::new((p0.x + p1.x) * 0.5, p0.y.min(p1.y) - 18.0 * zoom - lane)
+        };
+
+        // Two-segment polyline with clear DB badge
+        let stroke = Stroke::new((2.2 * zoom).max(1.5), pot_color);
+        painter.line_segment([p0, arch], stroke);
+        painter.line_segment([arch, p1], stroke);
+        painter.circle_filled(p0, 3.0 * zoom, pot_color);
+        painter.circle_filled(p1, 3.0 * zoom, pot_color);
+
+        let badge_rect = Rect::from_center_size(arch, Vec2::new(18.0 * zoom, 12.0 * zoom));
+        painter.rect_filled(badge_rect, CornerRadius::same(3), pot_color);
+        painter.text(
+            arch,
+            Align2::CENTER_CENTER,
+            "DB",
+            FontId::proportional((8.0 * zoom).max(7.0)),
+            Color32::WHITE,
+        );
     }
 }

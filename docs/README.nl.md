@@ -34,32 +34,27 @@
 
 ## Belangrijkste functies
 
-- **186 ingebouwde klemtypes + eigen klemmen:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (met drukknop), `2102–2116`, `2022` X-COM en `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` installatieklemmen, plus `ST` & `UT`
-  - **Weidmüller:** `A-Series`, `AITB` installatieklemmen, `W-Series`, `DLI` & `Z-Series`
-  - **Eigen klemmen:** Maak en beheer je eigen aangepaste klemdefinities rechtstreeks in de app
-- **Meerniveaunummering & PE-uitlijning:**
-  - Installatie- en meeretageklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, enz.): Een aanwezige **PE-aansluiting** wordt altijd uitgelijnd op een eigen PE-rij **onder het onderste hoofdniveau**, zodat doorlopende nummers op één strakke horizontale lijn blijven.
-  - **Voorbeeld meeretageklem:** Op een klemmenstrook met 2-etageklemmen telt niveau 1 (onder) automatisch oneven (`1, 3, 5 …`) en niveau 2 (boven) even (`2, 4, 6 …`); daaropvolgende 1-etageklemmen gaan naadloos verder op niveau 1 (`7, 8, 9 …`).
-- **Interactieve 2D CAD-editor (zonder DIN-railballast):**
-  - Overzichtelijke CAD-weergave zonder overbodige DIN-rail, met ingebouwde fabrikantlogo's (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Typeweergave:** Naar keuze **verticaal (`-90°` gedraaid)** per klem of **horizontaal gegroepeerd** onder de klemmenstrook.
-  - **Inline bewerken:** **Dubbelklik** op een klemcodering om deze direct aan te passen (`Enter` = toepassen, leeg laten = automatische nummering herstellen, `Esc` = annuleren).
-  - **Meervoudige selectie:** Enkelklik, `Ctrl+klik`, `Shift+klik` en kaderselectie om samen types toe te wijzen, ervoor/erna in te voegen of te verwijderen.
-- **Automatisch bijpassende accessoires:**
-  - Het rechterpaneel Eigenschappen toont automatisch passende accessoires voor de geselecteerde klemmen: **eindplaten**, **dwarsbruggen / doorverbinders**, **coderingsstroken / markers**, **eindsteunen** en **N-verzamelrails**.
-- **Printklare export (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 overzichtelijke werkbladen:
-    1. `Druckfolge` / Printvolgorde (`ByTierStrip` standaard – alle labels per niveau aaneengesloten achter elkaar, bijv. eerst heel niveau 1, daarna niveau 2, daarna niveau 3; optioneel per kolom of blok en met/zonder `PE`)
-    2. `Ebenen-Spalten` / Niveaukolommen
-    3. `Ebenen-Matrix` / Niveaumatrix
-    - Alle cellen worden strikt als **Excel-tekst (`@`)** opgemaakt, zodat voorloopnullen (`01`) of puntnotaties (`1.1`) nooit worden omgezet in getallen of datums.
-  - **CSV (`.csv`):** UTF-8 met BOM en puntkomma `;` als standaard scheidingsteken.
-  - **Projectbestanden:** Opslaan en laden als `.termi` of `.json` inclusief handmatige aanpassingen en eigen klemmen.
-- **7 talen, thema's & ingebouwde Update Checker:**
-  - Interface direct omschakelbaar tussen **DE, EN, FR, IT, ES, PL, NL** – met hoog contrast in **Lichte en Donkere** weergave.
-  - Ingebouwde **GitHub Update Checker** plus directe links naar **GitHub** en **Buy Me a Coffee**.
+- **277 ingebouwde klemtypes + eigen klemmen:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (drukknop), `2102–2116` (hendel), `2022` X-COM, `2007` meet/scheiding, `280/281` en `285` hoogstroom (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` installatieklemmen, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installatie, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Eigen klemmen:** Maak eigen klemmen direct in de app incl. `1×` of `2×` brugkamers
+- **Meerniveaunummering, N/PE-modi & speciale tekens:**
+  - Installatie- en meeretageklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, enz.): Een aanwezige **PE-aansluiting** wordt altijd uitgelijnd op een eigen rij **onder het onderste hoofdniveau**.
+  - **N- & PE-nummering:** Per strook instelbaar tussen vast (`N`/`PE`), doorgenummerd (`1, 2, …`), gedeeld `1N, 2N` / `1PE, 2PE` of **eigen N/PE-teller (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Batch Prefix / Suffix / Speciale tekens:** Selecteer meerdere klemmen en voeg `+`, `-`, `~`, `=`, `.1`, `Ω`, enz. toe voor of na het nummer (blijft behouden bij hernummeren).
+- **Brug-modus & Potentiaalberekening:**
+  - Maak gekleurde **potentialen** (`+24V`, `GND`, `L1` …) en klik/tik op klemniveaus direct in het CAD-overzicht.
+  - **Automatische berekening:** Bepaalt het aantal polen van kamverbinders (bijv. `2002-405`, `FBS 5-5`, `ZQV`), markeert **uit te breken pinnen (`Pin verwijderen ×`)**, plant **draadbruggen (`DB`)** bij etagewissels (`E1 <-> E2`) of steekverschillen en onderscheidt **1-kamerklemmen** (draadbrug boven max. polen) van **2-kamerklemmen** (cascade in kamer 1 & 2).
+- **Interactieve 2D CAD-editor (Desktop & Touch):**
+  - Overzichtelijke CAD-weergave zonder DIN-rail met fabrikantlogo's (**WAGO**, **Phoenix Contact**, **Weidmüller**), gereedschapsknoppen (**Verschuiven**, **Kaderselectie**, **Brug-modus**), touch-verschuiving & midden-/rechtsklik-slepen.
+  - **Weergave & inline bewerken:** Verticaal `-90°` of horizontaal gegroepeerd; **dubbelklik** om direct aan te passen (`Enter` = toepassen, leeg = auto, `Esc` = annuleren).
+- **Productvoorbeeld, fabrikantlink & bijpassende accessoires:**
+  - Toont **productfoto (indien beschikbaar) of technisch profiel**, **aantal brugkamers**, **directe link naar de fabrikantpagina** en **eindplaten, bruggen, markers, eindsteunen en N-rails**.
+- **Printklare export (`.xlsx` & `.csv`) & Projectbestanden (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 werkbladen (`Druckfolge` / `ByTierStrip` standaard, `Ebenen-Spalten`, `Ebenen-Matrix`), alle cellen strikt als **Excel-tekst (`@`)**.
+- **7 talen, thema's & live Update Checker:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Licht/Donker met hoog contrast, live GitHub-check op Desktop & Android plus links naar **GitHub** & **Buy Me a Coffee**.
 
 ---
 

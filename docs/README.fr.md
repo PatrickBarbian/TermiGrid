@@ -34,32 +34,27 @@
 
 ## Fonctionnalités principales
 
-- **186 références de bornes intégrées + bornes personnalisées :**
-  - **WAGO :** TOPJOB S (`2000–2016`), `2200–2216` (avec bouton-poussoir), `2102–2116`, `2022` X-COM et `280/281`
-  - **Phoenix Contact :** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` bornes d'installation ainsi que `ST` & `UT`
-  - **Weidmüller :** `A-Series`, `AITB` bornes d'installation, `W-Series`, `DLI` & `Z-Series`
-  - **Bornes personnalisées :** Créez et gérez vos propres types de bornes directement dans l'application
-- **Numérotation multi-niveaux & alignement PE :**
-  - Bornes d'installation et multi-étages (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.) : Tout **raccordement PE** présent est toujours aligné sur une ligne PE dédiée **sous l'étage principal inférieur**, afin de garder les repères numériques sur une ligne horizontale claire.
-  - **Exemple multi-étages :** Sur une barrette de bornes à 2 étages, l'étage 1 (bas) numérote automatiquement en impair (`1, 3, 5 …`) et l'étage 2 (haut) en pair (`2, 4, 6 …`) ; les bornes suivantes à 1 étage poursuivent sans rupture sur l'étage 1 (`7, 8, 9 …`).
-- **Éditeur CAO 2D interactif (sans encombrement de rail DIN) :**
-  - Vue CAO épurée sans rail DIN superflu, avec logos fabricants intégrés (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Affichage des références :** Au choix **vertical (orienté à `-90°`)** par borne ou **regroupé horizontalement** sous le bornier.
-  - **Édition directe (inline) :** Un **double-clic** sur un repère permet de le modifier directement (`Entrée` = valider, champ vide = restaurer la numérotation auto, `Échap` = annuler).
-  - **Sélection multiple :** Clic simple, `Ctrl+Clic`, `Maj+Clic` et sélection par rectangle pour réaffecter un type, insérer avant/après ou supprimer en lot.
-- **Accessoires compatibles affichés automatiquement :**
-  - Le panneau latéral droit affiche automatiquement les accessoires adaptés aux bornes sélectionnées : **flasques d'extrémité**, **peignes de pontage / jonctions**, **bandelettes de marquage**, **butées d'arrêt** et **barres collectrices N**.
-- **Export prêt pour l'impression (`.xlsx` & `.csv`) :**
-  - **Excel (`.xlsx`) :** 3 feuilles structurées :
-    1. `Druckfolge` / Ordre d'impression (`ByTierStrip` par défaut – tous les repères d'un même niveau regroupés en continu, d'abord tout le niveau 1, puis le niveau 2, puis le niveau 3 ; ordre par colonne ou par bloc et inclusion de `PE` en option)
-    2. `Ebenen-Spalten` / Colonnes par niveau
-    3. `Ebenen-Matrix` / Matrice des niveaux
-    - Toutes les cellules sont formatées strictement en **Texte Excel (`@`)** afin que les zéros initiaux (`01`) ou notations avec point (`1.1`) ne soient jamais convertis en nombres ou en dates.
-  - **CSV (`.csv`) :** UTF-8 avec BOM et point-virgule `;` par défaut.
-  - **Fichiers projet :** Enregistrement et chargement au format `.termi` ou `.json` avec textes manuels et bornes personnalisées.
-- **7 langues, thèmes & vérificateur de mises à jour intégré :**
-  - Interface disponible en **DE, EN, FR, IT, ES, PL, NL** – avec thèmes **Clair et Sombre** à fort contraste.
-  - **Vérificateur de mises à jour GitHub** intégré ainsi que liens directs vers **GitHub** et **Buy Me a Coffee**.
+- **277 références de bornes intégrées + bornes personnalisées :**
+  - **WAGO :** TOPJOB S (`2000–2016`), `2200–2216` (bouton-poussoir), `2102–2116` (levier), `2022` X-COM, `2007` mesure/test, `280/281` et `285` fort courant (`35–95 mm²`)
+  - **Phoenix Contact :** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` bornes d'installation, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller :** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installation, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Bornes personnalisées :** Créez vos propres bornes directement dans l'app avec `1×` ou `2×` chambres de pontage
+- **Numérotation multi-niveaux, modes N/PE & caractères spéciaux :**
+  - Bornes d'installation et multi-étages (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.) : Tout **raccordement PE** présent est toujours aligné sur une ligne dédiée **sous l'étage principal inférieur**.
+  - **Numérotation N & PE :** Basculez par bornier entre fixe (`N`/`PE`), compteur partagé (`1, 2, …`), `1N, 2N` / `1PE, 2PE` partagés ou **compteur N/PE propre (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Préfixe / Suffixe / Caractères spéciaux par lot :** Sélectionnez plusieurs bornes et ajoutez `+`, `-`, `~`, `=`, `.1`, `Ω`, etc. avant ou après le repère (conservé lors de la renumérotation).
+- **Mode Pontage & Calcul de potentiels :**
+  - Créez plusieurs **potentiels** colorés (`+24V`, `GND`, `L1` …) et touchez/cliquez les étages directement dans la vue CAO.
+  - **Calcul automatique :** Détermine le nombre de pôles de peigne requis (ex. `2002-405`, `FBS 5-5`, `ZQV`), signale les **broches à couper (`Couper broche ×`)**, planifie les **ponts filaires (`DB`)** entre étages (`E1 <-> E2`) ou changements de pas, et gère **1 chambre** (pont filaire si > pôles max) vs **2 chambres** (cascade superposée sur chambres 1 & 2).
+- **Éditeur CAO 2D interactif (Bureau & Tactile) :**
+  - Vue CAO sans rail DIN superflu, logos fabricants intégrés (**WAGO**, **Phoenix Contact**, **Weidmüller**), sélecteur d'outils (**Déplacer**, **Sélection**, **Mode Pontage**), déplacement tactile & bouton milieu/droit.
+  - **Affichage & édition directe :** Vertical `-90°` ou horizontal groupé ; **double-clic** pour éditer en direct (`Entrée` = valider, vide = auto, `Échap` = annuler).
+- **Aperçu produit, lien fabricant & accessoires compatibles :**
+  - Affiche **photo produit (si accessible) ou profil technique**, **nombre de chambres**, **lien direct vers la page produit fabricant**, plus **flasques, peignes, repères, butées et barres N**.
+- **Export prêt pour l'impression (`.xlsx` & `.csv`) & Fichiers projet (`.termi` / `.json`) :**
+  - **Excel (`.xlsx`) :** 3 feuilles (`Druckfolge` / `ByTierStrip` par défaut, `Ebenen-Spalten`, `Ebenen-Matrix`), toutes les cellules formatées en **Texte Excel (`@`)**.
+- **7 langues, thèmes & vérificateur de mises à jour en direct :**
+  - **DE, EN, FR, IT, ES, PL, NL** – Clair/Sombre contraste élevé, vérification GitHub sur Bureau & Android, liens directs **GitHub** & **Buy Me a Coffee**.
 
 ---
 

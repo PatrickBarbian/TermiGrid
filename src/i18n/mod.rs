@@ -171,6 +171,51 @@ pub struct Strings {
     pub status_loaded: &'static str,
     pub status_exported: &'static str,
     pub status_error: &'static str,
+
+    // CAD Tools & Interaction Modes
+    pub mode_pan: &'static str,
+    pub mode_select: &'static str,
+    pub mode_bridge: &'static str,
+
+    // N & PE Sequential Numbering Modes
+    pub n_mode_label: &'static str,
+    pub n_mode_fixed: &'static str,
+    pub n_mode_shared_num: &'static str,
+    pub n_mode_shared_n: &'static str,
+    pub n_mode_own_n: &'static str,
+    pub pe_mode_label: &'static str,
+    pub pe_mode_fixed: &'static str,
+    pub pe_mode_shared_num: &'static str,
+    pub pe_mode_shared_pe: &'static str,
+    pub pe_mode_own_pe: &'static str,
+
+    // Batch Special Characters / Prefix & Suffix
+    pub affix_heading: &'static str,
+    pub affix_prefix: &'static str,
+    pub affix_suffix: &'static str,
+    pub affix_target_all: &'static str,
+    pub affix_apply: &'static str,
+    pub affix_clear: &'static str,
+
+    // Jumper / Bridge Mode & BOM
+    pub bridge_heading: &'static str,
+    pub bridge_new_potential: &'static str,
+    pub bridge_add_btn: &'static str,
+    pub bridge_assign_hint: &'static str,
+    pub bridge_bom_heading: &'static str,
+    pub bridge_cut_pins: &'static str,
+    pub bridge_wire_label: &'static str,
+    pub bridge_reason_tier: &'static str,
+    pub bridge_reason_single_max: &'static str,
+    pub bridge_reason_single_occ: &'static str,
+    pub bridge_reason_pitch: &'static str,
+    pub bridge_double_cascade: &'static str,
+    pub bridge_chambers_unit: &'static str,
+    pub bridge_assign_selected: &'static str,
+
+    // Product Preview & Custom Spec
+    pub open_product_page: &'static str,
+    pub custom_spec_chambers: &'static str,
 }
 
 pub static DE: Strings = Strings {
@@ -303,6 +348,46 @@ pub static DE: Strings = Strings {
     status_loaded: "Projekt geladen",
     status_exported: "Export erfolgreich",
     status_error: "Fehler",
+
+    mode_pan: "Verschieben",
+    mode_select: "Rahmenauswahl",
+    mode_bridge: "Brücken-Modus",
+
+    n_mode_label: "N-Modus",
+    n_mode_fixed: "Fest 'N'",
+    n_mode_shared_num: "Mitgezählt (1, 2, ...)",
+    n_mode_shared_n: "Mitgezählt (1N, 2N, ...)",
+    n_mode_own_n: "Eigener N-Zähler (1N, 2N...)",
+    pe_mode_label: "PE-Modus",
+    pe_mode_fixed: "Fest 'PE'",
+    pe_mode_shared_num: "Mitgezählt (1, 2, ...)",
+    pe_mode_shared_pe: "Mitgezählt (1PE, 2PE, ...)",
+    pe_mode_own_pe: "Eigener PE-Zähler (1PE, 2PE...)",
+
+    affix_heading: "Präfix / Suffix / Sonderzeichen",
+    affix_prefix: "Präfix (vor Zahl)",
+    affix_suffix: "Suffix (nach Zahl)",
+    affix_target_all: "Alle Ebenen",
+    affix_apply: "Auf Auswahl anwenden",
+    affix_clear: "Sonderzeichen entfernen",
+
+    bridge_heading: "Brücken-Modus & Potentiale",
+    bridge_new_potential: "Potential (z.B. +24V)",
+    bridge_add_btn: "+ Potential",
+    bridge_assign_hint: "Potential wählen und im CAD auf die gewünschten Klemmen-Ebenen tippen/klicken.",
+    bridge_bom_heading: "Berechnete Brücken & Stückliste",
+    bridge_cut_pins: "Pin entfernen",
+    bridge_wire_label: "Drahtbrücke",
+    bridge_reason_tier: "Mehrstock Etage-zu-Etage",
+    bridge_reason_single_max: "Länger als max. Polzahl (1 Kammer)",
+    bridge_reason_single_occ: "Einzelkammer belegt",
+    bridge_reason_pitch: "Anderes Raster / Lücke",
+    bridge_double_cascade: "2-Kammer Kaskade",
+    bridge_chambers_unit: "Brückerkammer(n)",
+    bridge_assign_selected: "Markierte (E1) brücken",
+
+    open_product_page: "Produktseite öffnen",
+    custom_spec_chambers: "Brückerkammern",
 };
 
 pub static EN: Strings = Strings {
@@ -435,6 +520,46 @@ pub static EN: Strings = Strings {
     status_loaded: "Project loaded",
     status_exported: "Export complete",
     status_error: "Error",
+
+    mode_pan: "Pan / Scroll",
+    mode_select: "Box Select",
+    mode_bridge: "Bridge Mode",
+
+    n_mode_label: "N Mode",
+    n_mode_fixed: "Fixed 'N'",
+    n_mode_shared_num: "Shared count (1, 2, ...)",
+    n_mode_shared_n: "Shared count (1N, 2N, ...)",
+    n_mode_own_n: "Own N counter (1N, 2N...)",
+    pe_mode_label: "PE Mode",
+    pe_mode_fixed: "Fixed 'PE'",
+    pe_mode_shared_num: "Shared count (1, 2, ...)",
+    pe_mode_shared_pe: "Shared count (1PE, 2PE, ...)",
+    pe_mode_own_pe: "Own PE counter (1PE, 2PE...)",
+
+    affix_heading: "Prefix / Suffix / Special Chars",
+    affix_prefix: "Prefix (before)",
+    affix_suffix: "Suffix (after)",
+    affix_target_all: "All tiers",
+    affix_apply: "Apply to Selection",
+    affix_clear: "Clear Affixes",
+
+    bridge_heading: "Bridge Mode & Potentials",
+    bridge_new_potential: "Potential (e.g. +24V)",
+    bridge_add_btn: "+ Potential",
+    bridge_assign_hint: "Select a potential and click/tap terminal tiers in the CAD canvas to assign.",
+    bridge_bom_heading: "Calculated Jumpers & BOM",
+    bridge_cut_pins: "Cut pin(s)",
+    bridge_wire_label: "Wire bridge",
+    bridge_reason_tier: "Multi-tier vertical",
+    bridge_reason_single_max: "Exceeds max poles (1 chamber)",
+    bridge_reason_single_occ: "Single chamber occupied",
+    bridge_reason_pitch: "Different pitch / gap",
+    bridge_double_cascade: "2-chamber cascade",
+    bridge_chambers_unit: "jumper chamber(s)",
+    bridge_assign_selected: "Bridge selected (E1)",
+
+    open_product_page: "Open Product Page",
+    custom_spec_chambers: "Jumper chambers",
 };
 
 pub static FR: Strings = Strings {
@@ -567,6 +692,46 @@ pub static FR: Strings = Strings {
     status_loaded: "Projet chargé",
     status_exported: "Export réussi",
     status_error: "Erreur",
+
+    mode_pan: "Déplacer",
+    mode_select: "Sélection",
+    mode_bridge: "Mode Pontage",
+
+    n_mode_label: "Mode N",
+    n_mode_fixed: "Fixe 'N'",
+    n_mode_shared_num: "Numérotation partagée (1, 2...)",
+    n_mode_shared_n: "Numérotation partagée (1N, 2N...)",
+    n_mode_own_n: "Compteur N propre (1N, 2N...)",
+    pe_mode_label: "Mode PE",
+    pe_mode_fixed: "Fixe 'PE'",
+    pe_mode_shared_num: "Numérotation partagée (1, 2...)",
+    pe_mode_shared_pe: "Numérotation partagée (1PE, 2PE...)",
+    pe_mode_own_pe: "Compteur PE propre (1PE, 2PE...)",
+
+    affix_heading: "Préfixe / Suffixe / Caractères spéciaux",
+    affix_prefix: "Préfixe (avant)",
+    affix_suffix: "Suffixe (après)",
+    affix_target_all: "Tous étages",
+    affix_apply: "Appliquer à la sélection",
+    affix_clear: "Effacer préfixe/suffixe",
+
+    bridge_heading: "Mode Pontage & Potentiels",
+    bridge_new_potential: "Potentiel (ex. +24V)",
+    bridge_add_btn: "+ Potentiel",
+    bridge_assign_hint: "Sélectionnez un potentiel puis touchez/cliquez les étages dans la CAO.",
+    bridge_bom_heading: "Ponts calculés & Nomenclature",
+    bridge_cut_pins: "Couper broche(s)",
+    bridge_wire_label: "Pont filaire",
+    bridge_reason_tier: "Multi-étages (entre niveaux)",
+    bridge_reason_single_max: "Dépasse pôles max (1 chambre)",
+    bridge_reason_single_occ: "Chambre unique occupée",
+    bridge_reason_pitch: "Pas différent / écart",
+    bridge_double_cascade: "Cascade 2 chambres",
+    bridge_chambers_unit: "chambre(s) de pontage",
+    bridge_assign_selected: "Ponter sélection (E1)",
+
+    open_product_page: "Page produit fabricant",
+    custom_spec_chambers: "Chambres de pontage",
 };
 
 pub static IT: Strings = Strings {
@@ -699,6 +864,46 @@ pub static IT: Strings = Strings {
     status_loaded: "Progetto caricato",
     status_exported: "Esportazione completata",
     status_error: "Errore",
+
+    mode_pan: "Sposta vista",
+    mode_select: "Riquadro",
+    mode_bridge: "Modo Ponticelli",
+
+    n_mode_label: "Modalità N",
+    n_mode_fixed: "Fisso 'N'",
+    n_mode_shared_num: "Numerazione condivisa (1, 2...)",
+    n_mode_shared_n: "Numerazione condivisa (1N, 2N...)",
+    n_mode_own_n: "Contatore N proprio (1N, 2N...)",
+    pe_mode_label: "Modalità PE",
+    pe_mode_fixed: "Fisso 'PE'",
+    pe_mode_shared_num: "Numerazione condivisa (1, 2...)",
+    pe_mode_shared_pe: "Numerazione condivisa (1PE, 2PE...)",
+    pe_mode_own_pe: "Contatore PE proprio (1PE, 2PE...)",
+
+    affix_heading: "Prefisso / Suffisso / Simboli",
+    affix_prefix: "Prefisso (prima)",
+    affix_suffix: "Suffisso (dopo)",
+    affix_target_all: "Tutti i piani",
+    affix_apply: "Applica alla selezione",
+    affix_clear: "Rimuovi simboli",
+
+    bridge_heading: "Modo Ponticelli & Potenziali",
+    bridge_new_potential: "Potenziale (es. +24V)",
+    bridge_add_btn: "+ Potenziale",
+    bridge_assign_hint: "Scegli un potenziale e tocca/clicca i piani dei morsetti nella vista CAD.",
+    bridge_bom_heading: "Ponticelli calcolati & Distinta",
+    bridge_cut_pins: "Rimuovere pin",
+    bridge_wire_label: "Ponticello a filo",
+    bridge_reason_tier: "Multipiano tra livelli",
+    bridge_reason_single_max: "Supera poli max (1 camera)",
+    bridge_reason_single_occ: "Camera singola occupata",
+    bridge_reason_pitch: "Passo diverso / spazio",
+    bridge_double_cascade: "Cascata 2 camere",
+    bridge_chambers_unit: "camera/e ponticello",
+    bridge_assign_selected: "Ponticella selezione (E1)",
+
+    open_product_page: "Pagina prodotto produttore",
+    custom_spec_chambers: "Camere ponticello",
 };
 
 pub static ES: Strings = Strings {
@@ -831,6 +1036,46 @@ pub static ES: Strings = Strings {
     status_loaded: "Proyecto cargado",
     status_exported: "Exportación completada",
     status_error: "Error",
+
+    mode_pan: "Mover vista",
+    mode_select: "Selección",
+    mode_bridge: "Modo Puentes",
+
+    n_mode_label: "Modo N",
+    n_mode_fixed: "Fijo 'N'",
+    n_mode_shared_num: "Contador compartido (1, 2...)",
+    n_mode_shared_n: "Contador compartido (1N, 2N...)",
+    n_mode_own_n: "Contador N propio (1N, 2N...)",
+    pe_mode_label: "Modo PE",
+    pe_mode_fixed: "Fijo 'PE'",
+    pe_mode_shared_num: "Contador compartido (1, 2...)",
+    pe_mode_shared_pe: "Contador compartido (1PE, 2PE...)",
+    pe_mode_own_pe: "Contador PE propio (1PE, 2PE...)",
+
+    affix_heading: "Prefijo / Sufijo / Símbolos",
+    affix_prefix: "Prefijo (antes)",
+    affix_suffix: "Sufijo (después)",
+    affix_target_all: "Todos los pisos",
+    affix_apply: "Aplicar a selección",
+    affix_clear: "Quitar símbolos",
+
+    bridge_heading: "Modo Puentes y Potenciales",
+    bridge_new_potential: "Potencial (ej. +24V)",
+    bridge_add_btn: "+ Potencial",
+    bridge_assign_hint: "Selecciona un potencial y pulsa los niveles de bornes en el editor CAD.",
+    bridge_bom_heading: "Puentes calculados y Lista",
+    bridge_cut_pins: "Quitar pin(es)",
+    bridge_wire_label: "Puente de cable",
+    bridge_reason_tier: "Multipiso entre niveles",
+    bridge_reason_single_max: "Supera polos máx. (1 cámara)",
+    bridge_reason_single_occ: "Cámara única ocupada",
+    bridge_reason_pitch: "Paso distinto / hueco",
+    bridge_double_cascade: "Cascada 2 cámaras",
+    bridge_chambers_unit: "cámara(s) de puente",
+    bridge_assign_selected: "Puentear selección (E1)",
+
+    open_product_page: "Ver página del producto",
+    custom_spec_chambers: "Cámaras de puente",
 };
 
 pub static PL: Strings = Strings {
@@ -963,6 +1208,46 @@ pub static PL: Strings = Strings {
     status_loaded: "Wczytano projekt",
     status_exported: "Eksport zakończony",
     status_error: "Błąd",
+
+    mode_pan: "Przesuń",
+    mode_select: "Zaznacz ramką",
+    mode_bridge: "Tryb Mostków",
+
+    n_mode_label: "Tryb N",
+    n_mode_fixed: "Stałe 'N'",
+    n_mode_shared_num: "Wspólna numeracja (1, 2...)",
+    n_mode_shared_n: "Wspólna numeracja (1N, 2N...)",
+    n_mode_own_n: "Własny licznik N (1N, 2N...)",
+    pe_mode_label: "Tryb PE",
+    pe_mode_fixed: "Stałe 'PE'",
+    pe_mode_shared_num: "Wspólna numeracja (1, 2...)",
+    pe_mode_shared_pe: "Wspólna numeracja (1PE, 2PE...)",
+    pe_mode_own_pe: "Własny licznik PE (1PE, 2PE...)",
+
+    affix_heading: "Prefiks / Sufiks / Znaki",
+    affix_prefix: "Prefiks (przed)",
+    affix_suffix: "Sufiks (po)",
+    affix_target_all: "Wszystkie poziomy",
+    affix_apply: "Zastosuj do zaznaczonych",
+    affix_clear: "Usuń prefiks/sufiks",
+
+    bridge_heading: "Tryb Mostków i Potencjały",
+    bridge_new_potential: "Potencjał (np. +24V)",
+    bridge_add_btn: "+ Potencjał",
+    bridge_assign_hint: "Wybierz potencjał i kliknij/dotknij poziomy złączek w widoku CAD.",
+    bridge_bom_heading: "Obliczone mostki i lista",
+    bridge_cut_pins: "Wyłamać pin(y)",
+    bridge_wire_label: "Mostek przewodowy",
+    bridge_reason_tier: "Wielopiętrowy między poziomami",
+    bridge_reason_single_max: "Przekracza maks. piny (1 komora)",
+    bridge_reason_single_occ: "Pojedyncza komora zajęta",
+    bridge_reason_pitch: "Inny raster / przerwa",
+    bridge_double_cascade: "Kaskada 2-komorowa",
+    bridge_chambers_unit: "komora/y mostka",
+    bridge_assign_selected: "Mostkuj zaznaczone (E1)",
+
+    open_product_page: "Strona produktu producenta",
+    custom_spec_chambers: "Komory mostka",
 };
 
 pub static NL: Strings = Strings {
@@ -1095,6 +1380,46 @@ pub static NL: Strings = Strings {
     status_loaded: "Project geladen",
     status_exported: "Export voltooid",
     status_error: "Fout",
+
+    mode_pan: "Verschuiven",
+    mode_select: "Kaderselectie",
+    mode_bridge: "Brug-modus",
+
+    n_mode_label: "N-modus",
+    n_mode_fixed: "Vast 'N'",
+    n_mode_shared_num: "Doorgenummerd (1, 2...)",
+    n_mode_shared_n: "Doorgenummerd (1N, 2N...)",
+    n_mode_own_n: "Eigen N-teller (1N, 2N...)",
+    pe_mode_label: "PE-modus",
+    pe_mode_fixed: "Vast 'PE'",
+    pe_mode_shared_num: "Doorgenummerd (1, 2...)",
+    pe_mode_shared_pe: "Doorgenummerd (1PE, 2PE...)",
+    pe_mode_own_pe: "Eigen PE-teller (1PE, 2PE...)",
+
+    affix_heading: "Prefix / Suffix / Speciale tekens",
+    affix_prefix: "Prefix (voor)",
+    affix_suffix: "Suffix (erna)",
+    affix_target_all: "Alle niveaus",
+    affix_apply: "Op selectie toepassen",
+    affix_clear: "Speciale tekens wissen",
+
+    bridge_heading: "Brug-modus & Potentialen",
+    bridge_new_potential: "Potentiaal (bijv. +24V)",
+    bridge_add_btn: "+ Potentiaal",
+    bridge_assign_hint: "Kies een potentiaal en klik/tik op klemniveaus in het CAD-overzicht.",
+    bridge_bom_heading: "Berekende bruggen & stuklijst",
+    bridge_cut_pins: "Pin(s) verwijderen",
+    bridge_wire_label: "Draadbrug",
+    bridge_reason_tier: "Meer-etage onderling",
+    bridge_reason_single_max: "Langer dan max. polen (1 kamer)",
+    bridge_reason_single_occ: "Enkele kamer bezet",
+    bridge_reason_pitch: "Andere steek / opening",
+    bridge_double_cascade: "2-kamers cascade",
+    bridge_chambers_unit: "brugkamer(s)",
+    bridge_assign_selected: "Selectie bruggen (E1)",
+
+    open_product_page: "Productpagina fabrikant",
+    custom_spec_chambers: "Brugkamers",
 };
 
 pub fn strings(lang: Language) -> &'static Strings {

@@ -2,8 +2,10 @@ pub mod android_insets;
 pub mod cad_canvas;
 pub mod guide_modal;
 pub mod logos;
+pub mod net;
 pub mod new_strip_modal;
 pub mod platform_io;
+pub mod product_media;
 pub mod theme;
 pub mod updater;
 
@@ -15,15 +17,23 @@ use eframe::egui;
 use crate::catalog::TerminalCatalog;
 use crate::export::{csv::export_to_csv, xlsx::export_to_xlsx, ExportOptions, PrintOrder};
 use crate::i18n::{strings, Language};
-use crate::model::{NumberingOrder, Project, TerminalStrip};
+use crate::model::bridging::{
+    calculate_bridges, WireBridgeReason, POTENTIAL_PALETTE,
+};
+use crate::model::{
+    NeutralLabelMode, NumberingOrder, PeLabelMode, Project, TerminalStrip,
+};
 use crate::ui::android_insets::{current_safe_insets, SafeAreaInsets};
-use crate::ui::cad_canvas::{show_cad_canvas, CadCanvasState, TypeDisplayMode};
+use crate::ui::cad_canvas::{
+    show_cad_canvas, CadCanvasState, CanvasInteractionMode, TypeDisplayMode,
+};
 use crate::ui::guide_modal::{show_database_tab, show_guide_tab, CustomSpecDraft};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::new_strip_modal::{show_new_strip_modal, show_spec_picker, NewStripDialogState};
 use crate::ui::platform_io::{
     pick_export_csv_path, pick_export_xlsx_path, pick_open_project_path, pick_save_project_path,
 };
+use crate::ui::product_media::{show_product_preview_card, ProductMediaCache};
 use crate::ui::theme::{apply_termi_theme, install_system_fonts, secondary_text_color};
 use crate::ui::updater::{
     open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, GITHUB_REPO_URL,
@@ -78,6 +88,16 @@ pub struct TermiGridApp {
     safe_insets: SafeAreaInsets,
     last_screen_size: egui::Vec2,
     insets_frames: u32,
+
+    // Batch affix / special character state
+    batch_prefix: String,
+    batch_suffix: String,
+    batch_target_row: Option<isize>,
+
+    // Jumper / Bridge mode & product photo cache
+    new_potential_name: String,
+    active_potential_id: Option<u64>,
+    product_media: ProductMediaCache,
 }
 
 impl TermiGridApp {
@@ -91,7 +111,6 @@ impl TermiGridApp {
         apply_termi_theme(&cc.egui_ctx, true);
 
         let updater = UpdateChecker::default();
-        #[cfg(not(target_os = "android"))]
         updater.check_async(cc.egui_ctx.clone());
 
         Self {
@@ -119,6 +138,12 @@ impl TermiGridApp {
             safe_insets: SafeAreaInsets::default(),
             last_screen_size: egui::Vec2::ZERO,
             insets_frames: 0,
+            batch_prefix: String::new(),
+            batch_suffix: String::new(),
+            batch_target_row: None,
+            new_potential_name: "+24V".to_string(),
+            active_potential_id: None,
+            product_media: ProductMediaCache::default(),
         }
     }
 
@@ -770,9 +795,262 @@ impl TermiGridApp {
                                     }
                                 }
                             }
+
+                            // Batch prefix / suffix / special characters for all selected terminals
+                            ui.add_space(6.0);
+                            ui.group(|ui| {
+                                ui.label(egui::RichText::new(s.affix_heading).strong());
+                                ui.horizontal(|ui| {
+                                    ui.label(s.affix_prefix);
+                                    ui.add(
+                                        egui::TextEdit::singleline(&mut self.batch_prefix)
+                                            .desired_width(68.0),
+                                    );
+                                });
+                                ui.horizontal_wrapped(|ui| {
+                                    for sym in ["+", "-", "~", "=", "/", ":"] {
+                                        if ui.small_button(sym).clicked() {
+                                            self.batch_prefix = sym.to_string();
+                                        }
+                                    }
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label(s.affix_suffix);
+                                    ui.add(
+                                        egui::TextEdit::singleline(&mut self.batch_suffix)
+                                            .desired_width(68.0),
+                                    );
+                                });
+                                ui.horizontal_wrapped(|ui| {
+                                    for sym in ["+", "-", "~", ".1", ".2", "*", "Ω", "°"] {
+                                        if ui.small_button(sym).clicked() {
+                                            self.batch_suffix = sym.to_string();
+                                        }
+                                    }
+                                });
+                                ui.horizontal_wrapped(|ui| {
+                                    ui.selectable_value(
+                                        &mut self.batch_target_row,
+                                        None,
+                                        s.affix_target_all,
+                                    );
+                                    ui.selectable_value(&mut self.batch_target_row, Some(0), "E1");
+                                    ui.selectable_value(&mut self.batch_target_row, Some(1), "E2");
+                                    ui.selectable_value(&mut self.batch_target_row, Some(2), "E3");
+                                    ui.selectable_value(
+                                        &mut self.batch_target_row,
+                                        Some(-1),
+                                        "PE",
+                                    );
+                                });
+                                ui.horizontal_wrapped(|ui| {
+                                    if ui.button(s.affix_apply).clicked() {
+                                        let indices: Vec<usize> =
+                                            self.selected_blocks.iter().copied().collect();
+                                        self.project.strips[self.active_strip]
+                                            .apply_affix_to_selection(
+                                                &indices,
+                                                self.batch_target_row,
+                                                &self.batch_prefix,
+                                                &self.batch_suffix,
+                                            );
+                                    }
+                                    if ui.button(s.affix_clear).clicked() {
+                                        self.batch_prefix.clear();
+                                        self.batch_suffix.clear();
+                                        let indices: Vec<usize> =
+                                            self.selected_blocks.iter().copied().collect();
+                                        self.project.strips[self.active_strip]
+                                            .apply_affix_to_selection(
+                                                &indices,
+                                                self.batch_target_row,
+                                                "",
+                                                "",
+                                            );
+                                    }
+                                });
+                            });
                         }
                     }
 
+                    // Bridge Mode / Potentials & Calculated Jumper BOM
+                    if has_strip {
+                        ui.add_space(8.0);
+                        ui.separator();
+                        ui.label(egui::RichText::new(s.bridge_heading).strong());
+                        ui.label(
+                            egui::RichText::new(s.bridge_assign_hint)
+                                .color(secondary_text_color(ui))
+                                .small(),
+                        );
+                        ui.add_space(4.0);
+
+                        let bridge_plan = {
+                            let strip = &mut self.project.strips[self.active_strip];
+                            ui.horizontal_wrapped(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.new_potential_name)
+                                        .hint_text(s.bridge_new_potential)
+                                        .desired_width(120.0),
+                                );
+                                if ui.button(s.bridge_add_btn).clicked() {
+                                    let name = if self.new_potential_name.trim().is_empty() {
+                                        format!("P{}", strip.potentials.len() + 1)
+                                    } else {
+                                        self.new_potential_name.trim().to_string()
+                                    };
+                                    let rgb = POTENTIAL_PALETTE
+                                        [strip.potentials.len() % POTENTIAL_PALETTE.len()];
+                                    let id = strip.add_potential(name, rgb);
+                                    self.active_potential_id = Some(id);
+                                    self.canvas_state.interaction_mode =
+                                        CanvasInteractionMode::BridgeAssign;
+                                }
+                            });
+
+                            if let Some(active_id) = self.active_potential_id
+                                && !strip.potentials.iter().any(|p| p.id == active_id)
+                            {
+                                self.active_potential_id =
+                                    strip.potentials.first().map(|p| p.id);
+                            }
+
+                            let mut del_pot: Option<u64> = None;
+                            for pot in &strip.potentials {
+                                let is_active = self.active_potential_id == Some(pot.id);
+                                let col = egui::Color32::from_rgb(
+                                    pot.color_rgb[0],
+                                    pot.color_rgb[1],
+                                    pot.color_rgb[2],
+                                );
+                                ui.horizontal(|ui| {
+                                    let (dot_r, _) = ui.allocate_exact_size(
+                                        egui::Vec2::splat(12.0),
+                                        egui::Sense::hover(),
+                                    );
+                                    ui.painter().circle_filled(dot_r.center(), 5.5, col);
+                                    if ui
+                                        .selectable_label(
+                                            is_active,
+                                            format!("{} ({})", pot.name, pot.members.len()),
+                                        )
+                                        .clicked()
+                                    {
+                                        self.active_potential_id = Some(pot.id);
+                                        self.canvas_state.interaction_mode =
+                                            CanvasInteractionMode::BridgeAssign;
+                                    }
+                                    if ui.small_button("×").clicked() {
+                                        del_pot = Some(pot.id);
+                                    }
+                                });
+                            }
+                            if let Some(pid) = del_pot {
+                                strip.remove_potential(pid);
+                                if self.active_potential_id == Some(pid) {
+                                    self.active_potential_id =
+                                        strip.potentials.first().map(|p| p.id);
+                                }
+                            }
+
+                            if !self.selected_blocks.is_empty()
+                                && let Some(active_id) = self.active_potential_id
+                                && ui.button(s.bridge_assign_selected).clicked()
+                            {
+                                for &b_idx in &self.selected_blocks {
+                                    strip.toggle_potential_member(active_id, b_idx, 0);
+                                }
+                            }
+
+                            calculate_bridges(strip, &self.catalog)
+                        };
+
+                        if !bridge_plan.comb_segments.is_empty()
+                            || !bridge_plan.wire_bridges.is_empty()
+                        {
+                            ui.add_space(4.0);
+                            ui.group(|ui| {
+                                ui.label(egui::RichText::new(s.bridge_bom_heading).strong());
+                                for seg in &bridge_plan.comb_segments {
+                                    let col = egui::Color32::from_rgb(
+                                        seg.color_rgb[0],
+                                        seg.color_rgb[1],
+                                        seg.color_rgb[2],
+                                    );
+                                    ui.horizontal_wrapped(|ui| {
+                                        ui.label(egui::RichText::new(&seg.potential_name).color(col).strong());
+                                        let row_name = if seg.visual_row < 0 {
+                                            "PE".to_string()
+                                        } else {
+                                            format!("E{}", seg.visual_row + 1)
+                                        };
+                                        ui.label(format!(
+                                            "{} [{row_name}: #{}..#{}] (K{})",
+                                            seg.part_hint,
+                                            seg.start_block_idx + 1,
+                                            seg.end_block_idx + 1,
+                                            seg.channel_slot + 1
+                                        ));
+                                    });
+                                    if !seg.cut_pins.is_empty() {
+                                        let pins: Vec<String> =
+                                            seg.cut_pins.iter().map(|i| format!("#{}", i + 1)).collect();
+                                        ui.label(
+                                            egui::RichText::new(format!(
+                                                "  {}: {}",
+                                                s.bridge_cut_pins,
+                                                pins.join(", ")
+                                            ))
+                                            .color(egui::Color32::from_rgb(239, 68, 68))
+                                            .small(),
+                                        );
+                                    }
+                                    if seg.uses_double_chamber_cascade {
+                                        ui.label(
+                                            egui::RichText::new(format!("  {}", s.bridge_double_cascade))
+                                                .color(secondary_text_color(ui))
+                                                .small(),
+                                        );
+                                    }
+                                }
+                                for wb in &bridge_plan.wire_bridges {
+                                    let col = egui::Color32::from_rgb(
+                                        wb.color_rgb[0],
+                                        wb.color_rgb[1],
+                                        wb.color_rgb[2],
+                                    );
+                                    let reason_str = match wb.reason {
+                                        WireBridgeReason::CrossTier => s.bridge_reason_tier,
+                                        WireBridgeReason::ExceedsMaxPolesSingleSlot => {
+                                            s.bridge_reason_single_max
+                                        }
+                                        WireBridgeReason::SingleChannelOccupied => {
+                                            s.bridge_reason_single_occ
+                                        }
+                                        WireBridgeReason::IncompatiblePitchOrGap => {
+                                            s.bridge_reason_pitch
+                                        }
+                                    };
+                                    ui.horizontal_wrapped(|ui| {
+                                        ui.label(egui::RichText::new(&wb.potential_name).color(col).strong());
+                                        ui.label(
+                                            format!(
+                                                "{}: #{}:E{} -> #{}:E{} ({})",
+                                                s.bridge_wire_label,
+                                                wb.from.0 + 1,
+                                                wb.from.1 + 1,
+                                                wb.to.0 + 1,
+                                                wb.to.1 + 1,
+                                                reason_str
+                                            ),
+                                        );
+                                    });
+                                }
+                            });
+                        }
+                    }
+
+                    // Product Photo / Profile Preview + Accessories
                     ui.add_space(10.0);
                     ui.separator();
                     ui.label(egui::RichText::new(s.accessories_heading).strong());
@@ -796,6 +1074,20 @@ impl TermiGridApp {
                                     seen_specs.push((block.spec_id.clone(), 1));
                                 }
                             }
+                        }
+
+                        if let Some((first_spec_id, _)) = seen_specs.first()
+                            && let Some(first_spec) = self.catalog.find_by_id(first_spec_id)
+                        {
+                            show_product_preview_card(
+                                ui,
+                                first_spec,
+                                &self.logos,
+                                &self.product_media,
+                                s.open_product_page,
+                                s.bridge_chambers_unit,
+                            );
+                            ui.add_space(4.0);
                         }
 
                         for (spec_id, count) in seen_specs {
@@ -902,6 +1194,35 @@ impl TermiGridApp {
         let mut append_spec_id: Option<String> = None;
 
         ui.horizontal_wrapped(|ui| {
+            // CAD Tool Switcher (Pan/Tap vs Box Select vs Bridge Mode)
+            ui.selectable_value(
+                &mut self.canvas_state.interaction_mode,
+                CanvasInteractionMode::Pan,
+                s.mode_pan,
+            );
+            ui.selectable_value(
+                &mut self.canvas_state.interaction_mode,
+                CanvasInteractionMode::SelectBox,
+                s.mode_select,
+            );
+            if ui
+                .selectable_value(
+                    &mut self.canvas_state.interaction_mode,
+                    CanvasInteractionMode::BridgeAssign,
+                    s.mode_bridge,
+                )
+                .clicked()
+            {
+                let strip = &mut self.project.strips[self.active_strip];
+                if strip.potentials.is_empty() {
+                    let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
+                    self.active_potential_id = Some(id);
+                } else if self.active_potential_id.is_none() {
+                    self.active_potential_id = strip.potentials.first().map(|p| p.id);
+                }
+            }
+
+            ui.separator();
             let strip = &mut self.project.strips[self.active_strip];
             ui.label(s.strip_start_number);
             if ui
@@ -910,6 +1231,51 @@ impl TermiGridApp {
             {
                 recalc_needed = true;
             }
+
+            ui.separator();
+            ui.label(s.n_mode_label);
+            let n_text = match strip.neutral_mode {
+                NeutralLabelMode::Fixed => s.n_mode_fixed,
+                NeutralLabelMode::SharedSequenceNumber => s.n_mode_shared_num,
+                NeutralLabelMode::SharedSequenceSuffixN => s.n_mode_shared_n,
+                NeutralLabelMode::SeparateCounterSuffixN => s.n_mode_own_n,
+            };
+            egui::ComboBox::from_id_salt("n_mode_combo")
+                .selected_text(n_text)
+                .show_ui(ui, |ui| {
+                    for (mode, lbl) in [
+                        (NeutralLabelMode::Fixed, s.n_mode_fixed),
+                        (NeutralLabelMode::SharedSequenceNumber, s.n_mode_shared_num),
+                        (NeutralLabelMode::SharedSequenceSuffixN, s.n_mode_shared_n),
+                        (NeutralLabelMode::SeparateCounterSuffixN, s.n_mode_own_n),
+                    ] {
+                        if ui.selectable_value(&mut strip.neutral_mode, mode, lbl).changed() {
+                            recalc_needed = true;
+                        }
+                    }
+                });
+
+            ui.label(s.pe_mode_label);
+            let pe_text = match strip.pe_mode {
+                PeLabelMode::Fixed => s.pe_mode_fixed,
+                PeLabelMode::SharedSequenceNumber => s.pe_mode_shared_num,
+                PeLabelMode::SharedSequenceSuffixPe => s.pe_mode_shared_pe,
+                PeLabelMode::SeparateCounterSuffixPe => s.pe_mode_own_pe,
+            };
+            egui::ComboBox::from_id_salt("pe_mode_combo")
+                .selected_text(pe_text)
+                .show_ui(ui, |ui| {
+                    for (mode, lbl) in [
+                        (PeLabelMode::Fixed, s.pe_mode_fixed),
+                        (PeLabelMode::SharedSequenceNumber, s.pe_mode_shared_num),
+                        (PeLabelMode::SharedSequenceSuffixPe, s.pe_mode_shared_pe),
+                        (PeLabelMode::SeparateCounterSuffixPe, s.pe_mode_own_pe),
+                    ] {
+                        if ui.selectable_value(&mut strip.pe_mode, mode, lbl).changed() {
+                            recalc_needed = true;
+                        }
+                    }
+                });
 
             ui.separator();
             ui.label(s.zoom_label);
@@ -974,12 +1340,19 @@ impl TermiGridApp {
         ui.separator();
 
         let strip = &mut self.project.strips[self.active_strip];
+        let bridge_plan = if strip.potentials.is_empty() {
+            None
+        } else {
+            Some(calculate_bridges(strip, &self.catalog))
+        };
         show_cad_canvas(
             ui,
             strip,
             &mut self.selected_blocks,
             &mut self.canvas_state,
             s,
+            bridge_plan.as_ref(),
+            self.active_potential_id,
         );
     }
 }

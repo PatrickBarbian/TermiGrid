@@ -31,6 +31,14 @@ mod imp {
         }
     }
 
+    pub fn android_jvm() -> Option<JavaVM> {
+        let &vm_addr = ANDROID_VM_PTR.get()?;
+        if vm_addr == 0 {
+            return None;
+        }
+        Some(unsafe { JavaVM::from_raw(vm_addr as *mut jni::sys::JavaVM) })
+    }
+
     pub fn current_safe_insets(pixels_per_point: f32) -> SafeAreaInsets {
         let Some(&vm_addr) = ANDROID_VM_PTR.get() else {
             return SafeAreaInsets::default();
@@ -389,5 +397,5 @@ mod imp {
 }
 
 #[cfg(target_os = "android")]
-pub use imp::init_android_refs;
+pub use imp::{android_jvm, init_android_refs};
 pub use imp::current_safe_insets;

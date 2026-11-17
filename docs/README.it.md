@@ -34,32 +34,27 @@
 
 ## Funzionalità principali
 
-- **186 modelli di morsetti integrati + morsetti personalizzati:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (con pulsante), `2102–2116`, `2022` X-COM e `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` morsetti per installazione, più `ST` & `UT`
-  - **Weidmüller:** `A-Series`, `AITB` morsetti per installazione, `W-Series`, `DLI` & `Z-Series`
-  - **Morsetti personalizzati:** Crea e gestisci i tuoi morsetti personalizzati direttamente nell'app
-- **Numerazione multilivello & allineamento PE:**
-  - Morsetti di installazione e multipiano (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, ecc.): Un **collegamento PE** presente viene sempre allineato su una riga PE dedicata **sotto il livello principale inferiore**, mantenendo la numerazione progressiva su una linea orizzontale uniforme.
-  - **Esempio multipiano:** Su una morsettiera con morsetti a 2 piani, il piano 1 (basso) numera automaticamente i dispari (`1, 3, 5 …`) e il piano 2 (alto) i pari (`2, 4, 6 …`); i successivi morsetti a 1 piano continuano senza interruzioni sul piano 1 (`7, 8, 9 …`).
-- **Editor CAD 2D interattivo (senza guida DIN superflua):**
-  - Area CAD pulita senza guida DIN superflua, con loghi dei produttori integrati (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Visualizzazione tipo:** A scelta **verticale (ruotata di `-90°`)** per ogni morsetto oppure **raggruppata orizzontalmente** sotto la morsettiera.
-  - **Modifica diretta (inline):** Un **doppio clic** su una siglatura apre la modifica immediata (`Invio` = applica, campo vuoto = ripristina numerazione automatica, `Esc` = annulla).
-  - **Selezione multipla:** Clic singolo, `Ctrl+Clic`, `Maiusc+Clic` e selezione con riquadro per assegnare tipi, inserire prima/dopo o eliminare in blocco.
-- **Accessori compatibili mostrati automaticamente:**
-  - Il pannello destro Proprietà mostra automaticamente gli accessori adatti ai morsetti selezionati: **piastre terminali**, **ponticelli / cavallotti**, **strisce di siglatura**, **morsetti finali** e **barre collettrici N**.
-- **Esportazione pronta per la stampa (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 fogli strutturati:
-    1. `Druckfolge` / Sequenza di stampa (`ByTierStrip` come predefinito – ogni piano esportato di seguito in blocco continuo: prima tutto il piano 1, poi il piano 2, poi il piano 3; ordinamento per colonna o blocco e inclusione `PE` opzionali)
-    2. `Ebenen-Spalten` / Colonne per piano
-    3. `Ebenen-Matrix` / Matrice dei piani
-    - Tutte le celle vengono formattate rigorosamente come **Testo Excel (`@`)** in modo che zeri iniziali (`01`) o notazioni con punto (`1.1`) non vengano mai convertiti in numeri o date.
-  - **CSV (`.csv`):** UTF-8 con BOM e punto e virgola `;` come separatore predefinito.
-  - **File di progetto:** Salvataggio e caricamento in formato `.termi` o `.json` inclusi testi manuali e morsetti personalizzati.
-- **7 lingue, temi & controllo aggiornamenti integrato:**
-  - Interfaccia commutabile tra **DE, EN, FR, IT, ES, PL, NL** – con temi **Chiaro e Scuro** ad alto contrasto.
-  - **Controllo aggiornamenti GitHub** integrato oltre a link diretti a **GitHub** e **Buy Me a Coffee**.
+- **277 modelli di morsetti integrati + morsetti personalizzati:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (pulsante), `2102–2116` (leva), `2022` X-COM, `2007` misura/test, `280/281` e `285` alta corrente (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` morsetti per installazione, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installazione, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Morsetti personalizzati:** Crea morsetti personalizzati direttamente nell'app incluse `1×` o `2×` camere ponticello
+- **Numerazione multilivello, modalità N/PE & simboli speciali:**
+  - Morsetti di installazione e multipiano (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, ecc.): Un **collegamento PE** presente viene sempre allineato su una riga dedicata **sotto il livello principale inferiore**.
+  - **Numerazione N & PE:** Impostabile per morsettiera tra fisso (`N`/`PE`), sequenza condivisa (`1, 2, …`), `1N, 2N` / `1PE, 2PE` condivisi o **contatore N/PE proprio (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Prefisso / Suffisso / Simboli su selezione:** Seleziona più morsetti e aggiungi `+`, `-`, `~`, `=`, `.1`, `Ω`, ecc. prima o dopo il numero su tutti i piani o un piano mirato (dinamico anche cambiando il numero iniziale).
+- **Modo Ponticelli & Calcolo Potenziali:**
+  - Crea **potenziali** a colori (`+24V`, `GND`, `L1` …) e tocca/clicca i piani direttamente nella vista CAD.
+  - **Calcolo automatico:** Calcola i poli del ponticello necessari (es. `2002-405`, `FBS 5-5`, `ZQV`), segnala i **pin da rimuovere (`Rimuovere pin ×`)**, pianifica **ponticelli a filo (`DB`)** tra piani (`E1 <-> E2`) o cambi di passo, e gestisce **1 camera** (ponticello a filo oltre i poli max) vs **2 camere** (cascata su camera 1 & 2).
+- **Editor CAD 2D interattivo (Desktop & Touch):**
+  - Vista CAD senza guida DIN superflua con loghi produttori (**WAGO**, **Phoenix Contact**, **Weidmüller**), selettore strumenti (**Sposta vista**, **Riquadro**, **Modo Ponticelli**), scorrimento touch e trascinamento tasto centrale/destro.
+  - **Visualizzazione & modifica diretta:** Verticale `-90°` o orizzontale raggruppata; **doppio clic** per modificare (`Invio` = applica, vuoto = auto, `Esc` = annulla).
+- **Anteprima prodotto, link produttore & accessori compatibili:**
+  - Mostra **foto prodotto (se raggiungibile) o profilo tecnico**, **numero camere**, **link diretto alla pagina prodotto del produttore**, più **piastre, ponticelli, targhette, fermamorsetti e barre N**.
+- **Esportazione pronta per la stampa (`.xlsx` & `.csv`) & File di progetto (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 fogli (`Druckfolge` / `ByTierStrip` predefinito, `Ebenen-Spalten`, `Ebenen-Matrix`), tutte le celle formattate in **Testo Excel (`@`)**.
+- **7 lingue, temi & controllo aggiornamenti live:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Chiaro/Scuro ad alto contrasto, verifica GitHub live su Desktop & Android, link diretti a **GitHub** & **Buy Me a Coffee**.
 
 ---
 

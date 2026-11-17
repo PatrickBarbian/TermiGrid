@@ -1,6 +1,6 @@
 [package]
 name = "termigrid"
-version = "1.0.2"
+version = "1.1.0"
 edition = "2024"
 description = "TermiGrid - Cross-platform Terminal Block Strip Designer & Labeling Exporter for Control Cabinet Manufacturing"
 authors = ["Patrick Barbian"]
@@ -19,7 +19,7 @@ egui = "0.37"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rust_xlsxwriter = "0.102"
-image = { version = "0.25", default-features = false, features = ["png"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 eframe = { version = "0.37", default-features = false, features = [
@@ -60,6 +60,9 @@ target_sdk_version = 35
 label = "TermiGrid"
 icon = "@mipmap/ic_launcher"
 resizeable_activity = true
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.INTERNET"
 
 [package.metadata.android.application.activity]
 config_changes = "orientation|screenSize|screenLayout|smallestScreenSize|density|keyboard|keyboardHidden|navigation|uiMode"

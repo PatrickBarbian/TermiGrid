@@ -42,32 +42,28 @@
 
 ### Hauptfunktionen
 
-- **186 hinterlegte Klemmentypen + eigene Klemmen:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (mit Betätigungsdrücker), `2102–2116`, `2022` X-COM sowie `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` Installationsklemmen sowie `ST` & `UT`
-  - **Weidmüller:** `A-Series`, `AITB` Installationsklemmen, `W-Series`, `DLI` & `Z-Series`
-  - **Eigene Klemmen:** Eigene Klemmentypen direkt in der App anlegen und mit Hersteller-Zuordnung verwalten
-- **Ebenen-basierte Nummerierung & PE-Ausrichtung:**
-  - Installations- und Mehrstockklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` usw.): Ein vorhandener **PE-Anschluss** wird stets in einer eigenen PE-Zeile **unterhalb der unteren Hauptebene** ausgerichtet, sodass fortlaufende Nummern auf einer sauberen horizontalen Ebene bleiben.
-  - **Beispiel Mehrstockklemme:** Auf einer Klemmenleiste mit 2-Stock-Klemmen zählt Ebene 1 (unten) automatisch ungerade (`1, 3, 5 …`), Ebene 2 (oben) gerade (`2, 4, 6 …`); nachfolgende 1-Stock-Klemmen setzen auf Ebene 1 nahtlos fort (`7, 8, 9 …`).
-- **Interaktiver 2D CAD-Editor (ohne Hutschienen-Ballast):**
-  - Klare CAD-Ansicht ohne störende DIN-Schiene mit eingebetteten Hersteller-Logos (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Typ-Anzeige:** Wahlweise **vertikal (-90° gedreht)** je Klemme oder **horizontal gruppiert** unterhalb der Klemmenleiste.
-  - **Inline-Bearbeitung:** **Doppelklick** auf eine Klemmenbeschriftung öffnet die Direkteingabe (`Enter` = übernehmen, leer lassen = Automatik-Nummer wiederherstellen, `Esc` = abbrechen).
-  - **Mehrfachauswahl:** Einzelklick, `Strg+Klick`, `Shift+Klick` und Rahmenauswahl (Marquee) zum gemeinsamen Zuweisen, Einfügen davor/dahinter oder Löschen.
-- **Passendes Zubehör automatisch angezeigt:**
-  - Die rechte Eigenschaften-Spalte zeigt zu den ausgewählten Klemmen automatisch passendes Zubehör an: **Enddeckel / Abschlussplatten**, **Querbrücken / Verbinder**, **Beschriftungsstreifen / Marker**, **Endklammern** sowie **N-Sammelschienen**.
+- **277 hinterlegte Klemmentypen + eigene Klemmen:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (mit Betätigungsdrücker), `2102–2116` (Hebel), `2022` X-COM, `2007` Stromwandler, `280/281` sowie `285` Hochstrom (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` inkl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI` / `UTI` Installationsklemmen, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` Installationsklemmen, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Eigene Klemmen:** Eigene Klemmentypen inkl. `1×` oder `2×` Brückerkammern direkt in der App anlegen
+- **Ebenen-basierte Nummerierung, N/PE-Modi & Sonderzeichen:**
+  - Installations- und Mehrstockklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` usw.): Ein vorhandener **PE-Anschluss** wird stets in einer eigenen PE-Zeile **unterhalb der unteren Hauptebene** ausgerichtet.
+  - **N- & PE-Nummerierung:** Umschaltbar pro Leiste zwischen fest (`N`/`PE`), mit der Hauptfolge mitgezählt (`1, 2, …`), mitgezählt als `1N, 2N` / `1PE, 2PE` oder mit **eigenem Zähler (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Präfix / Suffix / Sonderzeichen für Auswahl:** Beliebig viele Klemmen markieren und Sonderzeichen wie `+`, `-`, `~`, `=`, `.1`, `Ω` etc. vor oder nach der Zahl für alle oder gezielte Ebenen anwenden (bleibt beim Umnummerieren dynamisch erhalten).
+- **Brücken-Modus & Potentialberechnung:**
+  - Mehrere farbliche **Potentiale** anlegen (`+24V`, `GND`, `L1` …) und Klemmen-Ebenen direkt im CAD antippen/anklicken.
+  - **Automatische Berechnung:** Ermittelt benötigte Kammbrücken-Polzahlen (z. B. `2002-405`, `FBS 5-5`, `ZQV`), markiert **herauszubrechende Pins (`Pin entfernen ×`)** bei übersprungenen Klemmen, plant **Drahtbrücken (`DB`)** bei Mehrstock-Ebenenwechseln (`E1 <-> E2`) oder Rasterwechseln und unterscheidet automatisch zwischen **1-Kammer-Klemmen** (Drahtbrücke ab Überschreitung der max. Zubehör-Polzahl) und **Doppelkammer-Klemmen** (überlappende Kaskadierung in Kammer 1 & 2).
+- **Interaktiver 2D CAD-Editor (Desktop & Touch-optimiert):**
+  - Klare CAD-Ansicht ohne DIN-Schiene mit Hersteller-Logos (**WAGO**, **Phoenix Contact**, **Weidmüller**), Modus-Umschalter (**Verschieben**, **Rahmenauswahl**, **Brücken-Modus**), Touch-Panning sowie Mittel-/Rechtsklick-Drag.
+  - **Typ-Anzeige & Inline-Bearbeitung:** `-90°` vertikal oder horizontal gruppiert; **Doppelklick** auf Beschriftung zum direkten Editieren (`Enter` = übernehmen, leer = Auto, `Esc` = abbrechen).
+- **Produktvorschau, Hersteller-Link & Passendes Zubehör:**
+  - Im rechten Panel erscheinen zur gewählten Klemme automatisch **Produktfoto (wenn abrufbar) bzw. technische Profilvorschau**, **Kammeranzahl**, ein direkter **Link zur Hersteller-Produktseite** sowie **Enddeckel, Brücken, Marker, Endklammern und N-Sammelschienen**.
 - **Druckerfertiger Export (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 strukturierte Arbeitsblätter:
-    1. `Druckfolge` (`ByTierStrip` als Standard – alle Schilder einer Ebene zusammenhängend am Stück, z. B. erst komplett Ebene 1, danach Ebene 2, danach Ebene 3; optional auch Spalten- oder Block-Reihenfolge sowie optional mit/ohne `PE`)
-    2. `Ebenen-Spalten`
-    3. `Ebenen-Matrix`
-    - Alle Zellen werden strikt als **Excel-Text (`@`)** formatiert, damit führende Nullen (`01`) oder Punkt-Notation (`1.1`) niemals zu Zahlen/Daten konvertiert werden.
-  - **CSV (`.csv`):** UTF-8 mit BOM und Semikolon `;` als Standard-Trennzeichen.
-  - **Projektdateien:** Laden und Speichern als `.termi` oder `.json` inklusive manueller Überschreibungen und eigener Klemmentypen.
+  - **Excel (`.xlsx`):** 3 Arbeitsblätter (`Druckfolge` mit `ByTierStrip`-Standard, `Ebenen-Spalten`, `Ebenen-Matrix`) – alle Zellen strikt als **Excel-Text (`@`)**.
+  - **CSV (`.csv`) & Projektdateien (`.termi` / `.json`)** inklusive Potentialen, Sonderzeichen und eigenen Klemmen.
 - **7 Sprachen, Themes & integrierter Update-Checker:**
-  - Oberfläche umschaltbar zwischen **DE, EN, FR, IT, ES, PL, NL** – mit hohem Kontrast im **Hell- und Dunkelmodus**.
-  - **GitHub Update-Checker** direkt in der App sowie direkte Links zu **GitHub** und **Buy Me a Coffee**.
+  - **DE, EN, FR, IT, ES, PL, NL** – Hell/Dunkel mit hohem Kontrast, nativer Update-Check auf Desktop & Android sowie direkte Links zu **GitHub** und **Buy Me a Coffee**.
 
 ---
 
@@ -153,32 +149,27 @@ Klicke auf eine Sprache, um die vollständige Dokumentation direkt hier aufzukla
 
 ### Key Features
 
-- **186 built-in terminal block specs + custom blocks:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (push-button), `2102–2116`, `2022` X-COM, and `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` installation terminals, plus `ST` & `UT`
-  - **Weidmüller:** `A-Series`, `AITB` installation terminals, `W-Series`, `DLI`, & `Z-Series`
-  - **Custom terminals:** Create and manage your own custom terminal definitions directly inside the app
-- **Multi-level numbering & PE alignment:**
-  - Installation and multi-tier terminals (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Any existing **PE connection** is consistently aligned in a dedicated PE row **below the bottom main tier**, keeping sequential numbers on one clean horizontal baseline.
-  - **Multi-tier example:** On a strip of 2-tier blocks, Tier 1 (bottom) automatically numbers odd (`1, 3, 5 …`) and Tier 2 (top) even (`2, 4, 6 …`); subsequent 1-tier blocks seamlessly continue on Tier 1 (`7, 8, 9 …`).
-- **Interactive 2D CAD Editor (without DIN-rail clutter):**
-  - Clean CAD canvas without an unnecessary DIN rail, featuring embedded manufacturer logos (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Type display:** Switch between **vertical (`-90°` rotated)** per terminal or **horizontally grouped** underneath the strip.
-  - **Inline editing:** **Double-click** any terminal label to edit directly (`Enter` = apply, empty = restore automatic numbering, `Esc` = cancel).
-  - **Multi-selection:** Single click, `Ctrl+Click`, `Shift+Click`, and marquee drag selection to reassign types, insert before/after, or delete together.
-- **Automatic matching accessories:**
-  - The right-hand Properties panel automatically displays matching accessories for the selected terminals: **End plates / covers**, **Jumpers / cross-connectors**, **Marking strips / tags**, **End brackets**, and **N-busbars**.
-- **Printer-ready Export (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 structured worksheets:
-    1. `Druckfolge` / Print Sequence (`ByTierStrip` by default – outputs every tier contiguously as a strip, e.g. all of Tier 1 first, then Tier 2, then Tier 3; optionally column- or block-ordered, with/without `PE`)
-    2. `Ebenen-Spalten` / Tier Columns
-    3. `Ebenen-Matrix` / Tier Matrix
-    - All cells are strictly formatted as **Excel Text (`@`)** so leading zeros (`01`) or dot notation (`1.1`) are never converted into numbers or dates.
-  - **CSV (`.csv`):** UTF-8 with BOM and semicolon `;` as the default delimiter.
-  - **Project files:** Save and load `.termi` or `.json` files including manual overrides and custom terminals.
-- **7 Languages, Themes & built-in Update Checker:**
-  - Instant UI switching between **DE, EN, FR, IT, ES, PL, NL** – with high-contrast **Light and Dark** themes.
-  - Built-in **GitHub Update Checker** plus direct **GitHub** and **Buy Me a Coffee** links.
+- **277 built-in terminal block specs + custom blocks:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (push-button), `2102–2116` (lever), `2022` X-COM, `2007` CT test, `280/281`, and `285` high-current (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` installation terminals, `ST`, `UT`, & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installation terminals, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`), & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Custom terminals:** Define custom blocks directly in the app including `1×` vs `2×` jumper chambers
+- **Multi-level numbering, N/PE modes & special characters:**
+  - Installation & multi-tier terminals (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Any existing **PE connection** is aligned on a dedicated PE row **below the bottom main tier**.
+  - **N & PE numbering:** Switch per strip between fixed (`N`/`PE`), shared sequential numbering (`1, 2, …`), shared `1N, 2N` / `1PE, 2PE`, or **separate N/PE counters (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Batch prefix / suffix / special characters:** Select any number of terminals and attach symbols (`+`, `-`, `~`, `=`, `.1`, `Ω`, etc.) before or after numbers across all or targeted tiers (preserved across renumbering).
+- **Bridge Mode & Potential Calculation:**
+  - Create color-coded **potentials** (`+24V`, `GND`, `L1` …) and tap/click terminal tiers directly in CAD.
+  - **Automatic calculation:** Computes required comb jumper poles (e.g. `2002-405`, `FBS 5-5`, `ZQV`), marks **cut-out pins (`Cut pin ×`)** over skipped blocks, inserts **wire bridges (`DB`)** across multi-tier jumps (`E1 <-> E2`) or pitch changes, and respects **single-chamber** (wire bridge beyond max poles) vs **double-chamber** terminals (overlapping slot-1/slot-2 cascades).
+- **Interactive 2D CAD Editor (Desktop & Touch-friendly):**
+  - Clean CAD canvas without DIN-rail clutter, embedded brand logos (**WAGO**, **Phoenix Contact**, **Weidmüller**), tool switcher (**Pan**, **Box Select**, **Bridge Mode**), touch panning & middle/right-drag scrolling.
+  - **Type display & inline editing:** `-90°` vertical or horizontal groups; **double-click** labels to edit inline (`Enter` = apply, empty = auto, `Esc` = cancel).
+- **Product Preview, Manufacturer Link & Matching Accessories:**
+  - Displays **product photo (when reachable) / technical profile preview**, **jumper chamber count**, clickable **manufacturer product page link**, plus **end plates, jumpers, markers, end brackets, and N-busbars**.
+- **Printer-ready Export (`.xlsx` & `.csv`) & Project files (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 worksheets (`Druckfolge` / `ByTierStrip` default, `Ebenen-Spalten`, `Ebenen-Matrix`), strictly formatted as **Excel Text (`@`)**.
+- **7 Languages, High-Contrast Themes & Live Update Checker:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Light & Dark themes, live GitHub update check on Desktop & Android, plus **GitHub** and **Buy Me a Coffee** links.
 
 ### Downloads & Portability
 
@@ -250,32 +241,27 @@ Licensed under the **MIT License**.
 
 ### Fonctionnalités principales
 
-- **186 références de bornes intégrées + bornes personnalisées :**
-  - **WAGO :** TOPJOB S (`2000–2016`), `2200–2216` (avec bouton-poussoir), `2102–2116`, `2022` X-COM et `280/281`
-  - **Phoenix Contact :** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` bornes d'installation ainsi que `ST` & `UT`
-  - **Weidmüller :** `A-Series`, `AITB` bornes d'installation, `W-Series`, `DLI` & `Z-Series`
-  - **Bornes personnalisées :** Créez et gérez vos propres types de bornes directement dans l'application
-- **Numérotation multi-niveaux & alignement PE :**
-  - Bornes d'installation et multi-étages (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.) : Tout **raccordement PE** présent est toujours aligné sur une ligne PE dédiée **sous l'étage principal inférieur**, afin de garder les repères numériques sur une ligne horizontale claire.
-  - **Exemple multi-étages :** Sur une barrette de bornes à 2 étages, l'étage 1 (bas) numérote automatiquement en impair (`1, 3, 5 …`) et l'étage 2 (haut) en pair (`2, 4, 6 …`) ; les bornes suivantes à 1 étage poursuivent sans rupture sur l'étage 1 (`7, 8, 9 …`).
-- **Éditeur CAO 2D interactif (sans encombrement de rail DIN) :**
-  - Vue CAO épurée sans rail DIN superflu, avec logos fabricants intégrés (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Affichage des références :** Au choix **vertical (orienté à `-90°`)** par borne ou **regroupé horizontalement** sous le bornier.
-  - **Édition directe (inline) :** Un **double-clic** sur un repère permet de le modifier directement (`Entrée` = valider, champ vide = restaurer la numérotation auto, `Échap` = annuler).
-  - **Sélection multiple :** Clic simple, `Ctrl+Clic`, `Maj+Clic` et sélection par rectangle pour réaffecter un type, insérer avant/après ou supprimer en lot.
-- **Accessoires compatibles affichés automatiquement :**
-  - Le panneau latéral droit affiche automatiquement les accessoires adaptés aux bornes sélectionnées : **flasques d'extrémité**, **peignes de pontage / jonctions**, **bandelettes de marquage**, **butées d'arrêt** et **barres collectrices N**.
-- **Export prêt pour l'impression (`.xlsx` & `.csv`) :**
-  - **Excel (`.xlsx`) :** 3 feuilles structurées :
-    1. `Druckfolge` / Ordre d'impression (`ByTierStrip` par défaut – tous les repères d'un même niveau regroupés en continu, d'abord tout le niveau 1, puis le niveau 2, puis le niveau 3 ; ordre par colonne ou par bloc et inclusion de `PE` en option)
-    2. `Ebenen-Spalten` / Colonnes par niveau
-    3. `Ebenen-Matrix` / Matrice des niveaux
-    - Toutes les cellules sont formatées strictement en **Texte Excel (`@`)** afin que les zéros initiaux (`01`) ou notations avec point (`1.1`) ne soient jamais convertis en nombres ou en dates.
-  - **CSV (`.csv`) :** UTF-8 avec BOM et point-virgule `;` par défaut.
-  - **Fichiers projet :** Enregistrement et chargement au format `.termi` ou `.json` avec textes manuels et bornes personnalisées.
-- **7 langues, thèmes & vérificateur de mises à jour intégré :**
-  - Interface disponible en **DE, EN, FR, IT, ES, PL, NL** – avec thèmes **Clair et Sombre** à fort contraste.
-  - **Vérificateur de mises à jour GitHub** intégré ainsi que liens directs vers **GitHub** et **Buy Me a Coffee**.
+- **277 références de bornes intégrées + bornes personnalisées :**
+  - **WAGO :** TOPJOB S (`2000–2016`), `2200–2216` (bouton-poussoir), `2102–2116` (levier), `2022` X-COM, `2007` mesure/test, `280/281` et `285` fort courant (`35–95 mm²`)
+  - **Phoenix Contact :** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` bornes d'installation, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller :** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installation, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Bornes personnalisées :** Créez vos propres bornes directement dans l'app avec `1×` ou `2×` chambres de pontage
+- **Numérotation multi-niveaux, modes N/PE & caractères spéciaux :**
+  - Bornes d'installation et multi-étages (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.) : Tout **raccordement PE** présent est toujours aligné sur une ligne dédiée **sous l'étage principal inférieur**.
+  - **Numérotation N & PE :** Basculez par bornier entre fixe (`N`/`PE`), compteur partagé (`1, 2, …`), `1N, 2N` / `1PE, 2PE` partagés ou **compteur N/PE propre (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Préfixe / Suffixe / Caractères spéciaux par lot :** Sélectionnez plusieurs bornes et ajoutez `+`, `-`, `~`, `=`, `.1`, `Ω`, etc. avant ou après le repère (conservé lors de la renumérotation).
+- **Mode Pontage & Calcul de potentiels :**
+  - Créez plusieurs **potentiels** colorés (`+24V`, `GND`, `L1` …) et touchez/cliquez les étages directement dans la vue CAO.
+  - **Calcul automatique :** Détermine le nombre de pôles de peigne requis (ex. `2002-405`, `FBS 5-5`, `ZQV`), signale les **broches à couper (`Couper broche ×`)**, planifie les **ponts filaires (`DB`)** entre étages (`E1 <-> E2`) ou changements de pas, et gère **1 chambre** (pont filaire si > pôles max) vs **2 chambres** (cascade superposée sur chambres 1 & 2).
+- **Éditeur CAO 2D interactif (Bureau & Tactile) :**
+  - Vue CAO sans rail DIN superflu, logos fabricants intégrés (**WAGO**, **Phoenix Contact**, **Weidmüller**), sélecteur d'outils (**Déplacer**, **Sélection**, **Mode Pontage**), déplacement tactile & bouton milieu/droit.
+  - **Affichage & édition directe :** Vertical `-90°` ou horizontal groupé ; **double-clic** pour éditer en direct (`Entrée` = valider, vide = auto, `Échap` = annuler).
+- **Aperçu produit, lien fabricant & accessoires compatibles :**
+  - Affiche **photo produit (si accessible) ou profil technique**, **nombre de chambres**, **lien direct vers la page produit fabricant**, plus **flasques, peignes, repères, butées et barres N**.
+- **Export prêt pour l'impression (`.xlsx` & `.csv`) & Fichiers projet (`.termi` / `.json`) :**
+  - **Excel (`.xlsx`) :** 3 feuilles (`Druckfolge` / `ByTierStrip` par défaut, `Ebenen-Spalten`, `Ebenen-Matrix`), toutes les cellules formatées en **Texte Excel (`@`)**.
+- **7 langues, thèmes & vérificateur de mises à jour en direct :**
+  - **DE, EN, FR, IT, ES, PL, NL** – Clair/Sombre contraste élevé, vérification GitHub sur Bureau & Android, liens directs **GitHub** & **Buy Me a Coffee**.
 
 ### Téléchargements & Portabilité
 
@@ -347,32 +333,27 @@ Publié sous **licence MIT**.
 
 ### Funzionalità principali
 
-- **186 modelli di morsetti integrati + morsetti personalizzati:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (con pulsante), `2102–2116`, `2022` X-COM e `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` morsetti per installazione, più `ST` & `UT`
-  - **Weidmüller:** `A-Series`, `AITB` morsetti per installazione, `W-Series`, `DLI` & `Z-Series`
-  - **Morsetti personalizzati:** Crea e gestisci i tuoi morsetti personalizzati direttamente nell'app
-- **Numerazione multilivello & allineamento PE:**
-  - Morsetti di installazione e multipiano (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, ecc.): Un **collegamento PE** presente viene sempre allineato su una riga PE dedicata **sotto il livello principale inferiore**, mantenendo la numerazione progressiva su una linea orizzontale uniforme.
-  - **Esempio multipiano:** Su una morsettiera con morsetti a 2 piani, il piano 1 (basso) numera automaticamente i dispari (`1, 3, 5 …`) e il piano 2 (alto) i pari (`2, 4, 6 …`); i successivi morsetti a 1 piano continuano senza interruzioni sul piano 1 (`7, 8, 9 …`).
-- **Editor CAD 2D interattivo (senza guida DIN superflua):**
-  - Area CAD pulita senza guida DIN superflua, con loghi dei produttori integrati (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Visualizzazione tipo:** A scelta **verticale (ruotata di `-90°`)** per ogni morsetto oppure **raggruppata orizzontalmente** sotto la morsettiera.
-  - **Modifica diretta (inline):** Un **doppio clic** su una siglatura apre la modifica immediata (`Invio` = applica, campo vuoto = ripristina numerazione automatica, `Esc` = annulla).
-  - **Selezione multipla:** Clic singolo, `Ctrl+Clic`, `Maiusc+Clic` e selezione con riquadro per assegnare tipi, inserire prima/dopo o eliminare in blocco.
-- **Accessori compatibili mostrati automaticamente:**
-  - Il pannello destro Proprietà mostra automaticamente gli accessori adatti ai morsetti selezionati: **piastre terminali**, **ponticelli / cavallotti**, **strisce di siglatura**, **morsetti finali** e **barre collettrici N**.
-- **Esportazione pronta per la stampa (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 fogli strutturati:
-    1. `Druckfolge` / Sequenza di stampa (`ByTierStrip` come predefinito – ogni piano esportato di seguito in blocco continuo: prima tutto il piano 1, poi il piano 2, poi il piano 3; ordinamento per colonna o blocco e inclusione `PE` opzionali)
-    2. `Ebenen-Spalten` / Colonne per piano
-    3. `Ebenen-Matrix` / Matrice dei piani
-    - Tutte le celle vengono formattate rigorosamente come **Testo Excel (`@`)** in modo che zeri iniziali (`01`) o notazioni con punto (`1.1`) non vengano mai convertiti in numeri o date.
-  - **CSV (`.csv`):** UTF-8 con BOM e punto e virgola `;` come separatore predefinito.
-  - **File di progetto:** Salvataggio e caricamento in formato `.termi` o `.json` inclusi testi manuali e morsetti personalizzati.
-- **7 lingue, temi & controllo aggiornamenti integrato:**
-  - Interfaccia commutabile tra **DE, EN, FR, IT, ES, PL, NL** – con temi **Chiaro e Scuro** ad alto contrasto.
-  - **Controllo aggiornamenti GitHub** integrato oltre a link diretti a **GitHub** e **Buy Me a Coffee**.
+- **277 modelli di morsetti integrati + morsetti personalizzati:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (pulsante), `2102–2116` (leva), `2022` X-COM, `2007` misura/test, `280/281` e `285` alta corrente (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` morsetti per installazione, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installazione, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Morsetti personalizzati:** Crea morsetti personalizzati direttamente nell'app incluse `1×` o `2×` camere ponticello
+- **Numerazione multilivello, modalità N/PE & simboli speciali:**
+  - Morsetti di installazione e multipiano (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, ecc.): Un **collegamento PE** presente viene sempre allineato su una riga dedicata **sotto il livello principale inferiore**.
+  - **Numerazione N & PE:** Impostabile per morsettiera tra fisso (`N`/`PE`), sequenza condivisa (`1, 2, …`), `1N, 2N` / `1PE, 2PE` condivisi o **contatore N/PE proprio (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Prefisso / Suffisso / Simboli su selezione:** Seleziona più morsetti e aggiungi `+`, `-`, `~`, `=`, `.1`, `Ω`, ecc. prima o dopo il numero su tutti i piani o un piano mirato (dinamico anche cambiando il numero iniziale).
+- **Modo Ponticelli & Calcolo Potenziali:**
+  - Crea **potenziali** a colori (`+24V`, `GND`, `L1` …) e tocca/clicca i piani direttamente nella vista CAD.
+  - **Calcolo automatico:** Calcola i poli del ponticello necessari (es. `2002-405`, `FBS 5-5`, `ZQV`), segnala i **pin da rimuovere (`Rimuovere pin ×`)**, pianifica **ponticelli a filo (`DB`)** tra piani (`E1 <-> E2`) o cambi di passo, e gestisce **1 camera** (ponticello a filo oltre i poli max) vs **2 camere** (cascata su camera 1 & 2).
+- **Editor CAD 2D interattivo (Desktop & Touch):**
+  - Vista CAD senza guida DIN superflua con loghi produttori (**WAGO**, **Phoenix Contact**, **Weidmüller**), selettore strumenti (**Sposta vista**, **Riquadro**, **Modo Ponticelli**), scorrimento touch e trascinamento tasto centrale/destro.
+  - **Visualizzazione & modifica diretta:** Verticale `-90°` o orizzontale raggruppata; **doppio clic** per modificare (`Invio` = applica, vuoto = auto, `Esc` = annulla).
+- **Anteprima prodotto, link produttore & accessori compatibili:**
+  - Mostra **foto prodotto (se raggiungibile) o profilo tecnico**, **numero camere**, **link diretto alla pagina prodotto del produttore**, più **piastre, ponticelli, targhette, fermamorsetti e barre N**.
+- **Esportazione pronta per la stampa (`.xlsx` & `.csv`) & File di progetto (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 fogli (`Druckfolge` / `ByTierStrip` predefinito, `Ebenen-Spalten`, `Ebenen-Matrix`), tutte le celle formattate in **Testo Excel (`@`)**.
+- **7 lingue, temi & controllo aggiornamenti live:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Chiaro/Scuro ad alto contrasto, verifica GitHub live su Desktop & Android, link diretti a **GitHub** & **Buy Me a Coffee**.
 
 ### Download & Portabilità
 
@@ -444,32 +425,27 @@ Distribuito con **licenza MIT**.
 
 ### Funciones principales
 
-- **186 tipos de bornes integrados + bornes personalizados:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (con pulsador), `2102–2116`, `2022` X-COM y `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` bornes de instalación, además de `ST` y `UT`
-  - **Weidmüller:** `A-Series`, `AITB` bornes de instalación, `W-Series`, `DLI` y `Z-Series`
-  - **Bornes personalizados:** Crea y gestiona tus propios modelos de bornes directamente dentro de la aplicación
-- **Numeración multinivel y alineación PE:**
-  - Bornes de instalación y multipiso (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Cualquier **conexión PE** existente se alinea siempre en su propia fila PE **debajo del nivel principal inferior**, manteniendo los números consecutivos sobre una línea horizontal limpia.
-  - **Ejemplo multipiso:** En un regletero de bornes de 2 pisos, el nivel 1 (inferior) numera automáticamente los impares (`1, 3, 5 …`) y el nivel 2 (superior) los pares (`2, 4, 6 …`); los bornes siguientes de 1 piso continúan sin cortes en el nivel 1 (`7, 8, 9 …`).
-- **Editor CAD 2D interactivo (sin ruido visual de carril DIN):**
-  - Vista CAD limpia sin carril DIN innecesario, con logotipos integrados de fabricantes (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Visualización de tipo:** Elige entre **vertical (rotado `-90°`)** por cada borne o **agrupado horizontalmente** debajo del regletero.
-  - **Edición en línea:** Un **doble clic** sobre cualquier etiqueta permite editarla al instante (`Enter` = aplicar, campo vacío = restaurar numeración automática, `Esc` = cancelar).
-  - **Selección múltiple:** Clic simple, `Ctrl+Clic`, `Shift+Clic` y selección por marco para reasignar tipos, insertar antes/después o eliminar en bloque.
-- **Accesorios compatibles mostrados automáticamente:**
-  - El panel derecho de Propiedades muestra automáticamente los accesorios compatibles para los bornes seleccionados: **tapas finales**, **puentes de conexión**, **tiras de marcado**, **topes finales** y **barras colectoras N**.
-- **Exportación lista para impresora (`.xlsx` y `.csv`):**
-  - **Excel (`.xlsx`):** 3 hojas estructuradas:
-    1. `Druckfolge` / Secuencia de impresión (`ByTierStrip` por defecto – exporta cada nivel de forma contigua en una tira, p. ej. primero todo el nivel 1, luego el nivel 2 y después el nivel 3; orden por columna o bloque y opción de incluir/excluir `PE`)
-    2. `Ebenen-Spalten` / Columnas por nivel
-    3. `Ebenen-Matrix` / Matriz de niveles
-    - Todas las celdas se formatean estrictamente como **Texto Excel (`@`)** para que los ceros a la izquierda (`01`) o notaciones con punto (`1.1`) nunca se conviertan en números ni fechas.
-  - **CSV (`.csv`):** UTF-8 con BOM y punto y coma `;` como separador predeterminado.
-  - **Archivos de proyecto:** Guarda y carga `.termi` o `.json` incluyendo textos manuales y bornes personalizados.
-- **7 idiomas, temas y comprobador de actualizaciones integrado:**
-  - Interfaz intercambiable entre **DE, EN, FR, IT, ES, PL, NL** – con temas **Claro y Oscuro** de alto contraste.
-  - **Comprobador de actualizaciones de GitHub** integrado junto con enlaces directos a **GitHub** y **Buy Me a Coffee**.
+- **277 tipos de bornes integrados + bornes personalizados:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (pulsador), `2102–2116` (palanca), `2022` X-COM, `2007` medida/prueba, `280/281` y `285` alta corriente (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` instalación, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` instalación, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Bornes personalizados:** Crea tus propios bornes en la app incluyendo `1×` o `2×` cámaras de puente
+- **Numeración multinivel, modos N/PE y símbolos especiales:**
+  - Bornes de instalación y multipiso (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Cualquier **conexión PE** se alinea siempre en su propia fila **debajo del nivel principal inferior**.
+  - **Numeración N y PE:** Selecciona por regletero entre fijo (`N`/`PE`), contador compartido (`1, 2, …`), `1N, 2N` / `1PE, 2PE` compartidos o **contador propio N/PE (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Prefijo / Sufijo / Símbolos en lote:** Marca varios bornes y añade `+`, `-`, `~`, `=`, `.1`, `Ω`, etc. antes o después del número en todos o en un piso específico (se conserva al renumerar).
+- **Modo Puentes y Cálculo de Potenciales:**
+  - Crea **potenciales** por color (`+24V`, `GND`, `L1` …) y pulsa los niveles de bornes directamente en el CAD.
+  - **Cálculo automático:** Determina polos de puente peine (`2002-405`, `FBS 5-5`, `ZQV`), marca **pines a quitar (`Quitar pin ×`)**, planifica **puentes de cable (`DB`)** entre pisos (`E1 <-> E2`) o cambios de paso, y distingue **1 cámara** (puente de cable si supera polos máx.) vs **2 cámaras** (cascada en cámaras 1 y 2).
+- **Editor CAD 2D interactivo (Escritorio y Táctil):**
+  - Vista CAD sin carril DIN innecesario con logotipos integrados (**WAGO**, **Phoenix Contact**, **Weidmüller**), selector (**Mover vista**, **Selección**, **Modo Puentes**), desplazamiento táctil y arrastre con botón central/derecho.
+  - **Visualización y edición directa:** Vertical `-90°` o horizontal agrupada; **doble clic** para editar (`Enter` = aplicar, vacío = automático, `Esc` = cancelar).
+- **Vista previa del producto, enlace del fabricante y accesorios:**
+  - Muestra **foto del producto (cuando está disponible) o perfil técnico**, **número de cámaras**, **enlace directo a la página del fabricante**, además de **tapas, puentes, marcadores, topes finales y barras N**.
+- **Exportación lista para impresora (`.xlsx` & `.csv`) y Proyectos (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 hojas (`Druckfolge` / `ByTierStrip` por defecto, `Ebenen-Spalten`, `Ebenen-Matrix`), todas las celdas formateadas como **Texto Excel (`@`)**.
+- **7 idiomas, temas y comprobador de actualizaciones en vivo:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Claro/Oscuro de alto contraste, comprobación de GitHub en Escritorio y Android, enlaces directos a **GitHub** y **Buy Me a Coffee**.
 
 ### Descargas y portabilidad
 
@@ -541,32 +517,27 @@ Publicado bajo la **licencia MIT**.
 
 ### Główne funkcje
 
-- **186 wbudowanych typów złączek + własne złączki:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (z przyciskiem), `2102–2116`, `2022` X-COM oraz `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` złączki instalacyjne, a także `ST` i `UT`
-  - **Weidmüller:** `A-Series`, `AITB` złączki instalacyjne, `W-Series`, `DLI` i `Z-Series`
-  - **Własne złączki:** Twórz i zarządzaj własnymi definicjami złączek bezpośrednio w aplikacji
-- **Numeracja wielopoziomowa i wyrównanie PE:**
-  - Złączki instalacyjne i wielopiętrowe (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` itp.): Istniejący **zacisk PE** jest zawsze wyrównany w osobnym wierszu PE **poniżej dolnego poziomu głównego**, dzięki czemu numeracja ciągła pozostaje na jednej równej linii poziomej.
-  - **Przykład wielopiętrowy:** Na listwie ze złączkami 2-piętrowymi poziom 1 (dolny) numeruje się automatycznie nieparzyście (`1, 3, 5 …`), a poziom 2 (górny) parzyście (`2, 4, 6 …`); kolejne złączki 1-piętrowe płynnie kontynuują numerację na poziomie 1 (`7, 8, 9 …`).
-- **Interaktywny edytor CAD 2D (bez zbędnej szyny DIN):**
-  - Czytelny widok CAD bez zbędnej szyny DIN, z wbudowanymi logotypami producentów (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Wyświetlanie typu:** Do wyboru **pionowo (obrócone o `-90°`)** dla każdej złączki lub **pogrupowane poziomo** pod listwą.
-  - **Edycja bezpośrednia (inline):** **Dwukrotne kliknięcie** oznaczenia złączki otwiera edycję na miejscu (`Enter` = zatwierdź, puste pole = przywróć numerację automatyczną, `Esc` = anuluj).
-  - **Zaznaczanie wielokrotne:** Pojedyncze kliknięcie, `Ctrl+kliknięcie`, `Shift+kliknięcie` oraz zaznaczanie ramką do wspólnego przypisywania typu, wstawiania przed/za lub usuwania.
-- **Automatyczne wyświetlanie pasujących akcesoriów:**
-  - Prawy panel Właściwości automatycznie pokazuje pasujące akcesoria dla zaznaczonych złączek: **płytki końcowe**, **mostki / zwory**, **paski oznaczeniowe**, **trzymacze końcowe** oraz **szyny zbiorcze N**.
-- **Eksport gotowy do druku (`.xlsx` i `.csv`):**
-  - **Excel (`.xlsx`):** 3 przejrzyste arkusze:
-    1. `Druckfolge` / Kolejność druku (domyślnie `ByTierStrip` – wszystkie oznaczniki danego poziomu w jednym ciągłym ciągu, np. najpierw cały poziom 1, potem poziom 2, potem poziom 3; opcjonalnie układ kolumnowy lub blokowy oraz uwzględnienie `PE`)
-    2. `Ebenen-Spalten` / Kolumny poziomów
-    3. `Ebenen-Matrix` / Macierz poziomów
-    - Wszystkie komórki są sformatowane ściśle jako **Tekst Excel (`@`)**, aby zera wiodące (`01`) lub zapis z kropką (`1.1`) nigdy nie zostały zamienione na liczby lub daty.
-  - **CSV (`.csv`):** UTF-8 z BOM oraz średnik `;` jako domyślny separator.
-  - **Pliki projektu:** Zapis i wczytywanie w formacie `.termi` lub `.json` wraz z ręcznymi zmianami i własnymi złączkami.
-- **7 języków, motywy i wbudowany moduł aktualizacji:**
-  - Interfejs przełączany między **DE, EN, FR, IT, ES, PL, NL** – z motywami **Jasnym i Ciemnym** o wysokim kontraście.
-  - Wbudowany **sprawdzacz aktualizacji GitHub** oraz bezpośrednie linki do **GitHub** i **Buy Me a Coffee**.
+- **277 wbudowanych typów złączek + własne złączki:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (z przyciskiem), `2102–2116` (dźwignia), `2022` X-COM, `2007` pomiarowe, `280/281` oraz `285` wysokoprądowe (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` z `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` instalacyjne, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` instalacyjne, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Własne złączki:** Twórz własne złączki w aplikacji z wyborem `1×` lub `2×` komór mostka
+- **Numeracja wielopoziomowa, tryby N/PE i znaki specjalne:**
+  - Złączki instalacyjne i wielopiętrowe (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` itd.): Zacisk **PE** jest zawsze wyrównany w osobnym wierszu **poniżej dolnego poziomu głównego**.
+  - **Numeracja N i PE:** Przełączana na listwę między stałym (`N`/`PE`), wspólnym licznikiem (`1, 2, …`), wspólnym `1N, 2N` / `1PE, 2PE` lub **własnym licznikiem N/PE (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Prefiks / Sufiks / Znaki specjalne dla zaznaczonych:** Zaznacz dowolne złączki i dodaj `+`, `-`, `~`, `=`, `.1`, `Ω` itd. przed lub po numerze (zachowywane przy zmianie numeracji).
+- **Tryb Mostków i obliczanie potencjałów:**
+  - Twórz kolorowe **potencjały** (`+24V`, `GND`, `L1` …) i klikaj/dotykaj poziomy złączek bezpośrednio w widoku CAD.
+  - **Automatyczne obliczanie:** Wylicza długość mostka grzebieniowego (np. `2002-405`, `FBS 5-5`, `ZQV`), oznacza **piny do wyłamania (`Wyłamać pin ×`)** przy pominiętych złączkach, planuje **mostki przewodowe (`DB`)** między poziomami (`E1 <-> E2`) lub różnymi rastrami oraz rozróżnia złączki **1-komorowe** (mostek przewodowy powyżej maks. pinów) i **2-komorowe** (kaskada na komorach 1 i 2).
+- **Interaktywny edytor CAD 2D (Desktop & Dotyk):**
+  - Czytelny widok CAD bez szyny DIN z logotypami producentów (**WAGO**, **Phoenix Contact**, **Weidmüller**), przełącznikiem narzędzi (**Przesuń**, **Zaznacz ramką**, **Tryb Mostków**), przesuwaniem dotykowym oraz środkowym/prawym przyciskiem myszy.
+  - **Wyświetlanie i edycja w miejscu:** Pionowo `-90°` lub grupowo poziomo; **dwuklik** pozwala od razu zmienić opis (`Enter` = zatwierdź, puste = auto, `Esc` = anuluj).
+- **Podgląd produktu, link producenta i pasujące akcesoria:**
+  - Pokazuje **zdjęcie produktu (jeśli dostępne) lub profil techniczny**, **liczbę komór**, **link do strony produktu producenta** oraz **płytki końcowe, mostki, oznaczniki, trzymacze końcowe i szyny N**.
+- **Eksport gotowy do druku (`.xlsx` i `.csv`) i Pliki projektu (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 arkusze (`Druckfolge` / domyślnie `ByTierStrip`, `Ebenen-Spalten`, `Ebenen-Matrix`), wszystkie komórki jako **Tekst Excel (`@`)**.
+- **7 języków, motywy i sprawdzanie aktualizacji na żywo:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Jasny/Ciemny o wysokim kontraście, sprawdzanie GitHub na Desktop & Android oraz linki **GitHub** i **Buy Me a Coffee**.
 
 ### Pobieranie i przenośność
 
@@ -638,32 +609,27 @@ Udostępniono na **licencji MIT**.
 
 ### Belangrijkste functies
 
-- **186 ingebouwde klemtypes + eigen klemmen:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (met drukknop), `2102–2116`, `2022` X-COM en `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` installatieklemmen, plus `ST` & `UT`
-  - **Weidmüller:** `A-Series`, `AITB` installatieklemmen, `W-Series`, `DLI` & `Z-Series`
-  - **Eigen klemmen:** Maak en beheer je eigen aangepaste klemdefinities rechtstreeks in de app
-- **Meerniveaunummering & PE-uitlijning:**
-  - Installatie- en meeretageklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, enz.): Een aanwezige **PE-aansluiting** wordt altijd uitgelijnd op een eigen PE-rij **onder het onderste hoofdniveau**, zodat doorlopende nummers op één strakke horizontale lijn blijven.
-  - **Voorbeeld meeretageklem:** Op een klemmenstrook met 2-etageklemmen telt niveau 1 (onder) automatisch oneven (`1, 3, 5 …`) en niveau 2 (boven) even (`2, 4, 6 …`); daaropvolgende 1-etageklemmen gaan naadloos verder op niveau 1 (`7, 8, 9 …`).
-- **Interactieve 2D CAD-editor (zonder DIN-railballast):**
-  - Overzichtelijke CAD-weergave zonder overbodige DIN-rail, met ingebouwde fabrikantlogo's (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Typeweergave:** Naar keuze **verticaal (`-90°` gedraaid)** per klem of **horizontaal gegroepeerd** onder de klemmenstrook.
-  - **Inline bewerken:** **Dubbelklik** op een klemcodering om deze direct aan te passen (`Enter` = toepassen, leeg laten = automatische nummering herstellen, `Esc` = annuleren).
-  - **Meervoudige selectie:** Enkelklik, `Ctrl+klik`, `Shift+klik` en kaderselectie om samen types toe te wijzen, ervoor/erna in te voegen of te verwijderen.
-- **Automatisch bijpassende accessoires:**
-  - Het rechterpaneel Eigenschappen toont automatisch passende accessoires voor de geselecteerde klemmen: **eindplaten**, **dwarsbruggen / doorverbinders**, **coderingsstroken / markers**, **eindsteunen** en **N-verzamelrails**.
-- **Printklare export (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 overzichtelijke werkbladen:
-    1. `Druckfolge` / Printvolgorde (`ByTierStrip` standaard – alle labels per niveau aaneengesloten achter elkaar, bijv. eerst heel niveau 1, daarna niveau 2, daarna niveau 3; optioneel per kolom of blok en met/zonder `PE`)
-    2. `Ebenen-Spalten` / Niveaukolommen
-    3. `Ebenen-Matrix` / Niveaumatrix
-    - Alle cellen worden strikt als **Excel-tekst (`@`)** opgemaakt, zodat voorloopnullen (`01`) of puntnotaties (`1.1`) nooit worden omgezet in getallen of datums.
-  - **CSV (`.csv`):** UTF-8 met BOM en puntkomma `;` als standaard scheidingsteken.
-  - **Projectbestanden:** Opslaan en laden als `.termi` of `.json` inclusief handmatige aanpassingen en eigen klemmen.
-- **7 talen, thema's & ingebouwde Update Checker:**
-  - Interface direct omschakelbaar tussen **DE, EN, FR, IT, ES, PL, NL** – met hoog contrast in **Lichte en Donkere** weergave.
-  - Ingebouwde **GitHub Update Checker** plus directe links naar **GitHub** en **Buy Me a Coffee**.
+- **277 ingebouwde klemtypes + eigen klemmen:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (drukknop), `2102–2116` (hendel), `2022` X-COM, `2007` meet/scheiding, `280/281` en `285` hoogstroom (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` installatieklemmen, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installatie, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Eigen klemmen:** Maak eigen klemmen direct in de app incl. `1×` of `2×` brugkamers
+- **Meerniveaunummering, N/PE-modi & speciale tekens:**
+  - Installatie- en meeretageklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, enz.): Een aanwezige **PE-aansluiting** wordt altijd uitgelijnd op een eigen rij **onder het onderste hoofdniveau**.
+  - **N- & PE-nummering:** Per strook instelbaar tussen vast (`N`/`PE`), doorgenummerd (`1, 2, …`), gedeeld `1N, 2N` / `1PE, 2PE` of **eigen N/PE-teller (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Batch Prefix / Suffix / Speciale tekens:** Selecteer meerdere klemmen en voeg `+`, `-`, `~`, `=`, `.1`, `Ω`, enz. toe voor of na het nummer (blijft behouden bij hernummeren).
+- **Brug-modus & Potentiaalberekening:**
+  - Maak gekleurde **potentialen** (`+24V`, `GND`, `L1` …) en klik/tik op klemniveaus direct in het CAD-overzicht.
+  - **Automatische berekening:** Bepaalt het aantal polen van kamverbinders (bijv. `2002-405`, `FBS 5-5`, `ZQV`), markeert **uit te breken pinnen (`Pin verwijderen ×`)**, plant **draadbruggen (`DB`)** bij etagewissels (`E1 <-> E2`) of steekverschillen en onderscheidt **1-kamerklemmen** (draadbrug boven max. polen) van **2-kamerklemmen** (cascade in kamer 1 & 2).
+- **Interactieve 2D CAD-editor (Desktop & Touch):**
+  - Overzichtelijke CAD-weergave zonder DIN-rail met fabrikantlogo's (**WAGO**, **Phoenix Contact**, **Weidmüller**), gereedschapsknoppen (**Verschuiven**, **Kaderselectie**, **Brug-modus**), touch-verschuiving & midden-/rechtsklik-slepen.
+  - **Weergave & inline bewerken:** Verticaal `-90°` of horizontaal gegroepeerd; **dubbelklik** om direct aan te passen (`Enter` = toepassen, leeg = auto, `Esc` = annuleren).
+- **Productvoorbeeld, fabrikantlink & bijpassende accessoires:**
+  - Toont **productfoto (indien beschikbaar) of technisch profiel**, **aantal brugkamers**, **directe link naar de fabrikantpagina** en **eindplaten, bruggen, markers, eindsteunen en N-rails**.
+- **Printklare export (`.xlsx` & `.csv`) & Projectbestanden (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 werkbladen (`Druckfolge` / `ByTierStrip` standaard, `Ebenen-Spalten`, `Ebenen-Matrix`), alle cellen strikt als **Excel-tekst (`@`)**.
+- **7 talen, thema's & live Update Checker:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Licht/Donker met hoog contrast, live GitHub-check op Desktop & Android plus links naar **GitHub** & **Buy Me a Coffee**.
 
 ### Downloads & Draagbaarheid
 

@@ -184,6 +184,26 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
+    if id.starts_with("wago-2007") {
+        return TerminalAccessories {
+            end_plate: "2007-8891 (Trenn-/Abschlussplatte)".to_string(),
+            jumpers: "2006-402 .. 2006-405 / 2007-8442".to_string(),
+            markers: markers_strip,
+            end_bracket,
+            extra: Some("2007-8899 (Prüfsteckerleiste)".to_string()),
+        };
+    }
+
+    if id.starts_with("wago-285") {
+        return TerminalAccessories {
+            end_plate: "Geschlossenes POWER-Gehäuse (kein Deckel)".to_string(),
+            jumpers: "285-435 / 285-447 (2-fach Brücker)".to_string(),
+            markers: "793-5501 (WMB 5mm)".to_string(),
+            end_bracket: "249-117 (Endklammer 10mm)".to_string(),
+            extra: None,
+        };
+    }
+
     if id.starts_with("wago-202") {
         return TerminalAccessories {
             end_plate: "2022-1291 (X-COM S-SYSTEM)".to_string(),
@@ -207,8 +227,10 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
     let id = spec.id.as_str();
     let end_bracket = "CLIPFIX 35 (3022218) / CLIPFIX 35-5 (3022276)".to_string();
 
-    if id.contains("pt-15s") || id.contains("pttb-15s") {
-        let end_plate = if spec.levels >= 2 {
+    if id.contains("pt-15s") || id.contains("pttb-15s") || id.contains("ptio-15s") {
+        let end_plate = if id.contains("ptio") {
+            "D-PTIO 1,5/S (3244575)"
+        } else if spec.levels >= 2 {
             "D-PTTB 1,5/S (3208579)"
         } else if id.contains("quattro") {
             "D-PT 1,5/S-QUATTRO (3208375)"
@@ -528,8 +550,10 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
-    if id.contains("zdu") || id.contains("zpe") || id.contains("zdk") || id.contains("zsi") {
-        let end_plate = if spec.levels >= 2 {
+    if id.contains("zdu") || id.contains("zpe") || id.contains("zdk") || id.contains("zsi") || id.contains("zdl") {
+        let end_plate = if id.contains("zdl") {
+            "ZAP/TW ZDL 2.5 (1720910000)"
+        } else if spec.levels >= 2 {
             "ZAP/TW ZDK2.5 (1674730000)"
         } else {
             "ZAP/TW 1 (1608740000)"

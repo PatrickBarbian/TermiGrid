@@ -10,7 +10,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 1,5 mm², grau (4,2 mm)",
     "description_en": "2-conductor through terminal block 1.5 mm², gray (4.2 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -24,7 +27,12 @@
     "description_de": "2-Leiter-Neutralleiterklemme 1,5 mm², blau (N)",
     "description_en": "2-conductor neutral terminal block 1.5 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -38,7 +46,10 @@
     "description_de": "2-Leiter-Schutzleiterklemme 1,5 mm², grün-gelb (PE)",
     "description_en": "2-conductor ground terminal block 1.5 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -52,7 +63,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 2,5 mm², grau",
     "description_en": "2-conductor through terminal block 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -66,7 +80,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 2,5 mm², orange (Hilfsspannung)",
     "description_en": "2-conductor through terminal block 2.5 mm², orange",
     "tiers": [
-      { "behavior": "Sequential", "color": "OrangeAux" }
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
     ]
   },
   {
@@ -80,7 +97,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 2,5 mm², rot",
     "description_en": "2-conductor through terminal block 2.5 mm², red",
     "tiers": [
-      { "behavior": "Sequential", "color": "RedPhase" }
+      {
+        "behavior": "Sequential",
+        "color": "RedPhase"
+      }
     ]
   },
   {
@@ -94,7 +114,12 @@
     "description_de": "2-Leiter-Neutralleiterklemme 2,5 mm², blau (N)",
     "description_en": "2-conductor neutral terminal block 2.5 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -108,7 +133,10 @@
     "description_de": "2-Leiter-Schutzleiterklemme 2,5 mm², grün-gelb (PE)",
     "description_en": "2-conductor ground terminal block 2.5 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -122,7 +150,10 @@
     "description_de": "4-Leiter-Durchgangsklemme 2,5 mm², grau",
     "description_en": "4-conductor through terminal block 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -136,7 +167,10 @@
     "description_de": "2-Leiter-Messertrennklemme 2,5 mm², grau/orange",
     "description_en": "2-conductor disconnect terminal block 2.5 mm²",
     "tiers": [
-      { "behavior": "Sequential", "color": "OrangeAux" }
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
     ]
   },
   {
@@ -150,7 +184,10 @@
     "description_de": "2-Leiter-Sicherungsklemme 5x20mm, 6,2 mm",
     "description_en": "2-conductor fuse terminal block 5x20mm, 6.2 mm",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -164,8 +201,14 @@
     "description_de": "Doppelstockklemme 2,5 mm², L/L (Unten/Oben sequentiell)",
     "description_en": "Double-deck terminal block 2.5 mm², L/L (Lower/Upper sequential)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -179,8 +222,16 @@
     "description_de": "Doppelstockklemme L/N (Unten sequentiell, Oben N)",
     "description_en": "Double-deck terminal block L/N (Lower sequential, Upper N)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -194,8 +245,14 @@
     "description_de": "Doppelstock-PE-Klemme (Unten PE, Oben sequentiell)",
     "description_en": "Double-deck PE terminal block (Lower PE, Upper sequential)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -209,9 +266,18 @@
     "description_de": "Dreistockklemme 2,5 mm², L/L/L (alle 3 Ebenen sequentiell)",
     "description_en": "Triple-deck terminal block 2.5 mm², L/L/L (all 3 tiers sequential)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -225,9 +291,18 @@
     "description_de": "Dreistockklemme PE/L/L (Unten PE, Mitte/Oben sequentiell)",
     "description_en": "Triple-deck terminal block PE/L/L (Bottom PE, Middle/Top sequential)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -241,9 +316,22 @@
     "description_de": "Dreistock-Initiatorenklemme (+ / - / Signal sequentiell)",
     "description_en": "Triple-deck sensor terminal (+ / - / Signal sequential)",
     "tiers": [
-      { "behavior": { "Fixed": "+" }, "color": "RedPhase" },
-      { "behavior": { "Fixed": "-" }, "color": "BlueNeutral" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": {
+          "Fixed": "+"
+        },
+        "color": "RedPhase"
+      },
+      {
+        "behavior": {
+          "Fixed": "-"
+        },
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -257,9 +345,20 @@
     "description_de": "Installations-Etagenklemme 2,5 mm² PE/L/N (NT-Bügel)",
     "description_en": "Installation multi-level terminal 2.5 mm² PE/L/N",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -273,9 +372,18 @@
     "description_de": "Installations-Etagenklemme 2,5 mm² PE/L/L",
     "description_en": "Installation multi-level terminal 2.5 mm² PE/L/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -289,8 +397,14 @@
     "description_de": "Installations-Etagenklemme 2,5 mm² L/L (ohne PE)",
     "description_en": "Installation multi-level terminal 2.5 mm² L/L (no PE)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -304,8 +418,16 @@
     "description_de": "Installations-Etagenklemme 2,5 mm² L/N",
     "description_en": "Installation multi-level terminal 2.5 mm² L/N",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -319,7 +441,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 4 mm², grau (6,2 mm)",
     "description_en": "2-conductor through terminal block 4 mm², gray (6.2 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -333,7 +458,12 @@
     "description_de": "2-Leiter-Neutralleiterklemme 4 mm², blau (N)",
     "description_en": "2-conductor neutral terminal block 4 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -347,7 +477,10 @@
     "description_de": "2-Leiter-Schutzleiterklemme 4 mm², grün-gelb (PE)",
     "description_en": "2-conductor ground terminal block 4 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -361,9 +494,20 @@
     "description_de": "Installations-Etagenklemme 4 mm² PE/L/N (6,2 mm)",
     "description_en": "Installation multi-level terminal 4 mm² PE/L/N (6.2 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -377,9 +521,18 @@
     "description_de": "Installations-Etagenklemme 4 mm² PE/L/L (6,2 mm)",
     "description_en": "Installation multi-level terminal 4 mm² PE/L/L (6.2 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -393,8 +546,14 @@
     "description_de": "Installations-Etagenklemme 4 mm² L/L (6,2 mm)",
     "description_en": "Installation multi-level terminal 4 mm² L/L (6.2 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -408,7 +567,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 6 mm², grau (7,5 mm)",
     "description_en": "2-conductor through terminal block 6 mm², gray (7.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -422,7 +584,12 @@
     "description_de": "2-Leiter-Neutralleiterklemme 6 mm², blau (N)",
     "description_en": "2-conductor neutral terminal block 6 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -436,7 +603,10 @@
     "description_de": "2-Leiter-Schutzleiterklemme 6 mm², grün-gelb (PE)",
     "description_en": "2-conductor ground terminal block 6 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -450,7 +620,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 10 mm², grau (10 mm)",
     "description_en": "2-conductor through terminal block 10 mm², gray (10 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -464,7 +637,12 @@
     "description_de": "2-Leiter-Neutralleiterklemme 10 mm², blau (N)",
     "description_en": "2-conductor neutral terminal block 10 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -478,7 +656,10 @@
     "description_de": "2-Leiter-Schutzleiterklemme 10 mm², grün-gelb (PE)",
     "description_en": "2-conductor ground terminal block 10 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -492,7 +673,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 16 mm², grau (12 mm)",
     "description_en": "2-conductor through terminal block 16 mm², gray (12 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -506,7 +690,10 @@
     "description_de": "2-Leiter-Schutzleiterklemme 16 mm², grün-gelb (PE)",
     "description_en": "2-conductor ground terminal block 16 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -520,7 +707,10 @@
     "description_de": "Push-in-Durchgangsklemme mit Drücker 2,5 mm², grau",
     "description_en": "Push-in through terminal with push-button 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -534,7 +724,12 @@
     "description_de": "Push-in-Neutralleiterklemme mit Drücker 2,5 mm², blau (N)",
     "description_en": "Push-in neutral terminal with push-button 2.5 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -548,7 +743,10 @@
     "description_de": "Push-in-Schutzleiterklemme mit Drücker 2,5 mm², PE",
     "description_en": "Push-in ground terminal with push-button 2.5 mm², PE",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -562,8 +760,14 @@
     "description_de": "Push-in-Doppelstockklemme mit Drücker L/L",
     "description_en": "Push-in double-deck terminal with push-button L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -577,9 +781,20 @@
     "description_de": "Dreistock-Installationsklemme mit Drücker PE/L/N",
     "description_en": "Triple-deck installation terminal with push-button PE/L/N",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -593,9 +808,18 @@
     "description_de": "Dreistock-Installationsklemme mit Drücker PE/L/L",
     "description_en": "Triple-deck installation terminal with push-button PE/L/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -609,8 +833,14 @@
     "description_de": "Installations-Etagenklemme mit Drücker L/L",
     "description_en": "Installation multi-level terminal with push-button L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -624,7 +854,10 @@
     "description_de": "Push-in-Durchgangsklemme mit Drücker 6 mm², grau (7,5 mm)",
     "description_en": "Push-in through terminal with push-button 6 mm², gray (7.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -638,7 +871,12 @@
     "description_de": "Push-in-Neutralleiterklemme mit Drücker 6 mm², blau (N)",
     "description_en": "Push-in neutral terminal with push-button 6 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -652,7 +890,10 @@
     "description_de": "Push-in-Schutzleiterklemme mit Drücker 6 mm², grün-gelb (PE)",
     "description_en": "Push-in ground terminal with push-button 6 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -666,7 +907,10 @@
     "description_de": "Push-in-Durchgangsklemme 1,5 mm², grau (3,5 mm)",
     "description_en": "Push-in feed-through terminal 1.5 mm², gray (3.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -680,7 +924,12 @@
     "description_de": "Push-in-Neutralleiterklemme 1,5 mm², blau (N)",
     "description_en": "Push-in neutral terminal 1.5 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -694,7 +943,10 @@
     "description_de": "Push-in-Schutzleiterklemme 1,5 mm², grün-gelb (PE)",
     "description_en": "Push-in ground terminal 1.5 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -708,8 +960,14 @@
     "description_de": "Push-in-Doppelstockklemme 1,5 mm², L/L (3,5 mm)",
     "description_en": "Push-in double-level terminal 1.5 mm², L/L (3.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -723,8 +981,14 @@
     "description_de": "Push-in-Doppelstock-PE-Klemme 1,5 mm², PE/L",
     "description_en": "Push-in double-level PE terminal 1.5 mm², PE/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -738,7 +1002,10 @@
     "description_de": "Push-in-Durchgangsklemme 2,5 mm², grau",
     "description_en": "Push-in feed-through terminal block 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -752,7 +1019,12 @@
     "description_de": "Push-in-Neutralleiterklemme 2,5 mm², blau (N)",
     "description_en": "Push-in neutral terminal block 2.5 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -766,7 +1038,10 @@
     "description_de": "Push-in-Schutzleiterklemme 2,5 mm², grün-gelb (PE)",
     "description_en": "Push-in ground terminal block 2.5 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -780,7 +1055,10 @@
     "description_de": "Push-in-Messertrennklemme 2,5 mm²",
     "description_en": "Push-in knife-disconnect terminal 2.5 mm²",
     "tiers": [
-      { "behavior": "Sequential", "color": "OrangeAux" }
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
     ]
   },
   {
@@ -794,8 +1072,14 @@
     "description_de": "Push-in-Doppelstockklemme 2,5 mm², L/L",
     "description_en": "Push-in double-level terminal block 2.5 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -809,8 +1093,16 @@
     "description_de": "Push-in-Doppelstockklemme 2,5 mm², L/N",
     "description_en": "Push-in double-level terminal block 2.5 mm², L/N",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -824,8 +1116,14 @@
     "description_de": "Push-in-Doppelstock-PE-Klemme (Unten PE, Oben sequentiell)",
     "description_en": "Push-in double-level PE terminal (Lower PE, Upper sequential)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -839,9 +1137,18 @@
     "description_de": "Push-in-Dreistockklemme 2,5 mm², alle 3 Ebenen sequentiell",
     "description_en": "Push-in triple-level terminal 2.5 mm², all 3 tiers sequential",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -855,9 +1162,20 @@
     "description_de": "Installations-Dreistockklemme PE/L/N (2,5 mm²)",
     "description_en": "Installation triple-level terminal PE/L/N (2.5 mm²)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -871,9 +1189,18 @@
     "description_de": "Installations-Dreistockklemme PE/L/L (2,5 mm²)",
     "description_en": "Installation triple-level terminal PE/L/L (2.5 mm²)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -887,8 +1214,14 @@
     "description_de": "Installations-Doppelstockklemme L/L (2,5 mm²)",
     "description_en": "Installation double-level terminal L/L (2.5 mm²)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -902,8 +1235,16 @@
     "description_de": "Installations-Doppelstockklemme L/N (2,5 mm²)",
     "description_en": "Installation double-level terminal L/N (2.5 mm²)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -917,9 +1258,20 @@
     "description_de": "Installations-Dreistockklemme PE/L/N (4 mm², 6,2 mm)",
     "description_en": "Installation triple-level terminal PE/L/N (4 mm², 6.2 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -933,9 +1285,18 @@
     "description_de": "Installations-Dreistockklemme PE/L/L (4 mm², 6,2 mm)",
     "description_en": "Installation triple-level terminal PE/L/L (4 mm², 6.2 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -949,7 +1310,10 @@
     "description_de": "Push-in-Durchgangsklemme 4 mm², grau (6,2 mm)",
     "description_en": "Push-in feed-through terminal 4 mm², gray (6.2 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -963,7 +1327,12 @@
     "description_de": "Push-in-Neutralleiterklemme 4 mm², blau (N)",
     "description_en": "Push-in neutral terminal 4 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -977,7 +1346,10 @@
     "description_de": "Push-in-Schutzleiterklemme 4 mm², grün-gelb (PE)",
     "description_en": "Push-in ground terminal 4 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -991,8 +1363,14 @@
     "description_de": "Push-in-Doppelstockklemme 4 mm², L/L",
     "description_en": "Push-in double-level terminal 4 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1006,7 +1384,10 @@
     "description_de": "Push-in-Durchgangsklemme 6 mm², grau (8,2 mm)",
     "description_en": "Push-in feed-through terminal 6 mm², gray (8.2 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1020,7 +1401,10 @@
     "description_de": "Push-in-Schutzleiterklemme 6 mm², grün-gelb (PE)",
     "description_en": "Push-in ground terminal 6 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -1034,7 +1418,10 @@
     "description_de": "Push-in-Durchgangsklemme 10 mm², grau (10,2 mm)",
     "description_en": "Push-in feed-through terminal 10 mm², gray (10.2 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1048,7 +1435,10 @@
     "description_de": "Push-in-Durchgangsklemme 16 mm², grau (12,2 mm)",
     "description_en": "Push-in feed-through terminal 16 mm², gray (12.2 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1062,7 +1452,10 @@
     "description_de": "Schraub-Durchgangsklemme 2,5 mm², grau",
     "description_en": "Screw feed-through terminal 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1076,7 +1469,10 @@
     "description_de": "Schraub-Durchgangsklemme 4 mm², grau",
     "description_en": "Screw feed-through terminal 4 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1090,8 +1486,14 @@
     "description_de": "Schraub-Doppelstockklemme 2,5 mm², L/L",
     "description_en": "Screw double-level terminal 2.5 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1105,7 +1507,10 @@
     "description_de": "Push-in-Durchgangsklemme 2,5 mm², dunkelbeige",
     "description_en": "Push-in feed-through terminal 2.5 mm², dark beige",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1119,7 +1524,12 @@
     "description_de": "Push-in-Neutralleiterklemme 2,5 mm², blau (N)",
     "description_en": "Push-in neutral terminal 2.5 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1133,7 +1543,10 @@
     "description_de": "Push-in-Schutzleiterklemme 2,5 mm², grün-gelb (PE)",
     "description_en": "Push-in ground terminal 2.5 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -1147,7 +1560,10 @@
     "description_de": "Push-in-Durchgangsklemme 4 mm², dunkelbeige (6,1 mm)",
     "description_en": "Push-in feed-through terminal 4 mm², dark beige (6.1 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1161,7 +1577,10 @@
     "description_de": "Push-in-Durchgangsklemme 6 mm², dunkelbeige (8,1 mm)",
     "description_en": "Push-in feed-through terminal 6 mm², dark beige (8.1 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1175,7 +1594,10 @@
     "description_de": "Push-in-Durchgangsklemme 10 mm², dunkelbeige (10 mm)",
     "description_en": "Push-in feed-through terminal 10 mm², dark beige (10 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1189,8 +1611,14 @@
     "description_de": "Push-in-Doppelstockklemme 2,5 mm², L/L",
     "description_en": "Push-in double-tier terminal 2.5 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1204,8 +1632,16 @@
     "description_de": "Push-in-Doppelstockklemme 2,5 mm², L/N",
     "description_en": "Push-in double-tier terminal 2.5 mm², L/N",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1219,8 +1655,14 @@
     "description_de": "Push-in-Doppelstock-PE-Klemme 2,5 mm², PE/L",
     "description_en": "Push-in double-tier PE terminal 2.5 mm², PE/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1234,9 +1676,18 @@
     "description_de": "Push-in-Dreistockklemme 2,5 mm², alle 3 Ebenen sequentiell",
     "description_en": "Push-in triple-tier terminal block 2.5 mm², all 3 tiers sequential",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1250,9 +1701,20 @@
     "description_de": "Push-in-Installationsklemme 2,5 mm², PE/L/N",
     "description_en": "Push-in installation terminal 2.5 mm², PE/L/N",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1266,9 +1728,18 @@
     "description_de": "Push-in-Installationsklemme 2,5 mm², PE/L/L",
     "description_en": "Push-in installation terminal 2.5 mm², PE/L/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1282,9 +1753,20 @@
     "description_de": "Push-in-Installationsklemme 4 mm², PE/L/N",
     "description_en": "Push-in installation terminal 4 mm², PE/L/N",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1298,7 +1780,10 @@
     "description_de": "Schraub-Durchgangsklemme 2,5 mm², dunkelbeige",
     "description_en": "Screw feed-through terminal block 2.5 mm², dark beige",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1312,7 +1797,12 @@
     "description_de": "Schraub-Neutralleiterklemme 2,5 mm², blau (N)",
     "description_en": "Screw neutral terminal block 2.5 mm², blue (N)",
     "tiers": [
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1326,7 +1816,10 @@
     "description_de": "Schutzleiterklemme 2,5 mm², grün-gelb (PE)",
     "description_en": "Ground terminal block 2.5 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -1340,7 +1833,10 @@
     "description_de": "Schraub-Durchgangsklemme 4 mm², dunkelbeige",
     "description_en": "Screw feed-through terminal 4 mm², dark beige",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1354,8 +1850,14 @@
     "description_de": "Doppelstockklemme 2,5 mm², L/L",
     "description_en": "Double-tier terminal block 2.5 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1369,8 +1871,16 @@
     "description_de": "Doppelstockklemme L/N (Unten sequentiell, Oben N)",
     "description_en": "Double-tier terminal block L/N (Lower sequential, Upper N)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1384,9 +1894,20 @@
     "description_de": "Dreistock-Installationsklemme PE/L/N (Unten PE, Mitte seq., Oben N)",
     "description_en": "Triple-tier installation terminal PE/L/N (Bottom PE, Mid seq., Top N)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1400,9 +1921,18 @@
     "description_de": "Dreistock-Installationsklemme PE/L/L (6,1 mm)",
     "description_en": "Triple-tier installation terminal PE/L/L (6.1 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1416,7 +1946,10 @@
     "description_de": "2-Leiter-Durchgangsklemme 1 mm², grau (3,5 mm)",
     "description_en": "2-conductor through terminal 1 mm², gray (3.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1430,8 +1963,14 @@
     "description_de": "Doppelstockklemme 1 mm², L/L (3,5 mm)",
     "description_en": "Double-deck terminal 1 mm², L/L (3.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1445,7 +1984,10 @@
     "description_de": "Hebel-Durchgangsklemme 2,5 mm², grau",
     "description_en": "Lever through terminal 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1459,7 +2001,10 @@
     "description_de": "Hebel-Durchgangsklemme 6 mm², grau (7,5 mm)",
     "description_en": "Lever through terminal 6 mm², gray (7.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1473,7 +2018,10 @@
     "description_de": "Klassische 2-Leiter-Durchgangsklemme 2,5 mm², grau",
     "description_en": "Classic 2-conductor through terminal 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1487,7 +2035,10 @@
     "description_de": "Klassische Schutzleiterklemme 2,5 mm², grün-gelb (PE)",
     "description_en": "Classic ground terminal 2.5 mm², green-yellow (PE)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -1501,7 +2052,10 @@
     "description_de": "3-Leiter-Push-in-Klemme 2,5 mm², grau",
     "description_en": "3-conductor push-in terminal 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1515,7 +2069,10 @@
     "description_de": "4-Leiter-Push-in-Klemme 2,5 mm², grau",
     "description_en": "4-conductor push-in terminal 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1529,9 +2086,20 @@
     "description_de": "Push-in-Dreistockklemme PE/L/N (2,5 mm²)",
     "description_en": "Push-in triple-level terminal PE/L/N (2.5 mm²)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1545,7 +2113,10 @@
     "description_de": "Zugfeder-Durchgangsklemme 2,5 mm², grau",
     "description_en": "Spring-cage feed-through terminal 2.5 mm², gray",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1559,8 +2130,14 @@
     "description_de": "Zugfeder-Doppelstockklemme 2,5 mm², L/L",
     "description_en": "Spring-cage double-level terminal 2.5 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1574,9 +2151,20 @@
     "description_de": "Zugfeder-Installationsklemme PE/L/N",
     "description_en": "Spring-cage installation terminal PE/L/N",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1590,7 +2178,10 @@
     "description_de": "Schraub-Trennklemme 2,5 mm²",
     "description_en": "Screw disconnect terminal 2.5 mm²",
     "tiers": [
-      { "behavior": "Sequential", "color": "OrangeAux" }
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
     ]
   },
   {
@@ -1604,7 +2195,10 @@
     "description_de": "Schraub-Sicherungsklemme 5x20mm (7,9 mm)",
     "description_en": "Screw fuse terminal 5x20mm (7.9 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1618,7 +2212,10 @@
     "description_de": "Zugfeder-Durchgangsklemme 2,5 mm²",
     "description_en": "Tension-clamp feed-through terminal 2.5 mm²",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1632,7 +2229,10 @@
     "description_de": "Zugfeder-Schutzleiterklemme 2,5 mm², PE",
     "description_en": "Tension-clamp ground terminal 2.5 mm², PE",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
     ]
   },
   {
@@ -1646,8 +2246,14 @@
     "description_de": "Zugfeder-Doppelstockklemme 2,5 mm², L/L",
     "description_en": "Tension-clamp double-tier terminal 2.5 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1661,8 +2267,16 @@
     "description_de": "Zugfeder-Doppelstockklemme 2,5 mm², L/N",
     "description_en": "Tension-clamp double-tier terminal 2.5 mm², L/N",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1675,7 +2289,14 @@
     "numbering_order": "BottomToTop",
     "description_de": "2-Leiter-Neutralleiterklemme 1 mm², blau (3,5 mm)",
     "description_en": "2-conductor neutral terminal 1 mm², blue (3.5 mm)",
-    "tiers": [{ "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }]
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
   },
   {
     "id": "wago-2000-1207",
@@ -1687,7 +2308,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "2-Leiter-Schutzleiterklemme 1 mm², grün-gelb (3,5 mm)",
     "description_en": "2-conductor ground terminal 1 mm², green-yellow (3.5 mm)",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "wago-2000-1301",
@@ -1699,7 +2325,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Durchgangsklemme 1 mm², grau (3,5 mm)",
     "description_en": "3-conductor through terminal 1 mm², gray (3.5 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2000-1401",
@@ -1711,7 +2342,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "4-Leiter-Durchgangsklemme 1 mm², grau (3,5 mm)",
     "description_en": "4-conductor through terminal 1 mm², gray (3.5 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2000-2207",
@@ -1724,8 +2360,14 @@
     "description_de": "Doppelstock-PE-Klemme 1 mm², PE/L (3,5 mm)",
     "description_en": "Double-deck PE terminal 1 mm², PE/L (3.5 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -1738,7 +2380,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Durchgangsklemme 1,5 mm², grau (4,2 mm)",
     "description_en": "3-conductor through terminal 1.5 mm², gray (4.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2001-1401",
@@ -1750,7 +2397,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "4-Leiter-Durchgangsklemme 1,5 mm², grau (4,2 mm)",
     "description_en": "4-conductor through terminal 1.5 mm², gray (4.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2002-1301",
@@ -1762,7 +2414,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Durchgangsklemme 2,5 mm², grau",
     "description_en": "3-conductor through terminal 2.5 mm², gray",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2002-1304",
@@ -1774,7 +2431,14 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Neutralleiterklemme 2,5 mm², blau (N)",
     "description_en": "3-conductor neutral terminal 2.5 mm², blue (N)",
-    "tiers": [{ "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }]
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
   },
   {
     "id": "wago-2002-1307",
@@ -1786,7 +2450,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Schutzleiterklemme 2,5 mm², grün-gelb (PE)",
     "description_en": "3-conductor ground terminal 2.5 mm², green-yellow (PE)",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "wago-2002-1404",
@@ -1798,7 +2467,14 @@
     "numbering_order": "BottomToTop",
     "description_de": "4-Leiter-Neutralleiterklemme 2,5 mm², blau (N)",
     "description_en": "4-conductor neutral terminal 2.5 mm², blue (N)",
-    "tiers": [{ "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }]
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
   },
   {
     "id": "wago-2002-1407",
@@ -1810,7 +2486,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "4-Leiter-Schutzleiterklemme 2,5 mm², grün-gelb (PE)",
     "description_en": "4-conductor ground terminal 2.5 mm², green-yellow (PE)",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "wago-2002-1711",
@@ -1822,7 +2503,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Messertrennklemme 2,5 mm²",
     "description_en": "3-conductor knife-disconnect terminal 2.5 mm²",
-    "tiers": [{ "behavior": "Sequential", "color": "OrangeAux" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ]
   },
   {
     "id": "wago-2002-1811",
@@ -1834,7 +2520,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Sicherungsklemme 5x20mm, 6,2 mm",
     "description_en": "3-conductor fuse terminal 5x20mm, 6.2 mm",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2003-6640",
@@ -1847,9 +2538,20 @@
     "description_de": "Installationsklemme mit N-Trennschlitten PE/L/NT",
     "description_en": "Installation terminal with N-disconnect PE/L/NT",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -1862,7 +2564,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Durchgangsklemme 4 mm², grau (6,2 mm)",
     "description_en": "3-conductor through terminal 4 mm², gray (6.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2004-1401",
@@ -1874,7 +2581,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "4-Leiter-Durchgangsklemme 4 mm², grau (6,2 mm)",
     "description_en": "4-conductor through terminal 4 mm², gray (6.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2006-1301",
@@ -1886,7 +2598,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Durchgangsklemme 6 mm², grau (7,5 mm)",
     "description_en": "3-conductor through terminal 6 mm², gray (7.5 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2006-1681",
@@ -1898,7 +2615,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "2-Leiter-Sicherungsklemme 6 mm² (5x20mm)",
     "description_en": "2-conductor fuse terminal 6 mm² (5x20mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2016-1204",
@@ -1910,7 +2632,14 @@
     "numbering_order": "BottomToTop",
     "description_de": "2-Leiter-Neutralleiterklemme 16 mm², blau (12 mm)",
     "description_en": "2-conductor neutral terminal 16 mm², blue (12 mm)",
-    "tiers": [{ "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }]
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
   },
   {
     "id": "wago-2022-1201",
@@ -1922,7 +2651,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Steckbare X-COM S-Grundklemme 2,5 mm², grau",
     "description_en": "Pluggable X-COM S carrier terminal 2.5 mm², gray",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2102-1204",
@@ -1934,7 +2668,14 @@
     "numbering_order": "BottomToTop",
     "description_de": "Hebel-Neutralleiterklemme 2,5 mm², blau (N)",
     "description_en": "Lever neutral terminal 2.5 mm², blue (N)",
-    "tiers": [{ "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }]
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
   },
   {
     "id": "wago-2102-1207",
@@ -1946,7 +2687,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Hebel-Schutzleiterklemme 2,5 mm², PE",
     "description_en": "Lever ground terminal 2.5 mm², PE",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "wago-2104-1201",
@@ -1958,7 +2704,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Hebel-Durchgangsklemme 4 mm², grau (6,2 mm)",
     "description_en": "Lever through terminal 4 mm², gray (6.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2110-1201",
@@ -1970,7 +2721,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Hebel-Durchgangsklemme 10 mm², grau (10 mm)",
     "description_en": "Lever through terminal 10 mm², gray (10 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2116-1201",
@@ -1982,7 +2738,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Hebel-Durchgangsklemme 16 mm², grau (12 mm)",
     "description_en": "Lever through terminal 16 mm², gray (12 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2200-1201",
@@ -1994,7 +2755,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Durchgangsklemme mit Drücker 1 mm², grau",
     "description_en": "Push-in through terminal with push-button 1 mm², gray",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2201-1201",
@@ -2006,7 +2772,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Durchgangsklemme mit Drücker 1,5 mm², grau",
     "description_en": "Push-in through terminal with push-button 1.5 mm², gray",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2202-1301",
@@ -2018,7 +2789,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in 3-Leiter-Klemme mit Drücker 2,5 mm²",
     "description_en": "Push-in 3-conductor terminal with push-button 2.5 mm²",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2202-2204",
@@ -2031,8 +2807,16 @@
     "description_de": "Push-in Doppelstockklemme mit Drücker L/N",
     "description_en": "Push-in double-deck terminal with push-button L/N",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -2046,8 +2830,14 @@
     "description_de": "Push-in Doppelstock-PE-Klemme mit Drücker PE/L",
     "description_en": "Push-in double-deck PE terminal with push-button PE/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2060,7 +2850,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Durchgangsklemme mit Drücker 4 mm², grau",
     "description_en": "Push-in through terminal with push-button 4 mm², gray",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2210-1201",
@@ -2072,7 +2867,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Durchgangsklemme mit Drücker 10 mm², grau",
     "description_en": "Push-in through terminal with push-button 10 mm², gray",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-2216-1201",
@@ -2084,7 +2884,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Durchgangsklemme mit Drücker 16 mm², grau",
     "description_en": "Push-in through terminal with push-button 16 mm², gray",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "wago-281-901",
@@ -2096,7 +2901,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Klassische Durchgangsklemme 4 mm², grau (6 mm)",
     "description_en": "Classic through terminal 4 mm², gray (6 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-pt-15s-3l",
@@ -2109,9 +2919,18 @@
     "description_de": "Push-in-Dreistockklemme 1,5 mm², L/L/L (3,5 mm)",
     "description_en": "Push-in triple-level terminal 1.5 mm², L/L/L (3.5 mm)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2124,7 +2943,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Schutzleiterklemme 2,5 mm², PE",
     "description_en": "3-conductor ground terminal 2.5 mm², PE",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "phoenix-pt-25-quattro-pe",
@@ -2136,7 +2960,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "4-Leiter-Schutzleiterklemme 2,5 mm², PE",
     "description_en": "4-conductor ground terminal 2.5 mm², PE",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "phoenix-pt-25-hesi",
@@ -2148,7 +2977,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Sicherungsklemme 5x20mm (6,2 mm)",
     "description_en": "Push-in fuse terminal 5x20mm (6.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-pt-25-pell",
@@ -2161,9 +2995,18 @@
     "description_de": "Push-in-Dreistockklemme PE/L/L (2,5 mm²)",
     "description_en": "Push-in triple-level terminal PE/L/L (2.5 mm²)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2177,8 +3020,14 @@
     "description_de": "Doppelstockklemme mit versetzten Ebenen L/L",
     "description_en": "Double-level terminal with offset tiers L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2191,7 +3040,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "3-Leiter-Push-in-Klemme 4 mm², grau (6,2 mm)",
     "description_en": "3-conductor push-in terminal 4 mm², gray (6.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-pt-4-quattro",
@@ -2203,7 +3057,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "4-Leiter-Push-in-Klemme 4 mm², grau (6,2 mm)",
     "description_en": "4-conductor push-in terminal 4 mm², gray (6.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-pttb-4-pe",
@@ -2216,8 +3075,14 @@
     "description_de": "Push-in-Doppelstock-PE-Klemme 4 mm², PE/L",
     "description_en": "Push-in double-level PE terminal 4 mm², PE/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2231,9 +3096,20 @@
     "description_de": "Installations-Dreistockklemme 6 mm², PE/L/N (8,2 mm)",
     "description_en": "Installation triple-level terminal 6 mm², PE/L/N (8.2 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -2246,7 +3122,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Klemme mit seitlichem Anschluss 2,5 mm²",
     "description_en": "Push-in terminal with lateral/vertical entry 2.5 mm²",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-ptv-25-pe",
@@ -2258,7 +3139,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Schutzleiterklemme PTV 2,5 mm², PE",
     "description_en": "Push-in ground terminal PTV 2.5 mm², PE",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "phoenix-pt-35",
@@ -2270,7 +3156,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Hochstrom-Push-in-Klemme 35 mm², grau (16 mm)",
     "description_en": "High-current push-in terminal 35 mm², gray (16 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-ptpower-50",
@@ -2282,7 +3173,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Hochstrom-Power-Turn-Klemme 50 mm² (20 mm)",
     "description_en": "High-current Power-Turn terminal 50 mm² (20 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-ut-25-pe",
@@ -2294,7 +3190,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Schraub-Schutzleiterklemme 2,5 mm², PE",
     "description_en": "Screw ground terminal 2.5 mm², PE",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "phoenix-ut-6",
@@ -2306,7 +3207,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Schraub-Durchgangsklemme 6 mm², grau (8,2 mm)",
     "description_en": "Screw feed-through terminal 6 mm², gray (8.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-ut-10",
@@ -2318,7 +3224,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Schraub-Durchgangsklemme 10 mm², grau (10,2 mm)",
     "description_en": "Screw feed-through terminal 10 mm², gray (10.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-ut-16",
@@ -2330,7 +3241,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Schraub-Durchgangsklemme 16 mm², grau (12,2 mm)",
     "description_en": "Screw feed-through terminal 16 mm², gray (12.2 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "phoenix-uttb-25-pe",
@@ -2343,8 +3259,14 @@
     "description_de": "Schraub-Doppelstock-PE-Klemme 2,5 mm², PE/L",
     "description_en": "Screw double-level PE terminal 2.5 mm², PE/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2357,7 +3279,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Durchgangsklemme 1,5 mm² (3,5 mm)",
     "description_en": "Push-in feed-through terminal 1.5 mm² (3.5 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-a2c-15-pe",
@@ -2369,7 +3296,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Schutzleiterklemme 1,5 mm², PE (3,5 mm)",
     "description_en": "Push-in ground terminal 1.5 mm², PE (3.5 mm)",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "weidmuller-a3c-25",
@@ -2381,7 +3313,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in 3-Leiter-Durchgangsklemme 2,5 mm²",
     "description_en": "Push-in 3-conductor terminal 2.5 mm²",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-a4c-25",
@@ -2393,7 +3330,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in 4-Leiter-Durchgangsklemme 2,5 mm²",
     "description_en": "Push-in 4-conductor terminal 2.5 mm²",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-a3t-25-peln",
@@ -2406,9 +3348,20 @@
     "description_de": "Push-in-Dreistockklemme 2,5 mm², PE/L/N",
     "description_en": "Push-in triple-tier terminal 2.5 mm², PE/L/N",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -2421,7 +3374,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Schutzleiterklemme 4 mm², PE (6,1 mm)",
     "description_en": "Push-in ground terminal 4 mm², PE (6.1 mm)",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "weidmuller-a2t-4",
@@ -2434,8 +3392,14 @@
     "description_de": "Push-in-Doppelstockklemme 4 mm², L/L",
     "description_en": "Push-in double-tier terminal 4 mm², L/L",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2448,7 +3412,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Schutzleiterklemme 6 mm², PE (8,1 mm)",
     "description_en": "Push-in ground terminal 6 mm², PE (8.1 mm)",
-    "tiers": [{ "behavior": "ProtectiveEarth", "color": "GreenYellowPe" }]
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   },
   {
     "id": "weidmuller-a2c-16",
@@ -2460,7 +3429,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Durchgangsklemme 16 mm² (12 mm)",
     "description_en": "Push-in feed-through terminal 16 mm² (12 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-a2c-35",
@@ -2472,7 +3446,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Hochstromklemme 35 mm² (16 mm)",
     "description_en": "Push-in high-current terminal 35 mm² (16 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-amc-25",
@@ -2484,7 +3463,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Messertrennklemme 2,5 mm²",
     "description_en": "Push-in disconnect terminal 2.5 mm²",
-    "tiers": [{ "behavior": "Sequential", "color": "OrangeAux" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ]
   },
   {
     "id": "weidmuller-afs-4",
@@ -2496,7 +3480,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Push-in-Sicherungsklemme 4 mm² (5x20mm)",
     "description_en": "Push-in fuse terminal 4 mm² (5x20mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-aitb-25-ll",
@@ -2509,8 +3498,14 @@
     "description_de": "Push-in-Installationsklemme L/L (2,5 mm²)",
     "description_en": "Push-in installation terminal L/L (2.5 mm²)",
     "tiers": [
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
   },
   {
@@ -2524,9 +3519,20 @@
     "description_de": "Push-in-Installationsklemme 6 mm², PE/L/N (8,1 mm)",
     "description_en": "Push-in installation terminal 6 mm², PE/L/N (8.1 mm)",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" },
-      { "behavior": { "Fixed": "N" }, "color": "BlueNeutral" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
     ]
   },
   {
@@ -2539,7 +3545,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Schraub-Durchgangsklemme 6 mm² (7,9 mm)",
     "description_en": "Screw feed-through terminal 6 mm² (7.9 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-wdu-10",
@@ -2551,7 +3562,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Schraub-Durchgangsklemme 10 mm² (9,9 mm)",
     "description_en": "Screw feed-through terminal 10 mm² (9.9 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-wdu-16",
@@ -2563,7 +3579,12 @@
     "numbering_order": "BottomToTop",
     "description_de": "Schraub-Durchgangsklemme 16 mm² (11,9 mm)",
     "description_en": "Screw feed-through terminal 16 mm² (11.9 mm)",
-    "tiers": [{ "behavior": "Sequential", "color": "StandardGray" }]
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
   },
   {
     "id": "weidmuller-wdk-25-pe",
@@ -2576,8 +3597,1945 @@
     "description_de": "Schraub-Doppelstock-PE-Klemme 2,5 mm², PE/L",
     "description_en": "Screw double-tier PE terminal 2.5 mm², PE/L",
     "tiers": [
-      { "behavior": "ProtectiveEarth", "color": "GreenYellowPe" },
-      { "behavior": "Sequential", "color": "StandardGray" }
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
     ]
+  },
+  {
+    "id": "wago-2000-5311",
+    "name": "2000-5311 (Sensor/Aktor 3-Leiter)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2000",
+    "levels": 3,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Etagen-Sensor/Aktorklemme 1,0 mm² (L/L/L)",
+    "description_en": "3-tier sensor/actuator terminal 1.0 mm² (L/L/L)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2000-5317",
+    "name": "2000-5317/102-000 (Sensor PE/N/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2000",
+    "levels": 3,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Etagen-Sensorklemme 1,0 mm², PE/N/L",
+    "description_en": "3-tier sensor terminal 1.0 mm², PE/N/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2001-1304",
+    "name": "2001-1304 (1,5mm² 3-Leiter N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2001",
+    "levels": 1,
+    "width_tenths_mm": 42,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Neutralleiterklemme 1,5 mm², blau (N)",
+    "description_en": "3-conductor neutral terminal 1.5 mm², blue (N)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2001-1307",
+    "name": "2001-1307 (1,5mm² 3-Leiter PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2001",
+    "levels": 1,
+    "width_tenths_mm": 42,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Schutzleiterklemme 1,5 mm², PE",
+    "description_en": "3-conductor ground terminal 1.5 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2001-1404",
+    "name": "2001-1404 (1,5mm² 4-Leiter N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2001",
+    "levels": 1,
+    "width_tenths_mm": 42,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Neutralleiterklemme 1,5 mm², blau (N)",
+    "description_en": "4-conductor neutral terminal 1.5 mm², blue (N)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2001-1407",
+    "name": "2001-1407 (1,5mm² 4-Leiter PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2001",
+    "levels": 1,
+    "width_tenths_mm": 42,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Schutzleiterklemme 1,5 mm², PE",
+    "description_en": "4-conductor ground terminal 1.5 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2002-1981",
+    "name": "2002-1981 (Trennklemme Hebel)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2002",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Trennklemme 2,5 mm² mit Hebel",
+    "description_en": "2-conductor disconnect terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2002-2601",
+    "name": "2002-2601 (2-Etagen Trenn/Durchg.)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2002",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Doppelstock-Trenn-/Durchgangsklemme 2,5 mm²",
+    "description_en": "Double-tier disconnect/feed-through terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2002-2961",
+    "name": "2002-2961 (2-Etagen Sicherung/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2002",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Doppelstock-Sicherungsklemme 2,5 mm², L/Si",
+    "description_en": "Double-tier fuse terminal 2.5 mm², L/Fuse",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "wago-2002-3204",
+    "name": "2002-3204 (3-Etagen L/L/N)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2002",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Dreistockklemme 2,5 mm², L/L/N",
+    "description_en": "Triple-level terminal 2.5 mm², L/L/N",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2002-3237",
+    "name": "2002-3237 (3-Etagen PE/L/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2002",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Dreistock-Schutzleiterklemme 2,5 mm², PE/L/L",
+    "description_en": "Triple-level PE terminal 2.5 mm², PE/L/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2003-6641",
+    "name": "2003-6641 (Inst. PE/L/NT Kompakt)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2003",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Etagenklemme 2,5 mm², PE/L/NT kompakt",
+    "description_en": "Compact installation terminal 2.5 mm², PE/L/NT",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2003-6660",
+    "name": "2003-6660 (Inst. PE/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2003",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Etagenklemme 2,5 mm², PE/L",
+    "description_en": "Installation terminal 2.5 mm², PE/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2003-7645",
+    "name": "2003-7645 (Inst. L/NT Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2003",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Etagenklemme 2,5 mm², L/NT",
+    "description_en": "Installation terminal 2.5 mm², L/NT",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2004-1304",
+    "name": "2004-1304 (4mm² 3-Leiter N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2004",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Neutralleiterklemme 4 mm², blau (N)",
+    "description_en": "3-conductor neutral terminal 4 mm², blue (N)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2004-1307",
+    "name": "2004-1307 (4mm² 3-Leiter PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2004",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Schutzleiterklemme 4 mm², PE",
+    "description_en": "3-conductor ground terminal 4 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2004-1404",
+    "name": "2004-1404 (4mm² 4-Leiter N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2004",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Neutralleiterklemme 4 mm², blau (N)",
+    "description_en": "4-conductor neutral terminal 4 mm², blue (N)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2004-1407",
+    "name": "2004-1407 (4mm² 4-Leiter PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2004",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Schutzleiterklemme 4 mm², PE",
+    "description_en": "4-conductor ground terminal 4 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2005-7645",
+    "name": "2005-7645 (4mm² Inst. L/NT)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2005",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Etagenklemme 4 mm², L/NT",
+    "description_en": "Installation terminal 4 mm², L/NT",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2006-1611",
+    "name": "2006-1611 (6mm² Sicherungsklemme)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2006",
+    "levels": 1,
+    "width_tenths_mm": 75,
+    "numbering_order": "BottomToTop",
+    "description_de": "Sicherungsklemme 6 mm² (5x20 / G-Sicherung)",
+    "description_en": "Fuse terminal 6 mm² (5x20)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "wago-2007-8811",
+    "name": "2007-8811 (Stromwandler-Prüf)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2007",
+    "levels": 1,
+    "width_tenths_mm": 80,
+    "numbering_order": "BottomToTop",
+    "description_de": "Stromwandler-Mess-/Trennklemme 6 mm²",
+    "description_en": "Current transformer test/disconnect terminal 6 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "wago-2202-1401",
+    "name": "2202-1401 (Drücker 4-Leiter Grau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2202 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Durchgangsklemme 2,5 mm² mit Drücker",
+    "description_en": "4-cond push-button feed-through 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2202-1611",
+    "name": "2202-1611 (Drücker Sicherung)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2202 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Sicherungsklemme 2,5 mm² mit Drücker",
+    "description_en": "Push-button fuse terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "wago-2202-1711",
+    "name": "2202-1711 (Drücker Trenn)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2202 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Trennklemme 2,5 mm² mit Drücker",
+    "description_en": "Push-button disconnect terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2203-6640",
+    "name": "2203-6640 (Drücker Inst. NT/L/PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2203 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Etagenklemme mit Drücker, PE/L/NT",
+    "description_en": "Push-button installation terminal, PE/L/NT",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2204-1204",
+    "name": "2204-1204 (Drücker 4mm² N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Neutralleiterklemme 4 mm² mit Drücker, blau (N)",
+    "description_en": "Push-button neutral terminal 4 mm² (N)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2204-1207",
+    "name": "2204-1207 (Drücker 4mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schutzleiterklemme 4 mm² mit Drücker, PE",
+    "description_en": "Push-button ground terminal 4 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2102-5201",
+    "name": "2102-5201 (Hebel 2-Etagen L/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2102 Hebel",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Etagen-Hebelklemme 2,5 mm², L/L",
+    "description_en": "Double-tier lever terminal 2.5 mm², L/L",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2104-1204",
+    "name": "2104-1204 (Hebel 4mm² N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2104 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hebel-Neutralleiterklemme 4 mm², blau (N)",
+    "description_en": "Lever neutral terminal 4 mm² (N)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2104-1207",
+    "name": "2104-1207 (Hebel 4mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2104 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hebel-Schutzleiterklemme 4 mm², PE",
+    "description_en": "Lever ground terminal 4 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2106-1204",
+    "name": "2106-1204 (Hebel 6mm² N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2106 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 75,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hebel-Neutralleiterklemme 6 mm², blau (N)",
+    "description_en": "Lever neutral terminal 6 mm² (N)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "wago-2106-1207",
+    "name": "2106-1207 (Hebel 6mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2106 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 75,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hebel-Schutzleiterklemme 6 mm², PE",
+    "description_en": "Lever ground terminal 6 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "wago-285-135",
+    "name": "285-135 (Hochstrom 35mm² Grau)",
+    "manufacturer": "WAGO",
+    "series": "285 POWER CAGE CLAMP",
+    "levels": 1,
+    "width_tenths_mm": 160,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hochstrom-Durchgangsklemme 35 mm², grau",
+    "description_en": "High-current through terminal 35 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "wago-285-137",
+    "name": "285-137 (Hochstrom 35mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "285 POWER CAGE CLAMP",
+    "levels": 1,
+    "width_tenths_mm": 160,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hochstrom-Schutzleiterklemme 35 mm², PE",
+    "description_en": "High-current ground terminal 35 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "wago-285-150",
+    "name": "285-150 (Hochstrom 50mm² Grau)",
+    "manufacturer": "WAGO",
+    "series": "285 POWER CAGE CLAMP",
+    "levels": 1,
+    "width_tenths_mm": 200,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hochstrom-Durchgangsklemme 50 mm², grau",
+    "description_en": "High-current through terminal 50 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "wago-285-195",
+    "name": "285-195 (Hochstrom 95mm² Grau)",
+    "manufacturer": "WAGO",
+    "series": "285 POWER CAGE CLAMP",
+    "levels": 1,
+    "width_tenths_mm": 250,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hochstrom-Durchgangsklemme 95 mm², grau",
+    "description_en": "High-current through terminal 95 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-pt-15s-twin",
+    "name": "PT 1,5/S-TWIN (1,5mm² 3-Leiter)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 1,5/S",
+    "levels": 1,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "Dreileiterklemme 1,5 mm², Push-in (3,5 mm)",
+    "description_en": "3-conductor terminal 1.5 mm², Push-in",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-15s-quattro",
+    "name": "PT 1,5/S-QUATTRO (1,5mm² 4-L)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 1,5/S",
+    "levels": 1,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "Vierleiterklemme 1,5 mm², Push-in (3,5 mm)",
+    "description_en": "4-conductor terminal 1.5 mm², Push-in",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-15s-twin-pe",
+    "name": "PT 1,5/S-TWIN-PE (1,5mm² PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 1,5/S",
+    "levels": 1,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Schutzleiterklemme 1,5 mm², PE",
+    "description_en": "3-conductor PE terminal 1.5 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-15s-mt",
+    "name": "PT 1,5/S-MT (1,5mm² Trenn)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 1,5/S",
+    "levels": 1,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messertrennklemme 1,5 mm², Push-in",
+    "description_en": "Knife disconnect terminal 1.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-25-twin-bu",
+    "name": "PT 2,5-TWIN BU (N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 2,5",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Dreileiter-N-Klemme 2,5 mm², blau",
+    "description_en": "3-conductor neutral terminal 2.5 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-25-quattro-bu",
+    "name": "PT 2,5-QUATTRO BU (N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 2,5",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Vierleiter-N-Klemme 2,5 mm², blau",
+    "description_en": "4-conductor neutral terminal 2.5 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-25-tg",
+    "name": "PT 2,5-TG (Trenngrundklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 2,5",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Trenngrundklemme 2,5 mm² (Steckerzone)",
+    "description_en": "Disconnect basic terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-4-twin-pe",
+    "name": "PT 4-TWIN-PE (4mm² 3-L PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 4",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Dreileiter-PE-Klemme 4 mm², grün-gelb",
+    "description_en": "3-conductor PE terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-4-hesi",
+    "name": "PT 4-HESI (5X20) (Sicherung)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 4",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Sicherungsklemme 4 mm² (5x20 mm)",
+    "description_en": "Fuse terminal 4 mm² (5x20)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-4-mt",
+    "name": "PT 4-MT (Messertrennklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 4",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messertrennklemme 4 mm², Push-in",
+    "description_en": "Knife disconnect terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pt-6-bu",
+    "name": "PT 6 BU (6mm² N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 6",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "numbering_order": "BottomToTop",
+    "description_de": "Neutralleiterklemme 6 mm², blau",
+    "description_en": "Neutral terminal 6 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "phoenix-pt-6-t",
+    "name": "PT 6-T (Mess-/Trennklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 6",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messwert-Trennklemme 6 mm²",
+    "description_en": "Test disconnect terminal 6 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "phoenix-ptme-6",
+    "name": "PTME 6 (Messwerttrenn)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 6",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "numbering_order": "BottomToTop",
+    "description_de": "Stromwandler-Messwerttrennklemme 6 mm²",
+    "description_en": "Current transformer test terminal 6 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "phoenix-ptio-15s-3",
+    "name": "PTIO 1,5/S/3 (Sensor/Aktor)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 1,5/S",
+    "levels": 3,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "Sensor-/Aktorklemme 1,5 mm², 3-polig",
+    "description_en": "Sensor/actuator terminal 1.5 mm², 3-level",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pti-25-lnt",
+    "name": "PTI 2,5-L/NT (Inst. L/NT)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installationsklemme 2,5 mm², L/NT",
+    "description_en": "Installation terminal 2.5 mm², L/NT",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pti-4-ln",
+    "name": "PTI 4-L/N (Inst. 4mm² L/N)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installationsklemme 4 mm², L/N",
+    "description_en": "Installation terminal 4 mm², L/N",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pti-6-pell",
+    "name": "PTI 6-PE/L/L (Inst. 6mm² PE/L/L)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 3,
+    "width_tenths_mm": 82,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Etagen-Installationsklemme 6 mm², PE/L/L",
+    "description_en": "3-tier installation terminal 6 mm², PE/L/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "phoenix-pttb-4-bu",
+    "name": "PTTB 4 BU (2-Etagen N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 4",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Doppelstockklemme 4 mm², N/N blau",
+    "description_en": "Double-level neutral terminal 4 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-ptv-25-bu",
+    "name": "PTV 2,5 BU (Seitl. N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTV",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Durchgangsklemme seitl. Anschluss N blau",
+    "description_en": "Side-entry neutral terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-ptv-4",
+    "name": "PTV 4 (4mm² Seitl. Push-in)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTV",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Durchgangsklemme seitl. Anschluss 4 mm²",
+    "description_en": "Side-entry feed-through 4 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-ptv-4-pe",
+    "name": "PTV 4-PE (4mm² Seitl. PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTV",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schutzleiterklemme seitl. Anschluss 4 mm²",
+    "description_en": "Side-entry PE terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-ptpower-35",
+    "name": "PTPOWER 35 (Hochstrom 35mm²)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTPOWER",
+    "levels": 1,
+    "width_tenths_mm": 160,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hochstromklemme Power-Turn 35 mm²",
+    "description_en": "High-current Power-Turn 35 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-ptpower-95",
+    "name": "PTPOWER 95 (Hochstrom 95mm²)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTPOWER",
+    "levels": 1,
+    "width_tenths_mm": 250,
+    "numbering_order": "BottomToTop",
+    "description_de": "Hochstromklemme Power-Turn 95 mm²",
+    "description_en": "High-current Power-Turn 95 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-st-25-bu",
+    "name": "ST 2,5 BU (Federzug N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfederklemme 2,5 mm², blau (N)",
+    "description_en": "Spring-cage neutral terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-st-25-pe",
+    "name": "ST 2,5-PE (Federzug PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Schutzleiterklemme 2,5 mm²",
+    "description_en": "Spring-cage ground terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-ut-4-hesi",
+    "name": "UT 4-HESI (5X20) (Schraub Si)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Sicherungsklemme 4 mm² (5x20)",
+    "description_en": "Screw fuse terminal 4 mm² (5x20)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-uti-25-peln",
+    "name": "UTI 2,5-PE/L/NT (Schraub Inst.)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Installationsklemme PE/L/NT",
+    "description_en": "Screw installation terminal PE/L/NT",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-uk-5n",
+    "name": "UK 5 N (Universal Schraub)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Universal-Schraubklemme UK 5 N (4 mm²)",
+    "description_en": "Universal screw terminal UK 5 N",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-uslkg-5",
+    "name": "USLKG 5 (Schraub PE 4mm²)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "Universal-Schutzleiterklemme USLKG 5",
+    "description_en": "Universal PE screw terminal USLKG 5",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a2c-15-bl",
+    "name": "A2C 1.5 BL (N Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "Neutralleiterklemme 1,5 mm², blau",
+    "description_en": "Neutral terminal 1.5 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a3c-15",
+    "name": "A3C 1.5 (3-Leiter 1,5mm²)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Durchgangsklemme 1,5 mm²",
+    "description_en": "3-cond through terminal 1.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a4c-15",
+    "name": "A4C 1.5 (4-Leiter 1,5mm²)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Durchgangsklemme 1,5 mm²",
+    "description_en": "4-cond through terminal 1.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a3c-25-bl",
+    "name": "A3C 2.5 BL (3-Leiter N Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 51,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Neutralleiterklemme 2,5 mm², blau",
+    "description_en": "3-cond neutral terminal 2.5 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a3c-25-pe",
+    "name": "A3C 2.5 PE (3-Leiter PE)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 51,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Schutzleiterklemme 2,5 mm², PE",
+    "description_en": "3-cond ground terminal 2.5 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a4c-25-bl",
+    "name": "A4C 2.5 BL (4-Leiter N Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 51,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Neutralleiterklemme 2,5 mm², blau",
+    "description_en": "4-cond neutral terminal 2.5 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a4c-25-pe",
+    "name": "A4C 2.5 PE (4-Leiter PE)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 51,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Schutzleiterklemme 2,5 mm², PE",
+    "description_en": "4-cond ground terminal 2.5 mm², PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a2c-4-bl",
+    "name": "A2C 4 BL (4mm² N Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "Neutralleiterklemme 4 mm², blau",
+    "description_en": "Neutral terminal 4 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a3c-4",
+    "name": "A3C 4 (4mm² 3-Leiter Grau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Durchgangsklemme 4 mm², grau",
+    "description_en": "3-cond through terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a3c-4-pe",
+    "name": "A3C 4 PE (4mm² 3-Leiter PE)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Schutzleiterklemme 4 mm², PE",
+    "description_en": "3-cond PE terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-a2c-6-bl",
+    "name": "A2C 6 BL (6mm² N Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 81,
+    "numbering_order": "BottomToTop",
+    "description_de": "Neutralleiterklemme 6 mm², blau",
+    "description_en": "Neutral terminal 6 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "weidmuller-a2c-10-bl",
+    "name": "A2C 10 BL (10mm² N Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 100,
+    "numbering_order": "BottomToTop",
+    "description_de": "Neutralleiterklemme 10 mm², blau",
+    "description_en": "Neutral terminal 10 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "weidmuller-a2c-10-pe",
+    "name": "A2C 10 PE (10mm² PE)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 100,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schutzleiterklemme 10 mm², PE",
+    "description_en": "PE terminal 10 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "weidmuller-adt-25",
+    "name": "ADT 2.5 2C (Trennklemme)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 1,
+    "width_tenths_mm": 51,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in Trennklemme 2,5 mm²",
+    "description_en": "Push-in disconnect terminal 2.5 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-aio21",
+    "name": "AIO21 1.5 SI (Sensor/Aktor)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 3,
+    "width_tenths_mm": 35,
+    "numbering_order": "BottomToTop",
+    "description_de": "Initiator-/Aktorklemme 1,5 mm², 3-Etagen",
+    "description_en": "Sensor/actuator terminal 1.5 mm², 3-tier",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-aitb-25-nl",
+    "name": "AITB 2.5 BB N-L (Inst. N-L)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect AITB",
+    "levels": 2,
+    "width_tenths_mm": 51,
+    "numbering_order": "BottomToTop",
+    "description_de": "Gebäudeinstallationsklemme 2,5 mm², N-L",
+    "description_en": "Building installation terminal 2.5 mm², N-L",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-aitb-4-llp",
+    "name": "AITB 4 L-L-PE (Inst. PE/L/L)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect AITB",
+    "levels": 3,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Dreistockklemme 4 mm², PE/L/L",
+    "description_en": "Installation 3-tier terminal 4 mm², PE/L/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-wdu-4-bl",
+    "name": "WDU 4 BL (Schraub 4mm² N)",
+    "manufacturer": "Weidmüller",
+    "series": "W-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiterklemme 4 mm², blau",
+    "description_en": "Screw neutral terminal 4 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-wpe-4",
+    "name": "WPE 4 (Schraub 4mm² PE)",
+    "manufacturer": "Weidmüller",
+    "series": "W-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Schutzleiterklemme 4 mm², PE",
+    "description_en": "Screw PE terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-wdu-6-bl",
+    "name": "WDU 6 BL (Schraub 6mm² N)",
+    "manufacturer": "Weidmüller",
+    "series": "W-Series",
+    "levels": 1,
+    "width_tenths_mm": 79,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiterklemme 6 mm², blau",
+    "description_en": "Screw neutral terminal 6 mm², blue",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "weidmuller-wpe-6",
+    "name": "WPE 6 (Schraub 6mm² PE)",
+    "manufacturer": "Weidmüller",
+    "series": "W-Series",
+    "levels": 1,
+    "width_tenths_mm": 79,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Schutzleiterklemme 6 mm², PE",
+    "description_en": "Screw PE terminal 6 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "weidmuller-wdu-35",
+    "name": "WDU 35 (Schraub 35mm²)",
+    "manufacturer": "Weidmüller",
+    "series": "W-Series",
+    "levels": 1,
+    "width_tenths_mm": 160,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Durchgangsklemme 35 mm²",
+    "description_en": "Screw through terminal 35 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "weidmuller-wtr-4",
+    "name": "WTR 4 (Schraub Trennklemme)",
+    "manufacturer": "Weidmüller",
+    "series": "W-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Trennklemme 4 mm²",
+    "description_en": "Screw disconnect terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-zdu-4",
+    "name": "ZDU 4 (Zugfeder 4mm² Grau)",
+    "manufacturer": "Weidmüller",
+    "series": "Z-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Durchgangsklemme 4 mm², grau",
+    "description_en": "Tension-clamp through terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-zpe-4",
+    "name": "ZPE 4 (Zugfeder 4mm² PE)",
+    "manufacturer": "Weidmüller",
+    "series": "Z-Series",
+    "levels": 1,
+    "width_tenths_mm": 61,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Schutzleiterklemme 4 mm², PE",
+    "description_en": "Tension-clamp PE terminal 4 mm²",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-zdl-25",
+    "name": "ZDL 2.5S/L/NT/PE (Zugfeder Inst.)",
+    "manufacturer": "Weidmüller",
+    "series": "Z-Series",
+    "levels": 3,
+    "width_tenths_mm": 51,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Installationsklemme PE/L/NT",
+    "description_en": "Tension-clamp installation terminal PE/L/NT",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
   }
 ]

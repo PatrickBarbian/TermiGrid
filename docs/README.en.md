@@ -34,32 +34,27 @@
 
 ## Key Features
 
-- **186 built-in terminal block specs + custom blocks:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (push-button), `2102–2116`, `2022` X-COM, and `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` installation terminals, plus `ST` & `UT`
-  - **Weidmüller:** `A-Series`, `AITB` installation terminals, `W-Series`, `DLI`, & `Z-Series`
-  - **Custom terminals:** Create and manage your own custom terminal definitions directly inside the app
-- **Multi-level numbering & PE alignment:**
-  - Installation and multi-tier terminals (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Any existing **PE connection** is consistently aligned in a dedicated PE row **below the bottom main tier**, keeping sequential numbers on one clean horizontal baseline.
-  - **Multi-tier example:** On a strip of 2-tier blocks, Tier 1 (bottom) automatically numbers odd (`1, 3, 5 …`) and Tier 2 (top) even (`2, 4, 6 …`); subsequent 1-tier blocks seamlessly continue on Tier 1 (`7, 8, 9 …`).
-- **Interactive 2D CAD Editor (without DIN-rail clutter):**
-  - Clean CAD canvas without an unnecessary DIN rail, featuring embedded manufacturer logos (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Type display:** Switch between **vertical (`-90°` rotated)** per terminal or **horizontally grouped** underneath the strip.
-  - **Inline editing:** **Double-click** any terminal label to edit directly (`Enter` = apply, empty = restore automatic numbering, `Esc` = cancel).
-  - **Multi-selection:** Single click, `Ctrl+Click`, `Shift+Click`, and marquee drag selection to reassign types, insert before/after, or delete together.
-- **Automatic matching accessories:**
-  - The right-hand Properties panel automatically displays matching accessories for the selected terminals: **End plates / covers**, **Jumpers / cross-connectors**, **Marking strips / tags**, **End brackets**, and **N-busbars**.
-- **Printer-ready Export (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 structured worksheets:
-    1. `Druckfolge` / Print Sequence (`ByTierStrip` by default – outputs every tier contiguously as a strip, e.g. all of Tier 1 first, then Tier 2, then Tier 3; optionally column- or block-ordered, with/without `PE`)
-    2. `Ebenen-Spalten` / Tier Columns
-    3. `Ebenen-Matrix` / Tier Matrix
-    - All cells are strictly formatted as **Excel Text (`@`)** so leading zeros (`01`) or dot notation (`1.1`) are never converted into numbers or dates.
-  - **CSV (`.csv`):** UTF-8 with BOM and semicolon `;` as the default delimiter.
-  - **Project files:** Save and load `.termi` or `.json` files including manual overrides and custom terminals.
-- **7 Languages, Themes & built-in Update Checker:**
-  - Instant UI switching between **DE, EN, FR, IT, ES, PL, NL** – with high-contrast **Light and Dark** themes.
-  - Built-in **GitHub Update Checker** plus direct **GitHub** and **Buy Me a Coffee** links.
+- **277 built-in terminal block specs + custom blocks:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (push-button), `2102–2116` (lever), `2022` X-COM, `2007` CT test, `280/281`, and `285` high-current (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` installation terminals, `ST`, `UT`, & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installation terminals, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`), & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Custom terminals:** Define custom blocks directly in the app including `1×` vs `2×` jumper chambers
+- **Multi-level numbering, N/PE modes & special characters:**
+  - Installation & multi-tier terminals (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Any existing **PE connection** is aligned on a dedicated PE row **below the bottom main tier**.
+  - **N & PE numbering:** Switch per strip between fixed (`N`/`PE`), shared sequential numbering (`1, 2, …`), shared `1N, 2N` / `1PE, 2PE`, or **separate N/PE counters (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Batch prefix / suffix / special characters:** Select any number of terminals and attach symbols (`+`, `-`, `~`, `=`, `.1`, `Ω`, etc.) before or after numbers across all or targeted tiers (preserved across renumbering).
+- **Bridge Mode & Potential Calculation:**
+  - Create color-coded **potentials** (`+24V`, `GND`, `L1` …) and tap/click terminal tiers directly in CAD.
+  - **Automatic calculation:** Computes required comb jumper poles (e.g. `2002-405`, `FBS 5-5`, `ZQV`), marks **cut-out pins (`Cut pin ×`)** over skipped blocks, inserts **wire bridges (`DB`)** across multi-tier jumps (`E1 <-> E2`) or pitch changes, and respects **single-chamber** (wire bridge beyond max poles) vs **double-chamber** terminals (overlapping slot-1/slot-2 cascades).
+- **Interactive 2D CAD Editor (Desktop & Touch-friendly):**
+  - Clean CAD canvas without DIN-rail clutter, embedded brand logos (**WAGO**, **Phoenix Contact**, **Weidmüller**), tool switcher (**Pan**, **Box Select**, **Bridge Mode**), touch panning & middle/right-drag scrolling.
+  - **Type display & inline editing:** `-90°` vertical or horizontal groups; **double-click** labels to edit inline (`Enter` = apply, empty = auto, `Esc` = cancel).
+- **Product Preview, Manufacturer Link & Matching Accessories:**
+  - Displays **product photo (when reachable) / technical profile preview**, **jumper chamber count**, clickable **manufacturer product page link**, plus **end plates, jumpers, markers, end brackets, and N-busbars**.
+- **Printer-ready Export (`.xlsx` & `.csv`) & Project files (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 worksheets (`Druckfolge` / `ByTierStrip` default, `Ebenen-Spalten`, `Ebenen-Matrix`), strictly formatted as **Excel Text (`@`)**.
+- **7 Languages, High-Contrast Themes & Live Update Checker:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Light & Dark themes, live GitHub update check on Desktop & Android, plus **GitHub** and **Buy Me a Coffee** links.
 
 ---
 

@@ -1,3 +1,4 @@
+pub mod bridging;
 pub mod numbering;
 
 use serde::{Deserialize, Serialize};
@@ -26,6 +27,11 @@ impl TierBehavior {
     /// Returns true if this tier represents Protective Earth (PE).
     pub fn is_pe(&self) -> bool {
         matches!(self, Self::ProtectiveEarth)
+    }
+
+    /// Returns true if this tier is a standard Neutral ("N") fixed connection.
+    pub fn is_neutral(&self) -> bool {
+        matches!(self, Self::Fixed(s) if s.trim().eq_ignore_ascii_case("N"))
     }
 }
 
@@ -59,6 +65,12 @@ pub struct ConnectionPoint {
     pub behavior: TierBehavior,
     /// Optional manual override entered by the user; suppresses automatic sequential numbering.
     pub custom_override: Option<String>,
+    /// Optional prefix applied before the base label (e.g., "+", "-", "X1:").
+    #[serde(default)]
+    pub label_prefix: String,
+    /// Optional suffix applied after the base label (e.g., "~", ".1", "*").
+    #[serde(default)]
+    pub label_suffix: String,
     /// Visual color classification for CAD rendering.
     pub color: TierColor,
     /// Computed label intended for marker printing (empty string for unlabeled/PE).
@@ -77,6 +89,8 @@ impl ConnectionPoint {
             level_index,
             behavior,
             custom_override: None,
+            label_prefix: String::new(),
+            label_suffix: String::new(),
             color,
             computed_label: String::new(),
             cad_display_label: String::new(),
@@ -141,6 +155,49 @@ impl TerminalBlock {
     }
 }
 
+/// Controls how Neutral (`N`) tiers are numbered along a terminal strip.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum NeutralLabelMode {
+    /// Classic fixed `"N"` on every neutral tier.
+    #[default]
+    Fixed,
+    /// Shares the strip's sequential counter, labeled as pure number (`"1"`, `"2"`, ...).
+    SharedSequenceNumber,
+    /// Shares the strip's sequential counter, formatted `<n>N` (e.g. `"3N"`).
+    SharedSequenceSuffixN,
+    /// Dedicated counter per strip starting at 1: `"1N"`, `"2N"`, `"3N"`...
+    SeparateCounterSuffixN,
+}
+
+/// Controls how Protective Earth (`PE`) tiers are numbered along a terminal strip.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum PeLabelMode {
+    /// Classic `"PE"` in CAD (and unlabeled unless PE export is enabled).
+    #[default]
+    Fixed,
+    /// Shares the strip's sequential counter, labeled as pure number (`"1"`, `"2"`, ...).
+    SharedSequenceNumber,
+    /// Shares the strip's sequential counter, formatted `<n>PE` (e.g. `"3PE"`).
+    SharedSequenceSuffixPe,
+    /// Dedicated counter per strip starting at 1: `"1PE"`, `"2PE"`, `"3PE"`...
+    SeparateCounterSuffixPe,
+}
+
+/// Represents a named electrical potential whose assigned terminal tiers should be bridged.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct JumperPotential {
+    pub id: u64,
+    pub name: String,
+    pub color_rgb: [u8; 3],
+    /// Assigned connection points as `(block_id, level_index)`.
+    #[serde(default)]
+    pub members: Vec<(u64, usize)>,
+}
+
+fn default_next_potential_id() -> u64 {
+    1
+}
+
 /// Represents a complete DIN-rail terminal strip (e.g., "-X1").
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TerminalStrip {
@@ -158,6 +215,18 @@ pub struct TerminalStrip {
     pub blocks: Vec<TerminalBlock>,
     /// Next unique block ID counter.
     next_block_id: u64,
+    /// Numbering behavior for `N` tiers on this strip.
+    #[serde(default)]
+    pub neutral_mode: NeutralLabelMode,
+    /// Numbering behavior for `PE` tiers on this strip.
+    #[serde(default)]
+    pub pe_mode: PeLabelMode,
+    /// Named jumper potentials assigned in Bridge Mode.
+    #[serde(default)]
+    pub potentials: Vec<JumperPotential>,
+    /// Next unique potential ID counter.
+    #[serde(default = "default_next_potential_id")]
+    next_potential_id: u64,
 }
 
 impl TerminalStrip {
@@ -176,6 +245,10 @@ impl TerminalStrip {
             default_spec_id: default_spec_id.into(),
             blocks: Vec::new(),
             next_block_id: 1,
+            neutral_mode: NeutralLabelMode::Fixed,
+            pe_mode: PeLabelMode::Fixed,
+            potentials: Vec::new(),
+            next_potential_id: 1,
         }
     }
 
@@ -186,11 +259,22 @@ impl TerminalStrip {
         id
     }
 
-    /// Ensures `next_block_id` stays strictly greater than any existing block ID (e.g., after loading JSON).
+    /// Allocates a fresh unique jumper potential ID within this strip.
+    pub fn allocate_potential_id(&mut self) -> u64 {
+        let id = self.next_potential_id.max(1);
+        self.next_potential_id = id + 1;
+        id
+    }
+
+    /// Ensures `next_block_id` and `next_potential_id` stay strictly greater than existing IDs.
     pub fn sync_next_block_id(&mut self) {
         let max_id = self.blocks.iter().map(|b| b.id).max().unwrap_or(0);
         if self.next_block_id <= max_id {
             self.next_block_id = max_id + 1;
+        }
+        let max_pot = self.potentials.iter().map(|p| p.id).max().unwrap_or(0);
+        if self.next_potential_id <= max_pot {
+            self.next_potential_id = max_pot + 1;
         }
     }
 

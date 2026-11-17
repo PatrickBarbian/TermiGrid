@@ -1,10 +1,11 @@
 use std::sync::{Arc, Mutex};
 
+use crate::ui::net::http_get_text;
+
 pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GITHUB_REPO_URL: &str = "https://github.com/PatrickBarbian/TermiGrid";
 pub const GITHUB_RELEASES_URL: &str = "https://github.com/PatrickBarbian/TermiGrid/releases";
 pub const BUYMEACOFFEE_URL: &str = "https://buymeacoffee.com/02eOWKzm5W";
-#[cfg(not(target_os = "android"))]
 const LATEST_RELEASE_API: &str =
     "https://api.github.com/repos/PatrickBarbian/TermiGrid/releases/latest";
 
@@ -61,38 +62,13 @@ pub fn open_external_url(ctx: &egui::Context, url: &str) {
     ctx.open_url(egui::OpenUrl::new_tab(url));
 }
 
-#[cfg(not(target_os = "android"))]
 fn perform_update_check() -> UpdateStatus {
-    let mut cmd = std::process::Command::new("curl");
-    cmd.args([
-        "-fsSL",
-        "-m",
-        "6",
-        "-H",
-        "Accept: application/vnd.github+json",
-        "-H",
-        "User-Agent: TermiGrid",
-        LATEST_RELEASE_API,
-    ]);
-
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
-    }
-
-    let output = match cmd.output() {
-        Ok(o) => o,
-        Err(e) => return UpdateStatus::Error(e.to_string()),
+    let body = match http_get_text(LATEST_RELEASE_API) {
+        Ok(text) => text,
+        Err(e) => return UpdateStatus::Error(e),
     };
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return UpdateStatus::Error(stderr.trim().to_string());
-    }
-
-    let json: serde_json::Value = match serde_json::from_slice(&output.stdout) {
+    let json: serde_json::Value = match serde_json::from_str(&body) {
         Ok(v) => v,
         Err(e) => return UpdateStatus::Error(e.to_string()),
     };
@@ -119,14 +95,6 @@ fn perform_update_check() -> UpdateStatus {
         }
     } else {
         UpdateStatus::UpToDate(tag)
-    }
-}
-
-#[cfg(target_os = "android")]
-fn perform_update_check() -> UpdateStatus {
-    UpdateStatus::UpdateAvailable {
-        latest_tag: format!("v{CURRENT_VERSION}"),
-        release_url: GITHUB_RELEASES_URL.to_string(),
     }
 }
 

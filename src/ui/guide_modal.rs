@@ -24,6 +24,7 @@ pub struct CustomSpecDraft {
     pub name: String,
     pub width_mm: f32,
     pub levels: usize,
+    pub jumper_slots: u8,
     pub tier_kinds: [CustomTierKind; 4],
     pub tier_fixed: [String; 4],
 }
@@ -35,6 +36,7 @@ impl Default for CustomSpecDraft {
             name: "2002-XXXX".to_string(),
             width_mm: 5.2,
             levels: 2,
+            jumper_slots: 2,
             tier_kinds: [
                 CustomTierKind::Sequential,
                 CustomTierKind::Sequential,
@@ -166,6 +168,9 @@ pub fn show_database_tab(
                 );
                 ui.label(strings.db_col_levels);
                 ui.add(egui::DragValue::new(&mut draft.levels).range(1..=4));
+                ui.label(strings.custom_spec_chambers);
+                ui.selectable_value(&mut draft.jumper_slots, 1, "1×");
+                ui.selectable_value(&mut draft.jumper_slots, 2, "2×");
             });
 
             ui.add_space(4.0);
@@ -246,6 +251,10 @@ pub fn show_database_tab(
                     description_en: "User-defined terminal block".to_string(),
                     tiers,
                     accessories: None,
+                    jumper_slots_per_tier: Some(draft.jumper_slots),
+                    max_jumper_poles: Some(10),
+                    article_number: None,
+                    product_url: None,
                 };
 
                 custom_specs.push(spec.clone());
@@ -290,7 +299,9 @@ pub fn show_database_tab(
                 ui.strong(strings.db_col_pattern);
                 ui.strong(strings.db_col_width);
                 ui.strong(strings.acc_end_plate);
+                ui.strong(strings.custom_spec_chambers);
                 ui.strong(strings.db_col_desc);
+                ui.strong("");
                 ui.end_row();
 
                 for spec in catalog.all() {
@@ -315,11 +326,15 @@ pub fn show_database_tab(
                     ui.label(format!("{:.1} mm", f32::from(spec.width_tenths_mm) / 10.0));
                     let acc = catalog.accessories_for(spec);
                     ui.label(acc.end_plate);
+                    ui.label(format!("{}×", spec.effective_jumper_slots()));
                     let desc = match lang {
                         Language::De => &spec.description_de,
                         _ => &spec.description_en,
                     };
                     ui.label(desc);
+                    if ui.small_button("Web ↗").clicked() {
+                        open_external_url(ui.ctx(), &spec.effective_product_url());
+                    }
                     ui.end_row();
                 }
             });

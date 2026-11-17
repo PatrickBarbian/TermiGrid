@@ -1,5 +1,7 @@
 use crate::catalog::{TerminalCatalog, TerminalSpec};
-use crate::model::{NumberingOrder, TerminalStrip, TierBehavior};
+use crate::model::{
+    NeutralLabelMode, NumberingOrder, PeLabelMode, TerminalStrip, TierBehavior,
+};
 
 /// Controls how a newly created strip determines its initial number of physical terminal blocks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,9 +56,12 @@ impl TerminalStrip {
     }
 
     /// Recomputes `computed_label` and `cad_display_label` for every tier of every block
-    /// by distributing the linear sequence starting at `self.start_number`.
+    /// by distributing the linear sequence starting at `self.start_number`, applying N/PE modes
+    /// and per-tier prefix/suffix special characters.
     pub fn recalculate_labels(&mut self) {
         let mut next_number = self.start_number;
+        let mut next_n = 1u32;
+        let mut next_pe = 1u32;
 
         for block in &mut self.blocks {
             let tier_count = block.tiers.len();
@@ -69,33 +74,96 @@ impl TerminalStrip {
                 let tier = &mut block.tiers[idx];
                 tier.level_index = idx;
 
-                if let Some(override_text) = &tier.custom_override {
-                    let trimmed = override_text.trim().to_string();
-                    tier.computed_label = trimmed.clone();
-                    tier.cad_display_label = if trimmed.is_empty() && tier.behavior.is_pe() {
-                        "PE".to_string()
+                let wrap_affix = |base: &str, prefix: &str, suffix: &str| -> String {
+                    if prefix.is_empty() && suffix.is_empty() {
+                        base.to_string()
                     } else {
-                        trimmed
+                        format!("{prefix}{base}{suffix}")
+                    }
+                };
+
+                if let Some(override_text) = &tier.custom_override {
+                    let trimmed = override_text.trim();
+                    let label = if trimmed.is_empty() {
+                        String::new()
+                    } else {
+                        wrap_affix(trimmed, &tier.label_prefix, &tier.label_suffix)
                     };
+                    tier.computed_label = label.clone();
+                    tier.cad_display_label = if label.is_empty() && tier.behavior.is_pe() {
+                        wrap_affix("PE", &tier.label_prefix, &tier.label_suffix)
+                    } else {
+                        label
+                    };
+                    continue;
+                }
+
+                if tier.behavior.is_neutral() {
+                    let base = match self.neutral_mode {
+                        NeutralLabelMode::Fixed => "N".to_string(),
+                        NeutralLabelMode::SharedSequenceNumber => {
+                            let v = next_number.to_string();
+                            next_number = next_number.saturating_add(1);
+                            v
+                        }
+                        NeutralLabelMode::SharedSequenceSuffixN => {
+                            let v = format!("{next_number}N");
+                            next_number = next_number.saturating_add(1);
+                            v
+                        }
+                        NeutralLabelMode::SeparateCounterSuffixN => {
+                            let v = format!("{next_n}N");
+                            next_n = next_n.saturating_add(1);
+                            v
+                        }
+                    };
+                    let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                    tier.computed_label = full.clone();
+                    tier.cad_display_label = full;
                     continue;
                 }
 
                 match &tier.behavior {
                     TierBehavior::Sequential => {
-                        let label = next_number.to_string();
+                        let base = next_number.to_string();
                         next_number = next_number.saturating_add(1);
-                        tier.computed_label = label.clone();
-                        tier.cad_display_label = label;
+                        let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                        tier.computed_label = full.clone();
+                        tier.cad_display_label = full;
                     }
                     TierBehavior::Fixed(fixed) => {
-                        tier.computed_label = fixed.clone();
-                        tier.cad_display_label = fixed.clone();
+                        let full = wrap_affix(fixed, &tier.label_prefix, &tier.label_suffix);
+                        tier.computed_label = full.clone();
+                        tier.cad_display_label = full;
                     }
-                    TierBehavior::ProtectiveEarth => {
-                        // PE connections are normally not labeled on terminal markers.
-                        tier.computed_label.clear();
-                        tier.cad_display_label = "PE".to_string();
-                    }
+                    TierBehavior::ProtectiveEarth => match self.pe_mode {
+                        PeLabelMode::Fixed => {
+                            tier.computed_label.clear();
+                            tier.cad_display_label =
+                                wrap_affix("PE", &tier.label_prefix, &tier.label_suffix);
+                        }
+                        PeLabelMode::SharedSequenceNumber => {
+                            let base = next_number.to_string();
+                            next_number = next_number.saturating_add(1);
+                            let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                            tier.computed_label = full.clone();
+                            tier.cad_display_label = full;
+                        }
+                        PeLabelMode::SharedSequenceSuffixPe => {
+                            let base = format!("{next_number}PE");
+                            next_number = next_number.saturating_add(1);
+                            let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                            tier.computed_label = full.clone();
+                            tier.cad_display_label = full;
+                        }
+                        PeLabelMode::SeparateCounterSuffixPe => {
+                            let base = format!("{next_pe}PE");
+                            next_pe = next_pe.saturating_add(1);
+                            let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                            tier.computed_label = full.clone();
+                            tier.cad_display_label = full;
+                        }
+                    },
                     TierBehavior::Unlabeled => {
                         tier.computed_label.clear();
                         tier.cad_display_label.clear();
@@ -103,6 +171,31 @@ impl TerminalStrip {
                 }
             }
         }
+    }
+
+    /// Sets `label_prefix` / `label_suffix` across selected blocks (optionally filtered to one
+    /// aligned `target_visual_row`, e.g. `Some(0)` = E1, `Some(-1)` = PE, `None` = all tiers).
+    pub fn apply_affix_to_selection(
+        &mut self,
+        block_indices: &[usize],
+        target_visual_row: Option<isize>,
+        prefix: &str,
+        suffix: &str,
+    ) {
+        let len = self.blocks.len();
+        for &b_idx in block_indices {
+            if b_idx >= len {
+                continue;
+            }
+            let block = &mut self.blocks[b_idx];
+            for t_idx in 0..block.tiers.len() {
+                if target_visual_row.is_none_or(|r| block.tier_visual_row(t_idx) == r) {
+                    block.tiers[t_idx].label_prefix = prefix.to_string();
+                    block.tiers[t_idx].label_suffix = suffix.to_string();
+                }
+            }
+        }
+        self.recalculate_labels();
     }
 
     /// Reassigns all blocks at the given `indices` to `new_spec` and recalculates labels.
@@ -257,5 +350,48 @@ mod tests {
             .map(|b| b.tiers[0].computed_label.as_str())
             .collect();
         assert_eq!(labels, vec!["1", "24V+", "2", "3"]);
+    }
+
+    #[test]
+    fn n_and_pe_modes_and_batch_affixes_preserve_dynamic_numbering() {
+        let catalog = TerminalCatalog::load_embedded();
+        assert!(catalog.all().len() >= 270);
+        let inst = catalog.find_by_id("wago-2003-7641").unwrap();
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 5, 2, inst);
+
+        // Mode 1: Own separate N and PE counters -> 1N, 2N and 1PE, 2PE
+        strip.neutral_mode = NeutralLabelMode::SeparateCounterSuffixN;
+        strip.pe_mode = PeLabelMode::SeparateCounterSuffixPe;
+        strip.recalculate_labels();
+
+        assert_eq!(strip.blocks[0].tiers[0].computed_label, "1PE");
+        assert_eq!(strip.blocks[0].tiers[1].computed_label, "1");
+        assert_eq!(strip.blocks[0].tiers[2].computed_label, "1N");
+        assert_eq!(strip.blocks[1].tiers[0].computed_label, "2PE");
+        assert_eq!(strip.blocks[1].tiers[1].computed_label, "2");
+        assert_eq!(strip.blocks[1].tiers[2].computed_label, "2N");
+
+        // Mode 2: Shared sequence with main terminals
+        strip.neutral_mode = NeutralLabelMode::SharedSequenceSuffixN;
+        strip.pe_mode = PeLabelMode::SharedSequenceSuffixPe;
+        strip.recalculate_labels();
+
+        assert_eq!(strip.blocks[0].tiers[0].computed_label, "1PE");
+        assert_eq!(strip.blocks[0].tiers[1].computed_label, "2");
+        assert_eq!(strip.blocks[0].tiers[2].computed_label, "3N");
+        assert_eq!(strip.blocks[1].tiers[0].computed_label, "4PE");
+        assert_eq!(strip.blocks[1].tiers[1].computed_label, "5");
+        assert_eq!(strip.blocks[1].tiers[2].computed_label, "6N");
+
+        // Batch affix on E1 (visual row 0) stays attached even if start_number changes
+        strip.apply_affix_to_selection(&[0, 1], Some(0), "+", "~");
+        assert_eq!(strip.blocks[0].tiers[1].computed_label, "+2~");
+        assert_eq!(strip.blocks[1].tiers[1].computed_label, "+5~");
+
+        strip.start_number = 10;
+        strip.recalculate_labels();
+        assert_eq!(strip.blocks[0].tiers[0].computed_label, "10PE");
+        assert_eq!(strip.blocks[0].tiers[1].computed_label, "+11~");
+        assert_eq!(strip.blocks[0].tiers[2].computed_label, "12N");
     }
 }

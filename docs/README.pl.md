@@ -34,32 +34,27 @@
 
 ## Główne funkcje
 
-- **186 wbudowanych typów złączek + własne złączki:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (z przyciskiem), `2102–2116`, `2022` X-COM oraz `280/281`
-  - **Phoenix Contact:** `PT 1,5/S`, `PT 2,5–35`, `PTPOWER`, `PTTB`, `PTTBS`, `PTV`, `PTI` złączki instalacyjne, a także `ST` i `UT`
-  - **Weidmüller:** `A-Series`, `AITB` złączki instalacyjne, `W-Series`, `DLI` i `Z-Series`
-  - **Własne złączki:** Twórz i zarządzaj własnymi definicjami złączek bezpośrednio w aplikacji
-- **Numeracja wielopoziomowa i wyrównanie PE:**
-  - Złączki instalacyjne i wielopiętrowe (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` itp.): Istniejący **zacisk PE** jest zawsze wyrównany w osobnym wierszu PE **poniżej dolnego poziomu głównego**, dzięki czemu numeracja ciągła pozostaje na jednej równej linii poziomej.
-  - **Przykład wielopiętrowy:** Na listwie ze złączkami 2-piętrowymi poziom 1 (dolny) numeruje się automatycznie nieparzyście (`1, 3, 5 …`), a poziom 2 (górny) parzyście (`2, 4, 6 …`); kolejne złączki 1-piętrowe płynnie kontynuują numerację na poziomie 1 (`7, 8, 9 …`).
-- **Interaktywny edytor CAD 2D (bez zbędnej szyny DIN):**
-  - Czytelny widok CAD bez zbędnej szyny DIN, z wbudowanymi logotypami producentów (**WAGO**, **Phoenix Contact**, **Weidmüller**).
-  - **Wyświetlanie typu:** Do wyboru **pionowo (obrócone o `-90°`)** dla każdej złączki lub **pogrupowane poziomo** pod listwą.
-  - **Edycja bezpośrednia (inline):** **Dwukrotne kliknięcie** oznaczenia złączki otwiera edycję na miejscu (`Enter` = zatwierdź, puste pole = przywróć numerację automatyczną, `Esc` = anuluj).
-  - **Zaznaczanie wielokrotne:** Pojedyncze kliknięcie, `Ctrl+kliknięcie`, `Shift+kliknięcie` oraz zaznaczanie ramką do wspólnego przypisywania typu, wstawiania przed/za lub usuwania.
-- **Automatyczne wyświetlanie pasujących akcesoriów:**
-  - Prawy panel Właściwości automatycznie pokazuje pasujące akcesoria dla zaznaczonych złączek: **płytki końcowe**, **mostki / zwory**, **paski oznaczeniowe**, **trzymacze końcowe** oraz **szyny zbiorcze N**.
-- **Eksport gotowy do druku (`.xlsx` i `.csv`):**
-  - **Excel (`.xlsx`):** 3 przejrzyste arkusze:
-    1. `Druckfolge` / Kolejność druku (domyślnie `ByTierStrip` – wszystkie oznaczniki danego poziomu w jednym ciągłym ciągu, np. najpierw cały poziom 1, potem poziom 2, potem poziom 3; opcjonalnie układ kolumnowy lub blokowy oraz uwzględnienie `PE`)
-    2. `Ebenen-Spalten` / Kolumny poziomów
-    3. `Ebenen-Matrix` / Macierz poziomów
-    - Wszystkie komórki są sformatowane ściśle jako **Tekst Excel (`@`)**, aby zera wiodące (`01`) lub zapis z kropką (`1.1`) nigdy nie zostały zamienione na liczby lub daty.
-  - **CSV (`.csv`):** UTF-8 z BOM oraz średnik `;` jako domyślny separator.
-  - **Pliki projektu:** Zapis i wczytywanie w formacie `.termi` lub `.json` wraz z ręcznymi zmianami i własnymi złączkami.
-- **7 języków, motywy i wbudowany moduł aktualizacji:**
-  - Interfejs przełączany między **DE, EN, FR, IT, ES, PL, NL** – z motywami **Jasnym i Ciemnym** o wysokim kontraście.
-  - Wbudowany **sprawdzacz aktualizacji GitHub** oraz bezpośrednie linki do **GitHub** i **Buy Me a Coffee**.
+- **277 wbudowanych typów złączek + własne złączki:**
+  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (z przyciskiem), `2102–2116` (dźwignia), `2022` X-COM, `2007` pomiarowe, `280/281` oraz `285` wysokoprądowe (`35–95 mm²`)
+  - **Phoenix Contact:** `PT 1,5/S` z `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` instalacyjne, `ST`, `UT` & `UK 5 N`
+  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` instalacyjne, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
+  - **Własne złączki:** Twórz własne złączki w aplikacji z wyborem `1×` lub `2×` komór mostka
+- **Numeracja wielopoziomowa, tryby N/PE i znaki specjalne:**
+  - Złączki instalacyjne i wielopiętrowe (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` itd.): Zacisk **PE** jest zawsze wyrównany w osobnym wierszu **poniżej dolnego poziomu głównego**.
+  - **Numeracja N i PE:** Przełączana na listwę między stałym (`N`/`PE`), wspólnym licznikiem (`1, 2, …`), wspólnym `1N, 2N` / `1PE, 2PE` lub **własnym licznikiem N/PE (`1N, 2N …` / `1PE, 2PE …`)**.
+  - **Prefiks / Sufiks / Znaki specjalne dla zaznaczonych:** Zaznacz dowolne złączki i dodaj `+`, `-`, `~`, `=`, `.1`, `Ω` itd. przed lub po numerze (zachowywane przy zmianie numeracji).
+- **Tryb Mostków i obliczanie potencjałów:**
+  - Twórz kolorowe **potencjały** (`+24V`, `GND`, `L1` …) i klikaj/dotykaj poziomy złączek bezpośrednio w widoku CAD.
+  - **Automatyczne obliczanie:** Wylicza długość mostka grzebieniowego (np. `2002-405`, `FBS 5-5`, `ZQV`), oznacza **piny do wyłamania (`Wyłamać pin ×`)** przy pominiętych złączkach, planuje **mostki przewodowe (`DB`)** między poziomami (`E1 <-> E2`) lub różnymi rastrami oraz rozróżnia złączki **1-komorowe** (mostek przewodowy powyżej maks. pinów) i **2-komorowe** (kaskada na komorach 1 i 2).
+- **Interaktywny edytor CAD 2D (Desktop & Dotyk):**
+  - Czytelny widok CAD bez szyny DIN z logotypami producentów (**WAGO**, **Phoenix Contact**, **Weidmüller**), przełącznikiem narzędzi (**Przesuń**, **Zaznacz ramką**, **Tryb Mostków**), przesuwaniem dotykowym oraz środkowym/prawym przyciskiem myszy.
+  - **Wyświetlanie i edycja w miejscu:** Pionowo `-90°` lub grupowo poziomo; **dwuklik** pozwala od razu zmienić opis (`Enter` = zatwierdź, puste = auto, `Esc` = anuluj).
+- **Podgląd produktu, link producenta i pasujące akcesoria:**
+  - Pokazuje **zdjęcie produktu (jeśli dostępne) lub profil techniczny**, **liczbę komór**, **link do strony produktu producenta** oraz **płytki końcowe, mostki, oznaczniki, trzymacze końcowe i szyny N**.
+- **Eksport gotowy do druku (`.xlsx` i `.csv`) i Pliki projektu (`.termi` / `.json`):**
+  - **Excel (`.xlsx`):** 3 arkusze (`Druckfolge` / domyślnie `ByTierStrip`, `Ebenen-Spalten`, `Ebenen-Matrix`), wszystkie komórki jako **Tekst Excel (`@`)**.
+- **7 języków, motywy i sprawdzanie aktualizacji na żywo:**
+  - **DE, EN, FR, IT, ES, PL, NL** – Jasny/Ciemny o wysokim kontraście, sprawdzanie GitHub na Desktop & Android oraz linki **GitHub** i **Buy Me a Coffee**.
 
 ---
 
