@@ -307,16 +307,18 @@ pub fn show_product_preview_card(
         });
         ui.add_space(4.0);
 
-        let compact = ui.available_width() < 290.0;
-        let preview_size = if compact {
-            Vec2::new(82.0, 62.0)
+        let stack_vertically = ui.available_width() < 265.0;
+        let preview_size = if stack_vertically {
+            Vec2::new(88.0, 64.0)
+        } else if ui.available_width() < 310.0 {
+            Vec2::new(80.0, 60.0)
         } else {
-            Vec2::new(104.0, 78.0)
+            Vec2::new(100.0, 75.0)
         };
         let tex_opt = media_cache.texture_for(ui.ctx(), spec);
 
-        ui.horizontal(|ui| {
-            if let Some(tex) = tex_opt {
+        let draw_thumb = |ui: &mut Ui| {
+            if let Some(tex) = tex_opt.as_ref() {
                 // Real manufacturer product photo on a bright studio frame
                 let (rect, _) = ui.allocate_exact_size(preview_size, egui::Sense::hover());
                 ui.painter()
@@ -327,61 +329,74 @@ pub fn show_product_preview_card(
                     Stroke::new(1.0, Color32::from_rgb(203, 213, 225)),
                     StrokeKind::Inside,
                 );
-                let img = egui::Image::from_texture(&tex)
+                let img = egui::Image::from_texture(tex)
                     .max_size(preview_size - Vec2::splat(6.0))
                     .corner_radius(3);
                 ui.put(rect.shrink(3.0), img);
             } else {
                 draw_technical_profile(ui, spec, preview_size, dark);
             }
+        };
 
-            ui.vertical(|ui| {
-                let slots = spec.effective_jumper_slots();
-                let max_poles = spec.effective_max_jumper_poles();
-                let height_mm = f32::from(spec.effective_height_tenths_mm()) / 10.0;
+        let draw_meta = |ui: &mut Ui| {
+            let slots = spec.effective_jumper_slots();
+            let max_poles = spec.effective_max_jumper_poles();
+            let height_mm = f32::from(spec.effective_height_tenths_mm()) / 10.0;
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(format!(
+                        "{:.1} mm | {} Etagen",
+                        f32::from(spec.width_tenths_mm) / 10.0,
+                        spec.levels
+                    ))
+                    .small(),
+                )
+                .wrap(),
+            );
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(format!("{height_label}: {height_mm:.1} mm"))
+                        .small()
+                        .strong(),
+                )
+                .wrap(),
+            );
+            if let Some(art) = spec.effective_article_number() {
                 ui.add(
                     egui::Label::new(
-                        egui::RichText::new(format!(
-                            "{:.1} mm | {} Etagen",
-                            f32::from(spec.width_tenths_mm) / 10.0,
-                            spec.levels
-                        ))
-                        .small(),
-                    )
-                    .wrap(),
-                );
-                ui.add(
-                    egui::Label::new(
-                        egui::RichText::new(format!("{height_label}: {height_mm:.1} mm"))
-                            .small()
-                            .strong(),
-                    )
-                    .wrap(),
-                );
-                if let Some(art) = spec.effective_article_number() {
-                    ui.add(
-                        egui::Label::new(
-                            egui::RichText::new(format!("Art.-Nr.: {art}"))
-                                .color(sec)
-                                .small(),
-                        )
-                        .wrap(),
-                    );
-                }
-                ui.add(
-                    egui::Label::new(
-                        egui::RichText::new(format!("{slots}× {chambers_label} (max. {max_poles}p)"))
+                        egui::RichText::new(format!("Art.-Nr.: {art}"))
                             .color(sec)
                             .small(),
                     )
                     .wrap(),
                 );
-                ui.add_space(3.0);
-                if ui.button(open_product_label).clicked() {
-                    open_external_url(ui.ctx(), &spec.effective_product_url());
-                }
+            }
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(format!("{slots}× {chambers_label} (max. {max_poles}p)"))
+                        .color(sec)
+                        .small(),
+                )
+                .wrap(),
+            );
+            ui.add_space(3.0);
+            if ui.button(open_product_label).clicked() {
+                open_external_url(ui.ctx(), &spec.effective_product_url());
+            }
+        };
+
+        if stack_vertically {
+            draw_thumb(ui);
+            ui.add_space(4.0);
+            draw_meta(ui);
+        } else {
+            ui.horizontal(|ui| {
+                draw_thumb(ui);
+                ui.vertical(|ui| {
+                    draw_meta(ui);
+                });
             });
-        });
+        }
     });
 }
 
@@ -407,16 +422,18 @@ pub fn show_end_bracket_preview_card(
         });
         ui.add_space(4.0);
 
-        let compact = ui.available_width() < 290.0;
-        let preview_size = if compact {
-            Vec2::new(82.0, 62.0)
+        let stack_vertically = ui.available_width() < 265.0;
+        let preview_size = if stack_vertically {
+            Vec2::new(88.0, 64.0)
+        } else if ui.available_width() < 310.0 {
+            Vec2::new(80.0, 60.0)
         } else {
-            Vec2::new(104.0, 78.0)
+            Vec2::new(100.0, 75.0)
         };
         let tex_opt = media_cache.texture_for_end_bracket(ui.ctx(), eb);
 
-        ui.horizontal(|ui| {
-            if let Some(tex) = tex_opt {
+        let draw_thumb = |ui: &mut Ui| {
+            if let Some(tex) = tex_opt.as_ref() {
                 let (rect, _) = ui.allocate_exact_size(preview_size, egui::Sense::hover());
                 ui.painter()
                     .rect_filled(rect, CornerRadius::same(4), Color32::WHITE);
@@ -426,48 +443,59 @@ pub fn show_end_bracket_preview_card(
                     Stroke::new(1.0, Color32::from_rgb(203, 213, 225)),
                     StrokeKind::Inside,
                 );
-                let img = egui::Image::from_texture(&tex)
+                let img = egui::Image::from_texture(tex)
                     .max_size(preview_size - Vec2::splat(6.0))
                     .corner_radius(3);
                 ui.put(rect.shrink(3.0), img);
             } else {
                 draw_end_bracket_profile(ui, eb, preview_size, dark);
             }
+        };
 
-            ui.vertical(|ui| {
-                ui.add(
-                    egui::Label::new(
-                        egui::RichText::new(format!(
-                            "{:.1} mm | {height_label}: {:.1} mm",
-                            f32::from(eb.width_tenths_mm) / 10.0,
-                            f32::from(eb.height_tenths_mm) / 10.0
-                        ))
-                        .small()
-                        .strong(),
-                    )
-                    .wrap(),
-                );
-                ui.add(
-                    egui::Label::new(
-                        egui::RichText::new(format!("Art.-Nr.: {}", eb.article_number))
-                            .color(sec)
-                            .small(),
-                    )
-                    .wrap(),
-                );
-                let mounting = match lang {
-                    Language::De => eb.mounting_de,
-                    _ => eb.mounting_en,
-                };
-                ui.add(
-                    egui::Label::new(egui::RichText::new(mounting).color(sec).small()).wrap(),
-                );
-                ui.add_space(3.0);
-                if ui.button(open_product_label).clicked() {
-                    open_external_url(ui.ctx(), eb.product_url);
-                }
+        let draw_meta = |ui: &mut Ui| {
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(format!(
+                        "{:.1} mm | {height_label}: {:.1} mm",
+                        f32::from(eb.width_tenths_mm) / 10.0,
+                        f32::from(eb.height_tenths_mm) / 10.0
+                    ))
+                    .small()
+                    .strong(),
+                )
+                .wrap(),
+            );
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(format!("Art.-Nr.: {}", eb.article_number))
+                        .color(sec)
+                        .small(),
+                )
+                .wrap(),
+            );
+            let mounting = match lang {
+                Language::De => eb.mounting_de,
+                _ => eb.mounting_en,
+            };
+            ui.add(egui::Label::new(egui::RichText::new(mounting).color(sec).small()).wrap());
+            ui.add_space(3.0);
+            if ui.button(open_product_label).clicked() {
+                open_external_url(ui.ctx(), eb.product_url);
+            }
+        };
+
+        if stack_vertically {
+            draw_thumb(ui);
+            ui.add_space(4.0);
+            draw_meta(ui);
+        } else {
+            ui.horizontal(|ui| {
+                draw_thumb(ui);
+                ui.vertical(|ui| {
+                    draw_meta(ui);
+                });
             });
-        });
+        }
     });
 }
 

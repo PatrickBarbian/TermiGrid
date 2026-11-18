@@ -320,7 +320,7 @@ pub fn show_end_bracket_picker(
     );
 
     let avail_w = ui.available_width();
-    let combo_w = (avail_w - 8.0).clamp(120.0, 480.0);
+    let combo_w = (avail_w - 16.0).clamp(100.0, 360.0);
 
     egui::ComboBox::from_id_salt(id_salt)
         .width(combo_w)
@@ -400,7 +400,7 @@ pub fn show_spec_picker(
     ui.add_space(3.0);
 
     let avail_w = ui.available_width();
-    let input_w = (avail_w - 8.0).clamp(120.0, 480.0);
+    let input_w = (avail_w - 16.0).clamp(100.0, 360.0);
     ui.add(
         egui::TextEdit::singleline(search_query)
             .hint_text(search_hint)
