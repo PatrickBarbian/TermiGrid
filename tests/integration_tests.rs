@@ -627,9 +627,14 @@ fn busbar_carriers_frame_install_group_and_support_every_200_mm() {
     );
 
     // Verify no unsupported distance between any two busbar carriers exceeds 200.0 mm
+    // AND that the split on ~246 mm is symmetrical around ~123 mm (121.2 mm | 124.8 mm)
+    let mut segment_widths: Vec<u16> = Vec::new();
     let mut span_tenths: u16 = 0;
     for blk in &long_strip.blocks {
         if catalog.find_by_id(&blk.spec_id).is_some_and(|s| s.is_busbar_carrier()) {
+            if span_tenths > 0 {
+                segment_widths.push(span_tenths);
+            }
             assert!(
                 span_tenths <= 2000,
                 "Unsupported N-busbar span exceeded 200.0 mm: {} tenths mm",
@@ -640,6 +645,13 @@ fn busbar_carriers_frame_install_group_and_support_every_200_mm() {
             span_tenths += blk.width_tenths_mm;
         }
     }
+    assert_eq!(segment_widths.len(), 2);
+    let imbalance = segment_widths[0].abs_diff(segment_widths[1]);
+    assert!(
+        imbalance <= 60,
+        "Expected symmetrical intermediate support (~120 mm split), got {:?}",
+        segment_widths
+    );
 
     // Re-running placement must be idempotent (zero duplicate carriers added)
     let count_before = long_strip.blocks.len();
@@ -686,7 +698,7 @@ fn busbar_carriers_frame_install_group_and_support_every_200_mm() {
     assert!(out_path.exists());
     let _ = std::fs::remove_file(&out_path);
 
-    // 3. Phoenix Contact PTI 2,5-PE/L/NT with AB-PTI/3 Auflagebock (every 200 mm)
+    // 3. Phoenix Contact PTI 2,5-PE/L/NT with AB-PTI/3 Auflagebock (symmetrical around ~117 mm)
     let phx_nt = catalog.find_by_id("phoenix-pti-25-pelnt").unwrap();
     let phx_ab = catalog.find_by_id("phoenix-ab-pti-3").unwrap();
     assert_eq!(phx_nt.recommended_outer_busbar_carrier_spec_id(), Some("phoenix-ab-pti-3"));
@@ -705,10 +717,67 @@ fn busbar_carriers_frame_install_group_and_support_every_200_mm() {
             max_unsupported_span_tenths_mm: 2000,
         },
     );
-    // 2 outer AB-PTI/3 + 1 intermediate AB-PTI/3 (45 * 5.2 mm = 234.0 mm > 200.0 mm)
-    assert_eq!(
-        phx_strip.blocks.iter().filter(|b| b.spec_id == "phoenix-ab-pti-3").count(),
-        3
+    // 2 outer AB-PTI/3 + 1 intermediate AB-PTI/3 (45 * 5.2 mm = 234.0 mm -> symmetrical 22/23 split: ~114.4 mm | ~119.6 mm)
+    let ab_indices: Vec<usize> = phx_strip
+        .blocks
+        .iter()
+        .enumerate()
+        .filter_map(|(i, b)| (b.spec_id == "phoenix-ab-pti-3").then_some(i))
+        .collect();
+    assert_eq!(ab_indices.len(), 3);
+    assert_eq!(ab_indices[0], 0);
+    assert_eq!(ab_indices[2], 47);
+    assert!(
+        ab_indices[1] == 23 || ab_indices[1] == 24,
+        "Expected symmetrical center carrier at index 23 or 24, got {:?}",
+        ab_indices
     );
+}
+
+#[test]
+fn n_supply_places_before_first_install_or_nt_block_even_at_pos_8() {
+    use termigrid_core::model::numbering::{
+        apply_n_busbar_carriers_around, place_n_supply_in_zone, BusbarCarrierPlan,
+    };
+
+    let catalog = TerminalCatalog::load_embedded();
+    let std_2002 = catalog.find_by_id("wago-2002-1201").unwrap();
+    let wago_2003_pln = catalog.find_by_id("wago-2003-7646").unwrap(); // 2003 without NT
+    let wago_2003_nt = catalog.find_by_id("wago-2003-7641").unwrap(); // 2003 with NT
+    let wago_supply = catalog.find_by_id("wago-2016-7714").unwrap();
+    let wago_outer = catalog.find_by_id("wago-2009-305").unwrap();
+    let wago_mid = catalog.find_by_id("wago-2009-304").unwrap();
+
+    // Pos 1..7 (indices 0..7) = standard 2002-1201
+    // Pos 8..9 (indices 7..9) = 2003-7646 (non-NT 2003)
+    // Pos 10 (index 9) = newly added 2003-7641 (NT)
+    let mut strip = TerminalStrip::generate_with_block_count("-XMIX", 1, 20, 10, std_2002);
+    strip.reassign_blocks(&[7, 8], wago_2003_pln);
+    strip.reassign_blocks(&[9], wago_2003_nt);
+
+    let (zs, ze) = place_n_supply_in_zone(&mut strip, 9, 10, wago_supply, true, &catalog);
+    apply_n_busbar_carriers_around(
+        &mut strip,
+        zs,
+        ze,
+        &catalog,
+        &BusbarCarrierPlan {
+            outer_carrier: Some(wago_outer),
+            intermediate_support: Some(wago_mid),
+            max_unsupported_span_tenths_mm: 2000,
+        },
+    );
+
+    // Standard 2002-1201 remain untouched at indices 0..7
+    for block in strip.blocks.iter().take(7) {
+        assert_eq!(block.spec_id, "wago-2002-1201");
+    }
+    // Index 7 (Pos 8) starts with left carrier 2009-305, then 2016-7714 BEFORE the first 2003 (2003-7646)!
+    assert_eq!(strip.blocks[7].spec_id, "wago-2009-305");
+    assert_eq!(strip.blocks[8].spec_id, "wago-2016-7714");
+    assert_eq!(strip.blocks[9].spec_id, "wago-2003-7646");
+    assert_eq!(strip.blocks[10].spec_id, "wago-2003-7646");
+    assert_eq!(strip.blocks[11].spec_id, "wago-2003-7641");
+    assert_eq!(strip.blocks[12].spec_id, "wago-2009-305");
 }
 

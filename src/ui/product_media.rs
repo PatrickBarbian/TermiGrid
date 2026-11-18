@@ -146,13 +146,14 @@ impl ProductMediaCache {
         let ctx_clone = ctx.clone();
 
         std::thread::spawn(move || {
-            let image_opt = load_cached_color_image(&key).or_else(|| {
+            let url_hash = url_fingerprint(direct_image_url.as_deref(), &page_url);
+            let image_opt = load_cached_color_image(&key, url_hash).or_else(|| {
                 let bytes = direct_image_url
                     .as_deref()
                     .and_then(|u| http_get_bytes(u).ok())
                     .or_else(|| fetch_product_image_bytes(&page_url))?;
                 let img = decode_color_image(&bytes)?;
-                save_cached_image_bytes(&key, &bytes);
+                save_cached_image_bytes(&key, url_hash, &bytes);
                 Some(img)
             });
             if let Ok(mut q) = queue.lock() {
@@ -194,7 +195,21 @@ fn photo_cache_dir() -> std::path::PathBuf {
     std::env::temp_dir().join("termigrid_photo_cache")
 }
 
-fn cache_file_path(spec_id: &str) -> std::path::PathBuf {
+fn url_fingerprint(direct_image_url: Option<&str>, page_url: &str) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in direct_image_url
+        .unwrap_or("")
+        .bytes()
+        .chain([0xff])
+        .chain(page_url.bytes())
+    {
+        hash ^= u64::from(byte);
+        hash = hash.wrapping_mul(0x0100_0000_01b3);
+    }
+    hash
+}
+
+fn cache_file_path(spec_id: &str, url_hash: u64) -> std::path::PathBuf {
     let clean: String = spec_id
         .chars()
         .map(|c| {
@@ -205,17 +220,17 @@ fn cache_file_path(spec_id: &str) -> std::path::PathBuf {
             }
         })
         .collect();
-    photo_cache_dir().join(format!("{clean}.img"))
+    photo_cache_dir().join(format!("{clean}_{url_hash:016x}.img"))
 }
 
-fn load_cached_color_image(spec_id: &str) -> Option<ColorImage> {
-    let path = cache_file_path(spec_id);
+fn load_cached_color_image(spec_id: &str, url_hash: u64) -> Option<ColorImage> {
+    let path = cache_file_path(spec_id, url_hash);
     let bytes = std::fs::read(path).ok()?;
     decode_color_image(&bytes)
 }
 
-fn save_cached_image_bytes(spec_id: &str, bytes: &[u8]) {
-    let path = cache_file_path(spec_id);
+fn save_cached_image_bytes(spec_id: &str, url_hash: u64, bytes: &[u8]) {
+    let path = cache_file_path(spec_id, url_hash);
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
@@ -718,7 +733,7 @@ fn draw_technical_profile(ui: &mut Ui, spec: &TerminalSpec, size: Vec2, dark: bo
 
 #[cfg(test)]
 mod tests {
-    use super::extract_product_image_url;
+    use super::{cache_file_path, extract_product_image_url, url_fingerprint};
 
     #[test]
     fn extract_product_image_url_skips_svg_logos_and_normalizes_entities() {
@@ -741,6 +756,23 @@ mod tests {
         assert_eq!(
             url2,
             "https://www.wago.com/medias/480-test-product.png?context=1"
+        );
+    }
+
+    #[test]
+    fn cache_file_path_changes_when_image_or_page_url_changes() {
+        let h1 = url_fingerprint(
+            Some("https://assets.dam.weidmueller.com/assets/api/old/DAP_Master_PP,w_800,q_80"),
+            "https://eshop.weidmueller.com/de/a2c-4/p/2051180000",
+        );
+        let h2 = url_fingerprint(
+            Some("https://assets.dam.weidmueller.com/assets/api/new/DAP_Master_PP,w_800,q_80"),
+            "https://eshop.weidmueller.com/de/a2c-4/p/2051180000",
+        );
+        assert_ne!(h1, h2);
+        assert_ne!(
+            cache_file_path("weidmuller-a2c-4", h1),
+            cache_file_path("weidmuller-a2c-4", h2)
         );
     }
 }

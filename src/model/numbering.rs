@@ -307,6 +307,74 @@ impl TerminalStrip {
     }
 }
 
+/// Places `supply_spec` before the first installation/NT terminal (`before_group == true`)
+/// or after the last installation/NT terminal (`before_group == false`) within the contiguous
+/// installation/supply/carrier zone containing `anchor_start..anchor_end`.
+///
+/// Even when standard terminals precede the installation group (e.g. standard terminals at Pos 1..7
+/// and the first `2003` / `PTI` / `NT` block starts at Pos 8), or when existing `2003`/`PTI` blocks
+/// precede `anchor_start`, `before_group == true` always inserts `supply_spec` immediately before
+/// the **first** installation/NT block of that zone (keeping any leading outer busbar carrier outside).
+/// Returns the updated `(zone_start, zone_end)` bounds after insertion.
+pub fn place_n_supply_in_zone(
+    strip: &mut TerminalStrip,
+    anchor_start: usize,
+    anchor_end: usize,
+    supply_spec: &TerminalSpec,
+    before_group: bool,
+    catalog: &TerminalCatalog,
+) -> (usize, usize) {
+    if strip.blocks.is_empty() || anchor_start >= anchor_end || anchor_end > strip.blocks.len() {
+        let id = strip.allocate_block_id();
+        let pos = anchor_start.min(strip.blocks.len());
+        strip.blocks.insert(pos, supply_spec.instantiate_block(id));
+        strip.recalculate_labels();
+        return (pos, pos + 1);
+    }
+
+    let is_carrier = |spec_id: &str| {
+        catalog
+            .find_by_id(spec_id)
+            .is_some_and(|s| s.is_busbar_carrier())
+    };
+    let is_zone_member = |spec_id: &str| {
+        catalog.find_by_id(spec_id).is_some_and(|s| {
+            s.is_installation_or_nt_terminal()
+                || s.is_n_supply_terminal()
+                || s.is_busbar_carrier()
+        })
+    };
+
+    let mut zone_start = anchor_start;
+    let mut zone_end = anchor_end;
+
+    while zone_start > 0 && is_zone_member(&strip.blocks[zone_start - 1].spec_id) {
+        zone_start -= 1;
+    }
+    while zone_end < strip.blocks.len() && is_zone_member(&strip.blocks[zone_end].spec_id) {
+        zone_end += 1;
+    }
+
+    let insert_pos = if before_group {
+        (zone_start..zone_end)
+            .find(|&idx| !is_carrier(&strip.blocks[idx].spec_id))
+            .unwrap_or(zone_start)
+    } else {
+        (zone_start..zone_end)
+            .rfind(|&idx| !is_carrier(&strip.blocks[idx].spec_id))
+            .map(|idx| idx + 1)
+            .unwrap_or(zone_end)
+    };
+
+    let id = strip.allocate_block_id();
+    strip
+        .blocks
+        .insert(insert_pos, supply_spec.instantiate_block(id));
+    zone_end += 1;
+    strip.recalculate_labels();
+    (zone_start, zone_end)
+}
+
 /// Configuration for automatic placement of N-busbar carriers (`Sammelschienenträger` / `Auflagebock`)
 /// framing an N-busbar installation zone and supporting long rows every 200 mm.
 #[derive(Debug, Clone, Copy)]
@@ -321,9 +389,88 @@ pub struct BusbarCarrierPlan<'a> {
     pub max_unsupported_span_tenths_mm: u16,
 }
 
+/// Computes balanced / symmetrical split indices within a contiguous run of non-carrier blocks
+/// so every resulting segment is `<= max_span_tenths_mm` while keeping all segment lengths as equal
+/// as possible (e.g. a 240 mm group splits around 120 mm | 120 mm rather than 199 mm | 41 mm).
+fn symmetrical_split_indices(widths: &[u16], max_span_tenths_mm: u16) -> Vec<usize> {
+    let m = widths.len();
+    if m <= 1 || max_span_tenths_mm == 0 {
+        return Vec::new();
+    }
+    let total_w: u32 = widths.iter().map(|&w| u32::from(w)).sum();
+    let max_span = u32::from(max_span_tenths_mm);
+    if total_w <= max_span {
+        return Vec::new();
+    }
+
+    let mut pref = Vec::with_capacity(m + 1);
+    pref.push(0u32);
+    for &w in widths {
+        pref.push(pref.last().copied().unwrap_or(0) + u32::from(w));
+    }
+
+    let min_segments = (total_w as usize).div_ceil(max_span as usize).clamp(2, m);
+    for s in min_segments..=m {
+        let target = (total_w as f64) / (s as f64);
+        let mut dp_prev: Vec<Option<u64>> = vec![None; m + 1];
+        dp_prev[0] = Some(0);
+        let mut choice = vec![vec![0usize; m + 1]; s + 1];
+
+        for (seg, choice_row) in choice.iter_mut().enumerate().skip(1) {
+            let mut dp_curr: Vec<Option<u64>> = vec![None; m + 1];
+            let max_i = m - (s - seg);
+            for (i, &pref_i) in pref.iter().enumerate().take(max_i + 1).skip(seg) {
+                for j in (seg - 1..i).rev() {
+                    let seg_w = pref_i - pref[j];
+                    if seg_w > max_span {
+                        break;
+                    }
+                    if let Some(prev_cost) = dp_prev[j] {
+                        let diff = (seg_w as f64 - target).abs();
+                        let penalty = (diff * diff).round() as u64;
+                        let total_cost = prev_cost.saturating_add(penalty);
+                        if dp_curr[i].is_none_or(|best| total_cost < best) {
+                            dp_curr[i] = Some(total_cost);
+                            choice_row[i] = j;
+                        }
+                    }
+                }
+            }
+            dp_prev = dp_curr;
+        }
+
+        if dp_prev[m].is_some() {
+            let mut splits = Vec::with_capacity(s - 1);
+            let mut cur = m;
+            for seg in (2..=s).rev() {
+                let prev = choice[seg][cur];
+                splits.push(prev);
+                cur = prev;
+            }
+            splits.reverse();
+            return splits;
+        }
+    }
+
+    // Fallback if an extraordinary single block exceeds `max_span_tenths_mm`
+    let mut splits = Vec::new();
+    let mut acc = 0u32;
+    for (i, &w) in widths.iter().enumerate() {
+        let wu = u32::from(w);
+        if acc > 0 && acc + wu > max_span {
+            splits.push(i);
+            acc = wu;
+        } else {
+            acc += wu;
+        }
+    }
+    splits
+}
+
 /// Frames the contiguous N-busbar installation / supply zone containing `anchor_start..anchor_end`
-/// with optional outer carriers and inserts intermediate supports before any unsupported span exceeds
-/// `plan.max_unsupported_span_tenths_mm` (200.0 mm). Returns the updated `(zone_start, zone_end)` bounds.
+/// with optional outer carriers and inserts intermediate supports symmetrically whenever an
+/// unsupported span exceeds `plan.max_unsupported_span_tenths_mm` (200.0 mm).
+/// Returns the updated `(zone_start, zone_end)` bounds.
 pub fn apply_n_busbar_carriers_around(
     strip: &mut TerminalStrip,
     anchor_start: usize,
@@ -374,27 +521,30 @@ pub fn apply_n_busbar_carriers_around(
     if let Some(support) = plan.intermediate_support
         && plan.max_unsupported_span_tenths_mm > 0
     {
-        let mut unsupported_tenths: u16 = 0;
         let mut idx = zone_start;
         while idx < zone_end {
             if is_carrier(&strip.blocks[idx].spec_id) {
-                unsupported_tenths = 0;
                 idx += 1;
                 continue;
             }
-            let w = strip.blocks[idx].width_tenths_mm;
-            if unsupported_tenths > 0
-                && unsupported_tenths.saturating_add(w) > plan.max_unsupported_span_tenths_mm
-            {
-                let id = strip.allocate_block_id();
-                strip.blocks.insert(idx, support.instantiate_block(id));
-                zone_end += 1;
-                unsupported_tenths = w;
-                idx += 2;
-            } else {
-                unsupported_tenths = unsupported_tenths.saturating_add(w);
-                idx += 1;
+            let run_start = idx;
+            let mut run_end = idx;
+            while run_end < zone_end && !is_carrier(&strip.blocks[run_end].spec_id) {
+                run_end += 1;
             }
+            let widths: Vec<u16> = strip.blocks[run_start..run_end]
+                .iter()
+                .map(|b| b.width_tenths_mm)
+                .collect();
+            let splits = symmetrical_split_indices(&widths, plan.max_unsupported_span_tenths_mm);
+            for &split_offset in splits.iter().rev() {
+                let id = strip.allocate_block_id();
+                strip
+                    .blocks
+                    .insert(run_start + split_offset, support.instantiate_block(id));
+            }
+            zone_end += splits.len();
+            idx = run_end + splits.len();
         }
     }
 

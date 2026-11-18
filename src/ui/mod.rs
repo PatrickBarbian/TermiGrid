@@ -899,7 +899,9 @@ impl TermiGridApp {
     }
 
     fn apply_install_prompt_resolution(&mut self, res: InstallPromptResolution) {
-        use crate::model::numbering::{apply_n_busbar_carriers_around, BusbarCarrierPlan};
+        use crate::model::numbering::{
+            apply_n_busbar_carriers_around, place_n_supply_in_zone, BusbarCarrierPlan,
+        };
 
         let Some(effective_spec) = self.catalog.find_by_id(&res.effective_spec_id) else {
             return;
@@ -930,23 +932,40 @@ impl TermiGridApp {
                     let all_indices: Vec<usize> = (0..new_strip.blocks.len()).collect();
                     new_strip.reassign_blocks(&all_indices, effective_spec);
                 }
+                let mut zone_start = 0usize;
+                let mut zone_end = new_strip.blocks.len();
                 if let Some(sup) = supply_spec {
                     match res.supply_placement {
                         InstallSupplyPlacement::BeforeGroup => {
-                            new_strip.insert_blocks(0, 1, sup);
+                            (zone_start, zone_end) = place_n_supply_in_zone(
+                                &mut new_strip,
+                                zone_start,
+                                zone_end,
+                                sup,
+                                true,
+                                &self.catalog,
+                            );
                         }
                         InstallSupplyPlacement::AfterGroup => {
-                            new_strip.append_blocks(1, sup);
+                            (zone_start, zone_end) = place_n_supply_in_zone(
+                                &mut new_strip,
+                                zone_start,
+                                zone_end,
+                                sup,
+                                false,
+                                &self.catalog,
+                            );
                         }
                         InstallSupplyPlacement::None => {}
                     }
                 }
-                let end = new_strip.blocks.len();
-                if end > 0 && (outer_carrier.is_some() || intermediate_support.is_some()) {
+                if zone_end > zone_start
+                    && (outer_carrier.is_some() || intermediate_support.is_some())
+                {
                     apply_n_busbar_carriers_around(
                         &mut new_strip,
-                        0,
-                        end,
+                        zone_start,
+                        zone_end,
                         &self.catalog,
                         &carrier_plan,
                     );
@@ -980,18 +999,24 @@ impl TermiGridApp {
                     if let Some(sup) = supply_spec {
                         match res.supply_placement {
                             InstallSupplyPlacement::BeforeGroup => {
-                                if let Some(&first) = indices.first() {
-                                    strip.insert_blocks(first, 1, sup);
-                                    anchor_start = anchor_start.min(first);
-                                    anchor_end += 1;
-                                }
+                                (anchor_start, anchor_end) = place_n_supply_in_zone(
+                                    strip,
+                                    anchor_start,
+                                    anchor_end,
+                                    sup,
+                                    true,
+                                    &self.catalog,
+                                );
                             }
                             InstallSupplyPlacement::AfterGroup => {
-                                if let Some(&last) = indices.last() {
-                                    let pos = last + 1;
-                                    strip.insert_blocks(pos, 1, sup);
-                                    anchor_end = anchor_end.max(pos + 1);
-                                }
+                                (anchor_start, anchor_end) = place_n_supply_in_zone(
+                                    strip,
+                                    anchor_start,
+                                    anchor_end,
+                                    sup,
+                                    false,
+                                    &self.catalog,
+                                );
                             }
                             InstallSupplyPlacement::None => {}
                         }
@@ -1044,23 +1069,10 @@ impl TermiGridApp {
                     }
 
                     strip.insert_blocks(insert_pos, count, effective_spec);
+                    let mut anchor_start = insert_pos;
                     let mut anchor_end = insert_pos + count;
-                    let inserted_range = match (supply_spec, res.supply_placement) {
-                        (Some(sup), InstallSupplyPlacement::BeforeGroup) => {
-                            strip.insert_blocks(insert_pos, 1, sup);
-                            anchor_end += 1;
-                            (insert_pos + 1)..(insert_pos + 1 + count)
-                        }
-                        (Some(sup), InstallSupplyPlacement::AfterGroup) => {
-                            strip.insert_blocks(insert_pos + count, 1, sup);
-                            anchor_end += 1;
-                            insert_pos..(insert_pos + count)
-                        }
-                        _ => insert_pos..(insert_pos + count),
-                    };
-
                     let inserted_ids: Vec<u64> = if select_inserted {
-                        strip.blocks[inserted_range]
+                        strip.blocks[anchor_start..anchor_end]
                             .iter()
                             .map(|b| b.id)
                             .collect()
@@ -1068,13 +1080,39 @@ impl TermiGridApp {
                         Vec::new()
                     };
 
-                    if anchor_end > insert_pos
+                    if let Some(sup) = supply_spec {
+                        match res.supply_placement {
+                            InstallSupplyPlacement::BeforeGroup => {
+                                (anchor_start, anchor_end) = place_n_supply_in_zone(
+                                    strip,
+                                    anchor_start,
+                                    anchor_end,
+                                    sup,
+                                    true,
+                                    &self.catalog,
+                                );
+                            }
+                            InstallSupplyPlacement::AfterGroup => {
+                                (anchor_start, anchor_end) = place_n_supply_in_zone(
+                                    strip,
+                                    anchor_start,
+                                    anchor_end,
+                                    sup,
+                                    false,
+                                    &self.catalog,
+                                );
+                            }
+                            InstallSupplyPlacement::None => {}
+                        }
+                    }
+
+                    if anchor_end > anchor_start
                         && anchor_end <= strip.blocks.len()
                         && (outer_carrier.is_some() || intermediate_support.is_some())
                     {
                         apply_n_busbar_carriers_around(
                             strip,
-                            insert_pos,
+                            anchor_start,
                             anchor_end,
                             &self.catalog,
                             &carrier_plan,

@@ -1555,7 +1555,7 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         mounting_de: "Rastbar / schraubenlos (Tragschiene NS 15)",
         mounting_en: "Snap-on screwless (DIN rail NS 15)",
         product_url: "https://www.phoenixcontact.com/de-de/produkte/endhalter-clipfix-15-3022263",
-        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/202056/full/b408?format=jpg"),
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/237274/full/b408?format=jpg"),
     },
     EndBracketSpec {
         id: "phoenix-clipfix-35-v0",
@@ -1713,7 +1713,7 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         mounting_de: "Rastbar / schraubenlos (TS 35/7,5 & TS 35/15)",
         mounting_en: "Snap-on screwless (TS 35/7.5 & TS 35/15)",
         product_url: "https://www.wago.com/de/zubehoer/schraubenlose-endklammer/p/249-116",
-        image_url: Some("https://www.wago.com/medias/249-116.jpg"),
+        image_url: Some("https://www.wago.com/medias/1024-020000010002d865000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3wzOTkwMnxpbWFnZS9qcGVnfGFEZzRMMmc0T0M4eE5qVTFORE14TURJek9ESXpPQzh4TURJMFh6QXlNREF3TURBeE1EQXdNbVE0TmpVd01EQXhNREJpTmw5RVJTNXFjR2N8OWU4NTllZmEwZGU2MGI5NGQyMzkzZjRhODJmOWNlNjA0OTVkNmYxMjU0MThjZDQ3YzI3M2I4NmI3OGQ2ODFkYw"),
     },
     EndBracketSpec {
         id: "wago-249-117",
@@ -1725,7 +1725,7 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         mounting_de: "Rastbar / schraubenlos, breit (TS 35/7,5 & TS 35/15)",
         mounting_en: "Snap-on screwless, wide (TS 35/7.5 & TS 35/15)",
         product_url: "https://www.wago.com/de/zubehoer/schraubenlose-endklammer/p/249-117",
-        image_url: Some("https://www.wago.com/medias/249-117.jpg"),
+        image_url: Some("https://www.wago.com/medias/1024-020000010002d8e0000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3w0ODk1MHxpbWFnZS9qcGVnfGFEWTFMMmhrWXk4eE5qVTNNVFl5T1RJd056VTRNaTh4TURJMFh6QXlNREF3TURBeE1EQXdNbVE0WlRBd01EQXhNREJpTmw5RVJTNXFjR2N8MjVlYWY4NGQ3N2U4MWYzYTkxZjQxNzlkY2I2MmVkYzM1NDE3ZThhYzZiZGFlZTkxMTk1OTBlM2Y5MGM4OTYyYg"),
     },
     EndBracketSpec {
         id: "wago-249-197",
@@ -1737,7 +1737,7 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         mounting_de: "Rastbar / schraubenlos, extra hoch für Mehrstock-/Hochstromklemmen (TS 35)",
         mounting_en: "Snap-on screwless, extra-tall for multi-level/high-current blocks (TS 35)",
         product_url: "https://www.wago.com/de/zubehoer/schraubenlose-endklammer/p/249-197",
-        image_url: Some("https://www.wago.com/medias/249-197.jpg"),
+        image_url: Some("https://www.wago.com/medias/1024-0200001a0000cc05000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3w0MjUzNnxpbWFnZS9qcGVnfGFETTJMMmcwTkM4eE5qVTJPVFUyTlRZME1qYzRNaTh4TURJMFh6QXlNREF3TURGaE1EQXdNR05qTURVd01EQXhNREJpTmw5RVJTNXFjR2N8YzEyMDc1OTM4MWVlZDM3OWI1ZDgwMGUyMTFhNWQxZWU3NDI5ZWQwNmVlMDIwZGMxMTAxZjBhM2Q1YTM2NWFiOQ"),
     },
     EndBracketSpec {
         id: "wago-249-198",
@@ -1749,7 +1749,7 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         mounting_de: "Rastbar / schraubenlos, Schwerlast für große Querschnitte (TS 35)",
         mounting_en: "Snap-on screwless, heavy-duty for large cross-sections (TS 35)",
         product_url: "https://www.wago.com/de/zubehoer/schraubenlose-endklammer/p/249-198",
-        image_url: Some("https://www.wago.com/medias/249-198.jpg"),
+        image_url: Some("https://www.wago.com/medias/1024-5515399-DE.jpg?context=bWFzdGVyfGltYWdlc3wzOTYxNXxpbWFnZS9qcGVnfGFEa3pMMmc1T1M4eE5qVTJPRE13TWpZMk5UYzFPQzh4TURJMFh6VTFNVFV6T1RsZlJFVXVhbkJufDA1ZjA0ZjkwODkxNDIyMzExMjkzYTk2NGM3NDZkMDRiYjkwM2E2MDgxZGI3MmUyZTU4OWZmZjU3NjU0YzcxNGU"),
     },
     EndBracketSpec {
         id: "wago-249-101",
@@ -1761,7 +1761,7 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         mounting_de: "Rastbar / schraubenlos für Tragschiene TS 15 (15 x 5,5 mm)",
         mounting_en: "Snap-on screwless for DIN rail TS 15 (15 x 5.5 mm)",
         product_url: "https://www.wago.com/de/zubehoer/schraubenlose-endklammer/p/249-101",
-        image_url: Some("https://www.wago.com/medias/249-101.jpg"),
+        image_url: Some("https://www.wago.com/medias/1024-02000005000028b5000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3w2NzkwNnxpbWFnZS9qcGVnfGFEUXlMMmhsTVM4eE5qVTNNRE13TVRZeE1qQTJNaTh4TURJMFh6QXlNREF3TURBMU1EQXdNREk0WWpVd01EQXhNREJpTmw5RVJTNXFjR2N8Nzk1MzJjOTU1YmU0ZjE0ZGVlNTczZDYwNGQ0ZDJlNDk5MjU1YTBiYTViMGQ4NWRjMDI1ZWQyZjEzOTVkZjdjZg"),
     },
     EndBracketSpec {
         id: "wago-209-101",
@@ -1773,7 +1773,7 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         mounting_de: "Schraubmontage mit Feststellschraube (TS 35/7,5 & TS 35/15)",
         mounting_en: "Screw-clamp with locking screw (TS 35/7.5 & TS 35/15)",
         product_url: "https://www.wago.com/de/zubehoer/endklammer/p/209-101",
-        image_url: Some("https://www.wago.com/medias/209-101.jpg"),
+        image_url: Some("https://it.farnell.com/productimages/large/en_US/28K7529-40.jpg"),
     },
 ];
 
