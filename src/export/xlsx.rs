@@ -3,7 +3,7 @@ use std::path::Path;
 
 use rust_xlsxwriter::{Format, Workbook, XlsxError};
 
-use crate::catalog::accessories::calculate_end_plates;
+use crate::catalog::accessories::{calculate_end_plates, find_end_bracket};
 use crate::catalog::TerminalCatalog;
 use crate::export::{build_print_rows, build_tier_columns, ExportOptions};
 use crate::model::bridging::calculate_bridges;
@@ -274,6 +274,10 @@ pub fn export_to_xlsx(
             .iter()
             .map(|p| f32::from(p.width_tenths_mm) / 10.0)
             .sum();
+        let bracket = find_end_bracket(&strip.end_bracket_id);
+        let bracket_qty = strip.end_bracket_count();
+        let brackets_mm = strip.end_brackets_width_mm();
+        let total_rail_mm = blocks_mm + plates_mm + brackets_mm;
 
         // 1. Strip dimension summary row
         ws4.write_string_with_format(
@@ -293,7 +297,7 @@ pub fn export_to_xlsx(
         ws4.write_string_with_format(
             r4,
             5,
-            format!("{:.1}", blocks_mm + plates_mm),
+            format!("{total_rail_mm:.1}"),
             &cell_text_fmt,
         )?;
         ws4.write_string_with_format(r4, 6, strip.blocks.len().to_string(), &cell_text_fmt)?;
@@ -301,11 +305,8 @@ pub fn export_to_xlsx(
             r4,
             7,
             format!(
-                "Klemmen: {:.1} mm + {}× Deckel: {:.1} mm = {:.1} mm",
-                blocks_mm,
+                "Klemmen: {blocks_mm:.1} mm + {}× Deckel: {plates_mm:.1} mm + {bracket_qty}× Endhalter: {brackets_mm:.1} mm = {total_rail_mm:.1} mm",
                 plates.len(),
-                plates_mm,
-                blocks_mm + plates_mm
             ),
             &cell_text_fmt,
         )?;
@@ -401,6 +402,48 @@ pub fn export_to_xlsx(
             )?;
             ws4.write_string_with_format(r4, 6, positions.len().to_string(), &cell_text_fmt)?;
             ws4.write_string_with_format(r4, 7, &pos_str, &cell_text_fmt)?;
+            r4 += 1;
+        }
+
+        // 3b. DIN-rail end brackets (Endhalter)
+        if bracket_qty > 0 {
+            let mut pos_parts = Vec::new();
+            if strip.end_bracket_left {
+                pos_parts.push(if german_headers {
+                    "vor #1".to_string()
+                } else {
+                    "before #1".to_string()
+                });
+            }
+            if strip.end_bracket_right && !strip.blocks.is_empty() {
+                pos_parts.push(if german_headers {
+                    format!("nach #{}", strip.blocks.len())
+                } else {
+                    format!("after #{}", strip.blocks.len())
+                });
+            }
+            ws4.write_string_with_format(
+                r4,
+                0,
+                if german_headers {
+                    "Endhalter"
+                } else {
+                    "End Bracket"
+                },
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 1, &strip.name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 2, bracket.manufacturer, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 3, bracket.name, &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 4, bracket.article_number, &cell_text_fmt)?;
+            ws4.write_string_with_format(
+                r4,
+                5,
+                format!("{:.1}", f32::from(bracket.width_tenths_mm) / 10.0),
+                &cell_text_fmt,
+            )?;
+            ws4.write_string_with_format(r4, 6, bracket_qty.to_string(), &cell_text_fmt)?;
+            ws4.write_string_with_format(r4, 7, pos_parts.join(" & "), &cell_text_fmt)?;
             r4 += 1;
         }
 

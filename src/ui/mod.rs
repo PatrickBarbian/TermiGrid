@@ -14,7 +14,9 @@ use std::path::PathBuf;
 
 use eframe::egui;
 
-use crate::catalog::accessories::{calculate_end_plates, end_plate_width_tenths_mm};
+use crate::catalog::accessories::{
+    calculate_end_plates, end_plate_width_tenths_mm, find_end_bracket,
+};
 use crate::catalog::TerminalCatalog;
 use crate::export::{csv::export_to_csv, xlsx::export_to_xlsx, ExportOptions, PrintOrder};
 use crate::i18n::{strings, Language};
@@ -30,7 +32,9 @@ use crate::ui::cad_canvas::{
 };
 use crate::ui::guide_modal::{show_database_tab, show_guide_tab, CustomSpecDraft};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
-use crate::ui::new_strip_modal::{show_new_strip_modal, show_spec_picker, NewStripDialogState};
+use crate::ui::new_strip_modal::{
+    show_end_bracket_picker, show_new_strip_modal, show_spec_picker, NewStripDialogState,
+};
 use crate::ui::platform_io::{
     pick_export_csv_path, pick_export_xlsx_path, pick_open_project_path, pick_save_project_path,
 };
@@ -832,6 +836,23 @@ impl TermiGridApp {
 
                     let has_strip = self.active_strip < self.project.strips.len();
                     if has_strip {
+                        {
+                            let strip = &mut self.project.strips[self.active_strip];
+                            ui.group(|ui| {
+                                show_end_bracket_picker(
+                                    ui,
+                                    &self.logos,
+                                    &mut strip.end_bracket_id,
+                                    &mut strip.end_bracket_left,
+                                    &mut strip.end_bracket_right,
+                                    s,
+                                    self.lang,
+                                    "inspector_end_bracket",
+                                );
+                            });
+                            ui.add_space(6.0);
+                        }
+
                         // Sync "Reassign type" manufacturer + type picker when canvas selection changes
                         if let Some(&first_idx) = self.selected_blocks.iter().next()
                             && let Some(block) = self.project.strips[self.active_strip].blocks.get(first_idx)
@@ -1329,6 +1350,39 @@ impl TermiGridApp {
 
                     if has_strip {
                         let strip = &self.project.strips[self.active_strip];
+                        let eb_count = strip.end_bracket_count();
+                        if eb_count > 0 {
+                            let eb = find_end_bracket(&strip.end_bracket_id);
+                            let mut pos_parts = Vec::new();
+                            if strip.end_bracket_left {
+                                pos_parts.push("#1 ◀".to_string());
+                            }
+                            if strip.end_bracket_right && !strip.blocks.is_empty() {
+                                pos_parts.push(format!("▶ #{}", strip.blocks.len()));
+                            }
+                            ui.group(|ui| {
+                                ui.horizontal_wrapped(|ui| {
+                                    show_logo_badge(ui, &self.logos, eb.manufacturer, 16.0);
+                                    ui.label(
+                                        egui::RichText::new(format!(
+                                            "{}× {} (Art. {}, {:.1} mm)",
+                                            eb_count,
+                                            eb.name,
+                                            eb.article_number,
+                                            strip.end_brackets_width_mm()
+                                        ))
+                                        .small(),
+                                    );
+                                    ui.label(
+                                        egui::RichText::new(format!("[{}]", pos_parts.join(", ")))
+                                            .color(secondary_text_color(ui))
+                                            .small(),
+                                    );
+                                });
+                            });
+                            ui.add_space(4.0);
+                        }
+
                         let plates = calculate_end_plates(strip, &self.catalog);
                         if !plates.is_empty() {
                             let mut plate_groups: BTreeMap<String, (String, u16, Vec<usize>)> =

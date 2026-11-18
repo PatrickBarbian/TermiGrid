@@ -822,3 +822,245 @@ pub fn calculate_end_plates(
     }
     plates
 }
+
+/// Technical specification of a TS 35 / NS 35 DIN-rail end bracket (`Endhalter` / `Endklammer`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EndBracketSpec {
+    pub id: &'static str,
+    pub manufacturer: &'static str,
+    pub name: &'static str,
+    pub article_number: &'static str,
+    /// Physical width on the DIN rail in tenths of a millimeter (e.g. `52` = `5.2 mm`).
+    pub width_tenths_mm: u16,
+    pub mounting_de: &'static str,
+    pub mounting_en: &'static str,
+    pub product_url: &'static str,
+}
+
+/// Default DIN-rail end bracket ID (`Phoenix Contact CLIPFIX 35-5`).
+pub const DEFAULT_END_BRACKET_ID: &str = "phoenix-clipfix-35-5";
+
+/// Verified database of TS 35 / NS 35 DIN-rail end brackets from Phoenix Contact, Weidmüller, and WAGO.
+pub static END_BRACKETS: &[EndBracketSpec] = &[
+    // --- Phoenix Contact ---
+    EndBracketSpec {
+        id: "phoenix-clipfix-35-5",
+        manufacturer: "Phoenix Contact",
+        name: "CLIPFIX 35-5",
+        article_number: "3022276",
+        width_tenths_mm: 52,
+        mounting_de: "Rastbar / schraubenlos (NS 35/7,5 & NS 35/15)",
+        mounting_en: "Snap-on screwless (NS 35/7.5 & NS 35/15)",
+        product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-clipfix-35-5-3022276",
+    },
+    EndBracketSpec {
+        id: "phoenix-clipfix-35-5-v0",
+        manufacturer: "Phoenix Contact",
+        name: "CLIPFIX 35-5 V0",
+        article_number: "3032350",
+        width_tenths_mm: 52,
+        mounting_de: "Rastbar / schraubenlos UL 94 V0 (NS 35)",
+        mounting_en: "Snap-on screwless UL 94 V0 (NS 35)",
+        product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-clipfix-35-5-v0-3032350",
+    },
+    EndBracketSpec {
+        id: "phoenix-clipfix-35",
+        manufacturer: "Phoenix Contact",
+        name: "CLIPFIX 35",
+        article_number: "3022218",
+        width_tenths_mm: 95,
+        mounting_de: "Rastbar / schraubenlos (NS 35/7,5 & NS 35/15)",
+        mounting_en: "Snap-on screwless (NS 35/7.5 & NS 35/15)",
+        product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-clipfix-35-3022218",
+    },
+    EndBracketSpec {
+        id: "phoenix-e-ns-35-n",
+        manufacturer: "Phoenix Contact",
+        name: "E/NS 35 N",
+        article_number: "0800886",
+        width_tenths_mm: 95,
+        mounting_de: "Schraubmontage (NS 35/7,5 & NS 35/15)",
+        mounting_en: "Screw-clamp (NS 35/7.5 & NS 35/15)",
+        product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-ens-35-n-0800886",
+    },
+    EndBracketSpec {
+        id: "phoenix-e-uk",
+        manufacturer: "Phoenix Contact",
+        name: "E/UK",
+        article_number: "1201442",
+        width_tenths_mm: 95,
+        mounting_de: "Schraubmontage (NS 32 & NS 35/7,5)",
+        mounting_en: "Screw-clamp (NS 32 & NS 35/7.5)",
+        product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-e-uk-1201442",
+    },
+    EndBracketSpec {
+        id: "phoenix-e-uk-1",
+        manufacturer: "Phoenix Contact",
+        name: "E/UK 1",
+        article_number: "1201413",
+        width_tenths_mm: 100,
+        mounting_de: "Schraubmontage für 2-/3-Etagenklemmen",
+        mounting_en: "Screw-clamp for 2-/3-level blocks",
+        product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-e-uk-1-1201413",
+    },
+    EndBracketSpec {
+        id: "phoenix-e-al-ns-35",
+        manufacturer: "Phoenix Contact",
+        name: "E/AL-NS 35",
+        article_number: "1201662",
+        width_tenths_mm: 100,
+        mounting_de: "Schwerlast-Alu (2 Schrauben, Hochstrom)",
+        mounting_en: "Heavy-duty aluminum (2-screw, high-current)",
+        product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-e-al-ns-35-1201662",
+    },
+    // --- Weidmüller ---
+    EndBracketSpec {
+        id: "weidmuller-aeb-35-scl-1-v0",
+        manufacturer: "Weidmüller",
+        name: "AEB 35 SCL/1 V0",
+        article_number: "2661280000",
+        width_tenths_mm: 60,
+        mounting_de: "Rastbar / schraubenlos A-Reihe V0",
+        mounting_en: "Snap-on screwless A-Series V0",
+        product_url: "https://eshop.weidmueller.com/en/aeb-35-scl1-v0/p/2661280000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-aeb-35-sc-1",
+        manufacturer: "Weidmüller",
+        name: "AEB 35 SC/1",
+        article_number: "1991920000",
+        width_tenths_mm: 80,
+        mounting_de: "Schraubmontage A-Reihe V0",
+        mounting_en: "Screw-clamp A-Series V0",
+        product_url: "https://eshop.weidmueller.com/en/aeb-35-sc1/p/1991920000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-zew-35",
+        manufacturer: "Weidmüller",
+        name: "ZEW 35",
+        article_number: "9540000000",
+        width_tenths_mm: 60,
+        mounting_de: "Rastbar / schraubenlos Z-Reihe",
+        mounting_en: "Snap-on screwless Z-Series",
+        product_url: "https://eshop.weidmueller.com/en/zew-35/p/9540000000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-zew-35-2",
+        manufacturer: "Weidmüller",
+        name: "ZEW 35/2",
+        article_number: "8630740000",
+        width_tenths_mm: 80,
+        mounting_de: "Rastbar / schraubenlos Z-Reihe (breit)",
+        mounting_en: "Snap-on screwless Z-Series (wide)",
+        product_url: "https://eshop.weidmueller.com/en/zew-352/p/8630740000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-wew-35-2",
+        manufacturer: "Weidmüller",
+        name: "WEW 35/2",
+        article_number: "1061200000",
+        width_tenths_mm: 80,
+        mounting_de: "Schraubmontage W-Reihe",
+        mounting_en: "Screw-clamp W-Series",
+        product_url: "https://eshop.weidmueller.com/en/wew-352/p/1061200000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-wew-35-1",
+        manufacturer: "Weidmüller",
+        name: "WEW 35/1",
+        article_number: "1059000000",
+        width_tenths_mm: 120,
+        mounting_de: "Schraubmontage W-Reihe (stark)",
+        mounting_en: "Screw-clamp W-Series (heavy)",
+        product_url: "https://eshop.weidmueller.com/en/wew-351/p/1059000000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-ew-35",
+        manufacturer: "Weidmüller",
+        name: "EW 35",
+        article_number: "0383560000",
+        width_tenths_mm: 85,
+        mounting_de: "Schraubmontage Standard beige",
+        mounting_en: "Screw-clamp standard beige",
+        product_url: "https://eshop.weidmueller.com/en/ew-35/p/0383560000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-ew-35-gr",
+        manufacturer: "Weidmüller",
+        name: "EW 35 GR 7032",
+        article_number: "0383530000",
+        width_tenths_mm: 90,
+        mounting_de: "Schraubmontage grau V0",
+        mounting_en: "Screw-clamp grey V0",
+        product_url: "https://eshop.weidmueller.com/en/ew-35-gr-7032/p/0383530000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-ew-35-scha-m3",
+        manufacturer: "Weidmüller",
+        name: "EW 35/SCHA/M3",
+        article_number: "0258660000",
+        width_tenths_mm: 165,
+        mounting_de: "Schraubmontage M3 (schwer)",
+        mounting_en: "Heavy screw-clamp M3",
+        product_url: "https://eshop.weidmueller.com/en/ew-35scham3/p/0258660000",
+    },
+    EndBracketSpec {
+        id: "weidmuller-mew-35-1",
+        manufacturer: "Weidmüller",
+        name: "MEW 35/1",
+        article_number: "1805610000",
+        width_tenths_mm: 125,
+        mounting_de: "Metall-Schraubmontage (schwer)",
+        mounting_en: "Metal screw-clamp (heavy)",
+        product_url: "https://eshop.weidmueller.com/en/mew-351/p/1805610000",
+    },
+    // --- WAGO ---
+    EndBracketSpec {
+        id: "wago-249-116",
+        manufacturer: "WAGO",
+        name: "249-116",
+        article_number: "249-116",
+        width_tenths_mm: 60,
+        mounting_de: "Schraubenloser Endstopp grau (TS 35)",
+        mounting_en: "Screwless end stop grey (TS 35)",
+        product_url: "https://www.wago.com/global/accessories/screwless-end-stop/p/249-116",
+    },
+    EndBracketSpec {
+        id: "wago-249-117",
+        manufacturer: "WAGO",
+        name: "249-117",
+        article_number: "249-117",
+        width_tenths_mm: 100,
+        mounting_de: "Schraubenloser Endstopp breit (TS 35)",
+        mounting_en: "Screwless end stop wide (TS 35)",
+        product_url: "https://www.wago.com/gb/accessories/screwless-end-stop/p/249-117",
+    },
+    EndBracketSpec {
+        id: "wago-249-197",
+        manufacturer: "WAGO",
+        name: "249-197",
+        article_number: "249-197",
+        width_tenths_mm: 140,
+        mounting_de: "Schwerlast-Endstopp schraubenlos (TS 35)",
+        mounting_en: "Heavy-duty screwless end stop (TS 35)",
+        product_url: "https://www.wago.com/global/accessories/screwless-end-stop/p/249-197",
+    },
+];
+
+/// Returns all built-in TS 35 DIN-rail end bracket specifications.
+pub fn all_end_brackets() -> &'static [EndBracketSpec] {
+    END_BRACKETS
+}
+
+/// Finds an end bracket by exact ID, returning `None` if not present.
+pub fn end_bracket_by_id(id: &str) -> Option<&'static EndBracketSpec> {
+    END_BRACKETS.iter().find(|eb| eb.id == id)
+}
+
+/// Resolves an end bracket by ID, falling back to `CLIPFIX 35-5` if empty or unknown.
+pub fn find_end_bracket(id: &str) -> &'static EndBracketSpec {
+    end_bracket_by_id(id)
+        .or_else(|| end_bracket_by_id(DEFAULT_END_BRACKET_ID))
+        .unwrap_or(&END_BRACKETS[0])
+}
+

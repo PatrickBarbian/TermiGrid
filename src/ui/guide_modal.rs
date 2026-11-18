@@ -1,5 +1,6 @@
 use egui::Ui;
 
+use crate::catalog::accessories::all_end_brackets;
 use crate::catalog::{TerminalCatalog, TerminalSpec, TierSpec};
 use crate::i18n::{Language, Strings};
 use crate::model::{NumberingOrder, TierBehavior, TierColor};
@@ -289,6 +290,53 @@ pub fn show_database_tab(
     ui.add_space(8.0);
 
     let q = search_query.trim().to_lowercase();
+    let all_eb = all_end_brackets();
+    egui::CollapsingHeader::new(format!("{} ({})", strings.end_bracket_db_heading, all_eb.len()))
+        .default_open(false)
+        .show(ui, |ui| {
+            egui::Grid::new("end_bracket_db_grid")
+                .striped(true)
+                .spacing([14.0, 6.0])
+                .show(ui, |ui| {
+                    ui.strong(strings.db_col_manufacturer);
+                    ui.strong(strings.db_col_name);
+                    ui.strong("Art.-Nr.");
+                    ui.strong(strings.db_col_width);
+                    ui.strong(strings.db_col_desc);
+                    ui.strong("");
+                    ui.end_row();
+
+                    for eb in all_eb {
+                        let mfg_ok = mfg_filter
+                            .as_deref()
+                            .is_none_or(|m| eb.manufacturer == m);
+                        let q_ok = q.is_empty()
+                            || eb.name.to_lowercase().contains(&q)
+                            || eb.manufacturer.to_lowercase().contains(&q)
+                            || eb.article_number.to_lowercase().contains(&q)
+                            || eb.mounting_de.to_lowercase().contains(&q)
+                            || eb.mounting_en.to_lowercase().contains(&q);
+                        if !mfg_ok || !q_ok {
+                            continue;
+                        }
+                        show_logo_badge(ui, logos, eb.manufacturer, 18.0);
+                        ui.label(eb.name);
+                        ui.monospace(eb.article_number);
+                        ui.label(format!("{:.1} mm", f32::from(eb.width_tenths_mm) / 10.0));
+                        let desc = match lang {
+                            Language::De => eb.mounting_de,
+                            _ => eb.mounting_en,
+                        };
+                        ui.label(desc);
+                        if ui.small_button("Web ↗").clicked() {
+                            open_external_url(ui.ctx(), eb.product_url);
+                        }
+                        ui.end_row();
+                    }
+                });
+        });
+    ui.add_space(4.0);
+
     egui::ScrollArea::both().show(ui, |ui| {
         egui::Grid::new("terminal_db_grid")
             .striped(true)

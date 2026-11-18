@@ -198,6 +198,14 @@ fn default_next_potential_id() -> u64 {
     1
 }
 
+fn default_end_bracket_id() -> String {
+    crate::catalog::accessories::DEFAULT_END_BRACKET_ID.to_string()
+}
+
+fn default_true() -> bool {
+    true
+}
+
 /// Represents a complete DIN-rail terminal strip (e.g., "-X1").
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TerminalStrip {
@@ -227,6 +235,15 @@ pub struct TerminalStrip {
     /// Next unique potential ID counter.
     #[serde(default = "default_next_potential_id")]
     next_potential_id: u64,
+    /// Selected DIN-rail end bracket ID (`Endhalter`), defaulting to Phoenix Contact CLIPFIX 35-5.
+    #[serde(default = "default_end_bracket_id")]
+    pub end_bracket_id: String,
+    /// Whether to mount an end bracket before the first terminal block (`vor #1`).
+    #[serde(default = "default_true")]
+    pub end_bracket_left: bool,
+    /// Whether to mount an end bracket after the last terminal block (`nach #N`).
+    #[serde(default = "default_true")]
+    pub end_bracket_right: bool,
 }
 
 impl TerminalStrip {
@@ -249,6 +266,9 @@ impl TerminalStrip {
             pe_mode: PeLabelMode::Fixed,
             potentials: Vec::new(),
             next_potential_id: 1,
+            end_bracket_id: default_end_bracket_id(),
+            end_bracket_left: true,
+            end_bracket_right: true,
         }
     }
 
@@ -278,12 +298,30 @@ impl TerminalStrip {
         }
     }
 
-    /// Returns the total physical width of the strip in millimeters.
+    /// Returns the total physical width of all terminal blocks in millimeters.
     pub fn total_width_mm(&self) -> f32 {
         self.blocks
             .iter()
             .map(|b| f32::from(b.width_tenths_mm) / 10.0)
             .sum()
+    }
+
+    /// Returns the number of configured DIN-rail end brackets (`0`, `1`, or `2`).
+    pub fn end_bracket_count(&self) -> usize {
+        if self.blocks.is_empty() {
+            return 0;
+        }
+        usize::from(self.end_bracket_left) + usize::from(self.end_bracket_right)
+    }
+
+    /// Returns the total DIN-rail width occupied by the selected end brackets in millimeters.
+    pub fn end_brackets_width_mm(&self) -> f32 {
+        let count = self.end_bracket_count();
+        if count == 0 {
+            return 0.0;
+        }
+        let spec = crate::catalog::accessories::find_end_bracket(&self.end_bracket_id);
+        (f32::from(spec.width_tenths_mm) / 10.0) * (count as f32)
     }
 
     /// Returns the total number of printable (non-empty) labels in this strip.

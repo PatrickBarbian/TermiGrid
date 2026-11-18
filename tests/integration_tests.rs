@@ -174,3 +174,109 @@ fn accessories_resolve_for_all_three_manufacturers() {
     assert!(weid_acc.end_plate.contains("AEP ITB 2.5"));
     assert!(weid_acc.jumpers.contains("ZQV 2.5N/2"));
 }
+
+#[test]
+fn end_brackets_database_covers_all_three_manufacturers_and_defaults_to_clipfix_35_5() {
+    use std::collections::BTreeSet;
+    use termigrid_core::catalog::accessories::{
+        all_end_brackets, find_end_bracket, DEFAULT_END_BRACKET_ID,
+    };
+
+    let all = all_end_brackets();
+    assert!(all.len() >= 18);
+
+    let default_eb = find_end_bracket("");
+    assert_eq!(default_eb.id, DEFAULT_END_BRACKET_ID);
+    assert_eq!(default_eb.manufacturer, "Phoenix Contact");
+    assert_eq!(default_eb.name, "CLIPFIX 35-5");
+    assert_eq!(default_eb.article_number, "3022276");
+    assert_eq!(default_eb.width_tenths_mm, 52);
+
+    let mut mfgs = BTreeSet::new();
+    let mut ids = BTreeSet::new();
+    for eb in all {
+        assert!(ids.insert(eb.id), "duplicate end bracket id: {}", eb.id);
+        assert!(!eb.article_number.is_empty());
+        assert!(eb.width_tenths_mm >= 40);
+        mfgs.insert(eb.manufacturer);
+    }
+    assert!(mfgs.contains("Phoenix Contact"));
+    assert!(mfgs.contains("Weidmüller"));
+    assert!(mfgs.contains("WAGO"));
+}
+
+#[test]
+fn strip_end_bracket_defaults_toggles_and_legacy_json_deserialization() {
+    let catalog = TerminalCatalog::load_embedded();
+    let single = catalog.find_by_id("wago-2002-1201").unwrap();
+    let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 4, 4, single);
+
+    assert_eq!(strip.end_bracket_id, "phoenix-clipfix-35-5");
+    assert!(strip.end_bracket_left);
+    assert!(strip.end_bracket_right);
+    assert_eq!(strip.end_bracket_count(), 2);
+    assert!((strip.end_brackets_width_mm() - 10.4).abs() < 0.01);
+
+    // Disable one side when joining strips flush
+    strip.end_bracket_right = false;
+    assert_eq!(strip.end_bracket_count(), 1);
+    assert!((strip.end_brackets_width_mm() - 5.2).abs() < 0.01);
+
+    // Disable both sides
+    strip.end_bracket_left = false;
+    assert_eq!(strip.end_bracket_count(), 0);
+    assert!((strip.end_brackets_width_mm() - 0.0).abs() < 0.01);
+
+    // Legacy JSON without end_bracket_* fields must deserialize cleanly to CLIPFIX 35-5 (both sides enabled)
+    let legacy_json = r#"{
+        "format_version": 1,
+        "project_name": "Legacy",
+        "strips": [
+            {
+                "name": "-X1",
+                "description": "",
+                "start_number": 1,
+                "target_end_number": 2,
+                "default_spec_id": "wago-2002-1201",
+                "blocks": [],
+                "next_block_id": 1
+            }
+        ]
+    }"#;
+    let loaded: Project = serde_json::from_str(legacy_json).unwrap();
+    assert_eq!(loaded.strips[0].end_bracket_id, "phoenix-clipfix-35-5");
+    assert!(loaded.strips[0].end_bracket_left);
+    assert!(loaded.strips[0].end_bracket_right);
+}
+
+#[test]
+fn xlsx_export_succeeds_with_0_1_and_2_end_brackets() {
+    let catalog = TerminalCatalog::load_embedded();
+    let single = catalog.find_by_id("wago-2002-1201").unwrap();
+
+    for (left, right, eb_id, suffix) in [
+        (true, true, "phoenix-clipfix-35-5", "both"),
+        (true, false, "weidmuller-ew-35", "left_only"),
+        (false, false, "wago-249-116", "none"),
+    ] {
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 3, 3, single);
+        strip.end_bracket_id = eb_id.to_string();
+        strip.end_bracket_left = left;
+        strip.end_bracket_right = right;
+
+        let project = Project {
+            format_version: 1,
+            project_name: "EndBracketXlsx".to_string(),
+            strips: vec![strip],
+            ..Default::default()
+        };
+
+        let out_path = std::env::temp_dir().join(format!("termigrid_eb_{suffix}.xlsx"));
+        let _ = std::fs::remove_file(&out_path);
+        let count = export_to_xlsx(&out_path, &project, 0, &ExportOptions::default(), true).unwrap();
+        assert_eq!(count, 3);
+        assert!(out_path.exists());
+        let _ = std::fs::remove_file(&out_path);
+    }
+}
+

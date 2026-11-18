@@ -1,5 +1,8 @@
 use egui::{Context, Ui};
 
+use crate::catalog::accessories::{
+    all_end_brackets, find_end_bracket, DEFAULT_END_BRACKET_ID,
+};
 use crate::catalog::TerminalCatalog;
 use crate::i18n::{Language, Strings};
 use crate::model::TerminalStrip;
@@ -24,6 +27,9 @@ pub struct NewStripDialogState {
     pub manufacturer_filter: Option<String>,
     pub search_query: String,
     pub selected_spec_id: String,
+    pub end_bracket_id: String,
+    pub end_bracket_left: bool,
+    pub end_bracket_right: bool,
 }
 
 impl Default for NewStripDialogState {
@@ -39,6 +45,9 @@ impl Default for NewStripDialogState {
             manufacturer_filter: None,
             search_query: String::new(),
             selected_spec_id: "wago-2002-1201".to_string(),
+            end_bracket_id: DEFAULT_END_BRACKET_ID.to_string(),
+            end_bracket_left: true,
+            end_bracket_right: true,
         }
     }
 }
@@ -51,6 +60,8 @@ impl NewStripDialogState {
         self.start_number = 1;
         self.end_number = 50;
         self.block_count = 25;
+        self.end_bracket_left = true;
+        self.end_bracket_right = true;
     }
 }
 
@@ -73,8 +84,8 @@ pub fn show_new_strip_modal(
     let screen_size = ctx.content_rect().size();
     let max_w = (screen_size.x - 24.0).max(280.0);
     let max_h = (screen_size.y - 40.0).max(220.0);
-    let target_w = 540.0_f32.min(max_w);
-    let needs_scroll = screen_size.y < 560.0;
+    let target_w = 560.0_f32.min(max_w);
+    let needs_scroll = screen_size.y < 680.0;
 
     egui::Window::new(strings.modal_new_strip_title)
         .collapsible(false)
@@ -147,7 +158,21 @@ pub fn show_new_strip_modal(
 
                 ui.separator();
 
-                // Live preview of resulting block count
+                // End bracket selector + left/right checkboxes
+                show_end_bracket_picker(
+                    ui,
+                    logos,
+                    &mut state.end_bracket_id,
+                    &mut state.end_bracket_left,
+                    &mut state.end_bracket_right,
+                    strings,
+                    lang,
+                    "new_strip_end_bracket",
+                );
+
+                ui.separator();
+
+                // Live preview of resulting block count + width incl. end brackets
                 if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
                     let preview_blocks = match state.mode {
                         NewStripMode::ByRange => {
@@ -161,13 +186,21 @@ pub fn show_new_strip_modal(
                         }
                         NewStripMode::ByCount => state.block_count,
                     };
+                    let eb_spec = find_end_bracket(&state.end_bracket_id);
+                    let eb_count =
+                        usize::from(state.end_bracket_left) + usize::from(state.end_bracket_right);
+                    let blocks_mm =
+                        (f32::from(spec.width_tenths_mm) / 10.0) * (preview_blocks as f32);
+                    let brackets_mm =
+                        (f32::from(eb_spec.width_tenths_mm) / 10.0) * (eb_count as f32);
                     ui.label(
                         egui::RichText::new(format!(
-                            "-> {} {} ({}: {})",
+                            "-> {} {} ({}: {})  |  ~{:.1} mm",
                             preview_blocks,
                             strings.blocks_unit,
                             spec.levels,
-                            spec.pattern_summary()
+                            spec.pattern_summary(),
+                            blocks_mm + brackets_mm
                         ))
                         .color(secondary_text_color(ui)),
                     );
@@ -199,6 +232,9 @@ pub fn show_new_strip_modal(
                             ),
                         };
                         strip.description = state.description.trim().to_string();
+                        strip.end_bracket_id = state.end_bracket_id.clone();
+                        strip.end_bracket_left = state.end_bracket_left;
+                        strip.end_bracket_right = state.end_bracket_right;
                         created = Some(strip);
                         should_close = true;
                     }
@@ -221,6 +257,75 @@ pub fn show_new_strip_modal(
     }
 
     created
+}
+
+/// Reusable TS 35 DIN-rail end bracket (`Endhalter`) ComboBox selector with left/right placement checkboxes.
+#[allow(clippy::too_many_arguments)]
+pub fn show_end_bracket_picker(
+    ui: &mut Ui,
+    logos: &BrandLogos,
+    end_bracket_id: &mut String,
+    end_bracket_left: &mut bool,
+    end_bracket_right: &mut bool,
+    strings: &Strings,
+    lang: Language,
+    id_salt: &str,
+) {
+    let selected = find_end_bracket(end_bracket_id);
+    if end_bracket_id != selected.id {
+        *end_bracket_id = selected.id.to_string();
+    }
+
+    ui.label(egui::RichText::new(strings.end_bracket_heading).strong());
+    ui.add_space(2.0);
+
+    let selected_text = format!(
+        "{} {} (Art. {}, {:.1} mm)",
+        selected.manufacturer,
+        selected.name,
+        selected.article_number,
+        f32::from(selected.width_tenths_mm) / 10.0
+    );
+
+    egui::ComboBox::from_id_salt(id_salt)
+        .width((ui.available_width() - 8.0).max(200.0))
+        .selected_text(selected_text)
+        .show_ui(ui, |ui| {
+            for eb in all_end_brackets() {
+                let text = format!(
+                    "{} {} (Art. {}, {:.1} mm)",
+                    eb.manufacturer,
+                    eb.name,
+                    eb.article_number,
+                    f32::from(eb.width_tenths_mm) / 10.0
+                );
+                if ui
+                    .selectable_label(selected.id == eb.id, text)
+                    .clicked()
+                {
+                    *end_bracket_id = eb.id.to_string();
+                }
+            }
+        });
+
+    let active = find_end_bracket(end_bracket_id);
+    let mounting = match lang {
+        Language::De => active.mounting_de,
+        _ => active.mounting_en,
+    };
+    ui.horizontal_wrapped(|ui| {
+        show_logo_badge(ui, logos, active.manufacturer, 16.0);
+        ui.label(
+            egui::RichText::new(format!("{mounting} | Art. {}", active.article_number))
+                .color(secondary_text_color(ui))
+                .small(),
+        );
+    });
+
+    ui.horizontal_wrapped(|ui| {
+        ui.checkbox(end_bracket_left, strings.end_bracket_left);
+        ui.checkbox(end_bracket_right, strings.end_bracket_right);
+    });
 }
 
 /// Reusable manufacturer-filtered & searchable terminal spec ComboBox picker with brand logos.

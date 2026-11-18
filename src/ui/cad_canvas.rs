@@ -5,7 +5,7 @@ use egui::{
     Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, StrokeKind, Ui, Vec2,
 };
 
-use crate::catalog::accessories::EndPlatePlacement;
+use crate::catalog::accessories::{find_end_bracket, EndBracketSpec, EndPlatePlacement};
 use crate::i18n::Strings;
 use crate::model::bridging::BridgePlan;
 use crate::model::{TerminalBlock, TerminalStrip, TierColor};
@@ -190,6 +190,17 @@ pub fn show_cad_canvas(
         0.0
     };
 
+    let end_bracket = find_end_bracket(&strip.end_bracket_id);
+    let bracket_count = strip.end_bracket_count();
+    let bracket_px =
+        ((f32::from(end_bracket.width_tenths_mm) / 10.0) * px_per_mm).max(20.0 * z);
+    let total_brackets_width = if bracket_count > 0 {
+        (bracket_px + block_gap) * (bracket_count as f32)
+    } else {
+        0.0
+    };
+    let brackets_mm = strip.end_brackets_width_mm();
+
     let total_blocks_width: f32 = strip
         .blocks
         .iter()
@@ -203,10 +214,12 @@ pub fn show_cad_canvas(
         .iter()
         .map(|p| f32::from(p.width_tenths_mm) / 10.0)
         .sum();
+    let total_rail_mm = strip.total_width_mm() + plates_mm + brackets_mm;
 
     let stack_height = (above_rows + below_rows) * (tier_height + tier_gap);
     let content_width =
-        (margin_x * 2.0 + total_blocks_width + total_plates_width).max(ui.available_width());
+        (margin_x * 2.0 + total_blocks_width + total_plates_width + total_brackets_width)
+            .max(ui.available_width());
     let content_height =
         (margin_top + stack_height + footer_height + 24.0).max(ui.available_height());
 
@@ -234,25 +247,40 @@ pub fn show_cad_canvas(
             } else {
                 Color32::from_rgb(30, 41, 59)
             };
-            let header_text = if end_plates.is_empty() {
+            let mut detail_parts = Vec::new();
+            if !end_plates.is_empty() || bracket_count > 0 {
+                detail_parts.push(format!("{:.1}", strip.total_width_mm()));
+                if !end_plates.is_empty() {
+                    detail_parts.push(format!(
+                        "{:.1} mm {}× {}",
+                        plates_mm,
+                        end_plates.len(),
+                        strings.acc_end_plate
+                    ));
+                }
+                if bracket_count > 0 {
+                    detail_parts.push(format!(
+                        "{:.1} mm {}× {}",
+                        brackets_mm, bracket_count, end_bracket.name
+                    ));
+                }
+            }
+            let header_text = if detail_parts.is_empty() {
                 format!(
                     "{}  |  {} {}  |  {:.1} mm",
                     strip.name,
                     strip.blocks.len(),
                     strings.blocks_unit,
-                    strip.total_width_mm()
+                    total_rail_mm
                 )
             } else {
                 format!(
-                    "{}  |  {} {}  |  {:.1} mm ({:.1} + {:.1} mm {}× {})",
+                    "{}  |  {} {}  |  {:.1} mm ({})",
                     strip.name,
                     strip.blocks.len(),
                     strings.blocks_unit,
-                    strip.total_width_mm() + plates_mm,
-                    strip.total_width_mm(),
-                    plates_mm,
-                    end_plates.len(),
-                    strings.acc_end_plate
+                    total_rail_mm,
+                    detail_parts.join(" + ")
                 )
             };
             painter.text(
@@ -297,12 +325,33 @@ pub fn show_cad_canvas(
                 );
             }
 
-            // 2. Compute block & tier bounding boxes and render each terminal block + end plates
+            // 2. Compute block & tier bounding boxes and render end brackets, terminal blocks & end plates
             let mut block_rects: Vec<Rect> = Vec::with_capacity(strip.blocks.len());
             let mut block_x_spans: Vec<(f32, f32)> = Vec::with_capacity(strip.blocks.len());
             let mut tier_hit_rects: Vec<(usize, usize, Rect, Rect)> = Vec::new();
             let mut plate_hit_rects: Vec<(Rect, &EndPlatePlacement)> = Vec::new();
+            let mut bracket_hit_rects: Vec<(Rect, bool)> = Vec::new();
             let mut cursor_x = canvas_rect.min.x + margin_x;
+
+            let eb_top = baseline_bottom_y - (tier_height + tier_gap) + 2.0 * z;
+            let eb_bottom = baseline_bottom_y - tier_gap - 2.0 * z;
+
+            if !strip.blocks.is_empty() && strip.end_bracket_left {
+                let eb_rect = Rect::from_min_max(
+                    Pos2::new(cursor_x, eb_top),
+                    Pos2::new(cursor_x + bracket_px, eb_bottom),
+                );
+                draw_end_bracket_cad(
+                    &painter,
+                    eb_rect,
+                    lowest_bottom_y,
+                    end_bracket,
+                    dark,
+                    z,
+                );
+                bracket_hit_rects.push((eb_rect, true));
+                cursor_x += bracket_px + block_gap;
+            }
 
             for (idx, block) in strip.blocks.iter().enumerate() {
                 let w = ((f32::from(block.width_tenths_mm) / 10.0) * px_per_mm).max(24.0 * z);
@@ -393,6 +442,22 @@ pub fn show_cad_canvas(
                     plate_hit_rects.push((plate_rect, plate));
                     cursor_x += plate_px + block_gap;
                 }
+            }
+
+            if !strip.blocks.is_empty() && strip.end_bracket_right {
+                let eb_rect = Rect::from_min_max(
+                    Pos2::new(cursor_x, eb_top),
+                    Pos2::new(cursor_x + bracket_px, eb_bottom),
+                );
+                draw_end_bracket_cad(
+                    &painter,
+                    eb_rect,
+                    lowest_bottom_y,
+                    end_bracket,
+                    dark,
+                    z,
+                );
+                bracket_hit_rects.push((eb_rect, false));
             }
 
             // Draw terminal type annotations below the block numbers (#1, #2, ...)
@@ -687,12 +752,30 @@ pub fn show_cad_canvas(
                 );
             }
 
-            // 5. Hover tooltip with detailed block, tier, or end-plate info
+            // 5. Hover tooltip with detailed block, tier, end-bracket, or end-plate info
             if !state.is_marquee_active
                 && state.editing_tier.is_none()
                 && let Some(hover_pos) = response.hover_pos()
             {
-                if let Some((_, plate)) = plate_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
+                if let Some((_, is_left)) = bracket_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
+                {
+                    let side = if *is_left {
+                        strings.end_bracket_left
+                    } else {
+                        strings.end_bracket_right
+                    };
+                    let tip = format!(
+                        "{} ({}): {}\n{} | Art.-Nr. {} | {:.1} mm\n{}",
+                        strings.acc_end_bracket,
+                        side,
+                        end_bracket.name,
+                        end_bracket.manufacturer,
+                        end_bracket.article_number,
+                        f32::from(end_bracket.width_tenths_mm) / 10.0,
+                        end_bracket.mounting_de,
+                    );
+                    response.on_hover_text_at_pointer(tip);
+                } else if let Some((_, plate)) = plate_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
                 {
                     let tip = format!(
                         "{}: {}\n{} (#{}) | {:.1} mm",
@@ -1369,3 +1452,74 @@ fn draw_bridge_overlay(
         );
     }
 }
+
+fn draw_end_bracket_cad(
+    painter: &egui::Painter,
+    rect: Rect,
+    lowest_bottom_y: f32,
+    spec: &EndBracketSpec,
+    dark: bool,
+    zoom: f32,
+) {
+    let body_fill = if dark {
+        Color32::from_rgb(51, 65, 85)
+    } else {
+        Color32::from_rgb(100, 116, 139)
+    };
+    let border_col = if dark {
+        Color32::from_rgb(148, 163, 184)
+    } else {
+        Color32::from_rgb(30, 41, 59)
+    };
+    let foot_col = if dark {
+        Color32::from_rgb(203, 213, 225)
+    } else {
+        Color32::from_rgb(226, 232, 240)
+    };
+
+    painter.rect_filled(rect, CornerRadius::same(3), body_fill);
+    painter.rect_stroke(
+        rect,
+        CornerRadius::same(3),
+        Stroke::new(1.4, border_col),
+        StrokeKind::Inside,
+    );
+
+    // Upper and lower metallic clamp foot / snap lock bars
+    let foot_h = (5.0 * zoom).max(3.5);
+    let top_foot = Rect::from_min_max(
+        Pos2::new(rect.min.x + 2.0, rect.min.y + 2.0),
+        Pos2::new(rect.max.x - 2.0, rect.min.y + 2.0 + foot_h),
+    );
+    let bot_foot = Rect::from_min_max(
+        Pos2::new(rect.min.x + 2.0, rect.max.y - 2.0 - foot_h),
+        Pos2::new(rect.max.x - 2.0, rect.max.y - 2.0),
+    );
+    painter.rect_filled(top_foot, CornerRadius::same(1), foot_col);
+    painter.rect_filled(bot_foot, CornerRadius::same(1), foot_col);
+
+    // Center clamp mark
+    painter.text(
+        rect.center(),
+        Align2::CENTER_CENTER,
+        "EH",
+        FontId::proportional((10.0 * zoom).max(8.5)),
+        Color32::WHITE,
+    );
+
+    if zoom >= 0.7 {
+        let lbl_col = if dark {
+            Color32::from_rgb(148, 163, 184)
+        } else {
+            Color32::from_rgb(51, 65, 85)
+        };
+        painter.text(
+            Pos2::new(rect.center().x, lowest_bottom_y + 6.0 * zoom),
+            Align2::CENTER_TOP,
+            format!("{:.1}", f32::from(spec.width_tenths_mm) / 10.0),
+            FontId::proportional((8.0 * zoom).max(6.5)),
+            lbl_col,
+        );
+    }
+}
+

@@ -233,6 +233,13 @@ pub struct Strings {
     pub mode_pan_tip: &'static str,
     pub mode_select_tip: &'static str,
     pub mode_bridge_tip: &'static str,
+
+    // End Brackets (Endhalter)
+    pub end_bracket_heading: &'static str,
+    pub end_bracket_left: &'static str,
+    pub end_bracket_right: &'static str,
+    pub end_bracket_none: &'static str,
+    pub end_bracket_db_heading: &'static str,
 }
 
 pub static DE: Strings = Strings {
@@ -420,6 +427,12 @@ pub static DE: Strings = Strings {
     mode_pan_tip: "Ziehen verschiebt den CAD-Ausschnitt (wie Hand-Werkzeug). Tippen/Klick wählt eine Klemme aus, Doppelklick ändert den Text.",
     mode_select_tip: "Ziehen spannt ein Auswahlrechteck (Rahmen) auf, um mehrere Klemmen gleichzeitig zu markieren.",
     mode_bridge_tip: "Klick/Tipp auf eine Klemmen-Ebene ordnet sie direkt dem aktiven Potential (+24V, GND ...) für Kamm- & Drahtbrücken zu.",
+
+    end_bracket_heading: "Endhalter (TS 35)",
+    end_bracket_left: "Vor Klemmblock (Links)",
+    end_bracket_right: "Nach Klemmblock (Rechts)",
+    end_bracket_none: "Ohne Endhalter",
+    end_bracket_db_heading: "TS 35 Endhalter-Datenbank (Phoenix Contact, Weidmüller, WAGO)",
 };
 
 pub static EN: Strings = Strings {
@@ -607,6 +620,12 @@ pub static EN: Strings = Strings {
     mode_pan_tip: "Drag to pan/scroll the CAD canvas freely. Single tap/click still selects a terminal; double-click edits text.",
     mode_select_tip: "Drag a selection rectangle (marquee box) around multiple terminals to select and edit them together.",
     mode_bridge_tip: "Click/tap terminal tiers to assign them to the active electrical potential for automatic comb/wire jumper calculation.",
+
+    end_bracket_heading: "End Bracket (TS 35)",
+    end_bracket_left: "Before block (Left)",
+    end_bracket_right: "After block (Right)",
+    end_bracket_none: "No end brackets",
+    end_bracket_db_heading: "TS 35 End Bracket Database (Phoenix Contact, Weidmüller, WAGO)",
 };
 
 pub static FR: Strings = Strings {
@@ -794,6 +813,12 @@ pub static FR: Strings = Strings {
     mode_pan_tip: "Faites glisser pour déplacer la vue CAO. Un clic simple sélectionne une borne ; un double-clic modifie le texte.",
     mode_select_tip: "Tracez un rectangle de sélection autour de plusieurs bornes pour les modifier ensemble.",
     mode_bridge_tip: "Cliquez/touchez un étage pour l'affecter au potentiel actif et calculer les peignes/ponts.",
+
+    end_bracket_heading: "Butée d'arrêt (TS 35)",
+    end_bracket_left: "Avant le bloc (Gauche)",
+    end_bracket_right: "Après le bloc (Droite)",
+    end_bracket_none: "Sans butée d'arrêt",
+    end_bracket_db_heading: "Base de butées d'arrêt TS 35 (Phoenix Contact, Weidmüller, WAGO)",
 };
 
 pub static IT: Strings = Strings {
@@ -981,6 +1006,12 @@ pub static IT: Strings = Strings {
     mode_pan_tip: "Trascina per spostare la vista CAD. Un clic seleziona un morsetto; doppio clic modifica il testo.",
     mode_select_tip: "Trascina un riquadro attorno a più morsetti per selezionarli e modificarli insieme.",
     mode_bridge_tip: "Clicca/tocca i piani per assegnarli al potenziale attivo e calcolare i ponticelli.",
+
+    end_bracket_heading: "Fermo terminale (TS 35)",
+    end_bracket_left: "Prima del blocco (Sinistra)",
+    end_bracket_right: "Dopo il blocco (Destra)",
+    end_bracket_none: "Senza fermo terminale",
+    end_bracket_db_heading: "Catalogo fermi terminali TS 35 (Phoenix Contact, Weidmüller, WAGO)",
 };
 
 pub static ES: Strings = Strings {
@@ -1168,6 +1199,12 @@ pub static ES: Strings = Strings {
     mode_pan_tip: "Arrastra para mover la vista CAD. Un clic selecciona un borne; doble clic edita el texto.",
     mode_select_tip: "Dibuja un recuadro alrededor de varios bornes para seleccionarlos y editarlos juntos.",
     mode_bridge_tip: "Pulsa un nivel del borne para asignarlo al potencial activo y calcular puentes.",
+
+    end_bracket_heading: "Tope final (TS 35)",
+    end_bracket_left: "Antes del bloque (Izquierda)",
+    end_bracket_right: "Después del bloque (Derecha)",
+    end_bracket_none: "Sin tope final",
+    end_bracket_db_heading: "Base de topes finales TS 35 (Phoenix Contact, Weidmüller, WAGO)",
 };
 
 pub static PL: Strings = Strings {
@@ -1355,6 +1392,12 @@ pub static PL: Strings = Strings {
     mode_pan_tip: "Przeciągnij, aby przesuwać widok CAD. Kliknięcie wybiera złączkę, dwuklik edytuje opis.",
     mode_select_tip: "Zaznacz ramką wiele złączek naraz, aby wspólnie zmienić ich typ lub dodać znaki.",
     mode_bridge_tip: "Kliknij poziom złączki, aby przypisać go do aktywnego potencjału i obliczyć mostki.",
+
+    end_bracket_heading: "Trzymacz końcowy (TS 35)",
+    end_bracket_left: "Przed blokiem (Lewo)",
+    end_bracket_right: "Za blokiem (Prawo)",
+    end_bracket_none: "Bez trzymacza",
+    end_bracket_db_heading: "Baza trzymaczy końcowych TS 35 (Phoenix Contact, Weidmüller, WAGO)",
 };
 
 pub static NL: Strings = Strings {
@@ -1542,6 +1585,12 @@ pub static NL: Strings = Strings {
     mode_pan_tip: "Sleep om het CAD-overzicht te verschuiven. Klikken selecteert één klem; dubbelklik bewerkt tekst.",
     mode_select_tip: "Trek een kader rond meerdere klemmen om ze tegelijk te selecteren en aan te passen.",
     mode_bridge_tip: "Klik/tik op klemniveaus om ze aan het actieve potentiaal toe te wijzen voor bruggen.",
+
+    end_bracket_heading: "Eindsteun (TS 35)",
+    end_bracket_left: "Voor klemmenblok (Links)",
+    end_bracket_right: "Na klemmenblok (Rechts)",
+    end_bracket_none: "Zonder eindsteun",
+    end_bracket_db_heading: "TS 35 Eindsteun-database (Phoenix Contact, Weidmüller, WAGO)",
 };
 
 pub fn strings(lang: Language) -> &'static Strings {
