@@ -165,8 +165,8 @@ pub fn show_cad_canvas(
     let tier_height = 56.0 * z;
     let tier_gap = 34.0 * z;
     let block_gap = 3.0 * z;
-    let margin_x = 46.0 * z;
-    let margin_top = 42.0 * z;
+    let margin_x = (46.0 * z).max(38.0);
+    let margin_top = 38.0 + 12.0 * z;
     let footer_height = match state.type_display {
         TypeDisplayMode::Off => 36.0 * z,
         TypeDisplayMode::HorizontalGroups => 74.0 * z,

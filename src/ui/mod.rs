@@ -1673,11 +1673,23 @@ impl TermiGridApp {
 
             ui.separator();
             ui.label(s.zoom_label);
-            ui.add_sized(
-                [80.0, 20.0],
-                egui::Slider::new(&mut self.canvas_state.zoom, 0.4..=2.5).show_value(false),
+            ui.scope(|ui| {
+                ui.spacing_mut().slider_width = 96.0;
+                ui.visuals_mut().widgets.inactive.bg_fill = if ui.visuals().dark_mode {
+                    egui::Color32::from_rgb(51, 65, 85)
+                } else {
+                    egui::Color32::from_rgb(203, 213, 225)
+                };
+                ui.add(
+                    egui::Slider::new(&mut self.canvas_state.zoom, 0.4..=2.5).show_value(false),
+                );
+            });
+            ui.label(
+                egui::RichText::new(format!("{:>3.0}%", self.canvas_state.zoom * 100.0))
+                    .monospace()
+                    .strong(),
             );
-            if ui.button(s.btn_fit_zoom).clicked() {
+            if ui.button(format!("↺ {}", s.btn_fit_zoom)).clicked() {
                 self.canvas_state.zoom = 1.0;
             }
 
