@@ -18,7 +18,9 @@ use crate::catalog::accessories::{
     calculate_end_plates, end_plate_width_tenths_mm, find_end_bracket,
 };
 use crate::catalog::TerminalCatalog;
-use crate::export::{csv::export_to_csv, xlsx::export_to_xlsx, ExportOptions, PrintOrder};
+use crate::export::{
+    csv::export_to_csv, dxf::export_to_dxf, xlsx::export_to_xlsx, ExportOptions, PrintOrder,
+};
 use crate::i18n::{strings, Language};
 use crate::model::bridging::{
     calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
@@ -36,9 +38,12 @@ use crate::ui::new_strip_modal::{
     show_end_bracket_picker, show_new_strip_modal, show_spec_picker, NewStripDialogState,
 };
 use crate::ui::platform_io::{
-    pick_export_csv_path, pick_export_xlsx_path, pick_open_project_path, pick_save_project_path,
+    pick_export_csv_path, pick_export_dxf_path, pick_export_xlsx_path, pick_open_project_path,
+    pick_save_project_path,
 };
-use crate::ui::product_media::{show_product_preview_card, ProductMediaCache};
+use crate::ui::product_media::{
+    show_end_bracket_preview_card, show_product_preview_card, ProductMediaCache,
+};
 use crate::ui::theme::{
     apply_theme_mode, danger_button, install_system_fonts, primary_button, secondary_text_color,
     success_button, ThemeMode,
@@ -67,6 +72,7 @@ pub struct TermiGridApp {
     project: Project,
     active_strip: usize,
     selected_blocks: BTreeSet<usize>,
+    selected_end_bracket: Option<bool>,
     canvas_state: CadCanvasState,
     new_strip_modal: NewStripDialogState,
 
@@ -135,6 +141,7 @@ impl TermiGridApp {
             project,
             active_strip: 0,
             selected_blocks: BTreeSet::new(),
+            selected_end_bracket: None,
             canvas_state: CadCanvasState::new(),
             new_strip_modal: NewStripDialogState::default(),
             inspector_mfg_filter: None,
@@ -178,6 +185,7 @@ impl TermiGridApp {
                 .active_strip
                 .min(self.project.strips.len().saturating_sub(1));
             self.selected_blocks.clear();
+            self.selected_end_bracket = None;
         }
     }
 
@@ -191,6 +199,7 @@ impl TermiGridApp {
                 .active_strip
                 .min(self.project.strips.len().saturating_sub(1));
             self.selected_blocks.clear();
+            self.selected_end_bracket = None;
         }
     }
 
@@ -235,6 +244,7 @@ impl TermiGridApp {
                         self.last_snapshot = self.project.clone();
                         self.active_strip = 0;
                         self.selected_blocks.clear();
+                        self.selected_end_bracket = None;
                         self.current_file = Some(path.clone());
                         self.show_welcome = false;
                         self.active_tab = ActiveTab::Editor;
@@ -289,6 +299,30 @@ impl TermiGridApp {
                 Ok(count) => {
                     self.status_message =
                         format!("{}: {} ({} {})", s.status_exported, path.display(), count, s.labels_unit);
+                }
+                Err(e) => {
+                    self.status_message = format!("{}: {e}", s.status_error);
+                }
+            }
+        }
+    }
+
+    fn export_dxf(&mut self) {
+        let s = strings(self.lang);
+        let default_name = format!(
+            "{}_eplan_aufbaubild.dxf",
+            sanitize_filename(&self.project.project_name)
+        );
+        if let Some(path) = pick_export_dxf_path(&default_name) {
+            match export_to_dxf(&path, &self.project, &self.catalog) {
+                Ok(strip_count) => {
+                    self.status_message = format!(
+                        "{}: {} ({} {}, 1:1 mm)",
+                        s.status_exported,
+                        path.display(),
+                        strip_count,
+                        s.strips_heading
+                    );
                 }
                 Err(e) => {
                     self.status_message = format!("{}: {e}", s.status_error);
@@ -428,6 +462,7 @@ impl eframe::App for TermiGridApp {
                     self.current_file = None;
                     self.active_strip = 0;
                     self.selected_blocks.clear();
+                    self.selected_end_bracket = None;
                     self.show_welcome = true;
                     self.active_tab = ActiveTab::Editor;
                     self.new_strip_modal.open_for_next_strip(0);
@@ -463,6 +498,15 @@ impl eframe::App for TermiGridApp {
                 }
                 if ui.button(s.menu_export_csv).clicked() {
                     self.export_csv();
+                }
+                if ui
+                    .button(s.menu_export_dxf)
+                    .on_hover_text(
+                        "Exportiert alle Klemmleisten maßstabsgetreu (1:1 mm) als eine DXF-Datei für EPLAN Electric P8.",
+                    )
+                    .clicked()
+                {
+                    self.export_dxf();
                 }
 
                 ui.separator();
@@ -572,12 +616,14 @@ impl eframe::App for TermiGridApp {
             &mut self.new_strip_modal,
             &self.catalog,
             &self.logos,
+            &self.product_media,
             s,
             self.lang,
         ) {
             self.project.strips.push(new_strip);
             self.active_strip = self.project.strips.len().saturating_sub(1);
             self.selected_blocks.clear();
+            self.selected_end_bracket = None;
             self.show_welcome = false;
             self.active_tab = ActiveTab::Editor;
         }
@@ -683,6 +729,7 @@ impl TermiGridApp {
                                     self.current_file = None;
                                     self.active_strip = 0;
                                     self.selected_blocks.clear();
+                                    self.selected_end_bracket = None;
                                     self.new_strip_modal.open_for_next_strip(0);
                                 }
                                 if success_button(ui, s.welcome_load_project).clicked() {
@@ -697,6 +744,7 @@ impl TermiGridApp {
                                 self.project = create_demo_project(&self.catalog);
                                 self.active_strip = 0;
                                 self.selected_blocks.clear();
+                                self.selected_end_bracket = None;
                                 self.show_welcome = false;
                             }
                         });
@@ -719,7 +767,9 @@ impl TermiGridApp {
                 ui.horizontal_wrapped(|ui| {
                     ui.selectable_value(&mut self.mobile_pane, MobilePane::Strips, s.strips_heading);
                     ui.selectable_value(&mut self.mobile_pane, MobilePane::Cad, s.tab_editor);
-                    let insp_label = if self.selected_blocks.is_empty() {
+                    let insp_label = if self.selected_end_bracket.is_some() {
+                        format!("{} (EH)", s.inspector_title)
+                    } else if self.selected_blocks.is_empty() {
                         s.inspector_title.to_string()
                     } else {
                         format!("{} ({})", s.inspector_title, self.selected_blocks.len())
@@ -799,6 +849,7 @@ impl TermiGridApp {
                 if resp.clicked() {
                     self.active_strip = idx;
                     self.selected_blocks.clear();
+                    self.selected_end_bracket = None;
                     self.mobile_pane = MobilePane::Cad;
                 }
                 if is_active && !strip.description.is_empty() {
@@ -824,713 +875,777 @@ impl TermiGridApp {
                 self.active_strip = self.project.strips.len().saturating_sub(1);
             }
             self.selected_blocks.clear();
+            self.selected_end_bracket = None;
         }
     }
 
     fn show_inspector_contents(&mut self, ui: &mut egui::Ui) {
         let s = strings(self.lang);
+        let sec = secondary_text_color(ui);
         egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.add_space(4.0);
-                    ui.heading(s.inspector_title);
-                    ui.separator();
+            ui.add_space(4.0);
+            ui.heading(s.inspector_title);
+            ui.separator();
 
-                    let has_strip = self.active_strip < self.project.strips.len();
-                    if has_strip {
-                        {
-                            let strip = &mut self.project.strips[self.active_strip];
-                            ui.group(|ui| {
-                                show_end_bracket_picker(
-                                    ui,
-                                    &self.logos,
-                                    &mut strip.end_bracket_id,
-                                    &mut strip.end_bracket_left,
-                                    &mut strip.end_bracket_right,
-                                    s,
-                                    self.lang,
-                                    "inspector_end_bracket",
-                                );
-                            });
-                            ui.add_space(6.0);
+            let has_strip = self.active_strip < self.project.strips.len();
+            if !has_strip {
+                ui.label(egui::RichText::new(s.cad_empty_hint).color(sec));
+            } else if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+                // Bridge Mode / Potentials & Calculated Jumper BOM + Virtual Pin Preview
+                // (Only shown while Bridge Mode is active; hidden in SelectBox / Pan modes.)
+                ui.label(egui::RichText::new(s.bridge_heading).strong());
+                ui.label(egui::RichText::new(s.bridge_assign_hint).color(sec).small());
+                ui.add_space(4.0);
+
+                let bridge_plan = {
+                    let strip = &mut self.project.strips[self.active_strip];
+                    ui.horizontal_wrapped(|ui| {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.new_potential_name)
+                                .hint_text(s.bridge_new_potential)
+                                .desired_width(120.0),
+                        );
+                        if success_button(ui, s.bridge_add_btn).clicked() {
+                            let name = if self.new_potential_name.trim().is_empty() {
+                                format!("P{}", strip.potentials.len() + 1)
+                            } else {
+                                self.new_potential_name.trim().to_string()
+                            };
+                            let rgb = POTENTIAL_PALETTE
+                                [strip.potentials.len() % POTENTIAL_PALETTE.len()];
+                            let id = strip.add_potential(name, rgb);
+                            self.active_potential_id = Some(id);
+                            self.canvas_state.interaction_mode =
+                                CanvasInteractionMode::BridgeAssign;
                         }
+                    });
 
-                        // Sync "Reassign type" manufacturer + type picker when canvas selection changes
-                        if let Some(&first_idx) = self.selected_blocks.iter().next()
-                            && let Some(block) = self.project.strips[self.active_strip].blocks.get(first_idx)
-                        {
-                            let sync_key = (self.active_strip, first_idx, block.spec_id.clone());
-                            if self.last_selection_sync.as_ref() != Some(&sync_key) {
-                                self.inspector_mfg_filter = Some(block.manufacturer.clone());
-                                self.inspector_spec_id = block.spec_id.clone();
-                                self.inspector_search.clear();
-                                self.last_selection_sync = Some(sync_key);
-                            }
-                        } else {
-                            self.last_selection_sync = None;
-                        }
+                    if let Some(active_id) = self.active_potential_id
+                        && !strip.potentials.iter().any(|p| p.id == active_id)
+                    {
+                        self.active_potential_id = strip.potentials.first().map(|p| p.id);
+                    }
 
-                        // Selection & Mixed-strip reassignment
-                        if self.selected_blocks.is_empty() {
-                            ui.label(
-                                egui::RichText::new(s.no_selection_hint)
-                                    .color(secondary_text_color(ui)),
+                    let mut del_pot: Option<u64> = None;
+                    for pot in &strip.potentials {
+                        let is_active = self.active_potential_id == Some(pot.id);
+                        let col = egui::Color32::from_rgb(
+                            pot.color_rgb[0],
+                            pot.color_rgb[1],
+                            pot.color_rgb[2],
+                        );
+                        ui.horizontal(|ui| {
+                            let (dot_r, _) = ui.allocate_exact_size(
+                                egui::Vec2::splat(12.0),
+                                egui::Sense::hover(),
                             );
-                        } else {
+                            ui.painter().circle_filled(dot_r.center(), 5.5, col);
+                            if ui
+                                .selectable_label(
+                                    is_active,
+                                    format!("{} ({})", pot.name, pot.members.len()),
+                                )
+                                .clicked()
+                            {
+                                self.active_potential_id = Some(pot.id);
+                                self.canvas_state.interaction_mode =
+                                    CanvasInteractionMode::BridgeAssign;
+                            }
+                            if ui.small_button("×").clicked() {
+                                del_pot = Some(pot.id);
+                            }
+                        });
+                    }
+                    if let Some(pid) = del_pot {
+                        strip.remove_potential(pid);
+                        if self.active_potential_id == Some(pid) {
+                            self.active_potential_id = strip.potentials.first().map(|p| p.id);
+                        }
+                    }
+
+                    if !self.selected_blocks.is_empty()
+                        && let Some(active_id) = self.active_potential_id
+                        && ui.button(s.bridge_assign_selected).clicked()
+                    {
+                        for &b_idx in &self.selected_blocks {
+                            strip.toggle_potential_member(active_id, b_idx, 0);
+                        }
+                    }
+
+                    calculate_bridges(strip, &self.catalog)
+                };
+
+                if !bridge_plan.comb_segments.is_empty()
+                    || !bridge_plan.wire_bridges.is_empty()
+                {
+                    ui.add_space(4.0);
+                    ui.group(|ui| {
+                        ui.label(egui::RichText::new(s.bridge_bom_heading).strong());
+                        for seg in &bridge_plan.comb_segments {
+                            let col = egui::Color32::from_rgb(
+                                seg.color_rgb[0],
+                                seg.color_rgb[1],
+                                seg.color_rgb[2],
+                            );
+                            ui.horizontal_wrapped(|ui| {
+                                ui.label(
+                                    egui::RichText::new(&seg.potential_name)
+                                        .color(col)
+                                        .strong(),
+                                );
+                                let row_name = if seg.visual_row < 0 {
+                                    "PE".to_string()
+                                } else {
+                                    format!("E{}", seg.visual_row + 1)
+                                };
+                                ui.label(format!(
+                                    "{} [{row_name}: #{}..#{}] (K{})",
+                                    seg.part_hint,
+                                    seg.start_block_idx + 1,
+                                    seg.end_block_idx + 1,
+                                    seg.channel_slot + 1
+                                ));
+                            });
+                            if !seg.cut_pins.is_empty() {
+                                let pins: Vec<String> =
+                                    seg.cut_pins.iter().map(|i| format!("#{}", i + 1)).collect();
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "  {}: {}",
+                                        s.bridge_cut_pins,
+                                        pins.join(", ")
+                                    ))
+                                    .color(egui::Color32::from_rgb(239, 68, 68))
+                                    .small(),
+                                );
+                            }
+                            draw_virtual_jumper_strip(ui, seg);
+                            if seg.uses_double_chamber_cascade {
+                                ui.label(
+                                    egui::RichText::new(format!("  {}", s.bridge_double_cascade))
+                                        .color(sec)
+                                        .small(),
+                                );
+                            }
+                            ui.add_space(4.0);
+                        }
+                        for wb in &bridge_plan.wire_bridges {
+                            let col = egui::Color32::from_rgb(
+                                wb.color_rgb[0],
+                                wb.color_rgb[1],
+                                wb.color_rgb[2],
+                            );
+                            let reason_str = match wb.reason {
+                                WireBridgeReason::CrossTier => s.bridge_reason_tier,
+                                WireBridgeReason::ExceedsMaxPolesSingleSlot => {
+                                    s.bridge_reason_single_max
+                                }
+                                WireBridgeReason::SingleChannelOccupied => {
+                                    s.bridge_reason_single_occ
+                                }
+                                WireBridgeReason::EndPlateBarrier => s.bridge_reason_end_plate,
+                                WireBridgeReason::IncompatiblePitchOrGap => s.bridge_reason_pitch,
+                            };
+                            ui.horizontal_wrapped(|ui| {
+                                ui.label(
+                                    egui::RichText::new(&wb.potential_name)
+                                        .color(col)
+                                        .strong(),
+                                );
+                                ui.label(format!(
+                                    "{}: #{}:E{} -> #{}:E{} ({})",
+                                    s.bridge_wire_label,
+                                    wb.from.0 + 1,
+                                    wb.from.1 + 1,
+                                    wb.to.0 + 1,
+                                    wb.to.1 + 1,
+                                    reason_str
+                                ));
+                            });
+                        }
+                    });
+                }
+            } else if let Some(is_left) = self.selected_end_bracket {
+                // End Bracket selected on CAD canvas -> show ONLY End Bracket config + preview
+                let side_label = if is_left {
+                    s.end_bracket_left
+                } else {
+                    s.end_bracket_right
+                };
+                ui.label(
+                    egui::RichText::new(format!("{}: {}", s.end_bracket_selected_hint, side_label))
+                        .strong(),
+                );
+                ui.add_space(4.0);
+
+                let (eb_id, keep_selected) = {
+                    let strip = &mut self.project.strips[self.active_strip];
+                    ui.group(|ui| {
+                        show_end_bracket_picker(
+                            ui,
+                            &self.logos,
+                            &mut strip.end_bracket_id,
+                            &mut strip.end_bracket_left,
+                            &mut strip.end_bracket_right,
+                            s,
+                            self.lang,
+                            "inspector_end_bracket",
+                        );
+                    });
+                    let keep = if is_left {
+                        strip.end_bracket_left
+                    } else {
+                        strip.end_bracket_right
+                    };
+                    (strip.end_bracket_id.clone(), keep)
+                };
+                if !keep_selected {
+                    self.selected_end_bracket = None;
+                }
+
+                ui.add_space(6.0);
+                let eb = find_end_bracket(&eb_id);
+                show_end_bracket_preview_card(
+                    ui,
+                    eb,
+                    &self.logos,
+                    &self.product_media,
+                    s.open_product_page,
+                    s.height_label,
+                    self.lang,
+                );
+            } else if !self.selected_blocks.is_empty() {
+                // Terminal Block(s) selected -> show ONLY Terminal Block tools, live preview & accessories
+                if let Some(&first_idx) = self.selected_blocks.iter().next()
+                    && let Some(block) = self.project.strips[self.active_strip].blocks.get(first_idx)
+                {
+                    let sync_key = (self.active_strip, first_idx, block.spec_id.clone());
+                    if self.last_selection_sync.as_ref() != Some(&sync_key) {
+                        self.inspector_mfg_filter = Some(block.manufacturer.clone());
+                        self.inspector_spec_id = block.spec_id.clone();
+                        self.inspector_search.clear();
+                        self.last_selection_sync = Some(sync_key);
+                    }
+                } else {
+                    self.last_selection_sync = None;
+                }
+
+                ui.label(
+                    egui::RichText::new(format!(
+                        "{}: {}",
+                        s.selected_count,
+                        self.selected_blocks.len()
+                    ))
+                    .strong(),
+                );
+                ui.add_space(4.0);
+
+                ui.group(|ui| {
+                    ui.label(egui::RichText::new(s.reassign_heading).strong());
+                    show_spec_picker(
+                        ui,
+                        &self.catalog,
+                        &self.logos,
+                        &mut self.inspector_mfg_filter,
+                        &mut self.inspector_search,
+                        &mut self.inspector_spec_id,
+                        s.filter_manufacturer,
+                        s.default_terminal_type,
+                        s.all_manufacturers,
+                        s.search_hint,
+                        self.lang,
+                    );
+
+                    // Live preview of the selected candidate type BEFORE clicking Apply / Insert
+                    if let Some(candidate_spec) = self.catalog.find_by_id(&self.inspector_spec_id) {
+                        ui.add_space(4.0);
+                        ui.label(
+                            egui::RichText::new(s.preview_before_apply)
+                                .color(sec)
+                                .small(),
+                        );
+                        show_product_preview_card(
+                            ui,
+                            candidate_spec,
+                            &self.logos,
+                            &self.product_media,
+                            s.open_product_page,
+                            s.bridge_chambers_unit,
+                            s.height_label,
+                        );
+                    }
+
+                    ui.add_space(4.0);
+
+                    if primary_button(ui, s.btn_apply_type).clicked()
+                        && let Some(spec) = self.catalog.find_by_id(&self.inspector_spec_id)
+                    {
+                        let indices: Vec<usize> = self.selected_blocks.iter().copied().collect();
+                        self.project.strips[self.active_strip].reassign_blocks(&indices, spec);
+                    }
+
+                    ui.horizontal(|ui| {
+                        if ui.button(s.btn_insert_before).clicked()
+                            && let (Some(&first), Some(spec)) = (
+                                self.selected_blocks.iter().next(),
+                                self.catalog.find_by_id(&self.inspector_spec_id),
+                            )
+                        {
+                            self.project.strips[self.active_strip].insert_blocks(first, 1, spec);
+                            self.selected_blocks.clear();
+                            self.selected_blocks.insert(first);
+                        }
+                        if ui.button(s.btn_insert_after).clicked()
+                            && let (Some(&last), Some(spec)) = (
+                                self.selected_blocks.iter().next_back(),
+                                self.catalog.find_by_id(&self.inspector_spec_id),
+                            )
+                        {
+                            self.project.strips[self.active_strip]
+                                .insert_blocks(last + 1, 1, spec);
+                            self.selected_blocks.clear();
+                            self.selected_blocks.insert(last + 1);
+                        }
+                    });
+
+                    ui.horizontal_wrapped(|ui| {
+                        if ui
+                            .button("◀")
+                            .on_hover_text("Nach links verschieben (Alt+Links)")
+                            .clicked()
+                        {
+                            self.selected_blocks = self.project.strips[self.active_strip]
+                                .move_selected_blocks(&self.selected_blocks, -1);
+                        }
+                        if ui
+                            .button("▶")
+                            .on_hover_text("Nach rechts verschieben (Alt+Rechts)")
+                            .clicked()
+                        {
+                            self.selected_blocks = self.project.strips[self.active_strip]
+                                .move_selected_blocks(&self.selected_blocks, 1);
+                        }
+                        if ui
+                            .button("⧉ Duplizieren")
+                            .on_hover_text("Auswahl klonen (Strg+D)")
+                            .clicked()
+                        {
+                            self.selected_blocks = self.project.strips[self.active_strip]
+                                .duplicate_selected_blocks(&self.selected_blocks);
+                        }
+                        if danger_button(ui, s.btn_delete_selected).clicked() {
+                            let indices: Vec<usize> =
+                                self.selected_blocks.iter().copied().collect();
+                            self.project.strips[self.active_strip].delete_blocks(&indices);
+                            self.selected_blocks.clear();
+                        }
+                    });
+                });
+
+                // Single block fine-tuning (Tier order & custom overrides)
+                if self.selected_blocks.len() == 1 {
+                    let idx = *self.selected_blocks.iter().next().unwrap();
+                    let block_dims = self.project.strips[self.active_strip]
+                        .blocks
+                        .get(idx)
+                        .and_then(|b| self.catalog.find_by_id(&b.spec_id))
+                        .map(|sp| (sp.width_tenths_mm, sp.effective_height_tenths_mm()));
+
+                    let strip = &mut self.project.strips[self.active_strip];
+                    if idx < strip.blocks.len() {
+                        ui.add_space(6.0);
+                        let mut needs_recalc = false;
+                        ui.group(|ui| {
+                            let block = &mut strip.blocks[idx];
                             ui.label(
                                 egui::RichText::new(format!(
-                                    "{}: {}",
-                                    s.selected_count,
-                                    self.selected_blocks.len()
+                                    "{} (#{})",
+                                    s.single_block_details,
+                                    idx + 1
                                 ))
                                 .strong(),
                             );
-                            ui.add_space(4.0);
-
-                            ui.group(|ui| {
-                                ui.label(egui::RichText::new(s.reassign_heading).strong());
-                                show_spec_picker(
-                                    ui,
-                                    &self.catalog,
-                                    &self.logos,
-                                    &mut self.inspector_mfg_filter,
-                                    &mut self.inspector_search,
-                                    &mut self.inspector_spec_id,
-                                    s.filter_manufacturer,
-                                    s.default_terminal_type,
-                                    s.all_manufacturers,
-                                    s.search_hint,
-                                    self.lang,
-                                );
-                                ui.add_space(4.0);
-
-                                if primary_button(ui, s.btn_apply_type).clicked()
-                                    && let Some(spec) =
-                                        self.catalog.find_by_id(&self.inspector_spec_id)
-                                {
-                                    let indices: Vec<usize> =
-                                        self.selected_blocks.iter().copied().collect();
-                                    self.project.strips[self.active_strip]
-                                        .reassign_blocks(&indices, spec);
-                                }
-
-                                ui.horizontal(|ui| {
-                                    if ui.button(s.btn_insert_before).clicked()
-                                        && let (Some(&first), Some(spec)) = (
-                                            self.selected_blocks.iter().next(),
-                                            self.catalog.find_by_id(&self.inspector_spec_id),
-                                        )
-                                    {
-                                        self.project.strips[self.active_strip]
-                                            .insert_blocks(first, 1, spec);
-                                        self.selected_blocks.clear();
-                                        self.selected_blocks.insert(first);
-                                    }
-                                    if ui.button(s.btn_insert_after).clicked()
-                                        && let (Some(&last), Some(spec)) = (
-                                            self.selected_blocks.iter().next_back(),
-                                            self.catalog.find_by_id(&self.inspector_spec_id),
-                                        )
-                                    {
-                                        self.project.strips[self.active_strip]
-                                            .insert_blocks(last + 1, 1, spec);
-                                        self.selected_blocks.clear();
-                                        self.selected_blocks.insert(last + 1);
-                                    }
-                                });
-
-                                ui.horizontal_wrapped(|ui| {
-                                    if ui
-                                        .button("◀")
-                                        .on_hover_text("Nach links verschieben (Alt+Links)")
-                                        .clicked()
-                                    {
-                                        self.selected_blocks = self.project.strips
-                                            [self.active_strip]
-                                            .move_selected_blocks(&self.selected_blocks, -1);
-                                    }
-                                    if ui
-                                        .button("▶")
-                                        .on_hover_text("Nach rechts verschieben (Alt+Rechts)")
-                                        .clicked()
-                                    {
-                                        self.selected_blocks = self.project.strips
-                                            [self.active_strip]
-                                            .move_selected_blocks(&self.selected_blocks, 1);
-                                    }
-                                    if ui
-                                        .button("⧉ Duplizieren")
-                                        .on_hover_text("Auswahl klonen (Strg+D)")
-                                        .clicked()
-                                    {
-                                        self.selected_blocks = self.project.strips
-                                            [self.active_strip]
-                                            .duplicate_selected_blocks(&self.selected_blocks);
-                                    }
-                                    if danger_button(ui, s.btn_delete_selected).clicked() {
-                                        let indices: Vec<usize> =
-                                            self.selected_blocks.iter().copied().collect();
-                                        self.project.strips[self.active_strip]
-                                            .delete_blocks(&indices);
-                                        self.selected_blocks.clear();
-                                    }
-                                });
-                            });
-
-                            // Single block fine-tuning (Tier order & custom overrides)
-                            if self.selected_blocks.len() == 1 {
-                                let idx = *self.selected_blocks.iter().next().unwrap();
-                                let strip = &mut self.project.strips[self.active_strip];
-                                if idx < strip.blocks.len() {
-                                    ui.add_space(6.0);
-                                    let mut needs_recalc = false;
-                                    ui.group(|ui| {
-                                        let block = &mut strip.blocks[idx];
-                                        ui.label(
-                                            egui::RichText::new(format!(
-                                                "{} (#{})",
-                                                s.single_block_details,
-                                                idx + 1
-                                            ))
-                                            .strong(),
-                                        );
-                                        ui.label(format!(
-                                            "{} — {}",
-                                            block.manufacturer, block.spec_name
-                                        ));
-
-                                        if block.tiers.len() > 1 {
-                                            ui.horizontal(|ui| {
-                                                ui.label(s.tier_order_label);
-                                                let before = block.numbering_order;
-                                                ui.selectable_value(
-                                                    &mut block.numbering_order,
-                                                    NumberingOrder::BottomToTop,
-                                                    s.order_bottom_to_top,
-                                                );
-                                                ui.selectable_value(
-                                                    &mut block.numbering_order,
-                                                    NumberingOrder::TopToBottom,
-                                                    s.order_top_to_bottom,
-                                                );
-                                                if block.numbering_order != before {
-                                                    needs_recalc = true;
-                                                }
-                                            });
-                                        }
-
-                                        ui.separator();
-                                        let total_tiers = block.tiers.len();
-                                        for (t_idx, tier) in
-                                            block.tiers.iter_mut().enumerate().rev()
-                                        {
-                                            let tier_title = match (total_tiers, t_idx) {
-                                                (1, 0) => s.tier_lower,
-                                                (2, 0) => s.tier_lower,
-                                                (2, 1) => s.tier_upper,
-                                                (3, 0) => s.tier_lower,
-                                                (3, 1) => s.tier_middle,
-                                                (3, 2) => s.tier_upper,
-                                                _ => s.tier_middle,
-                                            };
-
-                                            ui.horizontal(|ui| {
-                                                ui.label(format!(
-                                                    "{}: [{}]",
-                                                    tier_title, tier.cad_display_label
-                                                ));
-                                            });
-
-                                            let mut text = tier
-                                                .custom_override
-                                                .clone()
-                                                .unwrap_or_default();
-                                            ui.horizontal(|ui| {
-                                                let edit = egui::TextEdit::singleline(&mut text)
-                                                    .hint_text(s.custom_override_hint)
-                                                    .desired_width(150.0);
-                                                if ui.add(edit).changed() {
-                                                    tier.custom_override = if text.is_empty() {
-                                                        None
-                                                    } else {
-                                                        Some(text)
-                                                    };
-                                                    needs_recalc = true;
-                                                }
-                                                if tier.custom_override.is_some()
-                                                    && ui.button(s.btn_reset_override).clicked()
-                                                {
-                                                    tier.custom_override = None;
-                                                    needs_recalc = true;
-                                                }
-                                            });
-                                        }
-                                    });
-                                    if needs_recalc {
-                                        strip.recalculate_labels();
-                                    }
-                                }
-                            }
-
-                            // Batch prefix / suffix / special characters for all selected terminals (collapsible for cleaner UI)
-                            ui.add_space(6.0);
-                            egui::CollapsingHeader::new(s.affix_heading)
-                                .default_open(false)
-                                .show(ui, |ui| {
-                                ui.horizontal(|ui| {
-                                    ui.label(s.affix_prefix);
-                                    ui.add(
-                                        egui::TextEdit::singleline(&mut self.batch_prefix)
-                                            .desired_width(68.0),
-                                    );
-                                });
-                                ui.horizontal_wrapped(|ui| {
-                                    for sym in ["+", "-", "~", "=", "/", ":"] {
-                                        if ui.small_button(sym).clicked() {
-                                            self.batch_prefix = sym.to_string();
-                                        }
-                                    }
-                                });
-                                ui.horizontal(|ui| {
-                                    ui.label(s.affix_suffix);
-                                    ui.add(
-                                        egui::TextEdit::singleline(&mut self.batch_suffix)
-                                            .desired_width(68.0),
-                                    );
-                                });
-                                ui.horizontal_wrapped(|ui| {
-                                    for sym in ["+", "-", "~", ".1", ".2", "*", "Ω", "°"] {
-                                        if ui.small_button(sym).clicked() {
-                                            self.batch_suffix = sym.to_string();
-                                        }
-                                    }
-                                });
-                                ui.horizontal_wrapped(|ui| {
-                                    ui.selectable_value(
-                                        &mut self.batch_target_row,
-                                        None,
-                                        s.affix_target_all,
-                                    );
-                                    ui.selectable_value(&mut self.batch_target_row, Some(0), "E1");
-                                    ui.selectable_value(&mut self.batch_target_row, Some(1), "E2");
-                                    ui.selectable_value(&mut self.batch_target_row, Some(2), "E3");
-                                    ui.selectable_value(
-                                        &mut self.batch_target_row,
-                                        Some(-1),
-                                        "PE",
-                                    );
-                                });
-                                ui.horizontal_wrapped(|ui| {
-                                    if primary_button(ui, s.affix_apply).clicked() {
-                                        let indices: Vec<usize> =
-                                            self.selected_blocks.iter().copied().collect();
-                                        self.project.strips[self.active_strip]
-                                            .apply_affix_to_selection(
-                                                &indices,
-                                                self.batch_target_row,
-                                                &self.batch_prefix,
-                                                &self.batch_suffix,
-                                            );
-                                    }
-                                    if ui.button(s.affix_clear).clicked() {
-                                        self.batch_prefix.clear();
-                                        self.batch_suffix.clear();
-                                        let indices: Vec<usize> =
-                                            self.selected_blocks.iter().copied().collect();
-                                        self.project.strips[self.active_strip]
-                                            .apply_affix_to_selection(
-                                                &indices,
-                                                self.batch_target_row,
-                                                "",
-                                                "",
-                                            );
-                                    }
-                                });
-                            });
-                        }
-                    }
-
-                    // Bridge Mode / Potentials & Calculated Jumper BOM + Virtual Pin Preview
-                    if has_strip {
-                        ui.add_space(6.0);
-                        ui.separator();
-                        let bridge_mode_active =
-                            self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign;
-                        let bridge_open = bridge_mode_active
-                            || !self.project.strips[self.active_strip].potentials.is_empty();
-                        egui::CollapsingHeader::new(s.bridge_heading)
-                            .default_open(bridge_open)
-                            .open(if bridge_mode_active {
-                                Some(true)
-                            } else {
-                                None
-                            })
-                            .show(ui, |ui| {
-                        ui.label(
-                            egui::RichText::new(s.bridge_assign_hint)
-                                .color(secondary_text_color(ui))
-                                .small(),
-                        );
-                        ui.add_space(4.0);
-
-                        let bridge_plan = {
-                            let strip = &mut self.project.strips[self.active_strip];
-                            ui.horizontal_wrapped(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.new_potential_name)
-                                        .hint_text(s.bridge_new_potential)
-                                        .desired_width(120.0),
-                                );
-                                if success_button(ui, s.bridge_add_btn).clicked() {
-                                    let name = if self.new_potential_name.trim().is_empty() {
-                                        format!("P{}", strip.potentials.len() + 1)
-                                    } else {
-                                        self.new_potential_name.trim().to_string()
-                                    };
-                                    let rgb = POTENTIAL_PALETTE
-                                        [strip.potentials.len() % POTENTIAL_PALETTE.len()];
-                                    let id = strip.add_potential(name, rgb);
-                                    self.active_potential_id = Some(id);
-                                    self.canvas_state.interaction_mode =
-                                        CanvasInteractionMode::BridgeAssign;
-                                }
-                            });
-
-                            if let Some(active_id) = self.active_potential_id
-                                && !strip.potentials.iter().any(|p| p.id == active_id)
-                            {
-                                self.active_potential_id =
-                                    strip.potentials.first().map(|p| p.id);
-                            }
-
-                            let mut del_pot: Option<u64> = None;
-                            for pot in &strip.potentials {
-                                let is_active = self.active_potential_id == Some(pot.id);
-                                let col = egui::Color32::from_rgb(
-                                    pot.color_rgb[0],
-                                    pot.color_rgb[1],
-                                    pot.color_rgb[2],
-                                );
-                                ui.horizontal(|ui| {
-                                    let (dot_r, _) = ui.allocate_exact_size(
-                                        egui::Vec2::splat(12.0),
-                                        egui::Sense::hover(),
-                                    );
-                                    ui.painter().circle_filled(dot_r.center(), 5.5, col);
-                                    if ui
-                                        .selectable_label(
-                                            is_active,
-                                            format!("{} ({})", pot.name, pot.members.len()),
-                                        )
-                                        .clicked()
-                                    {
-                                        self.active_potential_id = Some(pot.id);
-                                        self.canvas_state.interaction_mode =
-                                            CanvasInteractionMode::BridgeAssign;
-                                    }
-                                    if ui.small_button("×").clicked() {
-                                        del_pot = Some(pot.id);
-                                    }
-                                });
-                            }
-                            if let Some(pid) = del_pot {
-                                strip.remove_potential(pid);
-                                if self.active_potential_id == Some(pid) {
-                                    self.active_potential_id =
-                                        strip.potentials.first().map(|p| p.id);
-                                }
-                            }
-
-                            if !self.selected_blocks.is_empty()
-                                && let Some(active_id) = self.active_potential_id
-                                && ui.button(s.bridge_assign_selected).clicked()
-                            {
-                                for &b_idx in &self.selected_blocks {
-                                    strip.toggle_potential_member(active_id, b_idx, 0);
-                                }
-                            }
-
-                            calculate_bridges(strip, &self.catalog)
-                        };
-
-                        if !bridge_plan.comb_segments.is_empty()
-                            || !bridge_plan.wire_bridges.is_empty()
-                        {
-                            ui.add_space(4.0);
-                            ui.group(|ui| {
-                                ui.label(egui::RichText::new(s.bridge_bom_heading).strong());
-                                for seg in &bridge_plan.comb_segments {
-                                    let col = egui::Color32::from_rgb(
-                                        seg.color_rgb[0],
-                                        seg.color_rgb[1],
-                                        seg.color_rgb[2],
-                                    );
-                                    ui.horizontal_wrapped(|ui| {
-                                        ui.label(egui::RichText::new(&seg.potential_name).color(col).strong());
-                                        let row_name = if seg.visual_row < 0 {
-                                            "PE".to_string()
-                                        } else {
-                                            format!("E{}", seg.visual_row + 1)
-                                        };
-                                        ui.label(format!(
-                                            "{} [{row_name}: #{}..#{}] (K{})",
-                                            seg.part_hint,
-                                            seg.start_block_idx + 1,
-                                            seg.end_block_idx + 1,
-                                            seg.channel_slot + 1
-                                        ));
-                                    });
-                                    if !seg.cut_pins.is_empty() {
-                                        let pins: Vec<String> =
-                                            seg.cut_pins.iter().map(|i| format!("#{}", i + 1)).collect();
-                                        ui.label(
-                                            egui::RichText::new(format!(
-                                                "  {}: {}",
-                                                s.bridge_cut_pins,
-                                                pins.join(", ")
-                                            ))
-                                            .color(egui::Color32::from_rgb(239, 68, 68))
-                                            .small(),
-                                        );
-                                    }
-                                    draw_virtual_jumper_strip(ui, seg);
-                                    if seg.uses_double_chamber_cascade {
-                                        ui.label(
-                                            egui::RichText::new(format!("  {}", s.bridge_double_cascade))
-                                                .color(secondary_text_color(ui))
-                                                .small(),
-                                        );
-                                    }
-                                    ui.add_space(4.0);
-                                }
-                                for wb in &bridge_plan.wire_bridges {
-                                    let col = egui::Color32::from_rgb(
-                                        wb.color_rgb[0],
-                                        wb.color_rgb[1],
-                                        wb.color_rgb[2],
-                                    );
-                                    let reason_str = match wb.reason {
-                                        WireBridgeReason::CrossTier => s.bridge_reason_tier,
-                                        WireBridgeReason::ExceedsMaxPolesSingleSlot => {
-                                            s.bridge_reason_single_max
-                                        }
-                                        WireBridgeReason::SingleChannelOccupied => {
-                                            s.bridge_reason_single_occ
-                                        }
-                                        WireBridgeReason::EndPlateBarrier => {
-                                            s.bridge_reason_end_plate
-                                        }
-                                        WireBridgeReason::IncompatiblePitchOrGap => {
-                                            s.bridge_reason_pitch
-                                        }
-                                    };
-                                    ui.horizontal_wrapped(|ui| {
-                                        ui.label(egui::RichText::new(&wb.potential_name).color(col).strong());
-                                        ui.label(
-                                            format!(
-                                                "{}: #{}:E{} -> #{}:E{} ({})",
-                                                s.bridge_wire_label,
-                                                wb.from.0 + 1,
-                                                wb.from.1 + 1,
-                                                wb.to.0 + 1,
-                                                wb.to.1 + 1,
-                                                reason_str
-                                            ),
-                                        );
-                                    });
-                                }
-                            });
-                        }
-                        });
-                    }
-
-                    // Product Photo / Profile Preview + Accessories & Automatic End Plates
-                    ui.add_space(10.0);
-                    ui.separator();
-                    ui.label(egui::RichText::new(s.accessories_heading).strong());
-                    ui.add_space(4.0);
-
-                    if has_strip {
-                        let strip = &self.project.strips[self.active_strip];
-                        let eb_count = strip.end_bracket_count();
-                        if eb_count > 0 {
-                            let eb = find_end_bracket(&strip.end_bracket_id);
-                            let mut pos_parts = Vec::new();
-                            if strip.end_bracket_left {
-                                pos_parts.push("#1 ◀".to_string());
-                            }
-                            if strip.end_bracket_right && !strip.blocks.is_empty() {
-                                pos_parts.push(format!("▶ #{}", strip.blocks.len()));
-                            }
-                            ui.group(|ui| {
-                                ui.horizontal_wrapped(|ui| {
-                                    show_logo_badge(ui, &self.logos, eb.manufacturer, 16.0);
-                                    ui.label(
-                                        egui::RichText::new(format!(
-                                            "{}× {} (Art. {}, {:.1} mm)",
-                                            eb_count,
-                                            eb.name,
-                                            eb.article_number,
-                                            strip.end_brackets_width_mm()
-                                        ))
-                                        .small(),
-                                    );
-                                    ui.label(
-                                        egui::RichText::new(format!("[{}]", pos_parts.join(", ")))
-                                            .color(secondary_text_color(ui))
-                                            .small(),
-                                    );
-                                });
-                            });
-                            ui.add_space(4.0);
-                        }
-
-                        let plates = calculate_end_plates(strip, &self.catalog);
-                        if !plates.is_empty() {
-                            let mut plate_groups: BTreeMap<String, (String, u16, Vec<usize>)> =
-                                BTreeMap::new();
-                            for p in &plates {
-                                let entry = plate_groups.entry(p.end_plate.clone()).or_insert_with(
-                                    || (p.manufacturer.clone(), p.width_tenths_mm, Vec::new()),
-                                );
-                                entry.2.push(p.after_block_idx + 1);
-                            }
-                            ui.group(|ui| {
+                            ui.label(format!("{} — {}", block.manufacturer, block.spec_name));
+                            if let Some((w10, h10)) = block_dims {
                                 ui.label(
                                     egui::RichText::new(format!(
-                                        "{} ({})",
-                                        s.acc_end_plate,
-                                        plates.len()
+                                        "{}: {:.1} mm | {}: {:.1} mm",
+                                        s.db_col_width,
+                                        f32::from(w10) / 10.0,
+                                        s.height_label,
+                                        f32::from(h10) / 10.0,
                                     ))
-                                    .strong()
+                                    .color(sec)
                                     .small(),
                                 );
-                                let sec = secondary_text_color(ui);
-                                for (plate_name, (mfg, w10, positions)) in plate_groups {
-                                    let pos_str = positions
-                                        .iter()
-                                        .map(|i| format!("#{i}"))
-                                        .collect::<Vec<_>>()
-                                        .join(", ");
-                                    ui.horizontal_wrapped(|ui| {
-                                        show_logo_badge(ui, &self.logos, &mfg, 16.0);
-                                        ui.label(
-                                            egui::RichText::new(format!(
-                                                "{}× {} ({:.1} mm)",
-                                                positions.len(),
-                                                plate_name,
-                                                f32::from(w10) / 10.0
-                                            ))
-                                            .small(),
-                                        );
-                                        ui.label(
-                                            egui::RichText::new(format!("[{pos_str}]"))
-                                                .color(sec)
-                                                .small(),
-                                        );
-                                    });
-                                }
-                            });
-                            ui.add_space(4.0);
+                            }
+
+                            if block.tiers.len() > 1 {
+                                ui.horizontal(|ui| {
+                                    ui.label(s.tier_order_label);
+                                    let before = block.numbering_order;
+                                    ui.selectable_value(
+                                        &mut block.numbering_order,
+                                        NumberingOrder::BottomToTop,
+                                        s.order_bottom_to_top,
+                                    );
+                                    ui.selectable_value(
+                                        &mut block.numbering_order,
+                                        NumberingOrder::TopToBottom,
+                                        s.order_top_to_bottom,
+                                    );
+                                    if block.numbering_order != before {
+                                        needs_recalc = true;
+                                    }
+                                });
+                            }
+
+                            ui.separator();
+                            let total_tiers = block.tiers.len();
+                            for (t_idx, tier) in block.tiers.iter_mut().enumerate().rev() {
+                                let tier_title = match (total_tiers, t_idx) {
+                                    (1, 0) => s.tier_lower,
+                                    (2, 0) => s.tier_lower,
+                                    (2, 1) => s.tier_upper,
+                                    (3, 0) => s.tier_lower,
+                                    (3, 1) => s.tier_middle,
+                                    (3, 2) => s.tier_upper,
+                                    _ => s.tier_middle,
+                                };
+
+                                ui.horizontal(|ui| {
+                                    ui.label(format!(
+                                        "{}: [{}]",
+                                        tier_title, tier.cad_display_label
+                                    ));
+                                });
+
+                                let mut text =
+                                    tier.custom_override.clone().unwrap_or_default();
+                                ui.horizontal(|ui| {
+                                    let edit = egui::TextEdit::singleline(&mut text)
+                                        .hint_text(s.custom_override_hint)
+                                        .desired_width(150.0);
+                                    if ui.add(edit).changed() {
+                                        tier.custom_override = if text.is_empty() {
+                                            None
+                                        } else {
+                                            Some(text)
+                                        };
+                                        needs_recalc = true;
+                                    }
+                                    if tier.custom_override.is_some()
+                                        && ui.button(s.btn_reset_override).clicked()
+                                    {
+                                        tier.custom_override = None;
+                                        needs_recalc = true;
+                                    }
+                                });
+                            }
+                        });
+                        if needs_recalc {
+                            strip.recalculate_labels();
                         }
                     }
+                }
 
-                    if !has_strip || self.selected_blocks.is_empty() {
-                        ui.label(
-                            egui::RichText::new(s.acc_none_selected)
-                                .color(secondary_text_color(ui)),
-                        );
-                    } else {
-                        let strip = &self.project.strips[self.active_strip];
-                        let mut seen_specs: Vec<(String, usize)> = Vec::new();
-                        for &b_idx in &self.selected_blocks {
-                            if let Some(block) = strip.blocks.get(b_idx) {
-                                if let Some((_, cnt)) =
-                                    seen_specs.iter_mut().find(|(id, _)| id == &block.spec_id)
-                                {
-                                    *cnt += 1;
-                                } else {
-                                    seen_specs.push((block.spec_id.clone(), 1));
+                // Batch prefix / suffix / special characters for all selected terminals
+                ui.add_space(6.0);
+                egui::CollapsingHeader::new(s.affix_heading)
+                    .default_open(false)
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(s.affix_prefix);
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.batch_prefix)
+                                    .desired_width(68.0),
+                            );
+                        });
+                        ui.horizontal_wrapped(|ui| {
+                            for sym in ["+", "-", "~", "=", "/", ":"] {
+                                if ui.small_button(sym).clicked() {
+                                    self.batch_prefix = sym.to_string();
                                 }
                             }
-                        }
-
-                        if let Some((first_spec_id, _)) = seen_specs.first()
-                            && let Some(first_spec) = self.catalog.find_by_id(first_spec_id)
-                        {
-                            show_product_preview_card(
-                                ui,
-                                first_spec,
-                                &self.logos,
-                                &self.product_media,
-                                s.open_product_page,
-                                s.bridge_chambers_unit,
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label(s.affix_suffix);
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.batch_suffix)
+                                    .desired_width(68.0),
                             );
-                            ui.add_space(4.0);
-                        }
+                        });
+                        ui.horizontal_wrapped(|ui| {
+                            for sym in ["+", "-", "~", ".1", ".2", "*", "Ω", "°"] {
+                                if ui.small_button(sym).clicked() {
+                                    self.batch_suffix = sym.to_string();
+                                }
+                            }
+                        });
+                        ui.horizontal_wrapped(|ui| {
+                            ui.selectable_value(
+                                &mut self.batch_target_row,
+                                None,
+                                s.affix_target_all,
+                            );
+                            ui.selectable_value(&mut self.batch_target_row, Some(0), "E1");
+                            ui.selectable_value(&mut self.batch_target_row, Some(1), "E2");
+                            ui.selectable_value(&mut self.batch_target_row, Some(2), "E3");
+                            ui.selectable_value(&mut self.batch_target_row, Some(-1), "PE");
+                        });
+                        ui.horizontal_wrapped(|ui| {
+                            if primary_button(ui, s.affix_apply).clicked() {
+                                let indices: Vec<usize> =
+                                    self.selected_blocks.iter().copied().collect();
+                                self.project.strips[self.active_strip]
+                                    .apply_affix_to_selection(
+                                        &indices,
+                                        self.batch_target_row,
+                                        &self.batch_prefix,
+                                        &self.batch_suffix,
+                                    );
+                            }
+                            if ui.button(s.affix_clear).clicked() {
+                                self.batch_prefix.clear();
+                                self.batch_suffix.clear();
+                                let indices: Vec<usize> =
+                                    self.selected_blocks.iter().copied().collect();
+                                self.project.strips[self.active_strip]
+                                    .apply_affix_to_selection(
+                                        &indices,
+                                        self.batch_target_row,
+                                        "",
+                                        "",
+                                    );
+                            }
+                        });
+                    });
 
-                        for (spec_id, count) in seen_specs {
-                            if let Some(spec) = self.catalog.find_by_id(&spec_id) {
-                                let acc = self.catalog.accessories_for(spec);
-                                ui.group(|ui| {
-                                    ui.horizontal_wrapped(|ui| {
-                                        show_logo_badge(ui, &self.logos, &spec.manufacturer, 18.0);
+                // Terminal Accessories & Automatic End Plates
+                ui.add_space(10.0);
+                ui.separator();
+                ui.label(egui::RichText::new(s.accessories_heading).strong());
+                ui.add_space(4.0);
+
+                let strip = &self.project.strips[self.active_strip];
+                let plates = calculate_end_plates(strip, &self.catalog);
+                if !plates.is_empty() {
+                    let mut plate_groups: BTreeMap<String, (String, u16, Vec<usize>)> =
+                        BTreeMap::new();
+                    for p in &plates {
+                        let entry = plate_groups
+                            .entry(p.end_plate.clone())
+                            .or_insert_with(|| {
+                                (p.manufacturer.clone(), p.width_tenths_mm, Vec::new())
+                            });
+                        entry.2.push(p.after_block_idx + 1);
+                    }
+                    ui.group(|ui| {
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "{} ({})",
+                                s.acc_end_plate,
+                                plates.len()
+                            ))
+                            .strong()
+                            .small(),
+                        );
+                        for (plate_name, (mfg, w10, positions)) in plate_groups {
+                            let pos_str = positions
+                                .iter()
+                                .map(|i| format!("#{i}"))
+                                .collect::<Vec<_>>()
+                                .join(", ");
+                            ui.horizontal_wrapped(|ui| {
+                                show_logo_badge(ui, &self.logos, &mfg, 16.0);
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "{}× {} ({:.1} mm)",
+                                        positions.len(),
+                                        plate_name,
+                                        f32::from(w10) / 10.0
+                                    ))
+                                    .small(),
+                                );
+                                ui.label(
+                                    egui::RichText::new(format!("[{pos_str}]"))
+                                        .color(sec)
+                                        .small(),
+                                );
+                            });
+                        }
+                    });
+                    ui.add_space(4.0);
+                }
+
+                let mut seen_specs: Vec<(String, usize)> = Vec::new();
+                for &b_idx in &self.selected_blocks {
+                    if let Some(block) = strip.blocks.get(b_idx) {
+                        if let Some((_, cnt)) =
+                            seen_specs.iter_mut().find(|(id, _)| id == &block.spec_id)
+                        {
+                            *cnt += 1;
+                        } else {
+                            seen_specs.push((block.spec_id.clone(), 1));
+                        }
+                    }
+                }
+
+                for (spec_id, count) in seen_specs {
+                    if let Some(spec) = self.catalog.find_by_id(&spec_id) {
+                        let acc = self.catalog.accessories_for(spec);
+                        ui.group(|ui| {
+                            ui.horizontal_wrapped(|ui| {
+                                show_logo_badge(ui, &self.logos, &spec.manufacturer, 18.0);
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "{count}× {} ({:.1} × {}: {:.1} mm)",
+                                        spec.name,
+                                        f32::from(spec.width_tenths_mm) / 10.0,
+                                        s.height_label,
+                                        f32::from(spec.effective_height_tenths_mm()) / 10.0,
+                                    ))
+                                    .strong(),
+                                );
+                            });
+                            ui.add_space(4.0);
+                            egui::Grid::new(format!("acc_grid_{spec_id}"))
+                                .num_columns(2)
+                                .spacing([10.0, 5.0])
+                                .show(ui, |ui| {
+                                    ui.label(egui::RichText::new(s.acc_end_plate).color(sec));
+                                    let pw = end_plate_width_tenths_mm(spec);
+                                    if pw > 0 {
                                         ui.label(
                                             egui::RichText::new(format!(
-                                                "{count}× {}",
-                                                spec.name
+                                                "{} ({:.1} mm)",
+                                                acc.end_plate,
+                                                f32::from(pw) / 10.0
                                             ))
                                             .strong(),
                                         );
-                                    });
-                                    ui.add_space(4.0);
-                                    let sec = secondary_text_color(ui);
-                                    egui::Grid::new(format!("acc_grid_{spec_id}"))
-                                        .num_columns(2)
-                                        .spacing([10.0, 5.0])
-                                        .show(ui, |ui| {
-                                            ui.label(egui::RichText::new(s.acc_end_plate).color(sec));
-                                            let pw = end_plate_width_tenths_mm(spec);
-                                            if pw > 0 {
-                                                ui.label(
-                                                    egui::RichText::new(format!(
-                                                        "{} ({:.1} mm)",
-                                                        acc.end_plate,
-                                                        f32::from(pw) / 10.0
-                                                    ))
-                                                    .strong(),
-                                                );
-                                            } else {
-                                                ui.label(egui::RichText::new(&acc.end_plate).strong());
-                                            }
-                                            ui.end_row();
+                                    } else {
+                                        ui.label(egui::RichText::new(&acc.end_plate).strong());
+                                    }
+                                    ui.end_row();
 
-                                            ui.label(egui::RichText::new(s.acc_jumpers).color(sec));
-                                            ui.label(&acc.jumpers);
-                                            ui.end_row();
+                                    ui.label(egui::RichText::new(s.acc_jumpers).color(sec));
+                                    ui.label(&acc.jumpers);
+                                    ui.end_row();
 
-                                            ui.label(egui::RichText::new(s.acc_markers).color(sec));
-                                            ui.label(&acc.markers);
-                                            ui.end_row();
+                                    ui.label(egui::RichText::new(s.acc_markers).color(sec));
+                                    ui.label(&acc.markers);
+                                    ui.end_row();
 
-                                            ui.label(egui::RichText::new(s.acc_end_bracket).color(sec));
-                                            ui.label(&acc.end_bracket);
-                                            ui.end_row();
+                                    ui.label(egui::RichText::new(s.acc_end_bracket).color(sec));
+                                    ui.label(&acc.end_bracket);
+                                    ui.end_row();
 
-                                            if let Some(extra) = &acc.extra {
-                                                ui.label(egui::RichText::new(s.acc_extra).color(sec));
-                                                ui.label(extra);
-                                                ui.end_row();
-                                            }
-                                        });
+                                    if let Some(extra) = &acc.extra {
+                                        ui.label(egui::RichText::new(s.acc_extra).color(sec));
+                                        ui.label(extra);
+                                        ui.end_row();
+                                    }
                                 });
-                            }
-                        }
+                        });
                     }
+                }
+            } else {
+                // Nothing selected in SelectBox / Pan mode
+                self.last_selection_sync = None;
+                ui.label(egui::RichText::new(s.no_selection_hint).color(sec));
+                ui.add_space(6.0);
 
-                    ui.add_space(6.0);
-                    ui.separator();
-                    egui::CollapsingHeader::new(s.export_settings_heading)
-                        .default_open(false)
-                        .show(ui, |ui| {
+                let (eb_id, has_eb) = {
+                    let strip = &mut self.project.strips[self.active_strip];
+                    ui.group(|ui| {
+                        show_end_bracket_picker(
+                            ui,
+                            &self.logos,
+                            &mut strip.end_bracket_id,
+                            &mut strip.end_bracket_left,
+                            &mut strip.end_bracket_right,
+                            s,
+                            self.lang,
+                            "inspector_end_bracket",
+                        );
+                    });
+                    (strip.end_bracket_id.clone(), strip.end_bracket_count() > 0)
+                };
+                if has_eb {
+                    ui.add_space(4.0);
+                    let eb = find_end_bracket(&eb_id);
+                    show_end_bracket_preview_card(
+                        ui,
+                        eb,
+                        &self.logos,
+                        &self.product_media,
+                        s.open_product_page,
+                        s.height_label,
+                        self.lang,
+                    );
+                }
+
+                ui.add_space(6.0);
+                let strip = &self.project.strips[self.active_strip];
+                let plates = calculate_end_plates(strip, &self.catalog);
+                if !plates.is_empty() {
+                    let mut plate_groups: BTreeMap<String, (String, u16, Vec<usize>)> =
+                        BTreeMap::new();
+                    for p in &plates {
+                        let entry = plate_groups
+                            .entry(p.end_plate.clone())
+                            .or_insert_with(|| {
+                                (p.manufacturer.clone(), p.width_tenths_mm, Vec::new())
+                            });
+                        entry.2.push(p.after_block_idx + 1);
+                    }
+                    ui.group(|ui| {
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "{} ({})",
+                                s.acc_end_plate,
+                                plates.len()
+                            ))
+                            .strong()
+                            .small(),
+                        );
+                        for (plate_name, (mfg, w10, positions)) in plate_groups {
+                            let pos_str = positions
+                                .iter()
+                                .map(|i| format!("#{i}"))
+                                .collect::<Vec<_>>()
+                                .join(", ");
+                            ui.horizontal_wrapped(|ui| {
+                                show_logo_badge(ui, &self.logos, &mfg, 16.0);
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "{}× {} ({:.1} mm)",
+                                        positions.len(),
+                                        plate_name,
+                                        f32::from(w10) / 10.0
+                                    ))
+                                    .small(),
+                                );
+                                ui.label(
+                                    egui::RichText::new(format!("[{pos_str}]"))
+                                        .color(sec)
+                                        .small(),
+                                );
+                            });
+                        }
+                    });
+                    ui.add_space(4.0);
+                }
+
+                ui.label(egui::RichText::new(s.acc_none_selected).color(sec));
+            }
+
+            ui.add_space(6.0);
+            ui.separator();
+            egui::CollapsingHeader::new(s.export_settings_heading)
+                .default_open(false)
+                .show(ui, |ui| {
                     ui.label(s.print_order_label);
                     let order_text = match self.export_options.print_order {
                         PrintOrder::ByBlockBottomToTop => s.print_order_block_btt,
@@ -1566,7 +1681,7 @@ impl TermiGridApp {
                         &mut self.export_options.all_strips,
                         s.export_all_strips_checkbox,
                     );
-                    });
+                });
         });
     }
 
@@ -1582,6 +1697,7 @@ impl TermiGridApp {
         // Strip action toolbar
         let mut recalc_needed = false;
         let mut append_spec_id: Option<String> = None;
+        let mut trigger_dxf_export = false;
 
         ui.horizontal_wrapped(|ui| {
             // CAD Tool Switcher: Pan/Tap (mobile only) vs Box Select vs Bridge Mode
@@ -1607,6 +1723,7 @@ impl TermiGridApp {
                 .on_hover_text(s.mode_bridge_tip)
                 .clicked()
             {
+                self.selected_end_bracket = None;
                 let strip = &mut self.project.strips[self.active_strip];
                 if strip.potentials.is_empty() {
                     let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
@@ -1696,9 +1813,11 @@ impl TermiGridApp {
             ui.separator();
             if ui.button(s.btn_select_all).clicked() {
                 self.selected_blocks = (0..strip.blocks.len()).collect();
+                self.selected_end_bracket = None;
             }
             if ui.button(s.btn_clear_selection).clicked() {
                 self.selected_blocks.clear();
+                self.selected_end_bracket = None;
             }
 
             ui.separator();
@@ -1732,6 +1851,31 @@ impl TermiGridApp {
                         s.type_display_off,
                     );
                 });
+
+            ui.separator();
+            let eplaner_btn = egui::Button::new(s.mode_eplaner)
+                .selected(self.canvas_state.e_planer_mode);
+            if ui
+                .add(eplaner_btn)
+                .on_hover_text(s.mode_eplaner_tip)
+                .clicked()
+            {
+                self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
+                if self.canvas_state.e_planer_mode
+                    && self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign
+                {
+                    self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
+                }
+            }
+            if self.canvas_state.e_planer_mode
+                && primary_button(ui, s.menu_export_dxf)
+                    .on_hover_text(
+                        "Exportiert alle Klemmleisten maßstabsgetreu (1:1 mm) als eine DXF-Datei für EPLAN Electric P8.",
+                    )
+                    .clicked()
+            {
+                trigger_dxf_export = true;
+            }
         });
 
         if recalc_needed {
@@ -1741,6 +1885,9 @@ impl TermiGridApp {
             && let Some(spec) = self.catalog.find_by_id(&spec_id)
         {
             self.project.strips[self.active_strip].append_blocks(1, spec);
+        }
+        if trigger_dxf_export {
+            self.export_dxf();
         }
 
         // Inline Potential Quick-Bar directly inside CAD workspace when Bridge Mode is active
@@ -1828,7 +1975,9 @@ impl TermiGridApp {
         show_cad_canvas(
             ui,
             strip,
+            &self.catalog,
             &mut self.selected_blocks,
+            &mut self.selected_end_bracket,
             &mut self.canvas_state,
             s,
             bridge_plan.as_ref(),

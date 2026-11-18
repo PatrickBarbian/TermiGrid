@@ -280,3 +280,54 @@ fn xlsx_export_succeeds_with_0_1_and_2_end_brackets() {
     }
 }
 
+#[test]
+fn dxf_export_writes_single_true_scale_eplan_file_for_all_strips() {
+    use termigrid_core::export::dxf::{export_to_dxf, export_to_dxf_string, strip_envelope_mm};
+
+    let catalog = TerminalCatalog::load_embedded();
+    let single = catalog.find_by_id("wago-2002-1201").unwrap(); // 5.2 x 48.5 mm
+    let double = catalog.find_by_id("wago-2002-2201").unwrap(); // 5.2 x 69.7 mm
+    let install = catalog.find_by_id("wago-2003-7641").unwrap(); // 5.2 x 96.0 mm
+
+    let mut x1 = TerminalStrip::generate_with_block_count("-X1", 1, 3, 3, single);
+    x1.reassign_blocks(&[1], double);
+    x1.reassign_blocks(&[2], install);
+    let x2 = TerminalStrip::generate_with_block_count("-X2", 1, 2, 2, single);
+
+    let project = Project {
+        format_version: 1,
+        project_name: "EplanTest".to_string(),
+        strips: vec![x1.clone(), x2],
+        ..Default::default()
+    };
+
+    let dxf = export_to_dxf_string(&project, &catalog);
+    // Strict AutoCAD R12 (AC1009) metric millimeters
+    assert!(dxf.contains("AC1009"));
+    assert!(dxf.contains("$INSUNITS\n 70\n4"));
+    assert!(dxf.contains("$MEASUREMENT\n 70\n1"));
+    // Both strips present in the single DXF file
+    assert!(dxf.contains("-X1"));
+    assert!(dxf.contains("-X2"));
+    assert!(dxf.contains("TS 35"));
+    // Strictly LINE and TEXT entities (no SOLID hatches that break EPLAN P8 import)
+    assert!(dxf.contains("\nLINE\n"));
+    assert!(dxf.contains("\nTEXT\n"));
+    assert!(!dxf.contains("\nSOLID\n"));
+    assert!(!dxf.contains("\nHATCH\n"));
+    assert!(!dxf.contains("\nLWPOLYLINE\n"));
+
+    // Envelope reflects tallest front-view block height (96.0 mm)
+    let (env_w, env_h) = strip_envelope_mm(&x1, &catalog);
+    assert!((env_h - 96.0).abs() < 0.05, "expected 96.0 mm height, got {env_h}");
+    assert!(env_w > 25.0);
+
+    let out_path = std::env::temp_dir().join("termigrid_eplan_test.dxf");
+    let _ = std::fs::remove_file(&out_path);
+    let count = export_to_dxf(&out_path, &project, &catalog).unwrap();
+    assert_eq!(count, 2);
+    assert!(out_path.exists());
+    let _ = std::fs::remove_file(&out_path);
+}
+
+

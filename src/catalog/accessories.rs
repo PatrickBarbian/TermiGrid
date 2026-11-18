@@ -832,9 +832,12 @@ pub struct EndBracketSpec {
     pub article_number: &'static str,
     /// Physical width on the DIN rail in tenths of a millimeter (e.g. `52` = `5.2 mm`).
     pub width_tenths_mm: u16,
+    /// Front-view vertical height across the TS 35 DIN rail in tenths of a millimeter (e.g. `486` = `48.6 mm`).
+    pub height_tenths_mm: u16,
     pub mounting_de: &'static str,
     pub mounting_en: &'static str,
     pub product_url: &'static str,
+    pub image_url: Option<&'static str>,
 }
 
 /// Default DIN-rail end bracket ID (`Phoenix Contact CLIPFIX 35-5`).
@@ -849,9 +852,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "CLIPFIX 35-5",
         article_number: "3022276",
         width_tenths_mm: 52,
+        height_tenths_mm: 486,
         mounting_de: "Rastbar / schraubenlos (NS 35/7,5 & NS 35/15)",
         mounting_en: "Snap-on screwless (NS 35/7.5 & NS 35/15)",
         product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-clipfix-35-5-3022276",
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/202056/full/b408?format=jpg"),
     },
     EndBracketSpec {
         id: "phoenix-clipfix-35-5-v0",
@@ -859,9 +864,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "CLIPFIX 35-5 V0",
         article_number: "3032350",
         width_tenths_mm: 52,
+        height_tenths_mm: 485,
         mounting_de: "Rastbar / schraubenlos UL 94 V0 (NS 35)",
         mounting_en: "Snap-on screwless UL 94 V0 (NS 35)",
         product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-clipfix-35-5-v0-3032350",
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/202056/full/b408?format=jpg"),
     },
     EndBracketSpec {
         id: "phoenix-clipfix-35",
@@ -869,9 +876,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "CLIPFIX 35",
         article_number: "3022218",
         width_tenths_mm: 95,
+        height_tenths_mm: 556,
         mounting_de: "Rastbar / schraubenlos (NS 35/7,5 & NS 35/15)",
         mounting_en: "Snap-on screwless (NS 35/7.5 & NS 35/15)",
         product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-clipfix-35-3022218",
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/11646/full/b408?format=jpg"),
     },
     EndBracketSpec {
         id: "phoenix-e-ns-35-n",
@@ -879,9 +888,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "E/NS 35 N",
         article_number: "0800886",
         width_tenths_mm: 95,
+        height_tenths_mm: 486,
         mounting_de: "Schraubmontage (NS 35/7,5 & NS 35/15)",
         mounting_en: "Screw-clamp (NS 35/7.5 & NS 35/15)",
         product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-ens-35-n-0800886",
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/239820/full/b408?format=jpg"),
     },
     EndBracketSpec {
         id: "phoenix-e-uk",
@@ -889,9 +900,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "E/UK",
         article_number: "1201442",
         width_tenths_mm: 95,
+        height_tenths_mm: 505,
         mounting_de: "Schraubmontage (NS 32 & NS 35/7,5)",
         mounting_en: "Screw-clamp (NS 32 & NS 35/7.5)",
         product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-e-uk-1201442",
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/223114/full/b408?format=jpg"),
     },
     EndBracketSpec {
         id: "phoenix-e-uk-1",
@@ -899,9 +912,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "E/UK 1",
         article_number: "1201413",
         width_tenths_mm: 100,
+        height_tenths_mm: 555,
         mounting_de: "Schraubmontage für 2-/3-Etagenklemmen",
         mounting_en: "Screw-clamp for 2-/3-level blocks",
         product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-e-uk-1-1201413",
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/255612/full/b408?format=jpg"),
     },
     EndBracketSpec {
         id: "phoenix-e-al-ns-35",
@@ -909,9 +924,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "E/AL-NS 35",
         article_number: "1201662",
         width_tenths_mm: 100,
+        height_tenths_mm: 590,
         mounting_de: "Schwerlast-Alu (2 Schrauben, Hochstrom)",
         mounting_en: "Heavy-duty aluminum (2-screw, high-current)",
         product_url: "https://www.phoenixcontact.com/en-pc/products/end-clamp-e-al-ns-35-1201662",
+        image_url: Some("https://caas.phoenixcontact.com/caas/v1/stable/media/113558/full/b408?format=jpg"),
     },
     // --- Weidmüller ---
     EndBracketSpec {
@@ -920,9 +937,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "AEB 35 SCL/1 V0",
         article_number: "2661280000",
         width_tenths_mm: 60,
+        height_tenths_mm: 526,
         mounting_de: "Rastbar / schraubenlos A-Reihe V0",
         mounting_en: "Snap-on screwless A-Series V0",
         product_url: "https://eshop.weidmueller.com/en/aeb-35-scl1-v0/p/2661280000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/cd27c8f0-1e41-4a89-8f46-2f68a34e52d4/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-aeb-35-sc-1",
@@ -930,9 +949,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "AEB 35 SC/1",
         article_number: "1991920000",
         width_tenths_mm: 80,
+        height_tenths_mm: 580,
         mounting_de: "Schraubmontage A-Reihe V0",
         mounting_en: "Screw-clamp A-Series V0",
         product_url: "https://eshop.weidmueller.com/en/aeb-35-sc1/p/1991920000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/cc1fc5e7-36dc-4017-bc0e-29583aa74d4d/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-zew-35",
@@ -940,9 +961,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "ZEW 35",
         article_number: "9540000000",
         width_tenths_mm: 60,
+        height_tenths_mm: 550,
         mounting_de: "Rastbar / schraubenlos Z-Reihe",
         mounting_en: "Snap-on screwless Z-Series",
         product_url: "https://eshop.weidmueller.com/en/zew-35/p/9540000000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/73291430-0f06-4ec3-a978-6f50c698ae20/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-zew-35-2",
@@ -950,9 +973,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "ZEW 35/2",
         article_number: "8630740000",
         width_tenths_mm: 80,
+        height_tenths_mm: 550,
         mounting_de: "Rastbar / schraubenlos Z-Reihe (breit)",
         mounting_en: "Snap-on screwless Z-Series (wide)",
         product_url: "https://eshop.weidmueller.com/en/zew-352/p/8630740000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/19500219-f550-4003-b1e7-862dc47d98c0/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-wew-35-2",
@@ -960,9 +985,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "WEW 35/2",
         article_number: "1061200000",
         width_tenths_mm: 80,
+        height_tenths_mm: 560,
         mounting_de: "Schraubmontage W-Reihe",
         mounting_en: "Screw-clamp W-Series",
         product_url: "https://eshop.weidmueller.com/en/wew-352/p/1061200000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/daf369fb-49b6-4b40-91b8-4a1f5bba2b45/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-wew-35-1",
@@ -970,9 +997,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "WEW 35/1",
         article_number: "1059000000",
         width_tenths_mm: 120,
+        height_tenths_mm: 560,
         mounting_de: "Schraubmontage W-Reihe (stark)",
         mounting_en: "Screw-clamp W-Series (heavy)",
         product_url: "https://eshop.weidmueller.com/en/wew-351/p/1059000000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/593f7b0a-b315-4f68-8eb5-0e0cce1bc2ff/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-ew-35",
@@ -980,9 +1009,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "EW 35",
         article_number: "0383560000",
         width_tenths_mm: 85,
+        height_tenths_mm: 460,
         mounting_de: "Schraubmontage Standard beige",
         mounting_en: "Screw-clamp standard beige",
         product_url: "https://eshop.weidmueller.com/en/ew-35/p/0383560000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/15cc897d-7612-48d7-a1c5-c8298dfd0a53/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-ew-35-gr",
@@ -990,9 +1021,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "EW 35 GR 7032",
         article_number: "0383530000",
         width_tenths_mm: 90,
+        height_tenths_mm: 460,
         mounting_de: "Schraubmontage grau V0",
         mounting_en: "Screw-clamp grey V0",
         product_url: "https://eshop.weidmueller.com/en/ew-35-gr-7032/p/0383530000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/8c0b24de-b1d1-4e82-9c55-9cb7c8a07e69/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-ew-35-scha-m3",
@@ -1000,9 +1033,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "EW 35/SCHA/M3",
         article_number: "0258660000",
         width_tenths_mm: 165,
+        height_tenths_mm: 460,
         mounting_de: "Schraubmontage M3 (schwer)",
         mounting_en: "Heavy screw-clamp M3",
         product_url: "https://eshop.weidmueller.com/en/ew-35scham3/p/0258660000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/436f023d-d252-4119-867d-924c88bc579e/DAP_Master_PP,w_800,q_80"),
     },
     EndBracketSpec {
         id: "weidmuller-mew-35-1",
@@ -1010,9 +1045,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "MEW 35/1",
         article_number: "1805610000",
         width_tenths_mm: 125,
+        height_tenths_mm: 562,
         mounting_de: "Metall-Schraubmontage (schwer)",
         mounting_en: "Metal screw-clamp (heavy)",
         product_url: "https://eshop.weidmueller.com/en/mew-351/p/1805610000",
+        image_url: Some("https://assets.dam.weidmueller.com/assets/api/e8ed408e-cabd-4148-b954-2757cfd1fbf0/DAP_Master_PP,w_800,q_80"),
     },
     // --- WAGO ---
     EndBracketSpec {
@@ -1021,9 +1058,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "249-116",
         article_number: "249-116",
         width_tenths_mm: 60,
+        height_tenths_mm: 440,
         mounting_de: "Schraubenloser Endstopp grau (TS 35)",
         mounting_en: "Screwless end stop grey (TS 35)",
         product_url: "https://www.wago.com/global/accessories/screwless-end-stop/p/249-116",
+        image_url: None,
     },
     EndBracketSpec {
         id: "wago-249-117",
@@ -1031,9 +1070,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "249-117",
         article_number: "249-117",
         width_tenths_mm: 100,
+        height_tenths_mm: 440,
         mounting_de: "Schraubenloser Endstopp breit (TS 35)",
         mounting_en: "Screwless end stop wide (TS 35)",
         product_url: "https://www.wago.com/gb/accessories/screwless-end-stop/p/249-117",
+        image_url: None,
     },
     EndBracketSpec {
         id: "wago-249-197",
@@ -1041,9 +1082,11 @@ pub static END_BRACKETS: &[EndBracketSpec] = &[
         name: "249-197",
         article_number: "249-197",
         width_tenths_mm: 140,
+        height_tenths_mm: 600,
         mounting_de: "Schwerlast-Endstopp schraubenlos (TS 35)",
         mounting_en: "Heavy-duty screwless end stop (TS 35)",
         product_url: "https://www.wago.com/global/accessories/screwless-end-stop/p/249-197",
+        image_url: None,
     },
 ];
 
@@ -1063,4 +1106,32 @@ pub fn find_end_bracket(id: &str) -> &'static EndBracketSpec {
         .or_else(|| end_bracket_by_id(DEFAULT_END_BRACKET_ID))
         .unwrap_or(&END_BRACKETS[0])
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_end_brackets_have_valid_dimensions_and_urls() {
+        assert_eq!(END_BRACKETS.len(), 20);
+        for eb in all_end_brackets() {
+            assert!(eb.width_tenths_mm >= 50, "width invalid for {}", eb.id);
+            assert!(
+                eb.height_tenths_mm >= 400 && eb.height_tenths_mm <= 700,
+                "height invalid for {}: {}",
+                eb.id,
+                eb.height_tenths_mm
+            );
+            assert!(eb.product_url.starts_with("https://"), "url invalid for {}", eb.id);
+            if eb.manufacturer == "Phoenix Contact" || eb.manufacturer == "Weidmüller" {
+                assert!(
+                    eb.image_url.is_some_and(|u| u.starts_with("https://")),
+                    "missing CDN image_url for {}",
+                    eb.id
+                );
+            }
+        }
+    }
+}
+
 

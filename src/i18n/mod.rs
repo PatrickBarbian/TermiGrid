@@ -234,12 +234,23 @@ pub struct Strings {
     pub mode_select_tip: &'static str,
     pub mode_bridge_tip: &'static str,
 
-    // End Brackets (Endhalter)
+    // End Brackets (Endhalter) & Bauhöhe
     pub end_bracket_heading: &'static str,
     pub end_bracket_left: &'static str,
     pub end_bracket_right: &'static str,
     pub end_bracket_none: &'static str,
     pub end_bracket_db_heading: &'static str,
+    pub height_label: &'static str,
+    pub db_col_height: &'static str,
+    pub end_bracket_selected_hint: &'static str,
+    pub preview_before_apply: &'static str,
+
+    // e-Planer 1:1 Mode & EPLAN DXF Export
+    pub menu_export_dxf: &'static str,
+    pub mode_eplaner: &'static str,
+    pub mode_eplaner_tip: &'static str,
+    pub cad_scale_1_1: &'static str,
+    pub max_height_label: &'static str,
 }
 
 pub static DE: Strings = Strings {
@@ -292,7 +303,7 @@ pub static DE: Strings = Strings {
     cad_footer_hint: "Klick = Auswahl | Doppelklick auf Zahl = Text ändern | Ziehen = Rahmenauswahl | Mausrad drücken = Verschieben | Strg+Mausrad = Zoom",
 
     inspector_title: "Eigenschaften & Zubehör",
-    no_selection_hint: "Wählen Sie eine oder mehrere Klemmen im CAD-Editor durch Klicken oder Aufziehen eines Auswahlrahmens aus.",
+    no_selection_hint: "Wählen Sie eine oder mehrere Klemmen oder einen Endhalter (EH) im CAD-Editor durch Klicken oder Aufziehen eines Auswahlrahmens aus.",
     reassign_heading: "Klemmentyp neu zuweisen",
     btn_apply_type: "Typ auf Auswahl anwenden",
     btn_insert_before: "Davor einfügen",
@@ -433,6 +444,16 @@ pub static DE: Strings = Strings {
     end_bracket_right: "Nach Klemmblock (Rechts)",
     end_bracket_none: "Ohne Endhalter",
     end_bracket_db_heading: "TS 35 Endhalter-Datenbank (Phoenix Contact, Weidmüller, WAGO)",
+    height_label: "Bauhöhe",
+    db_col_height: "Bauhöhe",
+    end_bracket_selected_hint: "Ausgewählter Endhalter",
+    preview_before_apply: "Vorschau vor Übernahme",
+
+    menu_export_dxf: "EPLAN DXF (1:1)",
+    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner_tip: "Schaltet auf das maßstabsgetreue 1:1-Aufbaubild (mm) mit Hutschiene TS 35, Bemaßung und EPLAN-Layout um.",
+    cad_scale_1_1: "Aufbaubild 1:1 (mm)",
+    max_height_label: "Max. Bauhöhe",
 };
 
 pub static EN: Strings = Strings {
@@ -485,7 +506,7 @@ pub static EN: Strings = Strings {
     cad_footer_hint: "Click = Select | Double-Click = Edit | Drag = Marquee | Middle-Drag = Pan | Ctrl+Wheel = Zoom",
 
     inspector_title: "Properties & Accessories",
-    no_selection_hint: "Select one or more terminal blocks in the CAD editor by clicking or dragging a selection rectangle.",
+    no_selection_hint: "Select one or more terminal blocks or an end bracket (EH) in the CAD editor by clicking or dragging a selection rectangle.",
     reassign_heading: "Reassign Terminal Type",
     btn_apply_type: "Apply Type to Selection",
     btn_insert_before: "Insert Before",
@@ -626,6 +647,16 @@ pub static EN: Strings = Strings {
     end_bracket_right: "After block (Right)",
     end_bracket_none: "No end brackets",
     end_bracket_db_heading: "TS 35 End Bracket Database (Phoenix Contact, Weidmüller, WAGO)",
+    height_label: "Height",
+    db_col_height: "Height",
+    end_bracket_selected_hint: "Selected End Bracket",
+    preview_before_apply: "Preview before apply",
+
+    menu_export_dxf: "EPLAN DXF (1:1)",
+    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner_tip: "Switch to true-to-scale 1:1 mm front elevation (Aufbaubild) with TS 35 DIN rail, dimension lines, and EPLAN title block.",
+    cad_scale_1_1: "Elevation 1:1 (mm)",
+    max_height_label: "Max. Height",
 };
 
 pub static FR: Strings = Strings {
@@ -678,7 +709,7 @@ pub static FR: Strings = Strings {
     cad_footer_hint: "Clic = Sélection | Double-clic = Éditer | Glisser = Cadre | Molette appuyée = Déplacer | Ctrl+Molette = Zoom",
 
     inspector_title: "Propriétés & Accessoires",
-    no_selection_hint: "Sélectionnez une ou plusieurs bornes dans l'éditeur CAO par clic ou rectangle de sélection.",
+    no_selection_hint: "Sélectionnez une ou plusieurs bornes ou une butée d'arrêt (EH) dans l'éditeur CAO par clic ou rectangle de sélection.",
     reassign_heading: "Changer le type de borne",
     btn_apply_type: "Appliquer à la sélection",
     btn_insert_before: "Insérer avant",
@@ -819,6 +850,16 @@ pub static FR: Strings = Strings {
     end_bracket_right: "Après le bloc (Droite)",
     end_bracket_none: "Sans butée d'arrêt",
     end_bracket_db_heading: "Base de butées d'arrêt TS 35 (Phoenix Contact, Weidmüller, WAGO)",
+    height_label: "Hauteur",
+    db_col_height: "Hauteur",
+    end_bracket_selected_hint: "Butée d'arrêt sélectionnée",
+    preview_before_apply: "Aperçu avant application",
+
+    menu_export_dxf: "EPLAN DXF (1:1)",
+    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner_tip: "Afficher l'élévation 1:1 réelle (mm) avec rail DIN TS 35, cotes et cartouche EPLAN.",
+    cad_scale_1_1: "Implantation 1:1 (mm)",
+    max_height_label: "Hauteur max.",
 };
 
 pub static IT: Strings = Strings {
@@ -871,7 +912,7 @@ pub static IT: Strings = Strings {
     cad_footer_hint: "Clic = Seleziona | Doppio clic = Modifica | Trascina = Riquadro | Tasto centrale = Sposta | Ctrl+Rotella = Zoom",
 
     inspector_title: "Proprietà & Accessori",
-    no_selection_hint: "Seleziona uno o più morsetti nell'editor CAD tramite clic o riquadro di selezione.",
+    no_selection_hint: "Seleziona uno o più morsetti o un fermo terminale (EH) nell'editor CAD tramite clic o riquadro di selezione.",
     reassign_heading: "Assegna tipo morsetto",
     btn_apply_type: "Applica alla selezione",
     btn_insert_before: "Inserisci prima",
@@ -1012,6 +1053,16 @@ pub static IT: Strings = Strings {
     end_bracket_right: "Dopo il blocco (Destra)",
     end_bracket_none: "Senza fermo terminale",
     end_bracket_db_heading: "Catalogo fermi terminali TS 35 (Phoenix Contact, Weidmüller, WAGO)",
+    height_label: "Altezza",
+    db_col_height: "Altezza",
+    end_bracket_selected_hint: "Fermo terminale selezionato",
+    preview_before_apply: "Anteprima prima di applicare",
+
+    menu_export_dxf: "EPLAN DXF (1:1)",
+    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner_tip: "Attiva la vista frontale in scala 1:1 reale (mm) con guida DIN TS 35, quote e cartiglio EPLAN.",
+    cad_scale_1_1: "Disposizione 1:1 (mm)",
+    max_height_label: "Altezza max.",
 };
 
 pub static ES: Strings = Strings {
@@ -1064,7 +1115,7 @@ pub static ES: Strings = Strings {
     cad_footer_hint: "Clic = Seleccionar | Doble clic = Editar | Arrastrar = Marco | Botón central = Desplazar | Ctrl+Rueda = Zoom",
 
     inspector_title: "Propiedades y Accesorios",
-    no_selection_hint: "Selecciona uno o más bornes en el editor CAD haciendo clic o arrastrando un marco.",
+    no_selection_hint: "Selecciona uno o más bornes o un tope final (EH) en el editor CAD haciendo clic o arrastrando un marco.",
     reassign_heading: "Cambiar tipo de borne",
     btn_apply_type: "Aplicar a la selección",
     btn_insert_before: "Insertar antes",
@@ -1205,6 +1256,16 @@ pub static ES: Strings = Strings {
     end_bracket_right: "Después del bloque (Derecha)",
     end_bracket_none: "Sin tope final",
     end_bracket_db_heading: "Base de topes finales TS 35 (Phoenix Contact, Weidmüller, WAGO)",
+    height_label: "Altura",
+    db_col_height: "Altura",
+    end_bracket_selected_hint: "Tope final seleccionado",
+    preview_before_apply: "Vista previa antes de aplicar",
+
+    menu_export_dxf: "EPLAN DXF (1:1)",
+    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner_tip: "Cambia a vista frontal a escala real 1:1 (mm) con carril DIN TS 35, cotas y cajetín EPLAN.",
+    cad_scale_1_1: "Disposición 1:1 (mm)",
+    max_height_label: "Altura máx.",
 };
 
 pub static PL: Strings = Strings {
@@ -1257,7 +1318,7 @@ pub static PL: Strings = Strings {
     cad_footer_hint: "Klik = Wybierz | Dwuklik = Edytuj | Przeciągnij = Ramka | Środkowy przycisk = Przesuń | Ctrl+Rolka = Zoom",
 
     inspector_title: "Właściwości i Akcesoria",
-    no_selection_hint: "Wybierz jedną lub więcej złączek w edytorze CAD kliknięciem lub ramką zaznaczenia.",
+    no_selection_hint: "Wybierz jedną lub więcej złączek lub trzymacz końcowy (EH) w edytorze CAD kliknięciem lub ramką zaznaczenia.",
     reassign_heading: "Zmień typ złączki",
     btn_apply_type: "Zastosuj do zaznaczenia",
     btn_insert_before: "Wstaw przed",
@@ -1398,6 +1459,16 @@ pub static PL: Strings = Strings {
     end_bracket_right: "Za blokiem (Prawo)",
     end_bracket_none: "Bez trzymacza",
     end_bracket_db_heading: "Baza trzymaczy końcowych TS 35 (Phoenix Contact, Weidmüller, WAGO)",
+    height_label: "Wysokość",
+    db_col_height: "Wysokość",
+    end_bracket_selected_hint: "Wybrany trzymacz końcowy",
+    preview_before_apply: "Podgląd przed zastosowaniem",
+
+    menu_export_dxf: "EPLAN DXF (1:1)",
+    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner_tip: "Widok elewacji w skali 1:1 (mm) z szyną DIN TS 35, wymiarowaniem i ramką EPLAN.",
+    cad_scale_1_1: "Układ 1:1 (mm)",
+    max_height_label: "Wys. maks.",
 };
 
 pub static NL: Strings = Strings {
@@ -1450,7 +1521,7 @@ pub static NL: Strings = Strings {
     cad_footer_hint: "Klik = Selecteer | Dubbelklik = Aanpassen | Slepen = Kader | Middelknop = Verschuiven | Ctrl+Wiel = Zoom",
 
     inspector_title: "Eigenschappen & Toebehoren",
-    no_selection_hint: "Selecteer een of meer klemmen in de CAD-editor door te klikken of een selectiekader te slepen.",
+    no_selection_hint: "Selecteer een of meer klemmen of een eindsteun (EH) in de CAD-editor door te klikken of een selectiekader te slepen.",
     reassign_heading: "Klemtype toewijzen",
     btn_apply_type: "Toepassen op selectie",
     btn_insert_before: "Ervoor invoegen",
@@ -1591,6 +1662,16 @@ pub static NL: Strings = Strings {
     end_bracket_right: "Na klemmenblok (Rechts)",
     end_bracket_none: "Zonder eindsteun",
     end_bracket_db_heading: "TS 35 Eindsteun-database (Phoenix Contact, Weidmüller, WAGO)",
+    height_label: "Hoogte",
+    db_col_height: "Hoogte",
+    end_bracket_selected_hint: "Geselecteerde eindsteun",
+    preview_before_apply: "Voorbeeld vóór toepassen",
+
+    menu_export_dxf: "EPLAN DXF (1:1)",
+    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner_tip: "Schakel naar het ware schaal 1:1-aanzicht (mm) met TS 35 DIN-rail, maatlijnen en EPLAN-kader.",
+    cad_scale_1_1: "Opstelling 1:1 (mm)",
+    max_height_label: "Max. hoogte",
 };
 
 pub fn strings(lang: Language) -> &'static Strings {

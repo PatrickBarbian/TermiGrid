@@ -74,6 +74,23 @@ pub fn pick_export_csv_path(default_filename: &str) -> Option<PathBuf> {
     }
 }
 
+/// Prompts for a `.dxf` EPLAN CAD export path on desktop, or returns an Android Downloads path.
+pub fn pick_export_dxf_path(default_filename: &str) -> Option<PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        rfd::FileDialog::new()
+            .set_file_name(default_filename)
+            .add_filter("AutoCAD / EPLAN DXF (1:1 mm)", &["dxf"])
+            .save_file()
+    }
+    #[cfg(target_os = "android")]
+    {
+        let dir = android_export_dir();
+        let _ = std::fs::create_dir_all(&dir);
+        Some(dir.join(default_filename))
+    }
+}
+
 #[cfg(target_os = "android")]
 fn android_export_dir() -> PathBuf {
     PathBuf::from("/sdcard/Download/TermiGrid")

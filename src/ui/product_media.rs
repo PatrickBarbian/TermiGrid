@@ -6,7 +6,9 @@ use egui::{
     TextureHandle, TextureOptions, Ui, Vec2,
 };
 
+use crate::catalog::accessories::EndBracketSpec;
 use crate::catalog::TerminalSpec;
+use crate::i18n::Language;
 use crate::model::TierColor;
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::net::{http_get_bytes, http_get_text};
@@ -66,10 +68,49 @@ impl ProductMediaCache {
     /// Returns an already-loaded texture, triggers an async fetch on first view for supported open URLs,
     /// or returns `None` to show the technical terminal profile preview.
     pub fn texture_for(&self, ctx: &egui::Context, spec: &TerminalSpec) -> Option<TextureHandle> {
+        let direct_image_url = spec.effective_image_url();
+        let can_fetch = direct_image_url.is_some()
+            || spec.manufacturer == "WAGO"
+            || spec.product_url.is_some();
+        self.texture_for_key(
+            ctx,
+            &spec.id,
+            direct_image_url,
+            spec.effective_product_url(),
+            can_fetch,
+        )
+    }
+
+    /// Returns an already-loaded texture for a TS 35 end bracket, or fetches its studio image asynchronously.
+    pub fn texture_for_end_bracket(
+        &self,
+        ctx: &egui::Context,
+        eb: &EndBracketSpec,
+    ) -> Option<TextureHandle> {
+        let key = format!("eb_{}", eb.id);
+        let direct_image_url = eb.image_url.map(str::to_string);
+        let can_fetch = direct_image_url.is_some() || eb.manufacturer == "WAGO";
+        self.texture_for_key(
+            ctx,
+            &key,
+            direct_image_url,
+            eb.product_url.to_string(),
+            can_fetch,
+        )
+    }
+
+    fn texture_for_key(
+        &self,
+        ctx: &egui::Context,
+        cache_key: &str,
+        direct_image_url: Option<String>,
+        page_url: String,
+        can_fetch: bool,
+    ) -> Option<TextureHandle> {
         self.poll_uploads(ctx);
 
         if let Ok(entries) = self.entries.lock()
-            && let Some(entry) = entries.get(&spec.id)
+            && let Some(entry) = entries.get(cache_key)
         {
             return match entry {
                 PhotoEntry::Ready(tex) => Some(tex.clone()),
@@ -77,13 +118,9 @@ impl ProductMediaCache {
             };
         }
 
-        let direct_image_url = spec.effective_image_url();
-        let can_fetch = direct_image_url.is_some()
-            || spec.manufacturer == "WAGO"
-            || spec.product_url.is_some();
         if !can_fetch {
             if let Ok(mut entries) = self.entries.lock() {
-                entries.insert(spec.id.clone(), PhotoEntry::Unavailable);
+                entries.insert(cache_key.to_string(), PhotoEntry::Unavailable);
             }
             return None;
         }
@@ -92,37 +129,36 @@ impl ProductMediaCache {
             let Ok(mut flight) = self.in_flight.lock() else {
                 return None;
             };
-            !flight.insert(spec.id.clone())
+            !flight.insert(cache_key.to_string())
         };
         if already_running {
             return None;
         }
 
         if let Ok(mut entries) = self.entries.lock() {
-            entries.insert(spec.id.clone(), PhotoEntry::Loading);
+            entries.insert(cache_key.to_string(), PhotoEntry::Loading);
         }
 
-        let spec_id = spec.id.clone();
-        let page_url = spec.effective_product_url();
+        let key = cache_key.to_string();
         let queue = Arc::clone(&self.queue);
         let in_flight = Arc::clone(&self.in_flight);
         let ctx_clone = ctx.clone();
 
         std::thread::spawn(move || {
-            let image_opt = load_cached_color_image(&spec_id).or_else(|| {
+            let image_opt = load_cached_color_image(&key).or_else(|| {
                 let bytes = direct_image_url
                     .as_deref()
                     .and_then(|u| http_get_bytes(u).ok())
                     .or_else(|| fetch_product_image_bytes(&page_url))?;
                 let img = decode_color_image(&bytes)?;
-                save_cached_image_bytes(&spec_id, &bytes);
+                save_cached_image_bytes(&key, &bytes);
                 Some(img)
             });
             if let Ok(mut q) = queue.lock() {
-                q.completed.insert(spec_id.clone(), image_opt);
+                q.completed.insert(key.clone(), image_opt);
             }
             if let Ok(mut flight) = in_flight.lock() {
-                flight.remove(&spec_id);
+                flight.remove(&key);
             }
             ctx_clone.request_repaint();
         });
@@ -250,7 +286,8 @@ fn extract_product_image_url(html: &str, base_url: &str) -> Option<String> {
 }
 
 /// Renders the product preview card (live photo if available + technical profile illustration,
-/// jumper chamber count, and clickable manufacturer product link).
+/// width, TS 35 Bauhöhe, jumper chamber count, and clickable manufacturer product link).
+#[allow(clippy::too_many_arguments)]
 pub fn show_product_preview_card(
     ui: &mut Ui,
     spec: &TerminalSpec,
@@ -258,6 +295,7 @@ pub fn show_product_preview_card(
     media_cache: &ProductMediaCache,
     open_product_label: &str,
     chambers_label: &str,
+    height_label: &str,
 ) {
     let dark = ui.visuals().dark_mode;
     let sec = secondary_text_color(ui);
@@ -295,6 +333,7 @@ pub fn show_product_preview_card(
             ui.vertical(|ui| {
                 let slots = spec.effective_jumper_slots();
                 let max_poles = spec.effective_max_jumper_poles();
+                let height_mm = f32::from(spec.effective_height_tenths_mm()) / 10.0;
                 ui.label(
                     egui::RichText::new(format!(
                         "{:.1} mm | {} Etagen",
@@ -302,6 +341,11 @@ pub fn show_product_preview_card(
                         spec.levels
                     ))
                     .small(),
+                );
+                ui.label(
+                    egui::RichText::new(format!("{height_label}: {height_mm:.1} mm"))
+                        .small()
+                        .strong(),
                 );
                 if let Some(art) = spec.effective_article_number() {
                     ui.label(egui::RichText::new(format!("Art.-Nr.: {art}")).color(sec).small());
@@ -318,6 +362,147 @@ pub fn show_product_preview_card(
             });
         });
     });
+}
+
+/// Renders the preview card for a TS 35 DIN-rail end bracket (`Endhalter`) with studio photo
+/// or side-profile schematic, physical width, Bauhöhe, article number, and manufacturer link.
+#[allow(clippy::too_many_arguments)]
+pub fn show_end_bracket_preview_card(
+    ui: &mut Ui,
+    eb: &EndBracketSpec,
+    logos: &BrandLogos,
+    media_cache: &ProductMediaCache,
+    open_product_label: &str,
+    height_label: &str,
+    lang: Language,
+) {
+    let dark = ui.visuals().dark_mode;
+    let sec = secondary_text_color(ui);
+
+    ui.group(|ui| {
+        ui.horizontal_wrapped(|ui| {
+            show_logo_badge(ui, logos, eb.manufacturer, 18.0);
+            ui.label(egui::RichText::new(eb.name).strong());
+        });
+        ui.add_space(4.0);
+
+        let preview_size = Vec2::new(112.0, 82.0);
+        let tex_opt = media_cache.texture_for_end_bracket(ui.ctx(), eb);
+
+        ui.horizontal(|ui| {
+            if let Some(tex) = tex_opt {
+                let (rect, _) = ui.allocate_exact_size(preview_size, egui::Sense::hover());
+                ui.painter()
+                    .rect_filled(rect, CornerRadius::same(4), Color32::WHITE);
+                ui.painter().rect_stroke(
+                    rect,
+                    CornerRadius::same(4),
+                    Stroke::new(1.0, Color32::from_rgb(203, 213, 225)),
+                    StrokeKind::Inside,
+                );
+                let img = egui::Image::from_texture(&tex)
+                    .max_size(preview_size - Vec2::splat(6.0))
+                    .corner_radius(3);
+                ui.put(rect.shrink(3.0), img);
+            } else {
+                draw_end_bracket_profile(ui, eb, preview_size, dark);
+            }
+
+            ui.vertical(|ui| {
+                ui.label(
+                    egui::RichText::new(format!(
+                        "{:.1} mm | {height_label}: {:.1} mm",
+                        f32::from(eb.width_tenths_mm) / 10.0,
+                        f32::from(eb.height_tenths_mm) / 10.0
+                    ))
+                    .small()
+                    .strong(),
+                );
+                ui.label(
+                    egui::RichText::new(format!("Art.-Nr.: {}", eb.article_number))
+                        .color(sec)
+                        .small(),
+                );
+                let mounting = match lang {
+                    Language::De => eb.mounting_de,
+                    _ => eb.mounting_en,
+                };
+                ui.label(egui::RichText::new(mounting).color(sec).small());
+                ui.add_space(3.0);
+                if ui.button(open_product_label).clicked() {
+                    open_external_url(ui.ctx(), eb.product_url);
+                }
+            });
+        });
+    });
+}
+
+/// Draws a side-profile schematic of a TS 35 DIN-rail end bracket (`Endhalter`) when no studio photo is cached.
+fn draw_end_bracket_profile(ui: &mut Ui, eb: &EndBracketSpec, size: Vec2, dark: bool) {
+    let (rect, _) = ui.allocate_exact_size(size, egui::Sense::hover());
+    let painter = ui.painter_at(rect);
+
+    let bg = if dark {
+        Color32::from_rgb(15, 23, 42)
+    } else {
+        Color32::from_rgb(248, 250, 252)
+    };
+    let border = if dark {
+        Color32::from_rgb(71, 85, 105)
+    } else {
+        Color32::from_rgb(148, 163, 184)
+    };
+    painter.rect_filled(rect, CornerRadius::same(4), bg);
+    painter.rect_stroke(rect, CornerRadius::same(4), Stroke::new(1.0, border), StrokeKind::Inside);
+
+    let body_fill = if dark {
+        Color32::from_rgb(71, 85, 105)
+    } else {
+        Color32::from_rgb(148, 163, 184)
+    };
+    let body_stroke = Stroke::new(
+        1.2,
+        if dark {
+            Color32::from_rgb(203, 213, 225)
+        } else {
+            Color32::from_rgb(30, 41, 59)
+        },
+    );
+
+    // Clamp housing on TS 35 rail
+    let body = Rect::from_min_max(
+        Pos2::new(rect.min.x + 18.0, rect.min.y + 22.0),
+        Pos2::new(rect.max.x - 18.0, rect.max.y - 16.0),
+    );
+    painter.rect_filled(body, CornerRadius::same(4), body_fill);
+    painter.rect_stroke(body, CornerRadius::same(4), body_stroke, StrokeKind::Inside);
+
+    // Screw head / snap latch top detail + marker slot
+    let latch = Rect::from_center_size(
+        Pos2::new(rect.center().x, body.min.y + 8.0),
+        Vec2::new(22.0, 7.0),
+    );
+    painter.rect_filled(latch, CornerRadius::same(2), Color32::from_rgb(226, 232, 240));
+
+    // TS 35 metallic DIN-rail bar at the bottom
+    let rail = Rect::from_min_max(
+        Pos2::new(rect.min.x + 8.0, rect.max.y - 15.0),
+        Pos2::new(rect.max.x - 8.0, rect.max.y - 9.0),
+    );
+    painter.rect_filled(rail, CornerRadius::same(1), Color32::from_rgb(203, 213, 225));
+    painter.rect_stroke(rail, CornerRadius::same(1), Stroke::new(1.0, Color32::from_rgb(71, 85, 105)), StrokeKind::Inside);
+
+    painter.text(
+        Pos2::new(rect.center().x, rect.min.y + 4.0),
+        Align2::CENTER_TOP,
+        eb.name,
+        FontId::proportional(9.5),
+        if dark {
+            Color32::from_rgb(226, 232, 240)
+        } else {
+            Color32::from_rgb(15, 23, 42)
+        },
+    );
 }
 
 /// Draws a crisp side-profile technical schematic of the selected terminal block

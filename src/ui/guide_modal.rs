@@ -257,6 +257,7 @@ pub fn show_database_tab(
                     article_number: None,
                     product_url: None,
                     image_url: None,
+                    height_tenths_mm: None,
                 };
 
                 custom_specs.push(spec.clone());
@@ -302,6 +303,7 @@ pub fn show_database_tab(
                     ui.strong(strings.db_col_name);
                     ui.strong("Art.-Nr.");
                     ui.strong(strings.db_col_width);
+                    ui.strong(strings.db_col_height);
                     ui.strong(strings.db_col_desc);
                     ui.strong("");
                     ui.end_row();
@@ -323,6 +325,7 @@ pub fn show_database_tab(
                         ui.label(eb.name);
                         ui.monospace(eb.article_number);
                         ui.label(format!("{:.1} mm", f32::from(eb.width_tenths_mm) / 10.0));
+                        ui.label(format!("{:.1} mm", f32::from(eb.height_tenths_mm) / 10.0));
                         let desc = match lang {
                             Language::De => eb.mounting_de,
                             _ => eb.mounting_en,
@@ -347,6 +350,7 @@ pub fn show_database_tab(
                 ui.strong(strings.db_col_levels);
                 ui.strong(strings.db_col_pattern);
                 ui.strong(strings.db_col_width);
+                ui.strong(strings.db_col_height);
                 ui.strong(strings.acc_end_plate);
                 ui.strong(strings.custom_spec_chambers);
                 ui.strong(strings.db_col_desc);
@@ -376,6 +380,10 @@ pub fn show_database_tab(
                     ui.label(spec.levels.to_string());
                     ui.monospace(spec.pattern_summary());
                     ui.label(format!("{:.1} mm", f32::from(spec.width_tenths_mm) / 10.0));
+                    ui.label(format!(
+                        "{:.1} mm",
+                        f32::from(spec.effective_height_tenths_mm()) / 10.0
+                    ));
                     let acc = catalog.accessories_for(spec);
                     ui.label(acc.end_plate);
                     ui.label(format!("{}×", spec.effective_jumper_slots()));

@@ -7,6 +7,9 @@ use crate::catalog::TerminalCatalog;
 use crate::i18n::{Language, Strings};
 use crate::model::TerminalStrip;
 use crate::ui::logos::{logo_filter_button, show_logo_badge, BrandLogos};
+use crate::ui::product_media::{
+    show_end_bracket_preview_card, show_product_preview_card, ProductMediaCache,
+};
 use crate::ui::theme::{primary_button, secondary_text_color};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,11 +69,13 @@ impl NewStripDialogState {
 }
 
 /// Renders the "New Terminal Strip" modal window. Returns `Some(TerminalStrip)` when confirmed.
+#[allow(clippy::too_many_arguments)]
 pub fn show_new_strip_modal(
     ctx: &Context,
     state: &mut NewStripDialogState,
     catalog: &TerminalCatalog,
     logos: &BrandLogos,
+    media_cache: &ProductMediaCache,
     strings: &Strings,
     lang: Language,
 ) -> Option<TerminalStrip> {
@@ -85,7 +90,7 @@ pub fn show_new_strip_modal(
     let max_w = (screen_size.x - 24.0).max(280.0);
     let max_h = (screen_size.y - 40.0).max(220.0);
     let target_w = 560.0_f32.min(max_w);
-    let needs_scroll = screen_size.y < 680.0;
+    let needs_scroll = screen_size.y < 900.0;
 
     egui::Window::new(strings.modal_new_strip_title)
         .collapsible(false)
@@ -141,7 +146,7 @@ pub fn show_new_strip_modal(
 
                 ui.separator();
 
-                // Manufacturer filter + search + terminal spec selector
+                // Manufacturer filter + search + terminal spec selector + live preview
                 show_spec_picker(
                     ui,
                     catalog,
@@ -155,10 +160,22 @@ pub fn show_new_strip_modal(
                     strings.search_hint,
                     lang,
                 );
+                if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
+                    ui.add_space(4.0);
+                    show_product_preview_card(
+                        ui,
+                        spec,
+                        logos,
+                        media_cache,
+                        strings.open_product_page,
+                        strings.bridge_chambers_unit,
+                        strings.height_label,
+                    );
+                }
 
                 ui.separator();
 
-                // End bracket selector + left/right checkboxes
+                // End bracket selector + left/right checkboxes + live preview
                 show_end_bracket_picker(
                     ui,
                     logos,
@@ -169,10 +186,23 @@ pub fn show_new_strip_modal(
                     lang,
                     "new_strip_end_bracket",
                 );
+                if state.end_bracket_left || state.end_bracket_right {
+                    ui.add_space(4.0);
+                    let eb_spec = find_end_bracket(&state.end_bracket_id);
+                    show_end_bracket_preview_card(
+                        ui,
+                        eb_spec,
+                        logos,
+                        media_cache,
+                        strings.open_product_page,
+                        strings.height_label,
+                        lang,
+                    );
+                }
 
                 ui.separator();
 
-                // Live preview of resulting block count + width incl. end brackets
+                // Live preview of resulting block count + width + Bauhöhe incl. end brackets
                 if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
                     let preview_blocks = match state.mode {
                         NewStripMode::ByRange => {
@@ -195,12 +225,14 @@ pub fn show_new_strip_modal(
                         (f32::from(eb_spec.width_tenths_mm) / 10.0) * (eb_count as f32);
                     ui.label(
                         egui::RichText::new(format!(
-                            "-> {} {} ({}: {})  |  ~{:.1} mm",
+                            "-> {} {} ({}: {})  |  ~{:.1} mm | {}: {:.1} mm",
                             preview_blocks,
                             strings.blocks_unit,
                             spec.levels,
                             spec.pattern_summary(),
-                            blocks_mm + brackets_mm
+                            blocks_mm + brackets_mm,
+                            strings.height_label,
+                            f32::from(spec.effective_height_tenths_mm()) / 10.0
                         ))
                         .color(secondary_text_color(ui)),
                     );

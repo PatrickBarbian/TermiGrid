@@ -45,6 +45,9 @@ pub struct TerminalSpec {
     /// Optional explicit direct manufacturer image CDN URL.
     #[serde(default)]
     pub image_url: Option<String>,
+    /// Optional front-view vertical height across the TS 35 DIN rail in tenths of a millimeter (e.g., `485` = `48.5 mm`).
+    #[serde(default)]
+    pub height_tenths_mm: Option<u16>,
 }
 
 impl TerminalSpec {
@@ -345,6 +348,236 @@ impl TerminalSpec {
             "Phoenix Contact" => Some(phoenix_caas_fallback(self)),
             "Weidmüller" => Some(weidmuller_dam_fallback(self)),
             _ => None,
+        }
+    }
+
+    /// Front-view vertical height across the TS 35 DIN rail in tenths of a millimeter (`Bauhöhe` quer zur Hutschiene, e.g., `485` = `48.5 mm`).
+    pub fn effective_height_tenths_mm(&self) -> u16 {
+        if let Some(h) = self.height_tenths_mm
+            && h > 0
+        {
+            return h;
+        }
+        let id = self.id.as_str();
+        match self.manufacturer.as_str() {
+            "WAGO" => {
+                if id.starts_with("wago-285") {
+                    if id.contains("-135") || id.contains("-137") {
+                        860
+                    } else {
+                        1070 // 285-150 / 285-195 (50-95 mm² POWER)
+                    }
+                } else if id.starts_with("wago-281") {
+                    if id.contains("-611") || id.contains("-623") {
+                        840
+                    } else {
+                        590
+                    }
+                } else if id.starts_with("wago-280") {
+                    if self.levels >= 3 || id.contains("-560") {
+                        830
+                    } else if id.contains("-833") || id.contains("-681") {
+                        640
+                    } else {
+                        500
+                    }
+                } else if id.starts_with("wago-202") {
+                    525 // 2022 X-COM S-SYSTEM
+                } else if id.starts_with("wago-2016")
+                    || id.starts_with("wago-2116")
+                    || id.starts_with("wago-2216")
+                {
+                    698
+                } else if id.starts_with("wago-2010")
+                    || id.starts_with("wago-2110")
+                    || id.starts_with("wago-2210")
+                {
+                    678
+                } else if id.starts_with("wago-2007") {
+                    996
+                } else if id.starts_with("wago-2006")
+                    || id.starts_with("wago-2106")
+                    || id.starts_with("wago-2206")
+                {
+                    if id.contains("-161") || id.contains("-168") {
+                        963
+                    } else if id.contains("-130") {
+                        733
+                    } else {
+                        575
+                    }
+                } else if id.starts_with("wago-2005") {
+                    1050
+                } else if id.starts_with("wago-2004")
+                    || id.starts_with("wago-2104")
+                    || id.starts_with("wago-2204")
+                {
+                    if id.contains("-140") {
+                        787
+                    } else if id.contains("-130") {
+                        655
+                    } else {
+                        523
+                    }
+                } else if id.starts_with("wago-2003") || id.starts_with("wago-2203") {
+                    960
+                } else if self.levels >= 3 {
+                    if id.starts_with("wago-2000") {
+                        811
+                    } else {
+                        933
+                    }
+                } else if self.levels == 2 {
+                    if id.starts_with("wago-2000") {
+                        615
+                    } else {
+                        697
+                    }
+                } else if id.contains("-161")
+                    || id.contains("-166")
+                    || id.contains("-181")
+                    || id.contains("-198")
+                {
+                    661
+                } else if id.contains("-140") {
+                    if id.starts_with("wago-2000") {
+                        679
+                    } else {
+                        699
+                    }
+                } else if id.contains("-130") || id.contains("-171") {
+                    if id.starts_with("wago-2000") {
+                        582
+                    } else {
+                        592
+                    }
+                } else {
+                    485 // Standard TOPJOB S 2-conductor (2000/2001/2002/2102/2202)
+                }
+            }
+            "Phoenix Contact" => {
+                if id.contains("ptpower-95") {
+                    1055
+                } else if id.contains("ptpower-50") {
+                    1010
+                } else if id.contains("ptpower-35") || id.contains("pt-35") {
+                    916
+                } else if id.contains("pti-") || id.contains("sti-") || id.contains("uti-") {
+                    1010
+                } else if id.contains("-3l") || id.contains("-peln") || id.contains("-pell") {
+                    if id.contains("15s") {
+                        972
+                    } else {
+                        1020
+                    }
+                } else if id.contains("pttb-4") {
+                    835
+                } else if id.contains("uttb") {
+                    699
+                } else if id.contains("pttb-15s") {
+                    654
+                } else if id.contains("pttb") || id.contains("sttb") || id.contains("pttbs") {
+                    680
+                } else if id.contains("pt-16") || id.contains("ut-16") {
+                    754
+                } else if id.contains("pt-10") || id.contains("ut-10") {
+                    677
+                } else if id.contains("pt-6") || id.contains("ut-6") || id.contains("ptme-6") {
+                    577
+                } else if id.contains("ptio") {
+                    745
+                } else if id.contains("pt-4") || id.contains("ut-4") || id.contains("ptv-4") {
+                    if id.contains("-hesi") {
+                        625
+                    } else if id.contains("-quattro") {
+                        770
+                    } else if id.contains("-twin") {
+                        665
+                    } else {
+                        560
+                    }
+                } else if id.contains("15s") {
+                    if id.contains("-quattro") {
+                        632
+                    } else if id.contains("-twin") {
+                        540
+                    } else if id.contains("-mt") {
+                        589
+                    } else {
+                        450
+                    }
+                } else if id.contains("-quattro") {
+                    722
+                } else if id.contains("-twin") {
+                    604
+                } else if id.contains("-hesi") {
+                    625
+                } else if id.contains("-mt") || id.contains("-tg") {
+                    620
+                } else if id.contains("st-25") {
+                    485
+                } else if id.contains("ut-25") || id.contains("uk-5n") || id.contains("uslkg") {
+                    477
+                } else {
+                    486 // Standard PT 2,5 / PTV 2,5
+                }
+            }
+            "Weidmüller" => {
+                if id.contains("a3t") {
+                    1160
+                } else if id.contains("aitb") {
+                    1030
+                } else if id.contains("zdl") {
+                    950
+                } else if id.contains("a2t-4") {
+                    1000
+                } else if id.contains("a2t") || id.contains("zdk") {
+                    900
+                } else if id.contains("wdk") {
+                    690
+                } else if id.contains("dli") {
+                    660
+                } else if id.contains("aio") {
+                    800
+                } else if id.contains("a2c-35") {
+                    1015
+                } else if id.contains("a2c-16") {
+                    805
+                } else if id.contains("a2c-10") {
+                    740
+                } else if id.contains("a2c-6") {
+                    665
+                } else if id.contains("a3c-4") {
+                    740
+                } else if id.contains("a2c-4") || id.contains("afs-4") {
+                    600
+                } else if id.contains("a4c-25") {
+                    775
+                } else if id.contains("a3c-25") {
+                    665
+                } else if id.contains("a4c-15") {
+                    675
+                } else if id.contains("a3c-15") {
+                    615
+                } else if id.contains("a2c-15")
+                    || id.contains("a2c-25")
+                    || id.contains("amc-25")
+                    || id.contains("adt-25")
+                {
+                    550
+                } else if id.contains("zdu-4") || id.contains("zpe-4") {
+                    640
+                } else if id.contains("zdu") || id.contains("zpe") {
+                    595
+                } else {
+                    600 // Standard WDU / WPE / WTR / WSI
+                }
+            }
+            _ => match self.levels {
+                1 => 485,
+                2 => 697,
+                _ => 960,
+            },
         }
     }
 }
@@ -799,6 +1032,41 @@ mod tests {
         assert_eq!(
             catalog.accessories_for(pt15_3l).end_plate,
             "D-PT 1,5/S-3L (3113771)"
+        );
+    }
+
+    #[test]
+    fn all_specs_have_realistic_bauhoehe_height_tenths_mm() {
+        let catalog = TerminalCatalog::load_embedded();
+        for spec in catalog.all() {
+            let h = spec.effective_height_tenths_mm();
+            assert!(
+                (420..=1200).contains(&h),
+                "Unrealistic front-view Bauhöhe {} for {} ({})",
+                h,
+                spec.name,
+                spec.id
+            );
+        }
+        assert_eq!(
+            catalog.find_by_id("wago-2002-1201").unwrap().effective_height_tenths_mm(),
+            485
+        );
+        assert_eq!(
+            catalog.find_by_id("wago-2002-2201").unwrap().effective_height_tenths_mm(),
+            697
+        );
+        assert_eq!(
+            catalog.find_by_id("wago-2003-7641").unwrap().effective_height_tenths_mm(),
+            960
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-pt-25").unwrap().effective_height_tenths_mm(),
+            486
+        );
+        assert_eq!(
+            catalog.find_by_id("weidmuller-a2c-25").unwrap().effective_height_tenths_mm(),
+            550
         );
     }
 }
