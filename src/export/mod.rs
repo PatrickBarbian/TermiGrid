@@ -150,44 +150,56 @@ pub fn build_tier_columns(
     let max_row = strips
         .iter()
         .flat_map(|s| s.blocks.iter())
-        .flat_map(|b| (0..b.tiers.len()).map(|l| b.tier_visual_row(l)))
+        .flat_map(|b| {
+            b.tiers
+                .iter()
+                .enumerate()
+                .filter(|(_, t)| !t.behavior.is_pe())
+                .map(|(l, _)| b.tier_visual_row(l))
+        })
         .max()
         .unwrap_or(0)
         .max(0);
+    let has_non_pe = strips
+        .iter()
+        .flat_map(|s| s.blocks.iter())
+        .any(|b| b.tiers.iter().any(|t| !t.behavior.is_pe()));
 
     let mut columns = Vec::new();
-    for target_row in 0..=max_row {
-        let header = if german_headers {
-            format!("Ebene {}", target_row + 1)
-        } else {
-            format!("Tier {}", target_row + 1)
-        };
-        let mut labels = Vec::new();
-        for strip in &strips {
-            for block in &strip.blocks {
-                for (t_idx, tier) in block.tiers.iter().enumerate() {
-                    if block.tier_visual_row(t_idx) == target_row && !tier.computed_label.is_empty()
-                    {
-                        labels.push(tier.computed_label.clone());
+    if has_non_pe {
+        for target_row in 0..=max_row {
+            let header = if german_headers {
+                format!("Ebene {}", target_row + 1)
+            } else {
+                format!("Tier {}", target_row + 1)
+            };
+            let mut labels = Vec::new();
+            for strip in &strips {
+                for block in &strip.blocks {
+                    for (t_idx, tier) in block.tiers.iter().enumerate() {
+                        if !tier.behavior.is_pe()
+                            && block.tier_visual_row(t_idx) == target_row
+                            && !tier.computed_label.is_empty()
+                        {
+                            labels.push(tier.computed_label.clone());
+                        }
                     }
                 }
             }
+            columns.push((header, labels));
         }
-        columns.push((header, labels));
     }
 
     if options.include_pe_labels {
         let mut pe_labels = Vec::new();
         for strip in &strips {
             for block in &strip.blocks {
-                for (t_idx, tier) in block.tiers.iter().enumerate() {
-                    if block.tier_visual_row(t_idx) == -1 {
+                for tier in &block.tiers {
+                    if tier.behavior.is_pe() {
                         let lbl = if !tier.computed_label.is_empty() {
                             tier.computed_label.clone()
-                        } else if tier.behavior.is_pe() {
-                            "PE".to_string()
                         } else {
-                            continue;
+                            "PE".to_string()
                         };
                         pe_labels.push(lbl);
                     }
@@ -221,7 +233,14 @@ fn extract_row(
         return None;
     };
 
-    let tier_level = if visual_row < 0 {
+    let pe_count = block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
+    let tier_level = if tier.behavior.is_pe() {
+        if pe_count > 1 {
+            format!("PE{}", tier_idx + 1)
+        } else {
+            "PE".to_string()
+        }
+    } else if visual_row < 0 {
         "PE".to_string()
     } else {
         format!("E{}", visual_row + 1)

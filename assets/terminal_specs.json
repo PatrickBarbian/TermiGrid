@@ -14,7 +14,8 @@
         "behavior": "Sequential",
         "color": "StandardGray"
       }
-    ]
+    ],
+    "image_url": "https://www.wago.com/medias/1024-8830017-DE.jpg?context=bWFzdGVyfGltYWdlc3w4MTU3NnxpbWFnZS9qcGVnfGFEY3pMMmcxTkM4eE5qVTJNRGcwTlRBMk1qRTNOQzh4TURJMFh6ZzRNekF3TVRkZlJFVXVhbkJufGRlMzc5ZmUzMWJmOGZhOWY4ODk4N2Q0YWEzNDgxZTE3ODlmMzQyNWFlNGRmOTliNWU0MGQ3MGE0NjQxYThkNzA"
   },
   {
     "id": "wago-2001-1204",
@@ -33,7 +34,8 @@
         },
         "color": "BlueNeutral"
       }
-    ]
+    ],
+    "image_url": "https://www.wago.com/medias/1024-020000190002d837000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3wxNjUyM3xpbWFnZS9qcGVnfGFERmhMMmcxTXk4eE5qY3hNRFkwT0RreU1qRTBNaTh4TURJMFh6QXlNREF3TURFNU1EQXdNbVE0TXpjd01EQXhNREJpTmw5RVJTNXFjR2N8NGFmYTJiNGEwMWVhZTJiODM0OTY1MzQ4ZDc5NGU0NmYyOTU3OWUyOTViZmFkYzk4NWM1MGZkM2I5MGRhZmEzOQ"
   },
   {
     "id": "wago-2001-1207",
@@ -50,7 +52,8 @@
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "image_url": "https://www.wago.com/medias/1024-020000190002d8c7000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3wxNzMwOXxpbWFnZS9qcGVnfGFHUmxMMmczWmk4eE5qVTFNRFUyTXpFeE9URXpOQzh4TURJMFh6QXlNREF3TURFNU1EQXdNbVE0WXpjd01EQXhNREJpTmw5RVJTNXFjR2N8YzUxMzllOTNmNTU1YTIzMmFmMmM5ODEwYjBiYTY0NTE3YzY4MjM0Yjk5ZjBiNjBjNzY3ZmFkMzZmZGJhZGQxMA"
   },
   {
     "id": "wago-2002-1201",
@@ -236,24 +239,25 @@
   },
   {
     "id": "wago-2002-2207",
-    "name": "2002-2207 (2-Etagen PE/L)",
+    "name": "2002-2207 (2-Etagen PE/PE)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2002",
     "levels": 2,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Doppelstock-PE-Klemme (Unten PE, Oben sequentiell)",
-    "description_en": "Double-deck PE terminal block (Lower PE, Upper sequential)",
+    "description_de": "Doppelstock-Schutzleiterklemme 2,5 mm², 2× PE (5,2 mm)",
+    "description_en": "Double-deck PE terminal block 2.5 mm², 2× PE (5.2 mm)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "image_url": "https://www.wago.com/medias/1024-020000030000cdaa000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3w4NDc3MHxpbWFnZS9qcGVnfGFEZGlMMmc0TlM4eE5qVTJORFl3TlRrM05qWXdOaTh4TURJMFh6QXlNREF3TURBek1EQXdNR05rWVdFd01EQXhNREJpTmw5RVJTNXFjR2N8NjM0MDgyMzdlM2QwODRlMWQ0MmQ3YzQ3NGJiYzc0N2RlN2QxMjIzYmMxMTQ0M2ZkNjg2MTYyMjAyNzViMWZmMQ"
   },
   {
     "id": "wago-2002-3201",
@@ -282,26 +286,26 @@
   },
   {
     "id": "wago-2002-3207",
-    "name": "2002-3207 (3-Etagen PE/L/L)",
+    "name": "2002-3207 (3-Etagen PE/PE/PE)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2002",
     "levels": 3,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Dreistockklemme PE/L/L (Unten PE, Mitte/Oben sequentiell)",
-    "description_en": "Triple-deck terminal block PE/L/L (Bottom PE, Middle/Top sequential)",
+    "description_de": "Dreistock-Schutzleiterklemme 2,5 mm², 3× PE (5,2 mm)",
+    "description_en": "Triple-deck PE terminal block 2.5 mm², 3× PE (5.2 mm)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ]
   },
@@ -986,22 +990,22 @@
   },
   {
     "id": "phoenix-pttb-15s-pe",
-    "name": "PTTB 1,5/S-PE (1,5mm² PE/L)",
+    "name": "PTTB 1,5/S-PE (1,5mm² PE/PE)",
     "manufacturer": "Phoenix Contact",
     "series": "CLIPLINE PT 1,5/S",
     "levels": 2,
     "width_tenths_mm": 35,
     "numbering_order": "BottomToTop",
-    "description_de": "Push-in-Doppelstock-PE-Klemme 1,5 mm², PE/L",
-    "description_en": "Push-in double-level PE terminal 1.5 mm², PE/L",
+    "description_de": "Push-in-Doppelstock-Schutzleiterklemme 1,5 mm², 2× PE",
+    "description_en": "Push-in double-level PE terminal 1.5 mm², 2× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ]
   },
@@ -1129,22 +1133,22 @@
   },
   {
     "id": "phoenix-pttb-25-pe",
-    "name": "PTTB 2,5-PE (2-Etagen PE/L)",
+    "name": "PTTB 2,5-PE (2-Etagen PE/PE)",
     "manufacturer": "Phoenix Contact",
     "series": "CLIPLINE PT 2,5",
     "levels": 2,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Push-in-Doppelstock-PE-Klemme (Unten PE, Oben sequentiell)",
-    "description_en": "Push-in double-level PE terminal (Lower PE, Upper sequential)",
+    "description_de": "Push-in-Doppelstock-Schutzleiterklemme 2,5 mm², 2× PE",
+    "description_en": "Push-in double-level PE terminal 2.5 mm², 2× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ],
     "article_number": "3210596",
@@ -1714,22 +1718,22 @@
   },
   {
     "id": "weidmuller-a2t-25-pe",
-    "name": "A2T 2.5 PE (Push-in 2-Etagen PE/L)",
+    "name": "A2T 2.5 PE (Push-in 2-Etagen PE/PE)",
     "manufacturer": "Weidmüller",
     "series": "Klippon Connect A-Series",
     "levels": 2,
     "width_tenths_mm": 51,
     "numbering_order": "BottomToTop",
-    "description_de": "Push-in-Doppelstock-PE-Klemme 2,5 mm², PE/L",
-    "description_en": "Push-in double-tier PE terminal 2.5 mm², PE/L",
+    "description_de": "Push-in-Doppelstock-Schutzleiterklemme 2,5 mm², 2× PE",
+    "description_en": "Push-in double-tier PE terminal 2.5 mm², 2× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ]
   },
@@ -2451,24 +2455,26 @@
   },
   {
     "id": "wago-2000-2207",
-    "name": "2000-2207 (1mm² 2-Etagen PE/L)",
+    "name": "2000-2207 (1mm² 2-Etagen PE/PE)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2000",
     "levels": 2,
     "width_tenths_mm": 35,
     "numbering_order": "BottomToTop",
-    "description_de": "Doppelstock-PE-Klemme 1 mm², PE/L (3,5 mm)",
-    "description_en": "Double-deck PE terminal 1 mm², PE/L (3.5 mm)",
+    "description_de": "Doppelstock-Schutzleiterklemme 1 mm², 2× PE (3,5 mm)",
+    "description_en": "Double-deck PE terminal 1 mm², 2× PE (3.5 mm)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "height_tenths_mm": 697,
+    "image_url": "https://www.wago.com/medias/1024-0200001c00004e40000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3w2MDAxNHxpbWFnZS9qcGVnfGFEazNMMmd4WWk4eE5qVTJPVFEyTkRJeU5UZ3lNaTh4TURJMFh6QXlNREF3TURGak1EQXdNRFJsTkRBd01EQXhNREJpTmw5RVJTNXFjR2N8NmFkMGU1ZmQyOWZhYmY5Njk0NTJjYjZmZDRhMGZmYjNlYzExZWRjMjllNDBjOTkyMWFmNGNjNDllNmM5ODM0ZQ"
   },
   {
     "id": "wago-2001-1301",
@@ -2921,24 +2927,25 @@
   },
   {
     "id": "wago-2202-2207",
-    "name": "2202-2207 (Drücker 2-Etagen PE/L)",
+    "name": "2202-2207 (Drücker 2-Etagen PE/PE)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2202 Push-in",
     "levels": 2,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Push-in Doppelstock-PE-Klemme mit Drücker PE/L",
-    "description_en": "Push-in double-deck PE terminal with push-button PE/L",
+    "description_de": "Push-in Doppelstock-Schutzleiterklemme mit Drücker, 2× PE",
+    "description_en": "Push-in double-deck PE terminal with push-button, 2× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
-    ]
+    ],
+    "image_url": "https://www.wago.com/medias/1024-11327131-DE.jpg?context=bWFzdGVyfGltYWdlc3wxNTEzODB8aW1hZ2UvanBlZ3xhR0U1TDJnMk9TOHhOalU0TVRJMk16QTVOemc0Tmk4eE1ESTBYekV4TXpJM01UTXhYMFJGTG1wd1p3fDZmM2Y1MTdhN2MwOGE1Y2EwNjMxMTg1YWE1NmYzMmMzOGFmYjM1MDM0Y2MzZDY3YmQ1MTZhZjE5MjJmNDBhZjA"
   },
   {
     "id": "wago-2204-1201",
@@ -3172,22 +3179,22 @@
   },
   {
     "id": "phoenix-pttb-4-pe",
-    "name": "PTTB 4-PE (4mm² 2-Etagen PE/L)",
+    "name": "PTTB 4-PE (4mm² 2-Etagen PE/PE)",
     "manufacturer": "Phoenix Contact",
     "series": "CLIPLINE PT 4",
     "levels": 2,
     "width_tenths_mm": 62,
     "numbering_order": "BottomToTop",
-    "description_de": "Push-in-Doppelstock-PE-Klemme 4 mm², PE/L",
-    "description_en": "Push-in double-level PE terminal 4 mm², PE/L",
+    "description_de": "Push-in-Doppelstock-Schutzleiterklemme 4 mm², 2× PE",
+    "description_en": "Push-in double-level PE terminal 4 mm², 2× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ]
   },
@@ -3366,22 +3373,22 @@
   },
   {
     "id": "phoenix-uttb-25-pe",
-    "name": "UTTB 2,5-PE (Schraub PE/L)",
+    "name": "UTTB 2,5-PE (Schraub 2-Etagen PE/PE)",
     "manufacturer": "Phoenix Contact",
     "series": "CLIPLINE UT",
     "levels": 2,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Schraub-Doppelstock-PE-Klemme 2,5 mm², PE/L",
-    "description_en": "Screw double-level PE terminal 2.5 mm², PE/L",
+    "description_de": "Schraub-Doppelstock-Schutzleiterklemme 2,5 mm², 2× PE",
+    "description_en": "Screw double-level PE terminal 2.5 mm², 2× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ]
   },
@@ -3728,22 +3735,22 @@
   },
   {
     "id": "weidmuller-wdk-25-pe",
-    "name": "WDK 2.5 PE (Schraub PE/L)",
+    "name": "WDK 2.5 PE (Schraub 2-Etagen PE/PE)",
     "manufacturer": "Weidmüller",
     "series": "W-Series",
     "levels": 2,
     "width_tenths_mm": 51,
     "numbering_order": "BottomToTop",
-    "description_de": "Schraub-Doppelstock-PE-Klemme 2,5 mm², PE/L",
-    "description_en": "Screw double-tier PE terminal 2.5 mm², PE/L",
+    "description_de": "Schraub-Doppelstock-Schutzleiterklemme 2,5 mm², 2× PE",
+    "description_en": "Screw double-tier PE terminal 2.5 mm², 2× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ]
   },
@@ -3979,26 +3986,26 @@
   },
   {
     "id": "wago-2002-3237",
-    "name": "2002-3237 (3-Etagen PE/L/L)",
+    "name": "2002-3237 (3-Etagen PE/PE/PE m. M-Träger)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2002",
     "levels": 3,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Dreistock-Schutzleiterklemme 2,5 mm², PE/L/L",
-    "description_en": "Triple-level PE terminal 2.5 mm², PE/L/L",
+    "description_de": "Dreistock-Schutzleiterklemme 2,5 mm² mit Beschriftungsträger, 3× PE",
+    "description_en": "Triple-level PE terminal 2.5 mm² with marker carrier, 3× PE",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
         "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
       }
     ],
     "jumper_slots_per_tier": 1,
@@ -6792,5 +6799,460 @@
     ],
     "jumper_slots_per_tier": 1,
     "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-udmtk-5",
+    "name": "UDMTK 5 (2-reihige Messertrennklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK / UDMTK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 930,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messertrennklemme 4 mm², Schraubanschluss, 2-reihig (6,2 mm, geschlossenes Gehäuse)",
+    "description_en": "Knife-disconnect terminal block 4 mm², screw connection (6.2 mm, closed housing)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-udmtk-5-pp",
+    "name": "UDMTK 5-P/P (Messertrennklemme m. Prüfbuchse)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK / UDMTK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 930,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messertrennklemme 4 mm² mit Prüfbuchsen, Schraubanschluss (6,2 mm)",
+    "description_en": "Knife-disconnect terminal block 4 mm² with test sockets, screw (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-udmtk-5-pp-bu",
+    "name": "UDMTK 5-P/P BU (Blau N-Messertrennklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK / UDMTK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 930,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messertrennklemme 4 mm² blau (N) mit Prüfbuchsen, Schraubanschluss",
+    "description_en": "Knife-disconnect terminal block 4 mm² blue (N) with test sockets",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-udmtk-5-pl",
+    "name": "UDMTK 5-PL (Messertrennklemme f. Flachstecker)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK / UDMTK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 930,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messertrennklemme 4 mm² mit Flachsteckanschluss und Prüfbuchse (6,2 mm)",
+    "description_en": "Knife-disconnect terminal block 4 mm² with slip-on connection (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-udmtk-5-twin-pp",
+    "name": "UDMTK 5-TWIN-P/P (3-Leiter Messertrennklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK / UDMTK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 765,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Messertrennklemme 4 mm² mit Prüfbuchsen, Schraubanschluss (6,2 mm)",
+    "description_en": "3-conductor knife-disconnect terminal block 4 mm² with test sockets (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-udmtkb-5-pp",
+    "name": "UDMTKB 5-P/P (Brückbare Messertrennklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK / UDMTK",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1060,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Brückbare Messertrennklemme 4 mm² mit Prüfbuchsen, Schraubanschluss (6,2 mm)",
+    "description_en": "Bridgeable knife-disconnect terminal block 4 mm² with test sockets (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-ukk-5-mtk-pp",
+    "name": "UKK 5-MTK-P/P (2-Etagen Messertrennklemme)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UK / UDMTK",
+    "levels": 2,
+    "width_tenths_mm": 61,
+    "height_tenths_mm": 800,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Doppelstock-Messertrennklemme 4 mm² (Unten Durchgang, Oben Trennmesser + Prüfbuchsen)",
+    "description_en": "Double-level knife-disconnect terminal 4 mm² (Lower feed-through, Upper disconnect)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pttb-25-pel",
+    "name": "PTTB 2,5-PE/L (2-Etagen PE/L)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 2,5",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 680,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Doppelstock-Schutzleiter-/Durchgangsklemme 2,5 mm², PE/L",
+    "description_en": "Push-in double-level PE/feed-through terminal 2.5 mm², PE/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
+  },
+  {
+    "id": "phoenix-uttb-25-pel",
+    "name": "UTTB 2,5-PE/L (Schraub 2-Etagen PE/L)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 699,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Doppelstockklemme 2,5 mm², Unten PE / Oben L",
+    "description_en": "Screw double-level terminal 2.5 mm², Lower PE / Upper L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
+  },
+  {
+    "id": "phoenix-sttb-25-pe",
+    "name": "STTB 2,5-PE (Zugfeder 2-Etagen PE/PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 675,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Doppelstock-Schutzleiterklemme 2,5 mm², 2× PE",
+    "description_en": "Spring-cage double-level PE terminal 2.5 mm², 2× PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "phoenix-sttb-25-pel",
+    "name": "STTB 2,5-PE/L (Zugfeder 2-Etagen PE/L)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 675,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Doppelstockklemme 2,5 mm², Unten PE / Oben L",
+    "description_en": "Spring-cage double-level terminal 2.5 mm², Lower PE / Upper L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
+  },
+  {
+    "id": "phoenix-pt-25-3pe",
+    "name": "PT 2,5-3PE (3-Etagen PE/PE/PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 2,5",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 1020,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Dreistock-Schutzleiterklemme 2,5 mm², 3× PE (5,2 mm)",
+    "description_en": "Push-in triple-level PE terminal 2.5 mm², 3× PE (5.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "phoenix-pt-15s-3pe",
+    "name": "PT 1,5/S-3PE (1,5mm² 3-Etagen PE/PE/PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PT 1,5/S",
+    "levels": 3,
+    "width_tenths_mm": 35,
+    "height_tenths_mm": 972,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Dreistock-Schutzleiterklemme 1,5 mm², 3× PE (3,5 mm)",
+    "description_en": "Push-in triple-level PE terminal 1.5 mm², 3× PE (3.5 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "phoenix-pti-6",
+    "name": "PTI 6 (6mm² Installations-Durchgang)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "height_tenths_mm": 660,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Durchgangsklemme 6 mm², grau (8,2 mm)",
+    "description_en": "Installation feed-through terminal 6 mm², gray (8.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "phoenix-pti-6-bu",
+    "name": "PTI 6 BU (6mm² Installations-N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "height_tenths_mm": 660,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Neutralleiterklemme 6 mm², blau (8,2 mm)",
+    "description_en": "Installation neutral terminal 6 mm², blue (8.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "phoenix-pti-6-pe",
+    "name": "PTI 6-PE (6mm² Installations-PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "height_tenths_mm": 660,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Schutzleiterklemme 6 mm², grün-gelb (8,2 mm)",
+    "description_en": "Installation PE terminal 6 mm², green-yellow (8.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "wago-2202-3207",
+    "name": "2202-3207 (Drücker 3-Etagen PE/PE/PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2202 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 936,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in Dreistock-Schutzleiterklemme mit Drücker 2,5 mm², 3× PE",
+    "description_en": "Push-in triple-deck PE terminal with push-button 2.5 mm², 3× PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "image_url": "https://www.wago.com/medias/200-7852011-DE.jpg?context=bWFzdGVyfGltYWdlc3wyNDM3MXxpbWFnZS9qcGVnfGFHWmxMMmhtWVM4eE5qVTNNRE0xTmpjMk1EWXdOaTh5TURCZk56ZzFNakF4TVY5RVJTNXFjR2N8MzJhOGU0ODMwY2EzNDBkMzMxMjQ1ZTgwODc4YWEyOWZhMmU5M2E2YzRmYzU0OTMyYWUxZGQ2MTQ1ZDUxYWE5NQ"
+  },
+  {
+    "id": "weidmuller-a2t-25-ft-pe",
+    "name": "A2T 2.5 FT-PE (Push-in 2-Etagen PE/L)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 2,
+    "width_tenths_mm": 51,
+    "height_tenths_mm": 900,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Doppelstockklemme 2,5 mm², Unten PE / Oben L",
+    "description_en": "Push-in double-tier terminal 2.5 mm², Lower PE / Upper L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
+  },
+  {
+    "id": "weidmuller-a3t-25-pe",
+    "name": "A3T 2.5 PE (Push-in 3-Etagen PE/PE/PE)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect A-Series",
+    "levels": 3,
+    "width_tenths_mm": 51,
+    "height_tenths_mm": 1160,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Dreistock-Schutzleiterklemme 2,5 mm², 3× PE",
+    "description_en": "Push-in triple-tier PE terminal 2.5 mm², 3× PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "weidmuller-zdk-25-pe",
+    "name": "ZDK 2.5PE (Zugfeder 2-Etagen PE/PE)",
+    "manufacturer": "Weidmüller",
+    "series": "Z-Series",
+    "levels": 2,
+    "width_tenths_mm": 51,
+    "height_tenths_mm": 795,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Doppelstock-Schutzleiterklemme 2,5 mm², 2× PE",
+    "description_en": "Tension-clamp double-tier PE terminal 2.5 mm², 2× PE",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
   }
 ]

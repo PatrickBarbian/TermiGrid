@@ -462,6 +462,26 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
+    if id.contains("udmtk") || id.contains("ukk-5") {
+        let jumpers = if id.contains("udmtkb") || id.contains("ukk-5") {
+            "FBI 10-6 (0203250) / ISSBI 10-6 (0301505)"
+        } else {
+            "Keine Steckbrücke (Trennklemme)"
+        };
+        let end_plate = if id.contains("ukk-5") {
+            "Geschlossenes Doppelstock-Gehäuse (optional: D-UK 5-MTK 2716100)"
+        } else {
+            "Geschlossenes Gehäuse (kein Enddeckel nötig)"
+        };
+        return TerminalAccessories {
+            end_plate: end_plate.to_string(),
+            jumpers: jumpers.to_string(),
+            markers: "ZB 6 / UCT-TM 6".to_string(),
+            end_bracket,
+            extra: Some("Optional: Trennplatte TP-UDMTK 5 (3100266)".to_string()),
+        };
+    }
+
     if id.contains("uk-5") {
         return TerminalAccessories {
             end_plate: "D-UK 4/10 (3003020)".to_string(),
@@ -755,6 +775,8 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
                 || id.contains("ut-35")
                 || id.contains("uslkg")
                 || id.contains("hesi")
+                || id.contains("udmtk")
+                || id.contains("ukk-5")
             {
                 0
             } else if id.contains("pt-15s-mt") {

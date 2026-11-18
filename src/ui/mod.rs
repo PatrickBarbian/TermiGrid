@@ -1607,6 +1607,8 @@ impl TermiGridApp {
 
                                 ui.separator();
                                 let total_tiers = block.tiers.len();
+                                let pe_count =
+                                    block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
                                 let field_w = (ui.available_width() - 24.0).clamp(90.0, 220.0);
                                 for (t_idx, tier) in block.tiers.iter_mut().enumerate().rev() {
                                     let tier_title = match (total_tiers, t_idx) {
@@ -1618,11 +1620,20 @@ impl TermiGridApp {
                                         (3, 2) => s.tier_upper,
                                         _ => s.tier_middle,
                                     };
+                                    let pe_tag = if tier.behavior.is_pe() {
+                                        if pe_count > 1 {
+                                            format!(" (PE{})", t_idx + 1)
+                                        } else {
+                                            " (PE)".to_string()
+                                        }
+                                    } else {
+                                        String::new()
+                                    };
 
                                     ui.add(
                                         egui::Label::new(format!(
-                                            "{}: [{}]",
-                                            tier_title, tier.cad_display_label
+                                            "{}{}: [{}]",
+                                            tier_title, pe_tag, tier.cad_display_label
                                         ))
                                         .wrap(),
                                     );

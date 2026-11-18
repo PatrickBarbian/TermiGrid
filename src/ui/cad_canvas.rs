@@ -1165,6 +1165,7 @@ pub fn show_cad_canvas(
                             "Ebenen"
                         }
                     ));
+                    let pe_count = block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
                     for (t_idx, tier) in block.tiers.iter().enumerate().rev() {
                         let lbl = if tier.computed_label.is_empty() {
                             if tier.behavior.is_pe() {
@@ -1177,7 +1178,16 @@ pub fn show_cad_canvas(
                         } else {
                             tier.computed_label.clone()
                         };
-                        lines.push(format!("  E{}: {}", t_idx + 1, lbl));
+                        let prefix = if tier.behavior.is_pe() {
+                            if pe_count > 1 {
+                                format!("PE{}", t_idx + 1)
+                            } else {
+                                "PE".to_string()
+                            }
+                        } else {
+                            format!("E{}", block.tier_visual_row(t_idx).max(0) + 1)
+                        };
+                        lines.push(format!("  {}: {}", prefix, lbl));
                     }
                     response.on_hover_text_at_pointer(lines.join("\n"));
                 }
@@ -1488,10 +1498,15 @@ fn draw_terminal_block(
             }
         }
 
-        // High-contrast tier level pill (E1, E2, E3, PE) in dedicated top-right header strip
+        // High-contrast tier level pill (E1, E2, E3, PE, PE1, PE2) in dedicated top-right header strip
         if zoom >= 0.7 && tier_rect.width() >= 22.0 {
-            let row_tag = if tier.behavior.is_pe() && vrow < 0 {
-                "PE".to_string()
+            let pe_count = block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
+            let row_tag = if tier.behavior.is_pe() {
+                if pe_count > 1 {
+                    format!("PE{}", level + 1)
+                } else {
+                    "PE".to_string()
+                }
             } else {
                 format!("E{}", (vrow.max(0) + 1))
             };

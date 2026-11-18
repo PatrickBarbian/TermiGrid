@@ -590,20 +590,28 @@ fn draw_technical_profile(ui: &mut Ui, spec: &TerminalSpec, size: Vec2, dark: bo
         .tiers
         .iter()
         .any(|t| matches!(t.behavior, crate::model::TierBehavior::ProtectiveEarth));
-    let has_blue = spec
-        .tiers
-        .iter()
-        .any(|t| t.color == TierColor::BlueNeutral);
+    let all_pe = !spec.tiers.is_empty()
+        && spec
+            .tiers
+            .iter()
+            .all(|t| matches!(t.behavior, crate::model::TierBehavior::ProtectiveEarth));
 
-    let body_color = if spec.tiers.len() == 1 && has_pe {
-        Color32::from_rgb(34, 197, 94)
-    } else if spec.tiers.len() == 1 && has_blue {
-        Color32::from_rgb(37, 99, 235)
-    } else if dark {
-        Color32::from_rgb(71, 85, 105)
-    } else {
-        Color32::from_rgb(203, 213, 225)
+    let tier_fill_for = |color: Option<TierColor>| -> Color32 {
+        match color {
+            Some(TierColor::GreenYellowPe) => Color32::from_rgb(34, 197, 94),
+            Some(TierColor::BlueNeutral) => Color32::from_rgb(37, 99, 235),
+            Some(TierColor::OrangeAux) => Color32::from_rgb(234, 88, 12),
+            Some(TierColor::RedPhase) => Color32::from_rgb(220, 38, 38),
+            _ => {
+                if dark {
+                    Color32::from_rgb(71, 85, 105)
+                } else {
+                    Color32::from_rgb(203, 213, 225)
+                }
+            }
+        }
     };
+    let body_color = tier_fill_for(spec.tiers.first().map(|t| t.color));
     let body_stroke = Stroke::new(
         1.2,
         if dark {
@@ -631,7 +639,12 @@ fn draw_technical_profile(ui: &mut Ui, spec: &TerminalSpec, size: Vec2, dark: bo
             Pos2::new(base_x + inset, top.max(rect.min.y + 8.0)),
             Pos2::new(rect.max.x - 10.0 - inset, foot_y - 4.0),
         );
-        painter.rect_filled(step_rect, CornerRadius::same(3), body_color);
+        let step_fill = if all_pe {
+            Color32::from_rgb(34, 197, 94)
+        } else {
+            tier_fill_for(spec.tiers.get(l).map(|t| t.color))
+        };
+        painter.rect_filled(step_rect, CornerRadius::same(3), step_fill);
         painter.rect_stroke(step_rect, CornerRadius::same(3), body_stroke, StrokeKind::Inside);
 
         // Conductor entry pockets left & right + orange push-button / actuator hint

@@ -146,6 +146,8 @@ impl TerminalSpec {
             || id.contains("-mt")
             || id.contains("-tg")
             || id.contains("uk-")
+            || id.contains("ukk-")
+            || id.contains("udmtk")
             || id.contains("uslkg")
             || id.contains("a2c-15")
             || id.contains("a3c-15")
@@ -788,6 +790,7 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-pt-15s-quattro" => Some(("3208197", "https://www.phoenixcontact.com/de-de/produkte/mehrleiterklemme-pt-15s-quattro-3208197", "https://caas.phoenixcontact.com/caas/v1/stable/media/213926/full/b408?format=jpg")),
         "phoenix-pt-15s-mt" => Some(("3210301", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-pt-15s-mt-3210301", "https://caas.phoenixcontact.com/caas/v1/stable/media/31502/full/b408?format=jpg")),
         "phoenix-pt-15s-3l" => Some(("3213713", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pt-15s-3l-3213713", "https://caas.phoenixcontact.com/caas/v1/stable/media/202242/full/b408?format=jpg")),
+        "phoenix-pt-15s-3pe" => Some(("3213739", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-15s-3pe-3213739", "https://caas.phoenixcontact.com/caas/v1/stable/media/262574/full/b408?format=jpg")),
         "phoenix-pttb-15s" => Some(("3208511", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-15s-3208511", "https://caas.phoenixcontact.com/caas/v1/stable/media/220810/full/b408?format=jpg")),
         "phoenix-pttb-15s-pe" => Some(("3208537", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pttb-15s-pe-3208537", "https://caas.phoenixcontact.com/caas/v1/stable/media/235702/full/b408?format=jpg")),
         "phoenix-ptio-15s-3" => Some(("3244410", "https://www.phoenixcontact.com/de-de/produkte/sensor-aktor-klemme-ptio-15s3-3244410", "https://caas.phoenixcontact.com/caas/v1/stable/media/210966/full/b408?format=jpg")),
@@ -806,8 +809,10 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-pttb-25" => Some(("3210567", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-25-3210567", "https://caas.phoenixcontact.com/caas/v1/stable/media/212446/full/b408?format=jpg")),
         "phoenix-pttb-25-ln" => Some(("3210570", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttb-25-bu-3210570", "https://caas.phoenixcontact.com/caas/v1/stable/media/212446/full/b408?format=jpg")),
         "phoenix-pttb-25-pe" => Some(("3210596", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pttb-25-pe-3210596", "https://caas.phoenixcontact.com/caas/v1/stable/media/235702/full/b408?format=jpg")),
+        "phoenix-pttb-25-pel" => Some(("3210978", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pttb-25-pel-3210978", "https://caas.phoenixcontact.com/caas/v1/stable/media/264750/full/b408?format=jpg")),
         "phoenix-pttbs-25" => Some(("3209604", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pttbs-25-3209604", "https://caas.phoenixcontact.com/caas/v1/stable/media/262156/full/b408?format=jpg")),
         "phoenix-pt-25-3l" => Some(("3210499", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pt-25-3l-3210499", "https://caas.phoenixcontact.com/caas/v1/stable/media/202242/full/b408?format=jpg")),
+        "phoenix-pt-25-3pe" => Some(("3210525", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-3pe-3210525", "https://caas.phoenixcontact.com/caas/v1/stable/media/201896/full/b408?format=jpg")),
         "phoenix-pt-25-peln" => Some(("3210538", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-peln-3210538", "https://caas.phoenixcontact.com/caas/v1/stable/media/213800/full/b408?format=jpg")),
         "phoenix-pt-25-pell" => Some(("3210541", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-pell-3210541", "https://caas.phoenixcontact.com/caas/v1/stable/media/213800/full/b408?format=jpg")),
         "phoenix-pti-16-nls-bu" => Some(("1030131", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16-nls-fi-bu-1030131", "https://caas.phoenixcontact.com/caas/v1/stable/media/253860/full/b408?format=jpg")),
@@ -822,6 +827,9 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-pti-4-pelnt" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
         "phoenix-pti-4-pell" => Some(("3214050", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pell-3214050", "https://caas.phoenixcontact.com/caas/v1/stable/media/227746/full/b408?format=jpg")),
         "phoenix-pti-4-ln" => Some(("3214052", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-4-ll-3214052", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
+        "phoenix-pti-6" => Some(("3213972", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-6-3213972", "https://caas.phoenixcontact.com/caas/v1/stable/media/217232/full/b408?format=jpg")),
+        "phoenix-pti-6-bu" => Some(("3213973", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-6-bu-3213973", "https://caas.phoenixcontact.com/caas/v1/stable/media/263182/full/b408?format=jpg")),
+        "phoenix-pti-6-pe" => Some(("3213966", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-6-pe-3213966", "https://caas.phoenixcontact.com/caas/v1/stable/media/230828/full/b408?format=jpg")),
         "phoenix-pti-6-peln" => Some(("3214049", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-peln-3214049", "https://caas.phoenixcontact.com/caas/v1/stable/media/121390/full/b408?format=jpg")),
         "phoenix-pti-6-pelnt" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
         "phoenix-pti-6-pell" => Some(("3214050", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pell-3214050", "https://caas.phoenixcontact.com/caas/v1/stable/media/227746/full/b408?format=jpg")),
@@ -856,6 +864,8 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-st-25-bu" => Some(("3031225", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-st-25-bu-3031225", "https://caas.phoenixcontact.com/caas/v1/stable/media/246770/full/b408?format=jpg")),
         "phoenix-st-25-pe" => Some(("3031238", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-st-25-pe-3031238", "https://caas.phoenixcontact.com/caas/v1/stable/media/246770/full/b408?format=jpg")),
         "phoenix-sttb-25" => Some(("3031270", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-sttb-25-3031270", "https://caas.phoenixcontact.com/caas/v1/stable/media/229202/full/b408?format=jpg")),
+        "phoenix-sttb-25-pe" => Some(("3036026", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-sttb-25-pe-3036026", "https://caas.phoenixcontact.com/caas/v1/stable/media/125436/full/b408?format=jpg")),
+        "phoenix-sttb-25-pel" => Some(("3036314", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-sttb-25-pel-3036314", "https://caas.phoenixcontact.com/caas/v1/stable/media/117532/full/b408?format=jpg")),
         "phoenix-sti-25-peln" => Some(("3031827", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-sti-25-pelnt-3031827", "https://caas.phoenixcontact.com/caas/v1/stable/media/124280/full/b408?format=jpg")),
         "phoenix-ut-25" => Some(("3044076", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-25-3044076", "https://caas.phoenixcontact.com/caas/v1/stable/media/209542/full/b408?format=jpg")),
         "phoenix-ut-25-pe" => Some(("3044092", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-ut-25-pe-3044092", "https://caas.phoenixcontact.com/caas/v1/stable/media/253550/full/b408?format=jpg")),
@@ -866,8 +876,16 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-ut-16" => Some(("3044199", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-16-3044199", "https://caas.phoenixcontact.com/caas/v1/stable/media/49680/full/b408?format=jpg")),
         "phoenix-uttb-25" => Some(("3044636", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-uttb-25-3044636", "https://caas.phoenixcontact.com/caas/v1/stable/media/255718/full/b408?format=jpg")),
         "phoenix-uttb-25-pe" => Some(("3044665", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uttb-25-pe-3044665", "https://caas.phoenixcontact.com/caas/v1/stable/media/255718/full/b408?format=jpg")),
+        "phoenix-uttb-25-pel" => Some(("3044678", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uttb-25-pel-3044678", "https://caas.phoenixcontact.com/caas/v1/stable/media/127298/full/b408?format=jpg")),
         "phoenix-uti-25-peln" => Some(("3076028", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uti-25-pelnt-3076028", "https://caas.phoenixcontact.com/caas/v1/stable/media/236244/full/b408?format=jpg")),
         "phoenix-uk-5n" => Some(("3004362", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-uk-5-n-3004362", "https://caas.phoenixcontact.com/caas/v1/stable/media/268498/full/b408?format=jpg")),
+        "phoenix-udmtk-5" => Some(("3048467", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-udmtk-5-3048467", "https://caas.phoenixcontact.com/caas/v1/stable/media/217516/full/b408?format=jpg")),
+        "phoenix-udmtk-5-pp" => Some(("3101087", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-udmtk-5-pp-3101087", "https://caas.phoenixcontact.com/caas/v1/stable/media/235500/full/b408?format=jpg")),
+        "phoenix-udmtk-5-pp-bu" => Some(("3101113", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-udmtk-5-pp-bu-3101113", "https://caas.phoenixcontact.com/caas/v1/stable/media/220494/full/b408?format=jpg")),
+        "phoenix-udmtk-5-pl" => Some(("3048454", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-udmtk-5-pl-3048454", "https://caas.phoenixcontact.com/caas/v1/stable/media/221956/full/b408?format=jpg")),
+        "phoenix-udmtk-5-twin-pp" => Some(("3101126", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-udmtk-5-twin-pp-3101126", "https://caas.phoenixcontact.com/caas/v1/stable/media/209994/full/b408?format=jpg")),
+        "phoenix-udmtkb-5-pp" => Some(("3024478", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-udmtkb-5-pp-3024478", "https://caas.phoenixcontact.com/caas/v1/stable/media/116514/full/b408?format=jpg")),
+        "phoenix-ukk-5-mtk-pp" => Some(("2800004", "https://www.phoenixcontact.com/de-de/produkte/trennklemme-ukk-5-mtk-pp-2800004", "https://caas.phoenixcontact.com/caas/v1/stable/media/122734/full/b408?format=jpg")),
         "phoenix-uslkg-5" => Some(("0441504", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uslkg-5-0441504", "https://caas.phoenixcontact.com/caas/v1/stable/media/253550/full/b408?format=jpg")),
 
         // --- WEIDMÜLLER ---
@@ -888,7 +906,9 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "weidmuller-a2t-25" => Some(("1547610000", "https://eshop.weidmueller.com/de/a2t-2-5/p/1547610000", "https://assets.dam.weidmueller.com/assets/api/d2054db7-d5a2-42b1-80ce-c5e41a701c86/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a2t-25-n" => Some(("1547650000", "https://eshop.weidmueller.com/de/a2t-2-5-vl/p/1547650000", "https://assets.dam.weidmueller.com/assets/api/d2054db7-d5a2-42b1-80ce-c5e41a701c86/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a2t-25-pe" => Some(("1547680000", "https://eshop.weidmueller.com/de/a2t-2-5-pe/p/1547680000", "https://assets.dam.weidmueller.com/assets/api/d2054db7-d5a2-42b1-80ce-c5e41a701c86/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a2t-25-ft-pe" => Some(("1547640000", "https://eshop.weidmueller.com/de/a2t-2-5-ft-pe/p/1547640000", "https://assets.dam.weidmueller.com/assets/api/b9b3e387-1119-4af8-bdcd-3b35656cc46e/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a3t-25" => Some(("2428510000", "https://eshop.weidmueller.com/de/a3t-2-5/p/2428510000", "https://assets.dam.weidmueller.com/assets/api/b22971ca-7cfb-40f7-b90e-89872195a387/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-a3t-25-pe" => Some(("2428550000", "https://eshop.weidmueller.com/de/a3t-2-5-pe/p/2428550000", "https://assets.dam.weidmueller.com/assets/api/6684e190-ab38-4f22-aa3e-4c0279b01f81/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a3t-25-peln" => Some(("2428560000", "https://eshop.weidmueller.com/de/a3t-2-5-n-l-pe/p/2428560000", "https://assets.dam.weidmueller.com/assets/api/b22971ca-7cfb-40f7-b90e-89872195a387/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a2c-4" => Some(("2051180000", "https://eshop.weidmueller.com/de/a2c-4/p/2051180000", "https://assets.dam.weidmueller.com/assets/api/9fb65787-f740-4082-816c-95507b13365b/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a2c-4-bl" => Some(("2051210000", "https://eshop.weidmueller.com/de/a2c-4-bl/p/2051210000", "https://assets.dam.weidmueller.com/assets/api/9fb65787-f740-4082-816c-95507b13365b/DAP_Master_PP,w_800,q_80")),
@@ -943,6 +963,7 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "weidmuller-zpe-25" => Some(("1608640000", "https://eshop.weidmueller.com/de/zpe-2-5/p/1608640000", "https://assets.dam.weidmueller.com/assets/api/20dbdc64-2c36-4806-89fe-28cd650bc6b8/DAP_Master_PP,w_800,q_80")),
         "weidmuller-zdk-25" => Some(("1674300000", "https://eshop.weidmueller.com/de/zdk-2-5/p/1674300000", "https://assets.dam.weidmueller.com/assets/api/46401129-1a26-4206-825c-25fc0676e8bd/DAP_Master_PP,w_800,q_80")),
         "weidmuller-zdk-25-n" => Some(("1678630000", "https://eshop.weidmueller.com/de/zdk-2-5-v/p/1678630000", "https://assets.dam.weidmueller.com/assets/api/46401129-1a26-4206-825c-25fc0676e8bd/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-zdk-25-pe" => Some(("1690000000", "https://eshop.weidmueller.com/de/zdk-2-5pe/p/1690000000", "https://assets.dam.weidmueller.com/assets/api/7bb6d52a-94c3-4a8b-bf85-8d3d572187ab/DAP_Master_PP,w_800,q_80")),
         "weidmuller-zdu-4" => Some(("1632050000", "https://eshop.weidmueller.com/de/zdu-4/p/1632050000", "https://assets.dam.weidmueller.com/assets/api/9e643106-5f17-4374-b941-e9f49e6fa908/DAP_Master_PP,w_800,q_80")),
         "weidmuller-zpe-4" => Some(("1632080000", "https://eshop.weidmueller.com/de/zpe-4/p/1632080000", "https://assets.dam.weidmueller.com/assets/api/20dbdc64-2c36-4806-89fe-28cd650bc6b8/DAP_Master_PP,w_800,q_80")),
         "weidmuller-zdl-25" => Some(("1720810000", "https://eshop.weidmueller.com/de/zdl-2-5-sllpe/p/1720810000", "https://assets.dam.weidmueller.com/assets/api/46401129-1a26-4206-825c-25fc0676e8bd/DAP_Master_PP,w_800,q_80")),
@@ -1303,5 +1324,93 @@ mod tests {
             catalog.find_by_id("weidmuller-aitb-25-nlp").unwrap().effective_rail_offset_tenths_mm(),
             130
         );
+    }
+
+    #[test]
+    fn udmtk_and_multi_level_pe_catalog_specs_are_complete_and_accurate() {
+        use crate::catalog::accessories::{end_plate_width_tenths_mm, resolve_accessories};
+
+        let catalog = TerminalCatalog::load_embedded();
+
+        // Phoenix UDMTK 5 & UKK 5-MTK knife-disconnect family
+        for id in [
+            "phoenix-udmtk-5",
+            "phoenix-udmtk-5-pp",
+            "phoenix-udmtk-5-pp-bu",
+            "phoenix-udmtk-5-pl",
+            "phoenix-udmtk-5-twin-pp",
+            "phoenix-udmtkb-5-pp",
+            "phoenix-ukk-5-mtk-pp",
+        ] {
+            let spec = catalog.find_by_id(id).expect(id);
+            assert_eq!(spec.manufacturer, "Phoenix Contact");
+            assert_eq!(end_plate_width_tenths_mm(spec), 0, "{id} has closed side wall");
+            assert_eq!(spec.effective_rail_offset_tenths_mm(), 0);
+            let _acc = resolve_accessories(spec);
+        }
+        assert_eq!(
+            catalog.find_by_id("phoenix-udmtk-5").unwrap().effective_height_tenths_mm(),
+            930
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-udmtk-5").unwrap().width_tenths_mm,
+            62
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-ukk-5-mtk-pp").unwrap().levels,
+            2
+        );
+
+        // Pure 2-level & 3-level PE terminals must have all tiers as ProtectiveEarth (no L/L!)
+        for id in [
+            "phoenix-pttb-15s-pe",
+            "phoenix-pttb-25-pe",
+            "phoenix-pttb-4-pe",
+            "phoenix-sttb-25-pe",
+            "phoenix-uttb-25-pe",
+            "phoenix-pt-15s-3pe",
+            "phoenix-pt-25-3pe",
+            "wago-2000-2207",
+            "wago-2002-2207",
+            "wago-2202-2207",
+            "wago-2002-3207",
+            "wago-2002-3237",
+            "wago-2202-3207",
+            "weidmuller-a2t-25-pe",
+            "weidmuller-a3t-25-pe",
+            "weidmuller-wdk-25-pe",
+            "weidmuller-zdk-25-pe",
+        ] {
+            let spec = catalog.find_by_id(id).expect(id);
+            assert!(spec.levels >= 2, "{id} must be multi-level");
+            assert_eq!(spec.tiers.len(), spec.levels);
+            assert!(
+                spec.tiers.iter().all(|t| t.behavior.is_pe()),
+                "{id} must be pure PE across all {} tiers",
+                spec.levels
+            );
+            assert_eq!(spec.sequential_tier_count(), 0);
+        }
+
+        // Hybrid PE/L terminals remain 1x PE + 1x Sequential
+        for id in [
+            "phoenix-pttb-25-pel",
+            "phoenix-sttb-25-pel",
+            "phoenix-uttb-25-pel",
+            "weidmuller-a2t-25-ft-pe",
+        ] {
+            let spec = catalog.find_by_id(id).expect(id);
+            assert_eq!(spec.levels, 2);
+            assert!(spec.tiers[0].behavior.is_pe());
+            assert_eq!(spec.tiers[1].behavior, TierBehavior::Sequential);
+        }
+
+        // Single-tier PTI 6 terminals stay symmetric at 66.0 mm height
+        for id in ["phoenix-pti-6", "phoenix-pti-6-bu", "phoenix-pti-6-pe"] {
+            let spec = catalog.find_by_id(id).expect(id);
+            assert_eq!(spec.levels, 1);
+            assert_eq!(spec.effective_height_tenths_mm(), 660);
+            assert_eq!(spec.effective_rail_offset_tenths_mm(), 0);
+        }
     }
 }

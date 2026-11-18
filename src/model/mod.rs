@@ -134,11 +134,16 @@ impl TerminalBlock {
     /// Computes the aligned visual/logical row index for tier `level_idx`.
     ///
     /// Row `0` is the main lower numbered baseline ("Ebene 1"), row `1` is "Ebene 2", etc.
-    /// If the bottom-most tier is Protective Earth (`PE`), it is placed at row `-1` ("PE")
-    /// so the numbered lower tier above it stays horizontally aligned with non-PE blocks.
+    /// For single-tier PE blocks and hybrid blocks with a bottom PE tier (`PE/L`, `PE/L/N`, etc.),
+    /// the bottom-most PE tier is placed at row `-1` ("PE") so numbered tiers above it stay
+    /// horizontally aligned with feed-through blocks.
+    /// For pure multi-level PE blocks (`PE/PE`, `PE/PE/PE` where all >= 2 tiers are `PE`),
+    /// tiers stack upward cleanly at rows `0, 1, ...` aligned with 2/3-level terminal decks.
     pub fn tier_visual_row(&self, level_idx: usize) -> isize {
         let has_bottom_pe = self.tiers.first().is_some_and(|t| t.behavior.is_pe());
-        if has_bottom_pe {
+        let is_pure_multi_pe =
+            self.tiers.len() >= 2 && self.tiers.iter().all(|t| t.behavior.is_pe());
+        if has_bottom_pe && !is_pure_multi_pe {
             (level_idx as isize) - 1
         } else {
             level_idx as isize

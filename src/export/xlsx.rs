@@ -126,10 +126,20 @@ pub fn export_to_xlsx(
     let max_row = strips
         .iter()
         .flat_map(|s| s.blocks.iter())
-        .flat_map(|b| (0..b.tiers.len()).map(|l| b.tier_visual_row(l)))
+        .flat_map(|b| {
+            b.tiers
+                .iter()
+                .enumerate()
+                .filter(|(_, t)| !t.behavior.is_pe())
+                .map(|(l, _)| b.tier_visual_row(l))
+        })
         .max()
         .unwrap_or(0)
         .max(0) as usize;
+    let has_non_pe = strips
+        .iter()
+        .flat_map(|s| s.blocks.iter())
+        .any(|b| b.tiers.iter().any(|t| !t.behavior.is_pe()));
     let has_pe = strips
         .iter()
         .flat_map(|s| s.blocks.iter())
@@ -151,12 +161,14 @@ pub fn export_to_xlsx(
         ]
     };
 
-    for row in 0..=max_row {
-        headers3.push(if german_headers {
-            format!("Ebene {}", row + 1)
-        } else {
-            format!("Tier {}", row + 1)
-        });
+    if has_non_pe {
+        for row in 0..=max_row {
+            headers3.push(if german_headers {
+                format!("Ebene {}", row + 1)
+            } else {
+                format!("Tier {}", row + 1)
+            });
+        }
     }
     if has_pe {
         headers3.push("PE".to_string());
@@ -174,42 +186,66 @@ pub fn export_to_xlsx(
             ws3.write_string_with_format(row_idx, 2, &block.manufacturer, &cell_text_fmt)?;
             ws3.write_string_with_format(row_idx, 3, block.short_type_name(), &cell_text_fmt)?;
 
-            for target_row in 0..=max_row {
-                let text = block
-                    .tiers
-                    .iter()
-                    .enumerate()
-                    .find(|(l, _)| block.tier_visual_row(*l) == target_row as isize)
-                    .map(|(_, t)| t.computed_label.as_str())
-                    .unwrap_or("");
-                ws3.write_string_with_format(
-                    row_idx,
-                    (4 + target_row) as u16,
-                    text,
-                    &cell_text_fmt,
-                )?;
+            let mut col_cursor = 4u16;
+            if has_non_pe {
+                for target_row in 0..=max_row {
+                    let text = block
+                        .tiers
+                        .iter()
+                        .enumerate()
+                        .find(|(l, t)| {
+                            !t.behavior.is_pe() && block.tier_visual_row(*l) == target_row as isize
+                        })
+                        .map(|(_, t)| t.computed_label.as_str())
+                        .unwrap_or("");
+                    ws3.write_string_with_format(
+                        row_idx,
+                        col_cursor,
+                        text,
+                        &cell_text_fmt,
+                    )?;
+                    col_cursor += 1;
+                }
             }
 
             if has_pe {
-                let pe_text = block
+                let pe_tiers: Vec<_> = block
                     .tiers
                     .iter()
                     .enumerate()
-                    .find(|(l, _)| block.tier_visual_row(*l) == -1)
-                    .map(|(_, t)| {
-                        if !t.computed_label.is_empty() {
-                            t.computed_label.as_str()
-                        } else if options.include_pe_labels && t.behavior.is_pe() {
-                            "PE"
-                        } else {
-                            "PE (unbeschriftet)"
-                        }
-                    })
-                    .unwrap_or("");
+                    .filter(|(_, t)| t.behavior.is_pe())
+                    .collect();
+                let pe_text = if pe_tiers.is_empty() {
+                    String::new()
+                } else if pe_tiers.len() == 1 {
+                    let t = pe_tiers[0].1;
+                    if !t.computed_label.is_empty() {
+                        t.computed_label.clone()
+                    } else if options.include_pe_labels {
+                        "PE".to_string()
+                    } else {
+                        "PE (unbeschriftet)".to_string()
+                    }
+                } else {
+                    pe_tiers
+                        .iter()
+                        .map(|(l, t)| {
+                            let lbl = if !t.computed_label.is_empty() {
+                                t.computed_label.as_str()
+                            } else if options.include_pe_labels {
+                                "PE"
+                            } else {
+                                "unbeschriftet"
+                            };
+                            format!("PE{}: {}", l + 1, lbl)
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" / ")
+                };
                 ws3.write_string_with_format(
                     row_idx,
-                    (5 + max_row) as u16,
-                    pe_text,
+                    col_cursor,
+                    &pe_text,
                     &cell_text_fmt,
                 )?;
             }

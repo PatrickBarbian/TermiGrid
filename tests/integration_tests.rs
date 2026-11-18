@@ -410,3 +410,77 @@ fn installation_nt_and_n_supply_terminals_resolve_correctly() {
     }
 }
 
+#[test]
+fn multi_level_pe_alignment_and_export_handles_pure_and_hybrid_pe() {
+    let catalog = TerminalCatalog::load_embedded();
+
+    let pt_pe = catalog.find_by_id("phoenix-pt-25-pe").unwrap();
+    let pttb_pe = catalog.find_by_id("phoenix-pttb-25-pe").unwrap();
+    let pttb_pel = catalog.find_by_id("phoenix-pttb-25-pel").unwrap();
+    let pt_3pe = catalog.find_by_id("phoenix-pt-25-3pe").unwrap();
+
+    let mut strip = TerminalStrip::generate_with_block_count("-XPE", 1, 4, 4, pt_pe);
+    strip.reassign_blocks(&[1], pttb_pe);
+    strip.reassign_blocks(&[2], pttb_pel);
+    strip.reassign_blocks(&[3], pt_3pe);
+
+    // 1-tier PE: row -1
+    assert_eq!(strip.blocks[0].tier_visual_row(0), -1);
+    // Pure 2-level PE (PTTB 2,5-PE): rows 0, 1
+    assert_eq!(strip.blocks[1].tier_visual_row(0), 0);
+    assert_eq!(strip.blocks[1].tier_visual_row(1), 1);
+    // Hybrid PE/L (PTTB 2,5-PE/L): bottom PE at -1, L at 0 -> sequential "1"
+    assert_eq!(strip.blocks[2].tier_visual_row(0), -1);
+    assert_eq!(strip.blocks[2].tier_visual_row(1), 0);
+    assert_eq!(strip.blocks[2].tiers[1].computed_label, "1");
+    // Pure 3-level PE (PT 2,5-3PE): rows 0, 1, 2
+    assert_eq!(strip.blocks[3].tier_visual_row(0), 0);
+    assert_eq!(strip.blocks[3].tier_visual_row(1), 1);
+    assert_eq!(strip.blocks[3].tier_visual_row(2), 2);
+
+    let project = Project {
+        format_version: 1,
+        project_name: "MultiPeExport".to_string(),
+        strips: vec![strip],
+        ..Default::default()
+    };
+
+    let opts = ExportOptions {
+        include_pe_labels: true,
+        ..ExportOptions::default()
+    };
+    let rows = build_print_rows(&project, 0, &opts);
+    assert_eq!(rows.iter().filter(|r| r.tier_level.starts_with("PE")).count(), 7);
+    assert!(rows.iter().any(|r| r.tier_level == "PE1"));
+    assert!(rows.iter().any(|r| r.tier_level == "PE2"));
+    assert!(rows.iter().any(|r| r.tier_level == "PE3"));
+
+    let cols = build_tier_columns(&project, 0, &opts, true);
+    assert_eq!(cols.len(), 2);
+    assert_eq!(cols[0].0, "Ebene 1");
+    assert_eq!(cols[0].1, vec!["1"]);
+    assert_eq!(cols[1].0, "PE");
+    assert_eq!(cols[1].1.len(), 7);
+
+    // Pure-PE-only strip export must produce clean XLSX & tier columns without phantom Ebene columns
+    let pe_only_strip = TerminalStrip::generate_with_block_count("-XPE2", 1, 2, 2, pttb_pe);
+    let pe_only_project = Project {
+        format_version: 1,
+        project_name: "PurePeOnly".to_string(),
+        strips: vec![pe_only_strip],
+        ..Default::default()
+    };
+    let pe_cols = build_tier_columns(&pe_only_project, 0, &opts, true);
+    assert_eq!(pe_cols.len(), 1);
+    assert_eq!(pe_cols[0].0, "PE");
+    assert_eq!(pe_cols[0].1, vec!["PE", "PE", "PE", "PE"]);
+
+    let out_path = std::env::temp_dir().join("termigrid_multi_pe_test.xlsx");
+    let _ = std::fs::remove_file(&out_path);
+    let count = export_to_xlsx(&out_path, &pe_only_project, 0, &opts, true).unwrap();
+    assert_eq!(count, 4);
+    assert!(out_path.exists());
+    let _ = std::fs::remove_file(&out_path);
+}
+
+
