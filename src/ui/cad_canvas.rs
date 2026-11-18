@@ -1294,7 +1294,7 @@ fn draw_bridge_overlay(
         }
     }
 
-    // 3. Wire bridges (`Drahtbrücken`) for cross-tier, single-chamber overflow, or pitch jumps
+    // 3. Wire bridges (`Drahtbrücken`) for cross-tier, end-plate barriers, single-chamber overflow, or pitch jumps
     for (wb_idx, wb) in plan.wire_bridges.iter().enumerate() {
         let Some(r_from) = tier_rects.get(&wb.from) else {
             continue;
@@ -1304,13 +1304,45 @@ fn draw_bridge_overlay(
         };
 
         let pot_color = Color32::from_rgb(wb.color_rgb[0], wb.color_rgb[1], wb.color_rgb[2]);
-        let p0 = Pos2::new(r_from.min.x + 8.0 * zoom, r_from.max.y - 3.0 * zoom);
-        let p1 = Pos2::new(r_to.min.x + 8.0 * zoom, r_to.max.y - 3.0 * zoom);
-        let arch = if wb.from.0 == wb.to.0 {
-            Pos2::new(r_from.max.x + 9.0 * zoom, (p0.y + p1.y) * 0.5)
+        let (p0, p1, arch) = if wb.from.0 == wb.to.0 {
+            let p0 = Pos2::new(r_from.max.x - 5.5 * zoom, r_from.max.y - 4.0 * zoom);
+            let p1 = Pos2::new(r_to.max.x - 5.5 * zoom, r_to.max.y - 4.0 * zoom);
+            let arch = Pos2::new(r_from.max.x + 9.0 * zoom, (p0.y + p1.y) * 0.5);
+            (p0, p1, arch)
         } else {
-            let lane = (wb_idx % 3) as f32 * 5.0 * zoom;
-            Pos2::new((p0.x + p1.x) * 0.5, p0.y.max(p1.y) + 12.0 * zoom + lane)
+            let from_x = if wb.from.0 < wb.to.0 {
+                r_from.max.x - 5.5 * zoom
+            } else {
+                r_from.min.x + 5.5 * zoom
+            };
+            let to_x = if wb.from.0 < wb.to.0 {
+                r_to.min.x + 5.5 * zoom
+            } else {
+                r_to.max.x - 5.5 * zoom
+            };
+            let p0 = Pos2::new(from_x, r_from.max.y - 3.0 * zoom);
+            let p1 = Pos2::new(to_x, r_to.max.y - 3.0 * zoom);
+            let lo_b = wb.from.0.min(wb.to.0);
+            let hi_b = wb.from.0.max(wb.to.0);
+            let from_vrow = strip
+                .blocks
+                .get(wb.from.0)
+                .map(|b| b.tier_visual_row(wb.from.1))
+                .unwrap_or(0);
+            let crosses_comb_slot0 = plan.comb_segments.iter().any(|seg| {
+                seg.visual_row == from_vrow
+                    && seg.channel_slot == 0
+                    && seg.end_block_idx > lo_b
+                    && seg.start_block_idx < hi_b
+            });
+            let lane = (wb_idx % 3) as f32 * 4.0 * zoom;
+            let drop_y = if crosses_comb_slot0 {
+                27.5 * zoom + lane
+            } else {
+                16.0 * zoom + lane
+            };
+            let arch = Pos2::new((p0.x + p1.x) * 0.5, p0.y.max(p1.y) + drop_y);
+            (p0, p1, arch)
         };
 
         // Two-segment polyline with clear DB badge
@@ -1322,6 +1354,12 @@ fn draw_bridge_overlay(
 
         let badge_rect = Rect::from_center_size(arch, Vec2::new(18.0 * zoom, 11.0 * zoom));
         painter.rect_filled(badge_rect, CornerRadius::same(3), pot_color);
+        painter.rect_stroke(
+            badge_rect,
+            CornerRadius::same(3),
+            Stroke::new(1.0, Color32::WHITE),
+            StrokeKind::Inside,
+        );
         painter.text(
             arch,
             Align2::CENTER_CENTER,

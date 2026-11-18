@@ -464,10 +464,25 @@ pub fn export_to_xlsx(
                     "1-Kammer max. Polzahl überschritten"
                 }
                 crate::model::bridging::WireBridgeReason::SingleChannelOccupied => {
-                    "Brückungskanal belegt"
+                    if german_headers {
+                        "Brückungskanal belegt"
+                    } else {
+                        "Jumper channel occupied"
+                    }
+                }
+                crate::model::bridging::WireBridgeReason::EndPlateBarrier => {
+                    if german_headers {
+                        "Enddeckel / Zwischenplatte"
+                    } else {
+                        "End / partition plate"
+                    }
                 }
                 crate::model::bridging::WireBridgeReason::IncompatiblePitchOrGap => {
-                    "Raster-/Typ-Sprung"
+                    if german_headers {
+                        "Raster-/Typ-Sprung"
+                    } else {
+                        "Pitch / type jump"
+                    }
                 }
             };
             let note = format!(

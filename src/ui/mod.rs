@@ -1294,6 +1294,9 @@ impl TermiGridApp {
                                         WireBridgeReason::SingleChannelOccupied => {
                                             s.bridge_reason_single_occ
                                         }
+                                        WireBridgeReason::EndPlateBarrier => {
+                                            s.bridge_reason_end_plate
+                                        }
                                         WireBridgeReason::IncompatiblePitchOrGap => {
                                             s.bridge_reason_pitch
                                         }

@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::catalog::accessories::calculate_end_plates;
 use crate::catalog::TerminalCatalog;
 use crate::model::{JumperPotential, TerminalStrip};
 
@@ -24,6 +25,8 @@ pub enum WireBridgeReason {
     ExceedsMaxPolesSingleSlot,
     /// Single jumper chamber on this block/gap is already occupied by another potential.
     SingleChannelOccupied,
+    /// Separated by an end/partition plate (`Enddeckel` / `Zwischenplatte`) blocking comb jumpers.
+    EndPlateBarrier,
     /// Different manufacturer/pitch/family or large gap between blocks.
     IncompatiblePitchOrGap,
 }
@@ -71,6 +74,7 @@ pub struct BridgePlan {
 #[derive(Debug, Clone)]
 struct BlockJumperMeta {
     family: String,
+    end_plate_key: String,
     slots: u8,
     max_poles: u8,
     part_hint_spec: Option<usize>,
@@ -168,21 +172,25 @@ pub fn calculate_bridges(strip: &TerminalStrip, catalog: &TerminalCatalog) -> Br
     for (idx, block) in strip.blocks.iter().enumerate() {
         id_to_idx.insert(block.id, idx);
         let spec = catalog.find_by_id(&block.spec_id);
-        let (family, slots, max_poles) = if let Some(sp) = spec {
+        let (family, end_plate_key, slots, max_poles) = if let Some(sp) = spec {
+            let acc = catalog.accessories_for(sp);
             (
                 sp.jumper_family_key(),
+                acc.end_plate,
                 sp.effective_jumper_slots(),
                 sp.effective_max_jumper_poles(),
             )
         } else {
             (
                 format!("{}:generic:{}", block.manufacturer, block.width_tenths_mm),
+                format!("generic:{}", block.spec_id),
                 1,
                 10,
             )
         };
         block_metas.push(BlockJumperMeta {
             family,
+            end_plate_key,
             slots,
             max_poles,
             part_hint_spec: spec.and_then(|sp| {
@@ -193,6 +201,13 @@ pub fn calculate_bridges(strip: &TerminalStrip, catalog: &TerminalCatalog) -> Br
             }),
         });
     }
+
+    // Physical end/partition plates placed between `after_block_idx` and `after_block_idx + 1`.
+    // A rigid comb jumper can never pass through an end plate wall or bridge across its added thickness.
+    let end_plate_after: BTreeSet<usize> = calculate_end_plates(strip, catalog)
+        .into_iter()
+        .map(|p| p.after_block_idx)
+        .collect();
 
     // Track chamber occupancy `(block_idx, visual_row, channel_slot) -> potential_id`
     let mut chamber_owner: BTreeMap<(usize, isize, u8), u64> = BTreeMap::new();
@@ -233,7 +248,7 @@ pub fn calculate_bridges(strip: &TerminalStrip, catalog: &TerminalCatalog) -> Br
 
         for ((vrow, fam), group) in by_row_family {
             // Split into horizontal runs that can potentially share a comb jumper (max gap <= 3 compatible blocks,
-            // no incompatible block in between, and no occupied single chamber blocking intermediate pass-through).
+            // no end/partition plate between blocks, no incompatible block in between, and no occupied single chamber).
             let mut runs: Vec<Vec<(usize, usize)>> = Vec::new();
             let mut current_run: Vec<(usize, usize)> = Vec::new();
 
@@ -242,6 +257,7 @@ pub fn calculate_bridges(strip: &TerminalStrip, catalog: &TerminalCatalog) -> Br
                     if can_comb_span(
                         strip,
                         &block_metas,
+                        &end_plate_after,
                         &chamber_owner,
                         pot.id,
                         vrow,
@@ -411,12 +427,26 @@ pub fn calculate_bridges(strip: &TerminalStrip, catalog: &TerminalCatalog) -> Br
                 }
 
                 if let Some((_, c_idx, a, b)) = best {
-                    let reason = if a.2 != b.2 {
+                    let (lo, hi) = if (a.0, a.1) <= (b.0, b.1) {
+                        (a, b)
+                    } else {
+                        (b, a)
+                    };
+                    let reason = if lo.2 != hi.2 {
                         WireBridgeReason::CrossTier
                     } else {
-                        let fam_a = &block_metas[a.0].family;
-                        let fam_b = &block_metas[b.0].family;
-                        if fam_a != fam_b || a.0.abs_diff(b.0) > 4 {
+                        let fam_a = &block_metas[lo.0].family;
+                        let fam_b = &block_metas[hi.0].family;
+                        let has_end_plate_barrier = (lo.0..hi.0).any(|mid| {
+                            end_plate_after.contains(&mid)
+                                || block_metas[mid].end_plate_key
+                                    != block_metas[mid + 1].end_plate_key
+                        });
+                        if fam_a != fam_b {
+                            WireBridgeReason::IncompatiblePitchOrGap
+                        } else if has_end_plate_barrier {
+                            WireBridgeReason::EndPlateBarrier
+                        } else if hi.0.abs_diff(lo.0) > 4 {
                             WireBridgeReason::IncompatiblePitchOrGap
                         } else {
                             WireBridgeReason::SingleChannelOccupied
@@ -426,8 +456,8 @@ pub fn calculate_bridges(strip: &TerminalStrip, catalog: &TerminalCatalog) -> Br
                         potential_id: pot.id,
                         potential_name: pot.name.clone(),
                         color_rgb: pot.color_rgb,
-                        from: (a.0, a.1),
-                        to: (b.0, b.1),
+                        from: (lo.0, lo.1),
+                        to: (hi.0, hi.1),
                         reason,
                     });
                     merged[c_idx] = true;
@@ -462,6 +492,7 @@ fn find_free_slot(
 fn can_comb_span(
     strip: &TerminalStrip,
     metas: &[BlockJumperMeta],
+    end_plate_after: &BTreeSet<usize>,
     chamber_owner: &BTreeMap<(usize, isize, u8), u64>,
     pot_id: u64,
     vrow: isize,
@@ -479,6 +510,12 @@ fn can_comb_span(
     }
 
     for mid in from_b..=to_b {
+        if mid < to_b
+            && (end_plate_after.contains(&mid)
+                || metas[mid].end_plate_key != metas[mid + 1].end_plate_key)
+        {
+            return false;
+        }
         if metas[mid].family != family {
             return false;
         }
@@ -567,5 +604,75 @@ mod tests {
         assert_eq!(plan.comb_segments[0].cut_pins, vec![1]);
         assert_eq!(plan.wire_bridges.len(), 1);
         assert_eq!(plan.wire_bridges[0].reason, WireBridgeReason::CrossTier);
+    }
+
+    #[test]
+    fn comb_jumper_never_crosses_end_plate_uses_wire_bridge_instead() {
+        let catalog = TerminalCatalog::load_embedded();
+        let install_peln = catalog.find_by_id("wago-2003-7641").unwrap();
+        let double_ll = catalog.find_by_id("wago-2002-2201").unwrap();
+        let single = catalog.find_by_id("wago-2002-1201").unwrap();
+
+        // 6x 2003-7641 (#0..#5), 3x 2002-2201 (#6..#8), 6x 2002-1201 (#9..#14)
+        // End plates sit after #5 (2003-7692) and after #8 (2002-2291).
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 20, 15, single);
+        strip.reassign_blocks(&[0, 1, 2, 3, 4, 5], install_peln);
+        strip.reassign_blocks(&[6, 7, 8], double_ll);
+
+        let pot = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
+        // E1 on 2003-7641 is level_index 1 (level 0 is PE)
+        strip.toggle_potential_member(pot, 0, 1);
+        strip.toggle_potential_member(pot, 2, 1);
+        strip.toggle_potential_member(pot, 5, 1);
+        // E1 on 2002-1201 is level_index 0
+        strip.toggle_potential_member(pot, 9, 0);
+        strip.toggle_potential_member(pot, 10, 0);
+        strip.toggle_potential_member(pot, 11, 0);
+        strip.toggle_potential_member(pot, 13, 0);
+        strip.toggle_potential_member(pot, 14, 0);
+
+        let plan = calculate_bridges(&strip, &catalog);
+        assert_eq!(plan.comb_segments.len(), 2);
+        assert_eq!(plan.comb_segments[0].start_block_idx, 0);
+        assert_eq!(plan.comb_segments[0].end_block_idx, 5);
+        assert_eq!(plan.comb_segments[0].pole_count, 6);
+        assert_eq!(plan.comb_segments[0].cut_pins, vec![1, 3, 4]);
+
+        assert_eq!(plan.comb_segments[1].start_block_idx, 9);
+        assert_eq!(plan.comb_segments[1].end_block_idx, 14);
+        assert_eq!(plan.comb_segments[1].pole_count, 6);
+        assert_eq!(plan.comb_segments[1].cut_pins, vec![12]);
+
+        assert_eq!(plan.wire_bridges.len(), 1);
+        assert_eq!(plan.wire_bridges[0].from, (5, 1));
+        assert_eq!(plan.wire_bridges[0].to, (9, 0));
+        assert_eq!(plan.wire_bridges[0].reason, WireBridgeReason::EndPlateBarrier);
+    }
+
+    #[test]
+    fn adjacent_blocks_separated_by_end_plate_use_wire_bridge() {
+        let catalog = TerminalCatalog::load_embedded();
+        let install_peln = catalog.find_by_id("wago-2003-7641").unwrap();
+        let double_ll = catalog.find_by_id("wago-2002-2201").unwrap();
+
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 6, 4, double_ll);
+        strip.reassign_blocks(&[0, 1], install_peln);
+
+        let pot = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
+        strip.toggle_potential_member(pot, 0, 1);
+        strip.toggle_potential_member(pot, 1, 1);
+        strip.toggle_potential_member(pot, 2, 0);
+        strip.toggle_potential_member(pot, 3, 0);
+
+        let plan = calculate_bridges(&strip, &catalog);
+        assert_eq!(plan.comb_segments.len(), 2);
+        assert_eq!(plan.comb_segments[0].start_block_idx, 0);
+        assert_eq!(plan.comb_segments[0].end_block_idx, 1);
+        assert_eq!(plan.comb_segments[1].start_block_idx, 2);
+        assert_eq!(plan.comb_segments[1].end_block_idx, 3);
+        assert_eq!(plan.wire_bridges.len(), 1);
+        assert_eq!(plan.wire_bridges[0].from, (1, 1));
+        assert_eq!(plan.wire_bridges[0].to, (2, 0));
+        assert_eq!(plan.wire_bridges[0].reason, WireBridgeReason::EndPlateBarrier);
     }
 }
