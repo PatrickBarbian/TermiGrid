@@ -74,64 +74,215 @@ pub fn show_guide_tab(ui: &mut Ui, updater: &UpdateChecker, strings: &Strings) {
             ui.add_space(8.0);
         }
 
-        // About, VibeCoded notice, Update Checker, GitHub & BuyMeACoffee card
+        // About, Authors, Open-Source Licenses, Update Checker, GitHub & BuyMeACoffee card
         egui::Frame::group(ui.style())
             .inner_margin(egui::Margin::same(12))
             .show(ui, |ui| {
                 ui.set_min_width(ui.available_width().min(860.0));
-                ui.label(
-                    egui::RichText::new(format!("TermiGrid v{CURRENT_VERSION}"))
-                        .strong()
-                        .size(16.0),
-                );
-                ui.add_space(4.0);
-                ui.label(
-                    egui::RichText::new(strings.about_vibecoded)
-                        .color(secondary_text_color(ui)),
-                );
-                ui.add_space(8.0);
+                show_about_license_contents(ui, updater, strings, false);
+            });
+    });
+}
 
-                ui.horizontal_wrapped(|ui| {
-                    if ui.button(strings.btn_github).clicked() {
-                        open_external_url(ui.ctx(), GITHUB_REPO_URL);
-                    }
-                    if ui.button(strings.btn_coffee).clicked() {
-                        open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
-                    }
-                    if ui.button(strings.btn_check_update).clicked() {
-                        updater.check_async(ui.ctx().clone());
-                    }
+/// Renders the dedicated Info & Open-Source Licenses modal dialog (`ℹ Info`), available in all builds
+/// (Windows, macOS, Android).
+pub fn show_about_modal(
+    ctx: &egui::Context,
+    open: &mut bool,
+    updater: &UpdateChecker,
+    strings: &Strings,
+) {
+    if !*open {
+        return;
+    }
 
-                    match updater.status() {
-                        UpdateStatus::Idle => {}
-                        UpdateStatus::Checking => {
-                            ui.label(strings.update_checking);
-                        }
-                        UpdateStatus::UpToDate(tag) => {
-                            ui.label(format!("✓ {} ({tag})", strings.update_up_to_date));
-                        }
-                        UpdateStatus::UpdateAvailable {
-                            latest_tag,
-                            release_url,
-                        } => {
-                            ui.label(
-                                egui::RichText::new(format!(
-                                    "{}: {latest_tag}",
-                                    strings.update_available
-                                ))
-                                .strong(),
-                            );
-                            if ui.button(strings.update_open_release).clicked() {
-                                open_external_url(ui.ctx(), &release_url);
-                            }
-                        }
-                        UpdateStatus::Error(err) => {
-                            ui.label(format!("{}: {err}", strings.update_error));
-                        }
+    let screen_size = ctx.content_rect().size();
+    let max_w = (screen_size.x - 24.0).max(280.0);
+    let max_h = (screen_size.y - 40.0).max(240.0);
+    let target_w = 560.0_f32.min(max_w);
+
+    let mut close_clicked = false;
+    egui::Window::new("ℹ Über TermiGrid – Info & Lizenzen")
+        .open(open)
+        .collapsible(false)
+        .resizable(true)
+        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+        .default_width(target_w)
+        .min_width(300.0_f32.min(max_w))
+        .max_width(max_w)
+        .max_height(max_h)
+        .show(ctx, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                show_about_license_contents(ui, updater, strings, true);
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    if crate::ui::theme::primary_button(ui, "Schließen / Close").clicked() {
+                        close_clicked = true;
                     }
                 });
             });
+        });
+
+    if close_clicked {
+        *open = false;
+    }
+}
+
+fn show_about_license_contents(
+    ui: &mut Ui,
+    updater: &UpdateChecker,
+    strings: &Strings,
+    compact: bool,
+) {
+    let sec = secondary_text_color(ui);
+
+    ui.label(
+        egui::RichText::new(format!("TermiGrid v{CURRENT_VERSION}"))
+            .strong()
+            .size(18.0),
+    );
+    ui.add(
+        egui::Label::new(egui::RichText::new(strings.app_subtitle).color(sec)).wrap(),
+    );
+    ui.add_space(6.0);
+
+    ui.group(|ui| {
+        ui.label(egui::RichText::new("Entwicklung & Autoren").strong());
+        ui.add_space(2.0);
+        ui.add(
+            egui::Label::new(
+                "• Patrick Barbian — Projektinhaber, Elektrotechnik-Konzept & Entwicklung",
+            )
+            .wrap(),
+        );
+        ui.add(
+            egui::Label::new(
+                "• Antigravity (Google Deepmind / Gemini) — KI-Pair-Programming & Architektur",
+            )
+            .wrap(),
+        );
+        ui.add(
+            egui::Label::new(egui::RichText::new(strings.about_vibecoded).color(sec).small())
+                .wrap(),
+        );
     });
+
+    ui.add_space(6.0);
+    ui.horizontal_wrapped(|ui| {
+        if ui.button(strings.btn_github).clicked() {
+            open_external_url(ui.ctx(), GITHUB_REPO_URL);
+        }
+        if ui.button(strings.btn_coffee).clicked() {
+            open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
+        }
+        if ui.button(strings.btn_check_update).clicked() {
+            updater.check_async(ui.ctx().clone());
+        }
+
+        match updater.status() {
+            UpdateStatus::Idle => {}
+            UpdateStatus::Checking => {
+                ui.label(strings.update_checking);
+            }
+            UpdateStatus::UpToDate(tag) => {
+                ui.label(format!("✓ {} ({tag})", strings.update_up_to_date));
+            }
+            UpdateStatus::UpdateAvailable {
+                latest_tag,
+                release_url,
+            } => {
+                ui.label(
+                    egui::RichText::new(format!("{}: {latest_tag}", strings.update_available))
+                        .strong(),
+                );
+                if ui.button(strings.update_open_release).clicked() {
+                    open_external_url(ui.ctx(), &release_url);
+                }
+            }
+            UpdateStatus::Error(err) => {
+                ui.add(egui::Label::new(format!("{}: {err}", strings.update_error)).wrap());
+            }
+        }
+    });
+
+    ui.add_space(8.0);
+    ui.group(|ui| {
+        ui.label(
+            egui::RichText::new("Verwendete Open-Source-Komponenten & Lizenzen").strong(),
+        );
+        ui.add_space(2.0);
+        let libs: [(&str, &str, &str); 9] = [
+            ("TermiGrid", "MIT License", "© Patrick Barbian"),
+            (
+                "egui / eframe (0.37)",
+                "MIT OR Apache-2.0",
+                "Emil Ernerfeldt & egui contributors",
+            ),
+            (
+                "serde / serde_json (1.0)",
+                "MIT OR Apache-2.0",
+                "Erick Tryzelaar, David Tolnay",
+            ),
+            (
+                "rust_xlsxwriter (0.102)",
+                "MIT OR Apache-2.0",
+                "John McNamara",
+            ),
+            (
+                "image (0.25)",
+                "MIT OR Apache-2.0",
+                "The image-rs Developers",
+            ),
+            ("rfd (0.18, Desktop)", "MIT", "PolyMeilex (Native File Dialogs)"),
+            ("winit (0.30, Android)", "Apache-2.0", "The winit contributors"),
+            ("jni (0.22, Android)", "MIT OR Apache-2.0", "jni-rs contributors"),
+            ("winresource (0.1, Windows)", "MIT", "Maxime Chambreuil"),
+        ];
+        for (name, license, author) in libs {
+            ui.horizontal_wrapped(|ui| {
+                ui.label(egui::RichText::new(format!("• {name}")).strong().small());
+                ui.label(
+                    egui::RichText::new(format!("[{license}]"))
+                        .color(egui::Color32::from_rgb(56, 189, 248))
+                        .small(),
+                );
+                ui.add(
+                    egui::Label::new(egui::RichText::new(author).color(sec).small()).wrap(),
+                );
+            });
+        }
+
+        ui.add_space(4.0);
+        egui::CollapsingHeader::new("MIT-Lizenztext (TermiGrid)")
+            .default_open(!compact)
+            .show(ui, |ui| {
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(
+                            "Copyright (c) 2026 Patrick Barbian\n\n\
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\n\
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\n\
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.",
+                        )
+                        .color(sec)
+                        .small(),
+                    )
+                    .wrap(),
+                );
+            });
+    });
+
+    ui.add_space(6.0);
+    ui.add(
+        egui::Label::new(
+            egui::RichText::new(
+                "Marken-Hinweis: WAGO (TOPJOB S), Phoenix Contact (CLIPLINE complete / PT / PTI) und Weidmüller (Klippon Connect) sind eingetragene Marken der jeweiligen Hersteller.",
+            )
+            .color(sec)
+            .small(),
+        )
+        .wrap(),
+    );
 }
 
 /// Renders the searchable embedded terminal database table ("Klemmen-Datenbank") plus a form

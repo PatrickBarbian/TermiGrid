@@ -61,6 +61,8 @@ pub struct CadCanvasState {
     /// Tracks middle-mouse / touch drag panning smoothly across frames.
     pub middle_panning: bool,
     pub pan_last_pos: Option<Pos2>,
+    /// Accumulates finger/pointer movement during Pan mode so short jittery taps still select.
+    pub pan_touch_total_dist: f32,
     /// Active left-drag mass-bridging state (`Some(true)` = adding, `Some(false)` = removing).
     pub bridge_drag_action: Option<bool>,
     pub bridge_painted: BTreeSet<(usize, usize)>,
@@ -823,8 +825,21 @@ pub fn show_cad_canvas(
                 state.editing_tier = None;
             }
 
-            // 4. Handle Pointer Interactions (Double-Click, Pan/Scroll, Bridge Assign, Click, Marquee)
+            // 4. Handle Pointer & Touch Interactions (Multi-touch, Double-Click, Pan/Scroll, Bridge Assign, Click/Tap, Marquee)
             let space_pan = ui.input(|i| i.key_down(egui::Key::Space));
+            let multi_touch = ui.input(|i| i.multi_touch());
+            if let Some(mt) = multi_touch
+                && mt.translation_delta.length_sq() > 0.0
+            {
+                ui.scroll_with_delta(mt.translation_delta);
+            }
+
+            let is_primary_pan = state.interaction_mode == CanvasInteractionMode::Pan || space_pan;
+            if is_primary_pan && response.drag_started_by(egui::PointerButton::Primary) {
+                state.pan_touch_total_dist = 0.0;
+            }
+
+            let mut touch_tap_release_pos: Option<Pos2> = None;
             if state.middle_panning {
                 ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
                 if let Some(pos) = ptr_pos {
@@ -835,11 +850,14 @@ pub fn show_cad_canvas(
                         ui.scroll_with_delta(delta);
                     }
                 }
-            } else if response.dragged_by(egui::PointerButton::Secondary)
-                || (response.dragged_by(egui::PointerButton::Primary)
-                    && (space_pan || state.interaction_mode == CanvasInteractionMode::Pan))
+            } else if multi_touch.is_none()
+                && (response.dragged_by(egui::PointerButton::Secondary)
+                    || (response.dragged_by(egui::PointerButton::Primary) && is_primary_pan))
             {
                 let delta = response.drag_delta();
+                if response.dragged_by(egui::PointerButton::Primary) && is_primary_pan {
+                    state.pan_touch_total_dist += delta.length();
+                }
                 if delta.length_sq() > 0.0 {
                     ui.scroll_with_delta(delta);
                 }
@@ -849,12 +867,28 @@ pub fn show_cad_canvas(
                 ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
             }
 
+            if is_primary_pan
+                && multi_touch.is_none()
+                && response.drag_stopped_by(egui::PointerButton::Primary)
+            {
+                if state.pan_touch_total_dist < 12.0 {
+                    touch_tap_release_pos = response.interact_pointer_pos().or(ptr_pos);
+                }
+                state.pan_touch_total_dist = 0.0;
+            }
+
+            let touch_pad = if cfg!(target_os = "android") {
+                6.0
+            } else {
+                0.0
+            };
+
             if state.interaction_mode != CanvasInteractionMode::BridgeAssign
                 && response.double_clicked_by(egui::PointerButton::Primary)
                 && let Some(pos) = response.interact_pointer_pos()
                 && let Some((b_idx, t_idx, _, _)) = tier_hit_rects
                     .iter()
-                    .find(|(_, _, tier_rect, _)| tier_rect.contains(pos))
+                    .find(|(_, _, tier_rect, _)| tier_rect.expand(touch_pad).contains(pos))
                     .copied()
             {
                 *selected_end_bracket = None;
@@ -871,7 +905,7 @@ pub fn show_cad_canvas(
                 state.is_marquee_active = false;
             }
 
-            if state.editing_tier.is_none() {
+            if state.editing_tier.is_none() && multi_touch.is_none() {
                 let use_marquee =
                     state.interaction_mode == CanvasInteractionMode::SelectBox && !space_pan;
                 let use_bridge =
@@ -919,7 +953,7 @@ pub fn show_cad_canvas(
                     {
                         let initial_present = tier_hit_rects
                             .iter()
-                            .find(|(_, _, tier_rect, _)| tier_rect.contains(pos))
+                            .find(|(_, _, tier_rect, _)| tier_rect.expand(touch_pad).contains(pos))
                             .is_some_and(|&(b_idx, t_idx, _, _)| {
                                 strip.blocks.get(b_idx).is_some_and(|b| {
                                     strip
@@ -945,7 +979,7 @@ pub fn show_cad_canvas(
                             let t = step as f32 / steps as f32;
                             let sample = prev.lerp(curr, t);
                             for &(b_idx, t_idx, tier_rect, _) in &tier_hit_rects {
-                                if tier_rect.contains(sample)
+                                if tier_rect.expand(touch_pad).contains(sample)
                                     && state.bridge_painted.insert((b_idx, t_idx))
                                 {
                                     strip.set_potential_member(pot_id, b_idx, t_idx, action);
@@ -968,27 +1002,41 @@ pub fn show_cad_canvas(
                     state.bridge_last_pos = None;
                 }
 
-                if response.clicked_by(egui::PointerButton::Primary)
-                    && let Some(pos) = response.interact_pointer_pos()
-                {
+                let tap_pos = if response.clicked_by(egui::PointerButton::Primary) {
+                    response.interact_pointer_pos()
+                } else {
+                    touch_tap_release_pos
+                };
+
+                if let Some(pos) = tap_pos {
                     if use_bridge {
                         *selected_end_bracket = None;
                         if let Some((b_idx, t_idx, _, _)) = tier_hit_rects
                             .iter()
-                            .find(|(_, _, tier_rect, _)| tier_rect.contains(pos))
+                            .find(|(_, _, tier_rect, _)| tier_rect.expand(touch_pad).contains(pos))
                             .copied()
                             && let Some(pot_id) = active_potential_id
                         {
                             strip.toggle_potential_member(pot_id, b_idx, t_idx);
                         }
-                    } else if let Some((_, is_left)) =
-                        bracket_hit_rects.iter().find(|(r, _)| r.contains(pos))
+                    } else if let Some((_, is_left)) = bracket_hit_rects
+                        .iter()
+                        .find(|(r, _)| r.expand(touch_pad).contains(pos))
                     {
                         *selected_end_bracket = Some(*is_left);
                         selected.clear();
                         state.selection_anchor = None;
                     } else {
-                        let hit = block_rects.iter().position(|r| r.contains(pos));
+                        let hit = block_rects
+                            .iter()
+                            .position(|r| r.contains(pos))
+                            .or_else(|| {
+                                if touch_pad > 0.0 {
+                                    block_rects.iter().position(|r| r.expand(touch_pad).contains(pos))
+                                } else {
+                                    None
+                                }
+                            });
                         match hit {
                             Some(idx) => {
                                 *selected_end_bracket = None;
@@ -1026,6 +1074,11 @@ pub fn show_cad_canvas(
                         }
                     }
                 }
+            } else if multi_touch.is_some() {
+                state.is_marquee_active = false;
+                state.drag_start = None;
+                state.drag_current = None;
+                state.bridge_drag_action = None;
             }
 
             // Draw marquee overlay if dragging

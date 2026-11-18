@@ -319,8 +319,12 @@ pub fn show_end_bracket_picker(
         f32::from(selected.width_tenths_mm) / 10.0
     );
 
+    let avail_w = ui.available_width();
+    let combo_w = (avail_w - 8.0).clamp(120.0, 480.0);
+
     egui::ComboBox::from_id_salt(id_salt)
-        .width((ui.available_width() - 8.0).max(200.0))
+        .width(combo_w)
+        .truncate()
         .selected_text(selected_text)
         .show_ui(ui, |ui| {
             for eb in all_end_brackets() {
@@ -347,10 +351,13 @@ pub fn show_end_bracket_picker(
     };
     ui.horizontal_wrapped(|ui| {
         show_logo_badge(ui, logos, active.manufacturer, 16.0);
-        ui.label(
-            egui::RichText::new(format!("{mounting} | Art. {}", active.article_number))
-                .color(secondary_text_color(ui))
-                .small(),
+        ui.add(
+            egui::Label::new(
+                egui::RichText::new(format!("{mounting} | Art. {}", active.article_number))
+                    .color(secondary_text_color(ui))
+                    .small(),
+            )
+            .wrap(),
         );
     });
 
@@ -392,10 +399,12 @@ pub fn show_spec_picker(
     });
     ui.add_space(3.0);
 
+    let avail_w = ui.available_width();
+    let input_w = (avail_w - 8.0).clamp(120.0, 480.0);
     ui.add(
         egui::TextEdit::singleline(search_query)
             .hint_text(search_hint)
-            .desired_width((ui.available_width() - 8.0).max(180.0)),
+            .desired_width(input_w),
     );
 
     let q = search_query.trim().to_lowercase();
@@ -428,7 +437,8 @@ pub fn show_spec_picker(
 
     ui.label(spec_label);
     egui::ComboBox::from_id_salt(format!("{spec_label}_spec"))
-        .width((ui.available_width() - 8.0).max(200.0))
+        .width(input_w)
+        .truncate()
         .selected_text(selected_text)
         .show_ui(ui, |ui| {
             for spec in filtered {
@@ -449,7 +459,10 @@ pub fn show_spec_picker(
         };
         ui.horizontal_wrapped(|ui| {
             show_logo_badge(ui, logos, &spec.manufacturer, 18.0);
-            ui.label(egui::RichText::new(desc).color(secondary_text_color(ui)));
+            ui.add(
+                egui::Label::new(egui::RichText::new(desc).color(secondary_text_color(ui)))
+                    .wrap(),
+            );
         });
     }
 }

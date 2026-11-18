@@ -303,11 +303,16 @@ pub fn show_product_preview_card(
     ui.group(|ui| {
         ui.horizontal_wrapped(|ui| {
             show_logo_badge(ui, logos, &spec.manufacturer, 18.0);
-            ui.label(egui::RichText::new(&spec.name).strong());
+            ui.add(egui::Label::new(egui::RichText::new(&spec.name).strong()).wrap());
         });
         ui.add_space(4.0);
 
-        let preview_size = Vec2::new(112.0, 82.0);
+        let compact = ui.available_width() < 290.0;
+        let preview_size = if compact {
+            Vec2::new(82.0, 62.0)
+        } else {
+            Vec2::new(104.0, 78.0)
+        };
         let tex_opt = media_cache.texture_for(ui.ctx(), spec);
 
         ui.horizontal(|ui| {
@@ -334,26 +339,42 @@ pub fn show_product_preview_card(
                 let slots = spec.effective_jumper_slots();
                 let max_poles = spec.effective_max_jumper_poles();
                 let height_mm = f32::from(spec.effective_height_tenths_mm()) / 10.0;
-                ui.label(
-                    egui::RichText::new(format!(
-                        "{:.1} mm | {} Etagen",
-                        f32::from(spec.width_tenths_mm) / 10.0,
-                        spec.levels
-                    ))
-                    .small(),
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!(
+                            "{:.1} mm | {} Etagen",
+                            f32::from(spec.width_tenths_mm) / 10.0,
+                            spec.levels
+                        ))
+                        .small(),
+                    )
+                    .wrap(),
                 );
-                ui.label(
-                    egui::RichText::new(format!("{height_label}: {height_mm:.1} mm"))
-                        .small()
-                        .strong(),
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!("{height_label}: {height_mm:.1} mm"))
+                            .small()
+                            .strong(),
+                    )
+                    .wrap(),
                 );
                 if let Some(art) = spec.effective_article_number() {
-                    ui.label(egui::RichText::new(format!("Art.-Nr.: {art}")).color(sec).small());
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new(format!("Art.-Nr.: {art}"))
+                                .color(sec)
+                                .small(),
+                        )
+                        .wrap(),
+                    );
                 }
-                ui.label(
-                    egui::RichText::new(format!("{slots}× {chambers_label} (max. {max_poles}p)"))
-                        .color(sec)
-                        .small(),
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!("{slots}× {chambers_label} (max. {max_poles}p)"))
+                            .color(sec)
+                            .small(),
+                    )
+                    .wrap(),
                 );
                 ui.add_space(3.0);
                 if ui.button(open_product_label).clicked() {
@@ -382,11 +403,16 @@ pub fn show_end_bracket_preview_card(
     ui.group(|ui| {
         ui.horizontal_wrapped(|ui| {
             show_logo_badge(ui, logos, eb.manufacturer, 18.0);
-            ui.label(egui::RichText::new(eb.name).strong());
+            ui.add(egui::Label::new(egui::RichText::new(eb.name).strong()).wrap());
         });
         ui.add_space(4.0);
 
-        let preview_size = Vec2::new(112.0, 82.0);
+        let compact = ui.available_width() < 290.0;
+        let preview_size = if compact {
+            Vec2::new(82.0, 62.0)
+        } else {
+            Vec2::new(104.0, 78.0)
+        };
         let tex_opt = media_cache.texture_for_end_bracket(ui.ctx(), eb);
 
         ui.horizontal(|ui| {
@@ -409,25 +435,33 @@ pub fn show_end_bracket_preview_card(
             }
 
             ui.vertical(|ui| {
-                ui.label(
-                    egui::RichText::new(format!(
-                        "{:.1} mm | {height_label}: {:.1} mm",
-                        f32::from(eb.width_tenths_mm) / 10.0,
-                        f32::from(eb.height_tenths_mm) / 10.0
-                    ))
-                    .small()
-                    .strong(),
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!(
+                            "{:.1} mm | {height_label}: {:.1} mm",
+                            f32::from(eb.width_tenths_mm) / 10.0,
+                            f32::from(eb.height_tenths_mm) / 10.0
+                        ))
+                        .small()
+                        .strong(),
+                    )
+                    .wrap(),
                 );
-                ui.label(
-                    egui::RichText::new(format!("Art.-Nr.: {}", eb.article_number))
-                        .color(sec)
-                        .small(),
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!("Art.-Nr.: {}", eb.article_number))
+                            .color(sec)
+                            .small(),
+                    )
+                    .wrap(),
                 );
                 let mounting = match lang {
                     Language::De => eb.mounting_de,
                     _ => eb.mounting_en,
                 };
-                ui.label(egui::RichText::new(mounting).color(sec).small());
+                ui.add(
+                    egui::Label::new(egui::RichText::new(mounting).color(sec).small()).wrap(),
+                );
                 ui.add_space(3.0);
                 if ui.button(open_product_label).clicked() {
                     open_external_url(ui.ctx(), eb.product_url);

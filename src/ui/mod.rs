@@ -32,7 +32,9 @@ use crate::ui::android_insets::{current_safe_insets, SafeAreaInsets};
 use crate::ui::cad_canvas::{
     show_cad_canvas, CadCanvasState, CanvasInteractionMode, TypeDisplayMode,
 };
-use crate::ui::guide_modal::{show_database_tab, show_guide_tab, CustomSpecDraft};
+use crate::ui::guide_modal::{
+    show_about_modal, show_database_tab, show_guide_tab, CustomSpecDraft,
+};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::new_strip_modal::{
     show_end_bracket_picker, show_install_supply_prompt_modal, show_new_strip_modal,
@@ -99,6 +101,9 @@ pub struct TermiGridApp {
     lang: Language,
     theme_mode: ThemeMode,
     show_welcome: bool,
+    show_left_sidebar: bool,
+    show_inspector: bool,
+    show_about_modal: bool,
     active_tab: ActiveTab,
     mobile_pane: MobilePane,
     updater: UpdateChecker,
@@ -161,6 +166,9 @@ impl TermiGridApp {
             lang: Language::De,
             theme_mode: ThemeMode::System,
             show_welcome: true,
+            show_left_sidebar: true,
+            show_inspector: true,
+            show_about_modal: false,
             active_tab: ActiveTab::Editor,
             mobile_pane: MobilePane::Cad,
             updater,
@@ -436,6 +444,13 @@ impl eframe::App for TermiGridApp {
                     ui.selectable_value(&mut self.active_tab, ActiveTab::Editor, s.tab_editor);
                     ui.selectable_value(&mut self.active_tab, ActiveTab::Database, s.tab_database);
                     ui.selectable_value(&mut self.active_tab, ActiveTab::Guide, s.tab_guide);
+                    if ui
+                        .selectable_label(self.show_about_modal, "ℹ Info")
+                        .on_hover_text("Über TermiGrid, Autoren & Open-Source-Lizenzen")
+                        .clicked()
+                    {
+                        self.show_about_modal = !self.show_about_modal;
+                    }
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         self.show_header_prefs(ui, 120.0);
@@ -452,6 +467,13 @@ impl eframe::App for TermiGridApp {
                     ui.selectable_value(&mut self.active_tab, ActiveTab::Editor, s.tab_editor);
                     ui.selectable_value(&mut self.active_tab, ActiveTab::Database, s.tab_database);
                     ui.selectable_value(&mut self.active_tab, ActiveTab::Guide, s.tab_guide);
+                    if ui
+                        .selectable_label(self.show_about_modal, "ℹ Info")
+                        .on_hover_text("Über TermiGrid, Autoren & Open-Source-Lizenzen")
+                        .clicked()
+                    {
+                        self.show_about_modal = !self.show_about_modal;
+                    }
                 });
             }
 
@@ -653,6 +675,9 @@ impl eframe::App for TermiGridApp {
         ) {
             self.apply_install_prompt_resolution(res);
         }
+
+        // Cross-platform Info & Open-Source Licenses modal dialog
+        show_about_modal(ui.ctx(), &mut self.show_about_modal, &self.updater, s);
 
         // Automatically record project state changes onto the Undo stack once pointer drag finishes
         if !ui.input(|i| i.pointer.any_down()) && self.project != self.last_snapshot {
@@ -901,12 +926,26 @@ impl TermiGridApp {
         let is_compact = avail.x < 960.0 || avail.y < 460.0;
 
         if is_compact {
-            // Smartphone / Folded Cover layout: adaptive sub-pane bar
+            // Smartphone / Folded Cover layout: touch-friendly sub-pane bar
             egui::Panel::bottom("mobile_nav_bar").show(ui, |ui| {
                 ui.add_space(4.0);
-                ui.horizontal_wrapped(|ui| {
-                    ui.selectable_value(&mut self.mobile_pane, MobilePane::Strips, s.strips_heading);
-                    ui.selectable_value(&mut self.mobile_pane, MobilePane::Cad, s.tab_editor);
+                let tab_w = ((ui.available_width() - 24.0) / 3.0).clamp(80.0, 200.0);
+                ui.horizontal(|ui| {
+                    ui.add_sized(
+                        egui::Vec2::new(tab_w, 36.0),
+                        egui::Button::selectable(
+                            self.mobile_pane == MobilePane::Strips,
+                            s.strips_heading,
+                        ),
+                    )
+                    .clicked()
+                    .then(|| self.mobile_pane = MobilePane::Strips);
+                    ui.add_sized(
+                        egui::Vec2::new(tab_w, 36.0),
+                        egui::Button::selectable(self.mobile_pane == MobilePane::Cad, s.tab_editor),
+                    )
+                    .clicked()
+                    .then(|| self.mobile_pane = MobilePane::Cad);
                     let insp_label = if self.selected_end_bracket.is_some() {
                         format!("{} (EH)", s.inspector_title)
                     } else if self.selected_blocks.is_empty() {
@@ -914,49 +953,78 @@ impl TermiGridApp {
                     } else {
                         format!("{} ({})", s.inspector_title, self.selected_blocks.len())
                     };
-                    ui.selectable_value(&mut self.mobile_pane, MobilePane::Inspector, insp_label);
+                    ui.add_sized(
+                        egui::Vec2::new(tab_w, 36.0),
+                        egui::Button::selectable(
+                            self.mobile_pane == MobilePane::Inspector,
+                            insp_label,
+                        ),
+                    )
+                    .clicked()
+                    .then(|| self.mobile_pane = MobilePane::Inspector);
                 });
                 ui.add_space(4.0);
             });
 
             egui::CentralPanel::default().show(ui, |ui| match self.mobile_pane {
                 MobilePane::Strips => {
-                    self.show_strips_sidebar_contents(ui);
+                    self.show_strips_sidebar_contents(ui, true);
                 }
                 MobilePane::Cad => {
-                    self.show_cad_workspace_contents(ui);
+                    self.show_cad_workspace_contents(ui, true);
                 }
                 MobilePane::Inspector => {
-                    self.show_inspector_contents(ui);
+                    self.show_inspector_contents(ui, true);
                 }
             });
             return;
         }
 
-        // Desktop / Tablet / Unfolded Foldable: full 3-column workspace
-        egui::Panel::left("left_sidebar")
-            .default_size(255.0)
-            .min_size(210.0)
-            .show(ui, |ui| {
-                self.show_strips_sidebar_contents(ui);
-            });
+        // Desktop / Tablet / Unfolded Foldable: collapsible & freely resizable 3-column workspace
+        if self.show_left_sidebar {
+            egui::Panel::left("left_sidebar")
+                .resizable(true)
+                .default_size(240.0)
+                .min_size(180.0)
+                .max_size(420.0)
+                .show(ui, |ui| {
+                    self.show_strips_sidebar_contents(ui, false);
+                });
+        }
 
-        egui::Panel::right("right_inspector")
-            .default_size(365.0)
-            .min_size(320.0)
-            .show(ui, |ui| {
-                self.show_inspector_contents(ui);
-            });
+        if self.show_inspector {
+            egui::Panel::right("right_inspector")
+                .resizable(true)
+                .default_size(350.0)
+                .min_size(240.0)
+                .max_size(640.0)
+                .show(ui, |ui| {
+                    self.show_inspector_contents(ui, false);
+                });
+        }
 
         egui::CentralPanel::default().show(ui, |ui| {
-            self.show_cad_workspace_contents(ui);
+            self.show_cad_workspace_contents(ui, false);
         });
     }
 
-    fn show_strips_sidebar_contents(&mut self, ui: &mut egui::Ui) {
+    fn show_strips_sidebar_contents(&mut self, ui: &mut egui::Ui, is_compact: bool) {
         let s = strings(self.lang);
         ui.add_space(4.0);
-        ui.label(egui::RichText::new(s.project_name).strong());
+        ui.horizontal(|ui| {
+            ui.label(egui::RichText::new(s.project_name).strong());
+            if !is_compact {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui
+                        .small_button("◀")
+                        .on_hover_text("Linke Leiste ausblenden")
+                        .clicked()
+                    {
+                        self.show_left_sidebar = false;
+                    }
+                });
+            }
+        });
         ui.text_edit_singleline(&mut self.project.project_name);
         ui.separator();
 
@@ -993,8 +1061,11 @@ impl TermiGridApp {
                     self.mobile_pane = MobilePane::Cad;
                 }
                 if is_active && !strip.description.is_empty() {
-                    ui.label(
-                        egui::RichText::new(&strip.description).color(secondary_text_color(ui)),
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new(&strip.description).color(secondary_text_color(ui)),
+                        )
+                        .wrap(),
                     );
                 }
             }
@@ -1019,13 +1090,30 @@ impl TermiGridApp {
         }
     }
 
-    fn show_inspector_contents(&mut self, ui: &mut egui::Ui) {
+    fn show_inspector_contents(&mut self, ui: &mut egui::Ui, is_compact: bool) {
         let s = strings(self.lang);
         let sec = secondary_text_color(ui);
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.add_space(4.0);
-            ui.heading(s.inspector_title);
-            ui.separator();
+        let panel_max_w = ui.available_width();
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                ui.set_max_width(panel_max_w);
+                ui.add_space(4.0);
+                ui.horizontal(|ui| {
+                    ui.heading(s.inspector_title);
+                    if !is_compact {
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui
+                                .small_button("▶")
+                                .on_hover_text("Seitenleiste ausblenden")
+                                .clicked()
+                            {
+                                self.show_inspector = false;
+                            }
+                        });
+                    }
+                });
+                ui.separator();
 
             let has_strip = self.active_strip < self.project.strips.len();
             if !has_strip {
@@ -1825,7 +1913,7 @@ impl TermiGridApp {
         });
     }
 
-    fn show_cad_workspace_contents(&mut self, ui: &mut egui::Ui) {
+    fn show_cad_workspace_contents(&mut self, ui: &mut egui::Ui, is_compact: bool) {
         let s = strings(self.lang);
         if self.active_strip >= self.project.strips.len() {
             ui.centered_and_justified(|ui| {
@@ -1840,7 +1928,24 @@ impl TermiGridApp {
         let mut trigger_dxf_export = false;
 
         ui.horizontal_wrapped(|ui| {
-            // CAD Tool Switcher: Pan/Tap (mobile only) vs Box Select vs Bridge Mode
+            // Left sidebar toggle button (Desktop/Tablet)
+            if !is_compact {
+                let left_lbl = if self.show_left_sidebar {
+                    "◧"
+                } else {
+                    "▶ Leisten"
+                };
+                if ui
+                    .button(left_lbl)
+                    .on_hover_text("Klemmleisten-Leiste ein-/ausblenden")
+                    .clicked()
+                {
+                    self.show_left_sidebar = !self.show_left_sidebar;
+                }
+                ui.separator();
+            }
+
+            // CAD Tool Switcher: Pan/Tap (mobile/touch) vs Box Select vs Bridge Mode
             #[cfg(any(target_os = "android", target_os = "ios"))]
             ui.selectable_value(
                 &mut self.canvas_state.interaction_mode,
@@ -1892,6 +1997,7 @@ impl TermiGridApp {
                 NeutralLabelMode::SeparateCounterSuffixN => s.n_mode_own_n,
             };
             egui::ComboBox::from_id_salt("n_mode_combo")
+                .truncate()
                 .selected_text(n_text)
                 .show_ui(ui, |ui| {
                     for (mode, lbl) in [
@@ -1914,6 +2020,7 @@ impl TermiGridApp {
                 PeLabelMode::SeparateCounterSuffixPe => s.pe_mode_own_pe,
             };
             egui::ComboBox::from_id_salt("pe_mode_combo")
+                .truncate()
                 .selected_text(pe_text)
                 .show_ui(ui, |ui| {
                     for (mode, lbl) in [
@@ -1930,8 +2037,15 @@ impl TermiGridApp {
 
             ui.separator();
             ui.label(s.zoom_label);
+            if ui
+                .button("−")
+                .on_hover_text("Verkleinern")
+                .clicked()
+            {
+                self.canvas_state.zoom = (self.canvas_state.zoom / 1.15).clamp(0.4, 2.5);
+            }
             ui.scope(|ui| {
-                ui.spacing_mut().slider_width = 96.0;
+                ui.spacing_mut().slider_width = if is_compact { 76.0 } else { 96.0 };
                 ui.visuals_mut().widgets.inactive.bg_fill = if ui.visuals().dark_mode {
                     egui::Color32::from_rgb(51, 65, 85)
                 } else {
@@ -1941,6 +2055,13 @@ impl TermiGridApp {
                     egui::Slider::new(&mut self.canvas_state.zoom, 0.4..=2.5).show_value(false),
                 );
             });
+            if ui
+                .button("+")
+                .on_hover_text("Vergrößern")
+                .clicked()
+            {
+                self.canvas_state.zoom = (self.canvas_state.zoom * 1.15).clamp(0.4, 2.5);
+            }
             ui.label(
                 egui::RichText::new(format!("{:>3.0}%", self.canvas_state.zoom * 100.0))
                     .monospace()
@@ -1973,6 +2094,7 @@ impl TermiGridApp {
                 TypeDisplayMode::Off => s.type_display_off,
             };
             egui::ComboBox::from_id_salt("type_display_combo")
+                .truncate()
                 .selected_text(td_text)
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
@@ -2015,6 +2137,32 @@ impl TermiGridApp {
                     .clicked()
             {
                 trigger_dxf_export = true;
+            }
+
+            if is_compact
+                && (!self.selected_blocks.is_empty() || self.selected_end_bracket.is_some())
+            {
+                ui.separator();
+                if primary_button(ui, "✏ Bearbeiten").clicked() {
+                    self.mobile_pane = MobilePane::Inspector;
+                }
+            }
+
+            if !is_compact {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    let right_lbl = if self.show_inspector {
+                        "Leiste ▶"
+                    } else {
+                        "◀ Eigenschaften"
+                    };
+                    if ui
+                        .button(right_lbl)
+                        .on_hover_text("Rechte Seitenleiste (Eigenschaften & Zubehör) ein-/ausblenden")
+                        .clicked()
+                    {
+                        self.show_inspector = !self.show_inspector;
+                    }
+                });
             }
         });
 

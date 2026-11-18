@@ -185,7 +185,15 @@ pub fn apply_termi_theme(ctx: &egui::Context, dark: bool) {
             .text_styles
             .insert(TextStyle::Heading, FontId::proportional(19.0));
         style.spacing.item_spacing = Vec2::new(8.0, 6.0);
-        style.spacing.button_padding = Vec2::new(10.0, 5.0);
+        if cfg!(target_os = "android") {
+            style.spacing.button_padding = Vec2::new(11.0, 8.0);
+            style.spacing.interact_size = Vec2::new(42.0, 34.0);
+            style.spacing.scroll.bar_width = 10.0;
+            style.spacing.scroll.handle_min_length = 28.0;
+            style.interaction.selectable_labels = false;
+        } else {
+            style.spacing.button_padding = Vec2::new(10.0, 5.0);
+        }
     });
 }
 
