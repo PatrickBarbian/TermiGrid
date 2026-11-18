@@ -10,6 +10,13 @@ use crate::catalog::TerminalCatalog;
 use crate::i18n::Strings;
 use crate::model::bridging::BridgePlan;
 use crate::model::{TerminalBlock, TerminalStrip, TierColor};
+use crate::ui::icons::{draw_icon, UiIcon};
+
+/// Actions emitted by interactive widgets painted directly inside the CAD canvas.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct CadCanvasResult {
+    pub quick_add_after_block: Option<usize>,
+}
 
 /// Controls how terminal block type names are displayed underneath the CAD strip.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -129,7 +136,7 @@ pub fn show_cad_canvas(
     bridge_plan: Option<&BridgePlan>,
     active_potential_id: Option<u64>,
     end_plates: &[EndPlatePlacement],
-) {
+) -> CadCanvasResult {
     let dark = ui.visuals().dark_mode;
 
     // Clear stale inline editor if strip shrank
@@ -543,6 +550,12 @@ pub fn show_cad_canvas(
                 cursor_x += bracket_px + block_gap;
             }
 
+            let quick_add_anchor_idx = state
+                .selection_anchor
+                .filter(|i| selected.contains(i))
+                .or_else(|| selected.iter().next_back().copied());
+            let mut anchor_housing_top_left: Option<(usize, Pos2)> = None;
+
             for (idx, block) in strip.blocks.iter().enumerate() {
                 let w = if e_planer {
                     (f32::from(block.width_tenths_mm) / 10.0) * px_per_mm
@@ -564,6 +577,9 @@ pub fn show_cad_canvas(
                         Rect::from_min_max(Pos2::new(cursor_x, y0), Pos2::new(cursor_x + w, y1));
                     block_rects.push(block_rect);
                     block_x_spans.push((cursor_x, cursor_x + w));
+                    if quick_add_anchor_idx == Some(idx) {
+                        anchor_housing_top_left = Some((idx, block_rect.min));
+                    }
 
                     let is_selected = selected.contains(&idx);
                     draw_e_planer_block(
@@ -608,6 +624,9 @@ pub fn show_cad_canvas(
                     );
                     block_rects.push(hit_rect);
                     block_x_spans.push((cursor_x, cursor_x + w));
+                    if quick_add_anchor_idx == Some(idx) {
+                        anchor_housing_top_left = Some((idx, Pos2::new(cursor_x, outer_top)));
+                    }
 
                     let is_selected = selected.contains(&idx);
                     draw_terminal_block(
@@ -780,6 +799,45 @@ pub fn show_cad_canvas(
                 draw_bridge_overlay(&painter, strip, plan, &tier_hit_rects, z, dark);
             }
 
+            // 2c. Quick '+' button near top-left of the marked terminal block
+            let mut result = CadCanvasResult::default();
+            let quick_add_target: Option<(usize, Rect)> = if state.interaction_mode
+                != CanvasInteractionMode::BridgeAssign
+                && state.editing_tier.is_none()
+                && let Some((target_idx, tl)) = anchor_housing_top_left
+            {
+                let btn_sz = (18.0 * z).clamp(16.0, 22.0);
+                let qa_x = (tl.x - btn_sz * 0.45).max(canvas_rect.min.x + 4.0);
+                let qa_y = (tl.y - btn_sz - 3.0).max(canvas_rect.min.y + 4.0);
+                Some((
+                    target_idx,
+                    Rect::from_min_size(Pos2::new(qa_x, qa_y), Vec2::splat(btn_sz)),
+                ))
+            } else {
+                None
+            };
+            if let Some((_, qa_rect)) = quick_add_target {
+                let hovered_qa = ptr_pos.is_some_and(|p| qa_rect.expand(4.0).contains(p));
+                let qa_fill = if hovered_qa {
+                    Color32::from_rgb(14, 165, 233)
+                } else {
+                    Color32::from_rgb(2, 132, 199)
+                };
+                let qa_stroke = if dark {
+                    Color32::from_rgb(186, 230, 253)
+                } else {
+                    Color32::WHITE
+                };
+                painter.rect_filled(qa_rect, CornerRadius::same(4), qa_fill);
+                painter.rect_stroke(
+                    qa_rect,
+                    CornerRadius::same(4),
+                    Stroke::new(1.25, qa_stroke),
+                    StrokeKind::Inside,
+                );
+                draw_icon(&painter, qa_rect.shrink(2.5), UiIcon::Add, Color32::WHITE);
+            }
+
             // 3. Inline text editor if user double-clicked a tier label
             let mut commit_edit: Option<(usize, usize, String)> = None;
             let mut cancel_edit = false;
@@ -840,6 +898,9 @@ pub fn show_cad_canvas(
                 ui.scroll_with_delta(mt.translation_delta);
             }
 
+            let over_quick_add =
+                |pos: Pos2| quick_add_target.is_some_and(|(_, r)| r.expand(4.0).contains(pos));
+
             let is_primary_pan = state.interaction_mode == CanvasInteractionMode::Pan || space_pan;
             if is_primary_pan && response.drag_started_by(egui::PointerButton::Primary) {
                 state.pan_touch_total_dist = 0.0;
@@ -867,6 +928,8 @@ pub fn show_cad_canvas(
                 if delta.length_sq() > 0.0 {
                     ui.scroll_with_delta(delta);
                 }
+            } else if response.hovered() && ptr_pos.is_some_and(over_quick_add) {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
             } else if state.interaction_mode == CanvasInteractionMode::BridgeAssign
                 && response.hovered()
             {
@@ -892,6 +955,7 @@ pub fn show_cad_canvas(
             if state.interaction_mode != CanvasInteractionMode::BridgeAssign
                 && response.double_clicked_by(egui::PointerButton::Primary)
                 && let Some(pos) = response.interact_pointer_pos()
+                && !over_quick_add(pos)
                 && let Some((b_idx, t_idx, _, _)) = tier_hit_rects
                     .iter()
                     .find(|(_, _, tier_rect, _)| tier_rect.expand(touch_pad).contains(pos))
@@ -920,6 +984,7 @@ pub fn show_cad_canvas(
                 if use_marquee
                     && response.drag_started_by(egui::PointerButton::Primary)
                     && let Some(pos) = response.interact_pointer_pos()
+                    && !over_quick_add(pos)
                 {
                     state.drag_start = Some(pos);
                     state.drag_current = Some(pos);
@@ -1015,7 +1080,11 @@ pub fn show_cad_canvas(
                 };
 
                 if let Some(pos) = tap_pos {
-                    if use_bridge {
+                    if let Some((target_idx, qa_rect)) = quick_add_target
+                        && qa_rect.expand(4.0).contains(pos)
+                    {
+                        result.quick_add_after_block = Some(target_idx);
+                    } else if use_bridge {
                         *selected_end_bracket = None;
                         if let Some((b_idx, t_idx, _, _)) = tier_hit_rects
                             .iter()
@@ -1110,7 +1179,17 @@ pub fn show_cad_canvas(
                 && state.editing_tier.is_none()
                 && let Some(hover_pos) = response.hover_pos()
             {
-                if let Some((_, is_left)) = bracket_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
+                if let Some((target_idx, qa_rect)) = quick_add_target
+                    && qa_rect.expand(4.0).contains(hover_pos)
+                    && let Some(blk) = strip.blocks.get(target_idx)
+                {
+                    let tip = format!(
+                        "Gleiche Klemme direkt nach #{} hinzufügen ({})",
+                        target_idx + 1,
+                        blk.spec_name
+                    );
+                    response.on_hover_text_at_pointer(tip);
+                } else if let Some((_, is_left)) = bracket_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
                 {
                     let side = if *is_left {
                         strings.end_bracket_left
@@ -1198,7 +1277,10 @@ pub fn show_cad_canvas(
                     response.on_hover_text_at_pointer(lines.join("\n"));
                 }
             }
-        });
+
+            result
+        })
+        .inner
 }
 
 fn draw_horizontal_type_groups(

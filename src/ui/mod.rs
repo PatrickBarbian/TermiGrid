@@ -898,6 +898,124 @@ impl TermiGridApp {
             })
     }
 
+    fn effective_append_pos(&self, strip_idx: usize, requested_pos: usize) -> usize {
+        let Some(strip) = self.project.strips.get(strip_idx) else {
+            return requested_pos;
+        };
+        let mut insert_pos = requested_pos.min(strip.blocks.len());
+        if insert_pos == strip.blocks.len() && strip.blocks.len() >= 2 {
+            let last_is_carrier = self
+                .catalog
+                .find_by_id(&strip.blocks[insert_pos - 1].spec_id)
+                .is_some_and(|s| s.is_busbar_carrier());
+            let prev_is_install_zone = self
+                .catalog
+                .find_by_id(&strip.blocks[insert_pos - 2].spec_id)
+                .is_some_and(|s| {
+                    s.is_installation_or_nt_terminal() || s.is_n_supply_terminal()
+                });
+            if last_is_carrier && prev_is_install_zone {
+                insert_pos -= 1;
+            }
+        }
+        insert_pos
+    }
+
+    fn insert_blocks_with_install_check(
+        &mut self,
+        strip_idx: usize,
+        at_index: usize,
+        count: usize,
+        spec_id: &str,
+        select_inserted: bool,
+    ) {
+        let Some(spec) = self.catalog.find_by_id(spec_id) else {
+            return;
+        };
+        if strip_idx >= self.project.strips.len() || count == 0 {
+            return;
+        }
+        let has_supply = self.strip_has_n_supply(strip_idx);
+        let has_carriers = self.strip_has_busbar_carriers(strip_idx);
+        if spec.is_installation_or_nt_terminal() && !has_supply && !has_carriers {
+            self.install_prompt_modal.open_for_action(
+                PendingInstallAction::InsertBlocks {
+                    strip_idx,
+                    at_index,
+                    count,
+                    spec_id: spec.id.clone(),
+                    select_inserted,
+                },
+                spec,
+                has_supply,
+                has_carriers,
+            );
+            return;
+        }
+
+        let insert_pos = self.effective_append_pos(strip_idx, at_index);
+        self.project.strips[strip_idx].insert_blocks(insert_pos, count, spec);
+        if select_inserted {
+            self.selected_blocks = (insert_pos..insert_pos + count).collect();
+            self.canvas_state.selection_anchor = Some(insert_pos + count - 1);
+            self.selected_end_bracket = None;
+        }
+        self.status_message = format!("{}× {} eingefügt.", count, spec.name);
+    }
+
+    fn insert_sequence_with_install_check(
+        &mut self,
+        strip_idx: usize,
+        at_index: usize,
+        spec_ids: Vec<String>,
+        select_inserted: bool,
+        summary: &str,
+    ) {
+        if strip_idx >= self.project.strips.len() || spec_ids.is_empty() {
+            return;
+        }
+        let has_supply = self.strip_has_n_supply(strip_idx);
+        let has_carriers = self.strip_has_busbar_carriers(strip_idx);
+        let install_anchor = spec_ids
+            .iter()
+            .filter_map(|id| self.catalog.find_by_id(id))
+            .find(|sp| sp.is_installation_or_nt_terminal());
+
+        if let Some(anchor_spec) = install_anchor
+            && !has_supply
+            && !has_carriers
+        {
+            self.install_prompt_modal.open_for_action(
+                PendingInstallAction::InsertSequence {
+                    strip_idx,
+                    at_index,
+                    spec_ids,
+                    select_inserted,
+                },
+                anchor_spec,
+                has_supply,
+                has_carriers,
+            );
+            return;
+        }
+
+        let insert_pos = self.effective_append_pos(strip_idx, at_index);
+        let specs: Vec<_> = spec_ids
+            .iter()
+            .filter_map(|id| self.catalog.find_by_id(id))
+            .collect();
+        if specs.is_empty() {
+            return;
+        }
+        let inserted = self.project.strips[strip_idx].insert_spec_sequence(insert_pos, &specs);
+        if select_inserted && !inserted.is_empty() {
+            self.canvas_state.selection_anchor = inserted.iter().next_back().copied();
+            self.selected_blocks = inserted;
+            self.selected_end_bracket = None;
+        }
+        self.status_message = format!("Block eingefügt: {summary}");
+    }
+
     fn apply_install_prompt_resolution(&mut self, res: InstallPromptResolution) {
         use crate::model::numbering::{
             apply_n_busbar_carriers_around, place_n_supply_in_zone, BusbarCarrierPlan,
@@ -1040,6 +1158,8 @@ impl TermiGridApp {
                         .filter(|(_, b)| selected_ids.contains(&b.id))
                         .map(|(i, _)| i)
                         .collect();
+                    self.canvas_state.selection_anchor =
+                        self.selected_blocks.iter().next_back().copied();
                 }
                 self.inspector_spec_id = effective_spec.id.clone();
             }
@@ -1050,24 +1170,8 @@ impl TermiGridApp {
                 select_inserted,
                 ..
             } => {
+                let insert_pos = self.effective_append_pos(strip_idx, at_index);
                 if let Some(strip) = self.project.strips.get_mut(strip_idx) {
-                    let mut insert_pos = at_index.min(strip.blocks.len());
-                    if insert_pos == strip.blocks.len() && strip.blocks.len() >= 2 {
-                        let last_is_carrier = self
-                            .catalog
-                            .find_by_id(&strip.blocks[insert_pos - 1].spec_id)
-                            .is_some_and(|s| s.is_busbar_carrier());
-                        let prev_is_install_zone = self
-                            .catalog
-                            .find_by_id(&strip.blocks[insert_pos - 2].spec_id)
-                            .is_some_and(|s| {
-                                s.is_installation_or_nt_terminal() || s.is_n_supply_terminal()
-                            });
-                        if last_is_carrier && prev_is_install_zone {
-                            insert_pos -= 1;
-                        }
-                    }
-
                     strip.insert_blocks(insert_pos, count, effective_spec);
                     let mut anchor_start = insert_pos;
                     let mut anchor_end = insert_pos + count;
@@ -1127,6 +1231,103 @@ impl TermiGridApp {
                             .filter(|(_, b)| inserted_ids.contains(&b.id))
                             .map(|(i, _)| i)
                             .collect();
+                        self.canvas_state.selection_anchor =
+                            self.selected_blocks.iter().next_back().copied();
+                        self.selected_end_bracket = None;
+                    }
+                }
+                self.inspector_spec_id = effective_spec.id.clone();
+            }
+            PendingInstallAction::InsertSequence {
+                strip_idx,
+                at_index,
+                mut spec_ids,
+                select_inserted,
+            } => {
+                for id in &mut spec_ids {
+                    if let Some(sp) = self.catalog.find_by_id(id)
+                        && sp.is_installation_or_nt_terminal()
+                        && (sp.id == effective_spec.id
+                            || sp.matching_nt_spec_id() == Some(effective_spec.id.as_str())
+                            || effective_spec.matching_nt_spec_id() == Some(sp.id.as_str()))
+                    {
+                        *id = effective_spec.id.clone();
+                    }
+                }
+
+                let insert_pos = self.effective_append_pos(strip_idx, at_index);
+                let specs: Vec<_> = spec_ids
+                    .iter()
+                    .filter_map(|id| self.catalog.find_by_id(id))
+                    .collect();
+                if specs.is_empty() {
+                    return;
+                }
+                let seq_len = specs.len();
+
+                if let Some(strip) = self.project.strips.get_mut(strip_idx) {
+                    strip.insert_spec_sequence(insert_pos, &specs);
+                    let mut anchor_start = insert_pos;
+                    let mut anchor_end = insert_pos + seq_len;
+                    let inserted_ids: Vec<u64> = if select_inserted {
+                        strip.blocks[anchor_start..anchor_end]
+                            .iter()
+                            .map(|b| b.id)
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
+
+                    if let Some(sup) = supply_spec {
+                        match res.supply_placement {
+                            InstallSupplyPlacement::BeforeGroup => {
+                                (anchor_start, anchor_end) = place_n_supply_in_zone(
+                                    strip,
+                                    anchor_start,
+                                    anchor_end,
+                                    sup,
+                                    true,
+                                    &self.catalog,
+                                );
+                            }
+                            InstallSupplyPlacement::AfterGroup => {
+                                (anchor_start, anchor_end) = place_n_supply_in_zone(
+                                    strip,
+                                    anchor_start,
+                                    anchor_end,
+                                    sup,
+                                    false,
+                                    &self.catalog,
+                                );
+                            }
+                            InstallSupplyPlacement::None => {}
+                        }
+                    }
+
+                    if anchor_end > anchor_start
+                        && anchor_end <= strip.blocks.len()
+                        && (outer_carrier.is_some() || intermediate_support.is_some())
+                    {
+                        apply_n_busbar_carriers_around(
+                            strip,
+                            anchor_start,
+                            anchor_end,
+                            &self.catalog,
+                            &carrier_plan,
+                        );
+                    }
+
+                    if select_inserted {
+                        self.selected_blocks = strip
+                            .blocks
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, b)| inserted_ids.contains(&b.id))
+                            .map(|(i, _)| i)
+                            .collect();
+                        self.canvas_state.selection_anchor =
+                            self.selected_blocks.iter().next_back().copied();
+                        self.selected_end_bracket = None;
                     }
                 }
                 self.inspector_spec_id = effective_spec.id.clone();
@@ -1822,6 +2023,16 @@ impl TermiGridApp {
                     ui.add_space(4.0);
 
                     ui.group(|ui| {
+                        let selected_ref_spec = self
+                            .canvas_state
+                            .selection_anchor
+                            .filter(|i| self.selected_blocks.contains(i))
+                            .or_else(|| self.selected_blocks.iter().next().copied())
+                            .and_then(|idx| {
+                                self.project.strips[self.active_strip].blocks.get(idx)
+                            })
+                            .and_then(|b| self.catalog.find_by_id(&b.spec_id));
+
                         ui.label(egui::RichText::new(s.reassign_heading).strong());
                         show_spec_picker(
                             ui,
@@ -1830,6 +2041,7 @@ impl TermiGridApp {
                             &mut self.inspector_mfg_filter,
                             &mut self.inspector_search,
                             &mut self.inspector_spec_id,
+                            selected_ref_spec,
                             s.filter_manufacturer,
                             s.default_terminal_type,
                             s.all_manufacturers,
@@ -1862,6 +2074,7 @@ impl TermiGridApp {
                         ui.add_space(4.0);
 
                         let mut pending_install: Option<(PendingInstallAction, String)> = None;
+                        let mut deferred_insert: Option<(usize, String)> = None;
 
                         if primary_icon_button(ui, UiIcon::Apply, s.btn_apply_type).clicked()
                             && let Some(spec) = self.catalog.find_by_id(&self.inspector_spec_id)
@@ -1885,52 +2098,14 @@ impl TermiGridApp {
 
                         ui.horizontal_wrapped(|ui| {
                             if icon_button(ui, UiIcon::InsertBefore, s.btn_insert_before).clicked()
-                                && let (Some(&first), Some(spec)) = (
-                                    self.selected_blocks.iter().next(),
-                                    self.catalog.find_by_id(&self.inspector_spec_id),
-                                )
+                                && let Some(&first) = self.selected_blocks.iter().next()
                             {
-                                if spec.is_installation_or_nt_terminal() {
-                                    pending_install = Some((
-                                        PendingInstallAction::InsertBlocks {
-                                            strip_idx: self.active_strip,
-                                            at_index: first,
-                                            count: 1,
-                                            spec_id: spec.id.clone(),
-                                            select_inserted: true,
-                                        },
-                                        spec.id.clone(),
-                                    ));
-                                } else {
-                                    self.project.strips[self.active_strip]
-                                        .insert_blocks(first, 1, spec);
-                                    self.selected_blocks.clear();
-                                    self.selected_blocks.insert(first);
-                                }
+                                deferred_insert = Some((first, self.inspector_spec_id.clone()));
                             }
                             if icon_button(ui, UiIcon::InsertAfter, s.btn_insert_after).clicked()
-                                && let (Some(&last), Some(spec)) = (
-                                    self.selected_blocks.iter().next_back(),
-                                    self.catalog.find_by_id(&self.inspector_spec_id),
-                                )
+                                && let Some(&last) = self.selected_blocks.iter().next_back()
                             {
-                                if spec.is_installation_or_nt_terminal() {
-                                    pending_install = Some((
-                                        PendingInstallAction::InsertBlocks {
-                                            strip_idx: self.active_strip,
-                                            at_index: last + 1,
-                                            count: 1,
-                                            spec_id: spec.id.clone(),
-                                            select_inserted: true,
-                                        },
-                                        spec.id.clone(),
-                                    ));
-                                } else {
-                                    self.project.strips[self.active_strip]
-                                        .insert_blocks(last + 1, 1, spec);
-                                    self.selected_blocks.clear();
-                                    self.selected_blocks.insert(last + 1);
-                                }
+                                deferred_insert = Some((last + 1, self.inspector_spec_id.clone()));
                             }
                         });
 
@@ -1941,6 +2116,14 @@ impl TermiGridApp {
                             let has_carriers = self.strip_has_busbar_carriers(self.active_strip);
                             self.install_prompt_modal
                                 .open_for_action(action, spec, has_supply, has_carriers);
+                        } else if let Some((pos, spec_id)) = deferred_insert {
+                            self.insert_blocks_with_install_check(
+                                self.active_strip,
+                                pos,
+                                1,
+                                &spec_id,
+                                true,
+                            );
                         }
 
                         ui.horizontal_wrapped(|ui| {
@@ -2481,7 +2664,9 @@ impl TermiGridApp {
 
         // Strip action toolbar
         let mut recalc_needed = false;
-        let mut append_spec_id: Option<String> = None;
+        let mut deferred_single_insert: Option<(usize, String, bool)> = None;
+        let mut deferred_seq_insert: Option<(usize, Vec<String>, String)> = None;
+        let mut deferred_convert: Option<bool> = None;
 
         ui.horizontal_wrapped(|ui| {
             // Group 1: CAD Interaction & Drafting Mode Switcher
@@ -2660,7 +2845,7 @@ impl TermiGridApp {
                     );
                 });
 
-            // Group 4: Strip block selection & append actions
+            // Group 4: Strip block selection, smart append, 1-Polig/3-Polig blocks & N <-> NT batch convert
             let strip = &self.project.strips[self.active_strip];
             let has_selection =
                 !self.selected_blocks.is_empty() || self.selected_end_bracket.is_some();
@@ -2677,9 +2862,165 @@ impl TermiGridApp {
                 self.selected_blocks.clear();
                 self.selected_end_bracket = None;
             }
-            if success_icon_button(ui, UiIcon::Add, s.btn_append_block).clicked() {
-                append_spec_id = Some(strip.default_spec_id.clone());
+
+            if self.canvas_state.interaction_mode != CanvasInteractionMode::BridgeAssign {
+                let anchor_idx = self
+                    .canvas_state
+                    .selection_anchor
+                    .filter(|i| self.selected_blocks.contains(i))
+                    .or_else(|| self.selected_blocks.iter().next_back().copied());
+                let last_selected_idx = self.selected_blocks.iter().next_back().copied();
+                let target_insert_pos = last_selected_idx
+                    .map(|i| i + 1)
+                    .unwrap_or(strip.blocks.len());
+
+                let marked_spec = anchor_idx
+                    .and_then(|idx| strip.blocks.get(idx))
+                    .and_then(|b| self.catalog.find_by_id(&b.spec_id));
+                let append_target_spec = marked_spec
+                    .or_else(|| self.catalog.find_by_id(&strip.default_spec_id));
+                let append_tip = if let (Some(idx), Some(sp)) = (anchor_idx, marked_spec) {
+                    format!(
+                        "Gleiche Klemme wie #{} ({}) direkt danach hinzufügen",
+                        idx + 1,
+                        sp.name
+                    )
+                } else if let Some(sp) = append_target_spec {
+                    format!("Standardklemme ({}) am Leistenende hinzufügen", sp.name)
+                } else {
+                    s.btn_append_block.to_string()
+                };
+
+                if success_icon_button(ui, UiIcon::Add, s.btn_append_block)
+                    .on_hover_text(append_tip)
+                    .clicked()
+                    && let Some(sp) = append_target_spec
+                {
+                    deferred_single_insert = Some((
+                        target_insert_pos,
+                        sp.id.clone(),
+                        marked_spec.is_some(),
+                    ));
+                }
+
+                // 1-Polig & 3-Polig feeder-block quick buttons (derived from marked or default terminal)
+                let plan_1p = append_target_spec
+                    .and_then(|sp| self.catalog.feeder_block_plan(sp, 1));
+                let plan_3p = append_target_spec
+                    .and_then(|sp| self.catalog.feeder_block_plan(sp, 3));
+
+                ui.separator();
+                let tip_1p = plan_1p
+                    .as_ref()
+                    .map(|p| format!("1-Polig Blockgruppe einfügen: {}", p.summary))
+                    .unwrap_or_else(|| {
+                        "Kein 1-Polig Block (L + N + PE) für diesen Klemmentyp verfügbar".to_string()
+                    });
+                let btn_1p = ui
+                    .add_enabled_ui(plan_1p.is_some(), |ui| {
+                        icon_button(ui, UiIcon::PoleBlock1, "1-Polig")
+                    })
+                    .inner
+                    .on_hover_text(&tip_1p)
+                    .on_disabled_hover_text(&tip_1p);
+                if btn_1p.clicked()
+                    && let Some(p) = plan_1p
+                {
+                    let ids = p.specs.iter().map(|sp| sp.id.clone()).collect();
+                    deferred_seq_insert = Some((target_insert_pos, ids, p.summary));
+                }
+
+                let tip_3p = plan_3p
+                    .as_ref()
+                    .map(|p| format!("3-Polig Blockgruppe einfügen: {}", p.summary))
+                    .unwrap_or_else(|| {
+                        "Kein 3-Polig Block (3× L + N + PE) für diesen Klemmentyp verfügbar"
+                            .to_string()
+                    });
+                let btn_3p = ui
+                    .add_enabled_ui(plan_3p.is_some(), |ui| {
+                        icon_button(ui, UiIcon::PoleBlock3, "3-Polig")
+                    })
+                    .inner
+                    .on_hover_text(&tip_3p)
+                    .on_disabled_hover_text(&tip_3p);
+                if btn_3p.clicked()
+                    && let Some(p) = plan_3p
+                {
+                    let ids = p.specs.iter().map(|sp| sp.id.clone()).collect();
+                    deferred_seq_insert = Some((target_insert_pos, ids, p.summary));
+                }
+
+                // Batch N <-> NT converter buttons
+                let to_nt_count = strip
+                    .blocks
+                    .iter()
+                    .filter(|b| {
+                        self.catalog
+                            .find_by_id(&b.spec_id)
+                            .and_then(|sp| sp.matching_nt_equivalent_id())
+                            .is_some()
+                    })
+                    .count();
+                let to_n_count = strip
+                    .blocks
+                    .iter()
+                    .filter(|b| {
+                        self.catalog
+                            .find_by_id(&b.spec_id)
+                            .and_then(|sp| sp.matching_n_from_nt_id())
+                            .is_some()
+                    })
+                    .count();
+
+                ui.separator();
+                let lbl_to_nt = if to_nt_count > 0 {
+                    format!("N → NT ({to_nt_count})")
+                } else {
+                    "N → NT".to_string()
+                };
+                let tip_to_nt = if to_nt_count > 0 {
+                    format!(
+                        "Wandelt alle {to_nt_count} N-Klemmen dieser Leiste in passende NT-Trennklemmen (mit N-Trennschlitten) um"
+                    )
+                } else {
+                    "Keine umwandelbaren Standard-N-Klemmen auf dieser Leiste vorhanden".to_string()
+                };
+                let btn_to_nt = ui
+                    .add_enabled_ui(to_nt_count > 0, |ui| {
+                        icon_button(ui, UiIcon::ConvertNt, &lbl_to_nt)
+                    })
+                    .inner
+                    .on_hover_text(&tip_to_nt)
+                    .on_disabled_hover_text(&tip_to_nt);
+                if btn_to_nt.clicked() {
+                    deferred_convert = Some(true);
+                }
+
+                let lbl_to_n = if to_n_count > 0 {
+                    format!("NT → N ({to_n_count})")
+                } else {
+                    "NT → N".to_string()
+                };
+                let tip_to_n = if to_n_count > 0 {
+                    format!(
+                        "Wandelt alle {to_n_count} NT-Trennklemmen dieser Leiste wieder in passende Standard-N-Klemmen um"
+                    )
+                } else {
+                    "Keine umwandelbaren NT-Trennklemmen auf dieser Leiste vorhanden".to_string()
+                };
+                let btn_to_n = ui
+                    .add_enabled_ui(to_n_count > 0, |ui| {
+                        icon_button(ui, UiIcon::ConvertNt, &lbl_to_n)
+                    })
+                    .inner
+                    .on_hover_text(&tip_to_n)
+                    .on_disabled_hover_text(&tip_to_n);
+                if btn_to_n.clicked() {
+                    deferred_convert = Some(false);
+                }
             }
+
             if is_compact
                 && has_selection
                 && primary_icon_button(ui, UiIcon::Edit, "Bearbeiten").clicked()
@@ -2691,27 +3032,45 @@ impl TermiGridApp {
         if recalc_needed {
             self.project.strips[self.active_strip].recalculate_labels();
         }
-        if let Some(spec_id) = append_spec_id
-            && let Some(spec) = self.catalog.find_by_id(&spec_id)
-        {
-            if spec.is_installation_or_nt_terminal() {
-                let has_supply = self.strip_has_n_supply(self.active_strip);
-                let has_carriers = self.strip_has_busbar_carriers(self.active_strip);
-                let len = self.project.strips[self.active_strip].blocks.len();
-                self.install_prompt_modal.open_for_action(
-                    PendingInstallAction::InsertBlocks {
-                        strip_idx: self.active_strip,
-                        at_index: len,
-                        count: 1,
-                        spec_id: spec.id.clone(),
-                        select_inserted: false,
-                    },
-                    spec,
-                    has_supply,
-                    has_carriers,
-                );
+        if let Some((at_idx, spec_id, select_new)) = deferred_single_insert {
+            self.insert_blocks_with_install_check(
+                self.active_strip,
+                at_idx,
+                1,
+                &spec_id,
+                select_new,
+            );
+        } else if let Some((at_idx, spec_ids, summary)) = deferred_seq_insert {
+            self.insert_sequence_with_install_check(
+                self.active_strip,
+                at_idx,
+                spec_ids,
+                true,
+                &summary,
+            );
+        } else if let Some(to_nt) = deferred_convert {
+            if to_nt {
+                let converted =
+                    self.project.strips[self.active_strip].convert_n_to_nt_blocks(&self.catalog);
+                if converted > 0 {
+                    if !self.strip_has_n_supply(self.active_strip) {
+                        self.status_message = format!(
+                            "{converted} N-Klemme(n) in NT-Trennklemmen umgewandelt (Tipp: ggf. passende N-Einspeiseklemme & Sammelschienenträger ergänzen)."
+                        );
+                    } else {
+                        self.status_message = format!(
+                            "{converted} N-Klemme(n) in NT-Trennklemmen umgewandelt."
+                        );
+                    }
+                }
             } else {
-                self.project.strips[self.active_strip].append_blocks(1, spec);
+                let converted =
+                    self.project.strips[self.active_strip].convert_nt_to_n_blocks(&self.catalog);
+                if converted > 0 {
+                    self.status_message = format!(
+                        "{converted} NT-Trennklemme(n) in Standard-N-Klemmen zurückgewandelt."
+                    );
+                }
             }
         }
 
@@ -2801,7 +3160,7 @@ impl TermiGridApp {
             Some(calculate_bridges(strip, &self.catalog))
         };
         let end_plates = calculate_end_plates(strip, &self.catalog);
-        show_cad_canvas(
+        let cad_res = show_cad_canvas(
             ui,
             strip,
             &self.catalog,
@@ -2813,6 +3172,20 @@ impl TermiGridApp {
             self.active_potential_id,
             &end_plates,
         );
+        if let Some(after_idx) = cad_res.quick_add_after_block
+            && let Some(spec_id) = self.project.strips[self.active_strip]
+                .blocks
+                .get(after_idx)
+                .map(|b| b.spec_id.clone())
+        {
+            self.insert_blocks_with_install_check(
+                self.active_strip,
+                after_idx + 1,
+                1,
+                &spec_id,
+                true,
+            );
+        }
     }
 }
 

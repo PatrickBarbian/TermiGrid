@@ -70,6 +70,9 @@ pub enum UiIcon {
     Check,
     Library,
     Bookmark,
+    ConvertNt,
+    PoleBlock1,
+    PoleBlock3,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -602,6 +605,42 @@ pub fn draw_icon(painter: &Painter, rect: Rect, icon: UiIcon, color: Color32) {
                 p(-0.42, -0.68),
             ];
             painter.add(Shape::line(ribbon, st));
+        }
+        UiIcon::ConvertNt => {
+            // Bidirectional swap arrows + knife-disconnect slider bar
+            painter.line_segment([p(-0.62, -0.34), p(0.54, -0.34)], st);
+            painter.line_segment([p(0.26, -0.60), p(0.56, -0.34)], st);
+            painter.line_segment([p(0.26, -0.08), p(0.56, -0.34)], st);
+            painter.line_segment([p(0.62, 0.34), p(-0.54, 0.34)], st);
+            painter.line_segment([p(-0.26, 0.08), p(-0.56, 0.34)], st);
+            painter.line_segment([p(-0.26, 0.60), p(-0.56, 0.34)], st);
+            painter.circle_filled(p(0.0, 0.0), 1.35, color);
+        }
+        UiIcon::PoleBlock1 => {
+            // Single phase + N + PE compact circuit bar (vertical terminal slice + "+" dot)
+            let b1 = Rect::from_min_max(p(-0.62, -0.58), p(-0.22, 0.58));
+            let b2 = Rect::from_min_max(p(-0.10, -0.58), p(0.30, 0.58));
+            let b3 = Rect::from_min_max(p(0.42, -0.58), p(0.72, 0.58));
+            painter.rect_stroke(b1, CornerRadius::same(1), st, StrokeKind::Inside);
+            painter.rect_stroke(b2, CornerRadius::same(1), thin, StrokeKind::Inside);
+            painter.rect_stroke(b3, CornerRadius::same(1), thin, StrokeKind::Inside);
+            painter.line_segment([p(-0.42, -0.18), p(-0.42, 0.18)], thin);
+        }
+        UiIcon::PoleBlock3 => {
+            // Three phase slices + N + PE circuit block
+            for (idx, x0) in [-0.74f32, -0.40, -0.06].into_iter().enumerate() {
+                let r_slice = Rect::from_min_max(p(x0, -0.58), p(x0 + 0.24, 0.58));
+                painter.rect_stroke(
+                    r_slice,
+                    CornerRadius::same(1),
+                    if idx == 0 { st } else { thin },
+                    StrokeKind::Inside,
+                );
+            }
+            let r_n = Rect::from_min_max(p(0.28, -0.58), p(0.50, 0.58));
+            let r_pe = Rect::from_min_max(p(0.58, -0.58), p(0.80, 0.58));
+            painter.rect_stroke(r_n, CornerRadius::same(1), thin, StrokeKind::Inside);
+            painter.rect_stroke(r_pe, CornerRadius::same(1), thin, StrokeKind::Inside);
         }
     }
 }

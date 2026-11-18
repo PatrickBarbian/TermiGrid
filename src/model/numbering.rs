@@ -305,6 +305,96 @@ impl TerminalStrip {
         self.recalculate_labels();
         (insert_at..insert_at + count).collect()
     }
+
+    /// Inserts an ordered sequence of specs (e.g. `1-Polig` `[L, N, PE]` or `3-Polig` `[L, L, L, N, PE]`)
+    /// at `at_index`, recalculates all labels, and returns the newly inserted block indices.
+    pub fn insert_spec_sequence(
+        &mut self,
+        at_index: usize,
+        specs: &[&TerminalSpec],
+    ) -> std::collections::BTreeSet<usize> {
+        if specs.is_empty() {
+            return std::collections::BTreeSet::new();
+        }
+        let clamped = at_index.min(self.blocks.len());
+        let mut new_blocks = Vec::with_capacity(specs.len());
+        for spec in specs {
+            let id = self.allocate_block_id();
+            new_blocks.push(spec.instantiate_block(id));
+        }
+        let count = new_blocks.len();
+        self.blocks.splice(clamped..clamped, new_blocks);
+        self.recalculate_labels();
+        (clamped..clamped + count).collect()
+    }
+
+    /// Converts all convertible `N` terminals in the strip into their matching `NT` disconnect
+    /// counterparts (`matching_nt_equivalent_id`), preserving custom overrides/affixes and recalculating labels.
+    /// Returns the number of converted blocks.
+    pub fn convert_n_to_nt_blocks(&mut self, catalog: &TerminalCatalog) -> usize {
+        self.convert_blocks_by_spec(catalog, |spec| spec.matching_nt_equivalent_id())
+    }
+
+    /// Converts all convertible `NT` disconnect terminals in the strip back into their matching `N`
+    /// counterparts (`matching_n_from_nt_id`), preserving L/PE conductors, custom overrides/affixes,
+    /// and recalculating labels. Returns the number of converted blocks.
+    pub fn convert_nt_to_n_blocks(&mut self, catalog: &TerminalCatalog) -> usize {
+        self.convert_blocks_by_spec(catalog, |spec| spec.matching_n_from_nt_id())
+    }
+
+    fn convert_blocks_by_spec<F>(&mut self, catalog: &TerminalCatalog, mapper: F) -> usize
+    where
+        F: Fn(&TerminalSpec) -> Option<&'static str>,
+    {
+        let mut converted = 0usize;
+        for block in &mut self.blocks {
+            let Some(current_spec) = catalog.find_by_id(&block.spec_id) else {
+                continue;
+            };
+            let Some(target_id) = mapper(current_spec) else {
+                continue;
+            };
+            let Some(target_spec) = catalog.find_by_id(target_id) else {
+                continue;
+            };
+
+            let saved_tiers: Vec<(Option<String>, String, String, bool)> = block
+                .tiers
+                .iter()
+                .map(|t| {
+                    (
+                        t.custom_override.clone(),
+                        t.label_prefix.clone(),
+                        t.label_suffix.clone(),
+                        t.behavior.is_neutral(),
+                    )
+                })
+                .collect();
+
+            TerminalCatalog::apply_spec_to_block(block, target_spec);
+
+            if saved_tiers.len() == block.tiers.len() {
+                for (tier, (ov, pre, suf, _)) in block.tiers.iter_mut().zip(saved_tiers) {
+                    tier.custom_override = ov;
+                    tier.label_prefix = pre;
+                    tier.label_suffix = suf;
+                }
+            } else if let Some((ov, pre, suf, _)) =
+                saved_tiers.into_iter().find(|(_, _, _, is_n)| *is_n)
+                && let Some(n_tier) = block.tiers.iter_mut().find(|t| t.behavior.is_neutral())
+            {
+                n_tier.custom_override = ov;
+                n_tier.label_prefix = pre;
+                n_tier.label_suffix = suf;
+            }
+
+            converted += 1;
+        }
+        if converted > 0 {
+            self.recalculate_labels();
+        }
+        converted
+    }
 }
 
 /// Places `supply_spec` before the first installation/NT terminal (`before_group == true`)

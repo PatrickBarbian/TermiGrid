@@ -154,6 +154,7 @@ pub fn show_new_strip_modal(
                 &mut state.manufacturer_filter,
                 &mut state.search_query,
                 &mut state.selected_spec_id,
+                None,
                 strings.filter_manufacturer,
                 strings.default_terminal_type,
                 strings.all_manufacturers,
@@ -368,6 +369,7 @@ pub fn show_spec_picker(
     manufacturer_filter: &mut Option<String>,
     search_query: &mut String,
     selected_spec_id: &mut String,
+    reference_spec: Option<&crate::catalog::TerminalSpec>,
     mfg_label: &str,
     spec_label: &str,
     all_label: &str,
@@ -410,7 +412,11 @@ pub fn show_spec_picker(
     });
 
     let has_query = !search_query.trim().is_empty();
-    let filtered = catalog.filter_specs(manufacturer_filter.as_deref(), search_query);
+    let filtered = catalog.filter_specs_for_reference(
+        manufacturer_filter.as_deref(),
+        search_query,
+        reference_spec,
+    );
 
     if has_query && manufacturer_filter.is_some() {
         ui.label(
@@ -500,7 +506,31 @@ pub fn show_spec_picker(
         .truncate()
         .selected_text(selected_text)
         .show_ui(ui, |ui| {
+            let mut in_compat_section = false;
+            let mut in_other_section = false;
             for spec in filtered {
+                if !has_query && let Some(ref_spec) = reference_spec {
+                    let is_compat = spec.compatibility_rank(ref_spec).0 <= 2;
+                    if is_compat && !in_compat_section {
+                        in_compat_section = true;
+                        ui.label(
+                            egui::RichText::new("Passende Typen (gleiche Serie / Profil)")
+                                .color(egui::Color32::from_rgb(14, 165, 233))
+                                .small()
+                                .strong(),
+                        );
+                    } else if !is_compat && !in_other_section {
+                        in_other_section = true;
+                        if in_compat_section {
+                            ui.separator();
+                        }
+                        ui.label(
+                            egui::RichText::new("Weitere Typen")
+                                .color(secondary_text_color(ui))
+                                .small(),
+                        );
+                    }
+                }
                 let art_tag = spec
                     .effective_article_number()
                     .map(|a| format!(" · {a}"))
@@ -550,6 +580,12 @@ pub enum PendingInstallAction {
         at_index: usize,
         count: usize,
         spec_id: String,
+        select_inserted: bool,
+    },
+    InsertSequence {
+        strip_idx: usize,
+        at_index: usize,
+        spec_ids: Vec<String>,
         select_inserted: bool,
     },
 }

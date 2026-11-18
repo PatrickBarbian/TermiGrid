@@ -793,6 +793,449 @@ impl TerminalSpec {
         }
     }
 
+    /// Returns `true` if at least one tier of this terminal carries an `N` (Neutral) potential.
+    pub fn has_neutral_tier(&self) -> bool {
+        self.tiers.iter().any(|t| t.behavior.is_neutral())
+    }
+
+    /// Maps an `N` terminal (installation N/PE/L/N or single-tier N) to its closest matching `NT`
+    /// disconnect counterpart within the same manufacturer & connection technology, or `None` if already `NT`
+    /// or no compatible `NT` terminal exists in the catalog.
+    pub fn matching_nt_equivalent_id(&self) -> Option<&'static str> {
+        if self.is_nt_disconnect_terminal()
+            || self.is_n_supply_terminal()
+            || self.is_busbar_carrier()
+            || !self.has_neutral_tier()
+        {
+            return None;
+        }
+        match self.id.as_str() {
+            // WAGO 2003 / 2203 / 2005 / 2205 (installation N <-> NT preserving conductor levels)
+            "wago-2003-7646" => Some("wago-2003-7641"),
+            "wago-2003-7649" => Some("wago-2003-7640"),
+            "wago-2003-6646" => Some("wago-2003-6640"),
+            "wago-2203-7646" => Some("wago-2203-7641"),
+            "wago-2203-7649" => Some("wago-2203-7640"),
+            "wago-2203-6646" => Some("wago-2203-6640"),
+            "wago-2005-7646" => Some("wago-2005-7641"),
+            "wago-2005-7649" => Some("wago-2005-7640"),
+            "wago-2205-7646" => Some("wago-2205-7641"),
+            "wago-2205-7649" => Some("wago-2205-7640"),
+
+            // WAGO 2002 / 2202 / 2004 / 2204 N -> nearest TOPJOB S NT equivalent
+            "wago-2002-3209" => Some("wago-2003-7641"),
+            "wago-2002-2204" | "wago-2002-1204" | "wago-2002-1304" | "wago-2002-1404" => {
+                Some("wago-2003-7640")
+            }
+            "wago-2202-2204" | "wago-2202-1204" | "wago-2202-1304" | "wago-2202-1404" => {
+                Some("wago-2203-7640")
+            }
+            "wago-2004-1204" | "wago-2004-1304" | "wago-2004-1404" => Some("wago-2005-7640"),
+            "wago-2204-1204" | "wago-2204-1304" | "wago-2204-1404" => Some("wago-2205-7640"),
+
+            // Phoenix Contact PTI / PT / ST / UT N -> NT
+            "phoenix-pti-25-peln" | "phoenix-pt-25-peln" => Some("phoenix-pti-25-pelnt"),
+            "phoenix-pti-25-ln"
+            | "phoenix-pttb-25-ln-real"
+            | "phoenix-pti-25-bu"
+            | "phoenix-pt-25-bu"
+            | "phoenix-pt-25-twin-bu"
+            | "phoenix-pt-25-quattro-bu" => Some("phoenix-pti-25-lnt"),
+            "phoenix-pti-4-peln"
+            | "phoenix-pti-4-ln"
+            | "phoenix-pti-4-bu"
+            | "phoenix-pt-4-bu" => Some("phoenix-pti-4-pelnt"),
+            "phoenix-st-25-bu" | "phoenix-st-25-twin-bu" | "phoenix-st-25-quattro-bu" => {
+                Some("phoenix-sti-25-pelnt")
+            }
+            "phoenix-ut-25-bu" | "phoenix-ut-25-twin-bu" | "phoenix-ut-25-quattro-bu" => {
+                Some("phoenix-uti-25-peln")
+            }
+
+            // Weidmüller AITB / A-Series / W-Series / Z-Series N -> NT
+            "weidmuller-aitb-25-nlp" | "weidmuller-a3t-25-peln" => Some("weidmuller-aitb-25-ntlp"),
+            "weidmuller-aitb-25-nl"
+            | "weidmuller-aitb-25-bb-bl"
+            | "weidmuller-a2c-25-bl"
+            | "weidmuller-a3c-25-bl"
+            | "weidmuller-a4c-25-bl" => Some("weidmuller-aitb-25-ndt"),
+            "weidmuller-aitb-4-nlp" => Some("weidmuller-aitb-4-ntlp"),
+            "weidmuller-aitb-4-nl"
+            | "weidmuller-aitb-4-bb-bl"
+            | "weidmuller-a2c-4-bl"
+            | "weidmuller-a3c-4-bl"
+            | "weidmuller-a4c-4-bl" => Some("weidmuller-aitb-4-ndt"),
+            "weidmuller-wdu-10-bl" => Some("weidmuller-wnt-10"),
+            "weidmuller-wdu-16-bl" => Some("weidmuller-wnt-16n"),
+            "weidmuller-zdu-25-bl" | "weidmuller-zdu-25-3an-bl" | "weidmuller-zdu-25-4an-bl" => {
+                Some("weidmuller-zdl-25")
+            }
+            _ => None,
+        }
+    }
+
+    /// Maps an `NT` disconnect terminal back to its matching standard `N` counterpart with the same
+    /// conductor count (`PE/L/NT -> PE/L/N`, `L/NT -> L/N`, `WNT -> WDU BL`), preserving all L/PE tiers.
+    pub fn matching_n_from_nt_id(&self) -> Option<&'static str> {
+        if !self.is_nt_disconnect_terminal() {
+            return None;
+        }
+        match self.id.as_str() {
+            "wago-2003-7641" => Some("wago-2003-7646"),
+            "wago-2003-7640" => Some("wago-2003-7649"),
+            "wago-2003-6640" | "wago-2003-6641" => Some("wago-2003-6646"),
+            "wago-2203-7641" => Some("wago-2203-7646"),
+            "wago-2203-7640" => Some("wago-2203-7649"),
+            "wago-2203-6640" | "wago-2203-6641" => Some("wago-2203-6646"),
+            "wago-2005-7641" => Some("wago-2005-7646"),
+            "wago-2005-7640" => Some("wago-2005-7649"),
+            "wago-2205-7641" => Some("wago-2205-7646"),
+            "wago-2205-7640" => Some("wago-2205-7649"),
+            "phoenix-pti-25-pelnt" => Some("phoenix-pti-25-peln"),
+            "phoenix-pti-25-lnt" => Some("phoenix-pti-25-ln"),
+            "phoenix-pti-4-pelnt" => Some("phoenix-pti-4-peln"),
+            "weidmuller-aitb-25-ntlp" => Some("weidmuller-aitb-25-nlp"),
+            "weidmuller-aitb-25-ndt" => Some("weidmuller-aitb-25-nl"),
+            "weidmuller-aitb-4-ntlp" => Some("weidmuller-aitb-4-nlp"),
+            "weidmuller-aitb-4-ndt" => Some("weidmuller-aitb-4-nl"),
+            "weidmuller-wnt-10" => Some("weidmuller-wdu-10-bl"),
+            "weidmuller-wnt-16n" => Some("weidmuller-wdu-16-bl"),
+            _ => None,
+        }
+    }
+
+    /// Logical terminal series/profile key used to group compatible terminal blocks together in dropdowns.
+    pub fn compatibility_family(&self) -> String {
+        let id = self.id.as_str();
+        match self.manufacturer.as_str() {
+            "WAGO" => {
+                if id.starts_with("wago-2000-") {
+                    "wago:2000".to_string()
+                } else if id.starts_with("wago-2001-") {
+                    "wago:2001".to_string()
+                } else if id.starts_with("wago-2002-") {
+                    "wago:2002".to_string()
+                } else if id.starts_with("wago-2003-") {
+                    "wago:2003".to_string()
+                } else if id.starts_with("wago-2004-") {
+                    "wago:2004".to_string()
+                } else if id.starts_with("wago-2005-") {
+                    "wago:2005".to_string()
+                } else if id.starts_with("wago-2006-") {
+                    "wago:2006".to_string()
+                } else if id.starts_with("wago-2007-") {
+                    "wago:2007".to_string()
+                } else if id.starts_with("wago-2009-") {
+                    "wago:2009".to_string()
+                } else if id.starts_with("wago-2010-") {
+                    "wago:2010".to_string()
+                } else if id.starts_with("wago-2016-") {
+                    "wago:2016".to_string()
+                } else if id.starts_with("wago-2022-") {
+                    "wago:2022".to_string()
+                } else if id.starts_with("wago-2035-") {
+                    "wago:2035".to_string()
+                } else if id.starts_with("wago-2102-") {
+                    "wago:2102".to_string()
+                } else if id.starts_with("wago-2104-") {
+                    "wago:2104".to_string()
+                } else if id.starts_with("wago-2106-") {
+                    "wago:2106".to_string()
+                } else if id.starts_with("wago-2110-") {
+                    "wago:2110".to_string()
+                } else if id.starts_with("wago-2116-") {
+                    "wago:2116".to_string()
+                } else if id.starts_with("wago-2200-") {
+                    "wago:2200".to_string()
+                } else if id.starts_with("wago-2201-") {
+                    "wago:2201".to_string()
+                } else if id.starts_with("wago-2202-") {
+                    "wago:2202".to_string()
+                } else if id.starts_with("wago-2203-") {
+                    "wago:2203".to_string()
+                } else if id.starts_with("wago-2204-") {
+                    "wago:2204".to_string()
+                } else if id.starts_with("wago-2205-") {
+                    "wago:2205".to_string()
+                } else if id.starts_with("wago-2206-") {
+                    "wago:2206".to_string()
+                } else if id.starts_with("wago-2210-") {
+                    "wago:2210".to_string()
+                } else if id.starts_with("wago-2216-") {
+                    "wago:2216".to_string()
+                } else if id.starts_with("wago-280-") {
+                    "wago:280".to_string()
+                } else if id.starts_with("wago-281-") {
+                    "wago:281".to_string()
+                } else if id.starts_with("wago-285-") {
+                    "wago:285".to_string()
+                } else {
+                    format!("wago:{}", self.series)
+                }
+            }
+            "Phoenix Contact" => {
+                if id.starts_with("phoenix-pt-15s") || id.starts_with("phoenix-pttb-15s") {
+                    "phx:pt-1.5s".to_string()
+                } else if id.starts_with("phoenix-pt-25")
+                    || id.starts_with("phoenix-pttb-25")
+                    || id.starts_with("phoenix-pttbs-25")
+                {
+                    "phx:pt-2.5".to_string()
+                } else if id.starts_with("phoenix-pt-4") || id.starts_with("phoenix-pttb-4") {
+                    "phx:pt-4".to_string()
+                } else if id.starts_with("phoenix-pt-6") || id.starts_with("phoenix-ptme") {
+                    "phx:pt-6".to_string()
+                } else if id.starts_with("phoenix-pt-10") {
+                    "phx:pt-10".to_string()
+                } else if id.starts_with("phoenix-pt-16") {
+                    "phx:pt-16".to_string()
+                } else if id.starts_with("phoenix-ptv-25") || id.starts_with("phoenix-ptvtb-25") {
+                    "phx:ptv-2.5".to_string()
+                } else if id.starts_with("phoenix-ptv-4") || id.starts_with("phoenix-ptvtb-4") {
+                    "phx:ptv-4".to_string()
+                } else if id.starts_with("phoenix-ptv-6") {
+                    "phx:ptv-6".to_string()
+                } else if id.starts_with("phoenix-ptv-10") {
+                    "phx:ptv-10".to_string()
+                } else if id.starts_with("phoenix-ptv-16") {
+                    "phx:ptv-16".to_string()
+                } else if id.starts_with("phoenix-pti-25")
+                    || id == "phoenix-ab-pti"
+                    || id == "phoenix-ab-pti-3"
+                {
+                    "phx:pti-2.5".to_string()
+                } else if id.starts_with("phoenix-pti-4") || id == "phoenix-ab-pti-4-3" {
+                    "phx:pti-4".to_string()
+                } else if id.starts_with("phoenix-pti-6") || id == "phoenix-ab-pti-6" {
+                    "phx:pti-6".to_string()
+                } else if id.starts_with("phoenix-pti-16") || id.starts_with("phoenix-ab-pti-16") {
+                    "phx:pti-16".to_string()
+                } else if id.starts_with("phoenix-sti-") || id.starts_with("phoenix-ab-sti") {
+                    "phx:sti".to_string()
+                } else if id.starts_with("phoenix-uti-") || id.starts_with("phoenix-ab-uti") {
+                    "phx:uti".to_string()
+                } else if id.starts_with("phoenix-st-25") || id.starts_with("phoenix-sttb-25") {
+                    "phx:st-2.5".to_string()
+                } else if id.starts_with("phoenix-st-4") {
+                    "phx:st-4".to_string()
+                } else if id.starts_with("phoenix-st-6") {
+                    "phx:st-6".to_string()
+                } else if id.starts_with("phoenix-st-10") {
+                    "phx:st-10".to_string()
+                } else if id.starts_with("phoenix-st-16") {
+                    "phx:st-16".to_string()
+                } else if id.starts_with("phoenix-ut-25") || id.starts_with("phoenix-uttb-25") {
+                    "phx:ut-2.5".to_string()
+                } else if id.starts_with("phoenix-ut-4") || id.starts_with("phoenix-uttb-4") {
+                    "phx:ut-4".to_string()
+                } else if id.starts_with("phoenix-ut-6") {
+                    "phx:ut-6".to_string()
+                } else if id.starts_with("phoenix-ut-10") {
+                    "phx:ut-10".to_string()
+                } else if id.starts_with("phoenix-ut-16") {
+                    "phx:ut-16".to_string()
+                } else if id.starts_with("phoenix-ut-35") {
+                    "phx:ut-35".to_string()
+                } else if id.starts_with("phoenix-uk-")
+                    || id.starts_with("phoenix-uslkg")
+                    || id.starts_with("phoenix-udmtk")
+                    || id.starts_with("phoenix-ukk")
+                {
+                    "phx:uk".to_string()
+                } else if id.starts_with("phoenix-ptpower") {
+                    "phx:ptpower".to_string()
+                } else if id.starts_with("phoenix-ptfix") {
+                    "phx:ptfix".to_string()
+                } else if id.starts_with("phoenix-ptrv") {
+                    "phx:ptrv".to_string()
+                } else if id.starts_with("phoenix-ptio") {
+                    "phx:ptio".to_string()
+                } else {
+                    format!("phx:{}", self.series)
+                }
+            }
+            "Weidmüller" => {
+                if id.contains("a2c-15")
+                    || id.contains("a3c-15")
+                    || id.contains("a4c-15")
+                    || id.contains("a2t-15")
+                    || id.contains("a3t-15")
+                {
+                    "wm:a-1.5".to_string()
+                } else if id.contains("a2c-25")
+                    || id.contains("a3c-25")
+                    || id.contains("a4c-25")
+                    || id.contains("a2t-25")
+                    || id.contains("a3t-25")
+                    || id.contains("amc-25")
+                    || id.contains("adt-25")
+                {
+                    "wm:a-2.5".to_string()
+                } else if id.contains("a2c-4")
+                    || id.contains("a3c-4")
+                    || id.contains("a4c-4")
+                    || id.contains("a2t-4")
+                    || id.contains("amc-4")
+                    || id.contains("adt-4")
+                    || id.contains("afs-4")
+                {
+                    "wm:a-4".to_string()
+                } else if id.contains("a2c-6") || id.contains("a3c-6") {
+                    "wm:a-6".to_string()
+                } else if id.contains("a2c-10") || id.contains("a3c-10") {
+                    "wm:a-10".to_string()
+                } else if id.contains("a2c-16") || id.contains("a3c-16") {
+                    "wm:a-16".to_string()
+                } else if id.contains("a2c-35") {
+                    "wm:a-35".to_string()
+                } else if id.contains("a2c-50-70") {
+                    "wm:a-70".to_string()
+                } else if id.contains("a2c-95-120") {
+                    "wm:a-120".to_string()
+                } else if id.contains("aio") {
+                    "wm:aio".to_string()
+                } else if id.starts_with("weidmuller-aitb-25") {
+                    "wm:aitb-2.5".to_string()
+                } else if id.starts_with("weidmuller-aitb-4") {
+                    "wm:aitb-4".to_string()
+                } else if id.starts_with("weidmuller-aitb-6") {
+                    "wm:aitb-6".to_string()
+                } else if id.starts_with("weidmuller-aitb-10") {
+                    "wm:aitb-10".to_string()
+                } else if id.starts_with("weidmuller-aitb-16") {
+                    "wm:aitb-16".to_string()
+                } else if id.starts_with("weidmuller-aeb-itb") {
+                    "wm:aitb-acc".to_string()
+                } else if id.contains("wdu-15")
+                    || id.contains("wpe-15")
+                    || id.contains("wdu-25")
+                    || id.contains("wpe-25")
+                    || id.contains("wtr-25")
+                    || id.contains("wdk-25")
+                    || id.contains("dli-25")
+                    || id.contains("dld-25")
+                {
+                    "wm:w-2.5".to_string()
+                } else if id.contains("wdu-4")
+                    || id.contains("wpe-4")
+                    || id.contains("wtr-4")
+                    || id.contains("wdk-4n")
+                {
+                    "wm:w-4".to_string()
+                } else if id.contains("wdu-6")
+                    || id.contains("wpe-6")
+                    || id.contains("wsi-6")
+                    || id.contains("wtl-6")
+                    || id.contains("wtd-6")
+                {
+                    "wm:w-6".to_string()
+                } else if id.contains("wdu-10")
+                    || id.contains("wpe-10")
+                    || id.contains("wnt-10")
+                {
+                    "wm:w-10".to_string()
+                } else if id.contains("wdu-16")
+                    || id.contains("wpe-16")
+                    || id.contains("wnt-16")
+                {
+                    "wm:w-16".to_string()
+                } else if id.contains("wdu-35") || id.contains("wpe-35") {
+                    "wm:w-35".to_string()
+                } else if id.contains("50n") || id.contains("70n") {
+                    "wm:w-50-70".to_string()
+                } else if id.contains("zdu-15") || id.contains("zpe-15") {
+                    "wm:z-1.5".to_string()
+                } else if id.contains("zdu-25")
+                    || id.contains("zpe-25")
+                    || id.contains("zdk-25")
+                    || id.contains("zdl-25")
+                    || id.contains("ztr-25")
+                {
+                    "wm:z-2.5".to_string()
+                } else if id.contains("zdu-4") || id.contains("zpe-4") {
+                    "wm:z-4".to_string()
+                } else if id.contains("zdu-6") || id.contains("zpe-6") {
+                    "wm:z-6".to_string()
+                } else if id.contains("zdu-10") {
+                    "wm:z-10".to_string()
+                } else if id.contains("zdu-16") {
+                    "wm:z-16".to_string()
+                } else {
+                    format!("wm:{}", self.series)
+                }
+            }
+            other => format!("{other}:{}", self.series),
+        }
+    }
+
+    fn connection_subbucket(&self) -> u8 {
+        let id = self.id.as_str();
+        if id.contains("-quattro")
+            || id.contains("-4an")
+            || id.contains("-4c")
+            || id.contains("-140")
+            || id.contains("a4c-")
+        {
+            3 // 4-conductor
+        } else if id.contains("-twin")
+            || id.contains("-3an")
+            || id.contains("-3c")
+            || id.contains("-130")
+            || id.contains("a3c-")
+        {
+            2 // 3-conductor
+        } else if id.contains("-120") || id.contains("a2c-") || self.levels == 1 {
+            1 // 2-conductor standard
+        } else {
+            0
+        }
+    }
+
+    /// Computes how compatible `self` is as a replacement/companion for `reference` in dropdowns.
+    /// Lower tuple values sort first (`0` = exact same type, `1` = same family & levels, `2` = same family, ...).
+    pub fn compatibility_rank(&self, reference: &TerminalSpec) -> (u8, u8) {
+        if self.id == reference.id {
+            return (0, 0);
+        }
+        let same_fam = self.compatibility_family() == reference.compatibility_family();
+        let sub_diff = u8::from(self.connection_subbucket() != reference.connection_subbucket());
+        let same_mfg = self.manufacturer == reference.manufacturer;
+        let same_levels = self.levels == reference.levels;
+        let same_width = self.width_tenths_mm == reference.width_tenths_mm;
+
+        if same_fam && same_levels {
+            return (1, sub_diff);
+        }
+        if same_fam {
+            return (2, sub_diff);
+        }
+        if (reference.is_installation_or_nt_terminal() || reference.is_n_supply_terminal())
+            && same_mfg
+            && (self.is_installation_or_nt_terminal()
+                || self.is_n_supply_terminal()
+                || self.is_busbar_carrier())
+            && same_width
+        {
+            return (3, u8::from(!same_levels));
+        }
+        if self.jumper_family_key() == reference.jumper_family_key() && same_levels {
+            return (3, sub_diff);
+        }
+        if same_mfg && same_levels && same_width {
+            return (4, sub_diff);
+        }
+        if same_mfg && same_levels {
+            return (5, sub_diff);
+        }
+        if same_mfg {
+            return (6, sub_diff);
+        }
+        if same_levels && same_width {
+            return (7, sub_diff);
+        }
+        (8, 0)
+    }
+
     /// Returns the default recommended 16 mm² N-supply terminal (`N-Einspeiseklemme`) for this installation block.
     /// For WAGO (`2003`, `2005`, `2203`, `2205`), defaults to `"wago-2016-7714"` (`2016-7714`).
     pub fn recommended_n_supply_spec_id(&self) -> &'static str {
@@ -1824,26 +2267,791 @@ impl TerminalCatalog {
         manufacturer_filter: Option<&str>,
         search_query: &str,
     ) -> Vec<&TerminalSpec> {
+        self.filter_specs_for_reference(manufacturer_filter, search_query, None)
+    }
+
+    /// Filters catalog specifications, optionally prioritizing compatible terminal types relative to `reference`.
+    pub fn filter_specs_for_reference(
+        &self,
+        manufacturer_filter: Option<&str>,
+        search_query: &str,
+        reference: Option<&TerminalSpec>,
+    ) -> Vec<&TerminalSpec> {
         let parsed = parse_search_query(search_query);
         if parsed.tokens.is_empty() {
-            return self
+            let mut list: Vec<&TerminalSpec> = self
                 .specs
                 .iter()
                 .filter(|s| manufacturer_filter.is_none_or(|m| s.manufacturer == m))
                 .collect();
+            if let Some(ref_spec) = reference {
+                self.sort_specs_for_reference(&mut list, ref_spec);
+            }
+            return list;
         }
 
-        let mut scored: Vec<(u32, &TerminalSpec)> = self
+        let mut scored: Vec<(u32, (u8, u8), &TerminalSpec)> = self
             .specs
             .iter()
-            .filter_map(|s| s.score_search_query(&parsed).map(|score| (score, s)))
+            .filter_map(|s| {
+                s.score_search_query(&parsed).map(|score| {
+                    let compat = reference.map_or((0, 0), |r| s.compatibility_rank(r));
+                    (score, compat, s)
+                })
+            })
             .collect();
-        scored.sort_by(|(sa, a), (sb, b)| {
+        scored.sort_by(|(sa, ra, a), (sb, rb, b)| {
             sb.cmp(sa)
+                .then_with(|| ra.cmp(rb))
                 .then_with(|| a.manufacturer.to_lowercase().cmp(&b.manufacturer.to_lowercase()))
                 .then_with(|| natural_cmp(&a.name, &b.name))
         });
-        scored.into_iter().map(|(_, s)| s).collect()
+        scored.into_iter().map(|(_, _, s)| s).collect()
+    }
+
+    /// Sorts `specs` by compatibility rank relative to `reference`, keeping manufacturer and natural order inside each rank.
+    pub fn sort_specs_for_reference(&self, specs: &mut [&TerminalSpec], reference: &TerminalSpec) {
+        specs.sort_by(|a, b| {
+            a.compatibility_rank(reference)
+                .cmp(&b.compatibility_rank(reference))
+                .then_with(|| a.manufacturer.to_lowercase().cmp(&b.manufacturer.to_lowercase()))
+                .then_with(|| natural_cmp(&a.name, &b.name))
+                .then_with(|| a.id.cmp(&b.id))
+        });
+    }
+
+    /// Computes a `1-Polig` (1× L + N + PE) or `3-Polig` (3× L + N + PE) feeder block sequence matching `reference`.
+    pub fn feeder_block_plan(&self, reference: &TerminalSpec, poles: u8) -> Option<FeederBlockPlan<'_>> {
+        if (poles != 1 && poles != 3)
+            || reference.is_busbar_carrier()
+            || reference.is_n_supply_terminal()
+        {
+            return None;
+        }
+
+        let id = reference.id.as_str();
+        let is_nt = reference.is_nt_disconnect_terminal();
+
+        let seq_ids: Vec<&str> = match reference.manufacturer.as_str() {
+            "WAGO" => {
+                if id.starts_with("wago-2003-") {
+                    let target = if id.starts_with("wago-2003-66") {
+                        if is_nt { "wago-2003-6641" } else { "wago-2003-6646" }
+                    } else if is_nt {
+                        "wago-2003-7641"
+                    } else {
+                        "wago-2003-7646"
+                    };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["wago-2003-7642", target]
+                    }
+                } else if id.starts_with("wago-2203-") {
+                    let target = if id.starts_with("wago-2203-66") {
+                        if is_nt { "wago-2203-6641" } else { "wago-2203-6646" }
+                    } else if is_nt {
+                        "wago-2203-7641"
+                    } else {
+                        "wago-2203-7646"
+                    };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["wago-2203-7642", target]
+                    }
+                } else if id.starts_with("wago-2005-") {
+                    let target = if is_nt { "wago-2005-7641" } else { "wago-2005-7646" };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["wago-2005-7642", target]
+                    }
+                } else if id.starts_with("wago-2205-") {
+                    let target = if is_nt { "wago-2205-7641" } else { "wago-2205-7646" };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["wago-2205-7642", target]
+                    }
+                } else if id.starts_with("wago-2002-32") {
+                    if poles == 1 {
+                        vec!["wago-2002-3209"]
+                    } else {
+                        vec!["wago-2002-3208", "wago-2002-3209"]
+                    }
+                } else if reference.levels == 2 && id.starts_with("wago-2000-22") {
+                    if poles == 1 {
+                        vec!["wago-2000-2204", "wago-2000-2207"]
+                    } else {
+                        vec!["wago-2000-2201", "wago-2000-2204", "wago-2000-2207"]
+                    }
+                } else if reference.levels == 2 && (id.starts_with("wago-2002-2") || id.starts_with("wago-2002-29")) {
+                    if poles == 1 {
+                        vec!["wago-2002-2204", "wago-2002-2207"]
+                    } else {
+                        vec!["wago-2002-2201", "wago-2002-2204", "wago-2002-2207"]
+                    }
+                } else if reference.levels == 2 && id.starts_with("wago-2202-22") {
+                    if poles == 1 {
+                        vec!["wago-2202-2204", "wago-2202-2207"]
+                    } else {
+                        vec!["wago-2202-2201", "wago-2202-2204", "wago-2202-2207"]
+                    }
+                } else if reference.levels == 1 {
+                    let (l_id, n_id, pe_id) = match id {
+                        s if s.starts_with("wago-2000-12") => ("wago-2000-1201", "wago-2000-1204", "wago-2000-1207"),
+                        s if s.starts_with("wago-2000-13") => ("wago-2000-1301", "wago-2000-1304", "wago-2000-1307"),
+                        s if s.starts_with("wago-2000-14") => ("wago-2000-1401", "wago-2000-1404", "wago-2000-1407"),
+                        s if s.starts_with("wago-2001-12") => ("wago-2001-1201", "wago-2001-1204", "wago-2001-1207"),
+                        s if s.starts_with("wago-2001-13") => ("wago-2001-1301", "wago-2001-1304", "wago-2001-1307"),
+                        s if s.starts_with("wago-2001-14") => ("wago-2001-1401", "wago-2001-1404", "wago-2001-1407"),
+                        "wago-2001-1661" => ("wago-2001-1661", "wago-2001-1204", "wago-2001-1207"),
+                        s if s.starts_with("wago-2002-13") => ("wago-2002-1301", "wago-2002-1304", "wago-2002-1307"),
+                        s if s.starts_with("wago-2002-14") => ("wago-2002-1401", "wago-2002-1404", "wago-2002-1407"),
+                        "wago-2002-1711" | "wago-2002-1771" => (id, "wago-2002-1304", "wago-2002-1307"),
+                        "wago-2002-1811" | "wago-2002-1861" | "wago-2002-1871" => {
+                            (id, "wago-2002-1404", "wago-2002-1407")
+                        }
+                        s if s.starts_with("wago-2002-1") || s == "wago-2022-1201" => {
+                            let l = if s.starts_with("wago-2002-16") || s.starts_with("wago-2002-19") {
+                                id
+                            } else {
+                                "wago-2002-1201"
+                            };
+                            (l, "wago-2002-1204", "wago-2002-1207")
+                        }
+                        s if s.starts_with("wago-2004-12") => ("wago-2004-1201", "wago-2004-1204", "wago-2004-1207"),
+                        s if s.starts_with("wago-2004-13") => ("wago-2004-1301", "wago-2004-1304", "wago-2004-1307"),
+                        s if s.starts_with("wago-2004-14") => ("wago-2004-1401", "wago-2004-1404", "wago-2004-1407"),
+                        "wago-2004-1661" => ("wago-2004-1661", "wago-2004-1204", "wago-2004-1207"),
+                        s if s.starts_with("wago-2006-13") => ("wago-2006-1301", "wago-2006-1304", "wago-2006-1307"),
+                        s if s.starts_with("wago-2006-") => {
+                            let l = if s.starts_with("wago-2006-16") { id } else { "wago-2006-1201" };
+                            (l, "wago-2006-1204", "wago-2006-1207")
+                        }
+                        s if s.starts_with("wago-2010-13") => ("wago-2010-1301", "wago-2010-1304", "wago-2010-1307"),
+                        s if s.starts_with("wago-2010-") => ("wago-2010-1201", "wago-2010-1204", "wago-2010-1207"),
+                        s if s.starts_with("wago-2016-13") => ("wago-2016-1301", "wago-2016-1304", "wago-2016-1307"),
+                        s if s.starts_with("wago-2016-") => ("wago-2016-1201", "wago-2016-1204", "wago-2016-1207"),
+                        s if s.starts_with("wago-2035-") => ("wago-2035-1201", "wago-2035-1204", "wago-2035-1207"),
+                        s if s.starts_with("wago-2102-13") => ("wago-2102-1301", "wago-2102-1304", "wago-2102-1307"),
+                        s if s.starts_with("wago-2102-14") => ("wago-2102-1401", "wago-2102-1404", "wago-2102-1407"),
+                        s if s.starts_with("wago-2102-") => ("wago-2102-1201", "wago-2102-1204", "wago-2102-1207"),
+                        s if s.starts_with("wago-2104-13") => ("wago-2104-1301", "wago-2104-1304", "wago-2104-1307"),
+                        s if s.starts_with("wago-2104-") => ("wago-2104-1201", "wago-2104-1204", "wago-2104-1207"),
+                        s if s.starts_with("wago-2106-13") => ("wago-2106-1301", "wago-2106-1304", "wago-2106-1307"),
+                        s if s.starts_with("wago-2106-") => ("wago-2106-1201", "wago-2106-1204", "wago-2106-1207"),
+                        s if s.starts_with("wago-2110-13") => ("wago-2110-1301", "wago-2110-1304", "wago-2110-1307"),
+                        s if s.starts_with("wago-2110-") => ("wago-2110-1201", "wago-2110-1204", "wago-2110-1207"),
+                        s if s.starts_with("wago-2116-13") => ("wago-2116-1301", "wago-2116-1304", "wago-2116-1307"),
+                        s if s.starts_with("wago-2116-") => ("wago-2116-1201", "wago-2116-1204", "wago-2116-1207"),
+                        s if s.starts_with("wago-2200-12") => ("wago-2200-1201", "wago-2200-1204", "wago-2200-1207"),
+                        s if s.starts_with("wago-2200-13") => ("wago-2200-1301", "wago-2200-1304", "wago-2200-1307"),
+                        s if s.starts_with("wago-2200-14") => ("wago-2200-1401", "wago-2200-1404", "wago-2200-1407"),
+                        s if s.starts_with("wago-2201-12") => ("wago-2201-1201", "wago-2201-1204", "wago-2201-1207"),
+                        s if s.starts_with("wago-2201-13") => ("wago-2201-1301", "wago-2201-1304", "wago-2201-1307"),
+                        s if s.starts_with("wago-2201-14") => ("wago-2201-1401", "wago-2201-1404", "wago-2201-1407"),
+                        s if s.starts_with("wago-2202-13") => ("wago-2202-1301", "wago-2202-1304", "wago-2202-1307"),
+                        s if s.starts_with("wago-2202-14") => ("wago-2202-1401", "wago-2202-1404", "wago-2202-1407"),
+                        "wago-2202-1711" => ("wago-2202-1711", "wago-2202-1304", "wago-2202-1307"),
+                        s if s.starts_with("wago-2202-1") => {
+                            let l = if s == "wago-2202-1611" || s == "wago-2202-1661" { id } else { "wago-2202-1201" };
+                            (l, "wago-2202-1204", "wago-2202-1207")
+                        }
+                        s if s.starts_with("wago-2204-12") => ("wago-2204-1201", "wago-2204-1204", "wago-2204-1207"),
+                        s if s.starts_with("wago-2204-13") => ("wago-2204-1301", "wago-2204-1304", "wago-2204-1307"),
+                        s if s.starts_with("wago-2204-14") => ("wago-2204-1401", "wago-2204-1404", "wago-2204-1407"),
+                        s if s.starts_with("wago-2206-13") => ("wago-2206-1301", "wago-2206-1304", "wago-2206-1307"),
+                        s if s.starts_with("wago-2206-") => ("wago-2206-1201", "wago-2206-1204", "wago-2206-1207"),
+                        s if s.starts_with("wago-2210-") => ("wago-2210-1201", "wago-2210-1204", "wago-2210-1207"),
+                        s if s.starts_with("wago-2216-") => ("wago-2216-1201", "wago-2216-1204", "wago-2216-1207"),
+                        s if s.starts_with("wago-280-68") => ("wago-280-681", "wago-280-684", "wago-280-687"),
+                        s if s.starts_with("wago-280-83") => ("wago-280-833", "wago-280-834", "wago-280-837"),
+                        s if s.starts_with("wago-280-90") => ("wago-280-901", "wago-280-904", "wago-280-907"),
+                        s if s.starts_with("wago-281-90") => ("wago-281-901", "wago-281-904", "wago-281-907"),
+                        s if s.starts_with("wago-285-13") => ("wago-285-135", "wago-285-134", "wago-285-137"),
+                        s if s.starts_with("wago-285-15") => ("wago-285-150", "wago-285-154", "wago-285-157"),
+                        s if s.starts_with("wago-285-19") => ("wago-285-195", "wago-285-194", "wago-285-197"),
+                        _ => return None,
+                    };
+                    if poles == 1 {
+                        vec![l_id, n_id, pe_id]
+                    } else {
+                        vec![l_id, l_id, l_id, n_id, pe_id]
+                    }
+                } else {
+                    return None;
+                }
+            }
+            "Phoenix Contact" => {
+                if id.starts_with("phoenix-pti-25") && reference.levels >= 2 {
+                    let target = if is_nt { "phoenix-pti-25-pelnt" } else { "phoenix-pti-25-peln" };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["phoenix-pti-25-ll", target]
+                    }
+                } else if id.starts_with("phoenix-pti-4") && reference.levels >= 2 {
+                    let target = if is_nt { "phoenix-pti-4-pelnt" } else { "phoenix-pti-4-peln" };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["phoenix-pti-4-ll", target]
+                    }
+                } else if id == "phoenix-sti-25-pelnt" && poles == 1 {
+                    vec!["phoenix-sti-25-pelnt"]
+                } else if id == "phoenix-uti-25-peln" && poles == 1 {
+                    vec!["phoenix-uti-25-peln"]
+                } else if id.starts_with("phoenix-pt-15s-") && reference.levels == 3 {
+                    if poles == 1 {
+                        vec!["phoenix-pt-15s-peln"]
+                    } else {
+                        vec!["phoenix-pt-15s-pell", "phoenix-pt-15s-peln"]
+                    }
+                } else if id.starts_with("phoenix-pt-25-") && reference.levels == 3 {
+                    if poles == 1 {
+                        vec!["phoenix-pt-25-peln"]
+                    } else {
+                        vec!["phoenix-pt-25-pell", "phoenix-pt-25-peln"]
+                    }
+                } else if id.starts_with("phoenix-pttb-15s") {
+                    if poles == 1 {
+                        vec!["phoenix-pttb-15s-ln", "phoenix-pttb-15s-pe"]
+                    } else {
+                        vec!["phoenix-pttb-15s", "phoenix-pttb-15s-ln", "phoenix-pttb-15s-pe"]
+                    }
+                } else if id.starts_with("phoenix-pttb-25") {
+                    if poles == 1 {
+                        vec!["phoenix-pttb-25-ln-real", "phoenix-pttb-25-pe"]
+                    } else {
+                        vec!["phoenix-pttb-25", "phoenix-pttb-25-ln-real", "phoenix-pttb-25-pe"]
+                    }
+                } else if reference.levels == 1 {
+                    let (l_id, n_id, pe_id) = match id {
+                        "phoenix-pti-25" | "phoenix-pti-25-bu" | "phoenix-pti-25-pe" => {
+                            ("phoenix-pti-25", "phoenix-pti-25-bu", "phoenix-pti-25-pe")
+                        }
+                        "phoenix-pti-4" | "phoenix-pti-4-bu" | "phoenix-pti-4-pe" => {
+                            ("phoenix-pti-4", "phoenix-pti-4-bu", "phoenix-pti-4-pe")
+                        }
+                        "phoenix-pti-6" | "phoenix-pti-6-bu" | "phoenix-pti-6-pe" => {
+                            ("phoenix-pti-6", "phoenix-pti-6-bu", "phoenix-pti-6-pe")
+                        }
+                        s if s.starts_with("phoenix-pt-15s-quattro") => (
+                            "phoenix-pt-15s-quattro",
+                            "phoenix-pt-15s-quattro-bu",
+                            "phoenix-pt-15s-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-15s-twin") => (
+                            "phoenix-pt-15s-twin",
+                            "phoenix-pt-15s-twin-bu",
+                            "phoenix-pt-15s-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-15s") => {
+                            let l = if s == "phoenix-pt-15s-mt" || s == "phoenix-pt-15s-tg" {
+                                id
+                            } else {
+                                "phoenix-pt-15s"
+                            };
+                            (l, "phoenix-pt-15s-bu", "phoenix-pt-15s-pe")
+                        }
+                        s if s.starts_with("phoenix-pt-25-quattro") => (
+                            if s.ends_with("-mt") || s.ends_with("-tg") || s.ends_with("-dio-lr") {
+                                id
+                            } else {
+                                "phoenix-pt-25-quattro"
+                            },
+                            "phoenix-pt-25-quattro-bu",
+                            "phoenix-pt-25-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-25-twin") => (
+                            if s.ends_with("-mt") || s.ends_with("-tg") { id } else { "phoenix-pt-25-twin" },
+                            "phoenix-pt-25-twin-bu",
+                            "phoenix-pt-25-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-25") => {
+                            let l = if s == "phoenix-pt-25-mt" || s == "phoenix-pt-25-tg" || s == "phoenix-pt-25-dio-lr" {
+                                id
+                            } else {
+                                "phoenix-pt-25"
+                            };
+                            (l, "phoenix-pt-25-bu", "phoenix-pt-25-pe")
+                        }
+                        s if s.starts_with("phoenix-pt-4-quattro") => (
+                            "phoenix-pt-4-quattro",
+                            "phoenix-pt-4-quattro-bu",
+                            "phoenix-pt-4-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-4-twin") => (
+                            "phoenix-pt-4-twin",
+                            "phoenix-pt-4-twin-bu",
+                            "phoenix-pt-4-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-4") => {
+                            let l = if s.contains("-hesi") || s == "phoenix-pt-4-mt" || s == "phoenix-pt-4-tg" {
+                                id
+                            } else {
+                                "phoenix-pt-4"
+                            };
+                            (l, "phoenix-pt-4-bu", "phoenix-pt-4-pe")
+                        }
+                        s if s.starts_with("phoenix-pt-6-quattro") => (
+                            "phoenix-pt-6-quattro",
+                            "phoenix-pt-6-quattro-bu",
+                            "phoenix-pt-6-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-6-twin") => (
+                            "phoenix-pt-6-twin",
+                            "phoenix-pt-6-twin-bu",
+                            "phoenix-pt-6-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-6") => {
+                            let l = if s.contains("-hesi") || s == "phoenix-pt-6-t" || s == "phoenix-pt-6-tg" {
+                                id
+                            } else {
+                                "phoenix-pt-6"
+                            };
+                            (l, "phoenix-pt-6-bu", "phoenix-pt-6-pe")
+                        }
+                        s if s.starts_with("phoenix-pt-10-twin") => (
+                            "phoenix-pt-10-twin",
+                            "phoenix-pt-10-twin-bu",
+                            "phoenix-pt-10-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-10") => {
+                            ("phoenix-pt-10", "phoenix-pt-10-bu", "phoenix-pt-10-pe")
+                        }
+                        s if s.starts_with("phoenix-pt-16-twin") => (
+                            "phoenix-pt-16-twin-n",
+                            "phoenix-pt-16-twin-n-bu",
+                            "phoenix-pt-16-twin-n-pe",
+                        ),
+                        s if s.starts_with("phoenix-pt-16") => {
+                            ("phoenix-pt-16n", "phoenix-pt-16n-bu", "phoenix-pt-16n-pe")
+                        }
+                        s if s.starts_with("phoenix-ptv-25-quattro") => (
+                            "phoenix-ptv-25-quattro",
+                            "phoenix-ptv-25-quattro-bu",
+                            "phoenix-ptv-25-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-ptv-25-twin") => (
+                            "phoenix-ptv-25-twin",
+                            "phoenix-ptv-25-twin-bu",
+                            "phoenix-ptv-25-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-ptv-25") => {
+                            ("phoenix-ptv-25", "phoenix-ptv-25-bu", "phoenix-ptv-25-pe")
+                        }
+                        s if s.starts_with("phoenix-ptv-4-quattro") => (
+                            "phoenix-ptv-4-quattro",
+                            "phoenix-ptv-4-quattro-bu",
+                            "phoenix-ptv-4-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-ptv-4-twin") => (
+                            "phoenix-ptv-4-twin",
+                            "phoenix-ptv-4-twin-bu",
+                            "phoenix-ptv-4-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-ptv-4") => {
+                            ("phoenix-ptv-4", "phoenix-ptv-4-bu", "phoenix-ptv-4-pe")
+                        }
+                        s if s.starts_with("phoenix-ptv-6") => {
+                            ("phoenix-ptv-6", "phoenix-ptv-6-bu", "phoenix-ptv-6-pe")
+                        }
+                        s if s.starts_with("phoenix-ptv-10") => {
+                            ("phoenix-ptv-10", "phoenix-ptv-10-bu", "phoenix-ptv-10-pe")
+                        }
+                        s if s.starts_with("phoenix-ptv-16") => {
+                            ("phoenix-ptv-16", "phoenix-ptv-16-bu", "phoenix-ptv-16-pe")
+                        }
+                        s if s.starts_with("phoenix-st-25-quattro") => (
+                            "phoenix-st-25-quattro",
+                            "phoenix-st-25-quattro-bu",
+                            "phoenix-st-25-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-st-25-twin") => (
+                            "phoenix-st-25-twin",
+                            "phoenix-st-25-twin-bu",
+                            "phoenix-st-25-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-st-25") => {
+                            let l = if s == "phoenix-st-25-mt" { id } else { "phoenix-st-25" };
+                            (l, "phoenix-st-25-bu", "phoenix-st-25-pe")
+                        }
+                        "phoenix-st-4-quattro" => {
+                            ("phoenix-st-4-quattro", "phoenix-st-4-bu", "phoenix-st-4-pe")
+                        }
+                        "phoenix-st-4-twin" => ("phoenix-st-4-twin", "phoenix-st-4-bu", "phoenix-st-4-pe"),
+                        s if s.starts_with("phoenix-st-4") => {
+                            ("phoenix-st-4", "phoenix-st-4-bu", "phoenix-st-4-pe")
+                        }
+                        s if s.starts_with("phoenix-st-6") => {
+                            ("phoenix-st-6", "phoenix-st-6-bu", "phoenix-st-6-pe")
+                        }
+                        s if s.starts_with("phoenix-ut-25-quattro") => (
+                            "phoenix-ut-25-quattro",
+                            "phoenix-ut-25-quattro-bu",
+                            "phoenix-ut-25-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-ut-25-twin") => (
+                            "phoenix-ut-25-twin",
+                            "phoenix-ut-25-twin-bu",
+                            "phoenix-ut-25-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-ut-25") => {
+                            let l = if s == "phoenix-ut-25-mt" { id } else { "phoenix-ut-25" };
+                            (l, "phoenix-ut-25-bu", "phoenix-ut-25-pe")
+                        }
+                        "phoenix-ut-4-quattro" | "phoenix-ut-4-quattro-pe" => (
+                            "phoenix-ut-4-quattro",
+                            "phoenix-ut-4-bu",
+                            "phoenix-ut-4-quattro-pe",
+                        ),
+                        s if s.starts_with("phoenix-ut-4-twin") => (
+                            "phoenix-ut-4-twin",
+                            "phoenix-ut-4-twin-bu",
+                            "phoenix-ut-4-twin-pe",
+                        ),
+                        s if s.starts_with("phoenix-ut-4") => {
+                            let l = if s.contains("-hesi") || s == "phoenix-ut-4-mt" {
+                                id
+                            } else {
+                                "phoenix-ut-4"
+                            };
+                            (l, "phoenix-ut-4-bu", "phoenix-ut-4-pe")
+                        }
+                        s if s.starts_with("phoenix-ut-6") => {
+                            ("phoenix-ut-6", "phoenix-ut-6-bu", "phoenix-ut-6-pe")
+                        }
+                        s if s.starts_with("phoenix-ut-10") => {
+                            ("phoenix-ut-10", "phoenix-ut-10-bu", "phoenix-ut-10-pe")
+                        }
+                        s if s.starts_with("phoenix-ut-16") => {
+                            ("phoenix-ut-16", "phoenix-ut-16-bu", "phoenix-ut-16-pe")
+                        }
+                        s if s.starts_with("phoenix-ut-35") => {
+                            ("phoenix-ut-35", "phoenix-ut-35-bu", "phoenix-ut-35-pe")
+                        }
+                        "phoenix-uk-5n" | "phoenix-uk-5n-bu" | "phoenix-uslkg-5" => {
+                            ("phoenix-uk-5n", "phoenix-uk-5n-bu", "phoenix-uslkg-5")
+                        }
+                        s if s.starts_with("phoenix-ptpower-35") => (
+                            "phoenix-ptpower-35",
+                            "phoenix-ptpower-35-bu",
+                            "phoenix-ptpower-35-pe",
+                        ),
+                        s if s.starts_with("phoenix-ptpower-50") => (
+                            "phoenix-ptpower-50",
+                            "phoenix-ptpower-50-bu",
+                            "phoenix-ptpower-50-pe",
+                        ),
+                        s if s.starts_with("phoenix-ptpower-95") => (
+                            "phoenix-ptpower-95",
+                            "phoenix-ptpower-95-bu",
+                            "phoenix-ptpower-95-pe",
+                        ),
+                        s if s.starts_with("phoenix-ptfix-6-18x25") => (
+                            "phoenix-ptfix-6-18x25-gy",
+                            "phoenix-ptfix-6-18x25-bu",
+                            "phoenix-ptfix-6-18x25-pe",
+                        ),
+                        _ => return None,
+                    };
+                    if poles == 1 {
+                        vec![l_id, n_id, pe_id]
+                    } else {
+                        vec![l_id, l_id, l_id, n_id, pe_id]
+                    }
+                } else {
+                    return None;
+                }
+            }
+            "Weidmüller" => {
+                if id.starts_with("weidmuller-aitb-25-") && reference.levels >= 2 {
+                    let target = if is_nt {
+                        "weidmuller-aitb-25-ntlp"
+                    } else {
+                        "weidmuller-aitb-25-nlp"
+                    };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["weidmuller-aitb-25-ll", target]
+                    }
+                } else if id.starts_with("weidmuller-aitb-4-") && reference.levels >= 2 {
+                    let target = if is_nt {
+                        "weidmuller-aitb-4-ntlp"
+                    } else {
+                        "weidmuller-aitb-4-nlp"
+                    };
+                    if poles == 1 {
+                        vec![target]
+                    } else {
+                        vec!["weidmuller-aitb-4-ll", target]
+                    }
+                } else if id.starts_with("weidmuller-a3t-25") {
+                    if poles == 1 {
+                        vec!["weidmuller-a3t-25-peln"]
+                    } else {
+                        vec!["weidmuller-a3t-25-pell", "weidmuller-a3t-25-peln"]
+                    }
+                } else if id.starts_with("weidmuller-dli-25") || id.starts_with("weidmuller-dld-25") {
+                    if poles == 1 {
+                        vec!["weidmuller-dli-25"]
+                    } else {
+                        vec!["weidmuller-dld-25-pe", "weidmuller-dli-25"]
+                    }
+                } else if id.starts_with("weidmuller-zdl-25") {
+                    if poles == 1 {
+                        vec!["weidmuller-zdl-25"]
+                    } else {
+                        vec!["weidmuller-zdk-25", "weidmuller-zdl-25"]
+                    }
+                } else if id.starts_with("weidmuller-wdk-25") {
+                    if poles == 1 {
+                        vec!["weidmuller-wdk-25-n", "weidmuller-wdk-25-pe"]
+                    } else {
+                        vec!["weidmuller-wdk-25", "weidmuller-wdk-25-n", "weidmuller-wdk-25-pe"]
+                    }
+                } else if id.starts_with("weidmuller-a2t-15") {
+                    if poles == 1 {
+                        vec!["weidmuller-a2t-15-ft-pe", "weidmuller-a2c-15-bl"]
+                    } else {
+                        vec!["weidmuller-a2t-15", "weidmuller-a2t-15-ft-pe", "weidmuller-a2c-15-bl"]
+                    }
+                } else if id.starts_with("weidmuller-a2t-25") {
+                    if poles == 1 {
+                        vec!["weidmuller-a2t-25-ft-pe", "weidmuller-a2c-25-bl"]
+                    } else {
+                        vec!["weidmuller-a2t-25", "weidmuller-a2t-25-ft-pe", "weidmuller-a2c-25-bl"]
+                    }
+                } else if id.starts_with("weidmuller-a2t-4") {
+                    if poles == 1 {
+                        vec!["weidmuller-a2t-4-ft-pe", "weidmuller-a2c-4-bl"]
+                    } else {
+                        vec!["weidmuller-a2t-4", "weidmuller-a2t-4-ft-pe", "weidmuller-a2c-4-bl"]
+                    }
+                } else if reference.levels == 1 {
+                    let (l_id, n_id, pe_id) = match id {
+                        s if s.starts_with("weidmuller-aitb-25-bb") => (
+                            "weidmuller-aitb-25-bb",
+                            "weidmuller-aitb-25-bb-bl",
+                            "weidmuller-aitb-25-bb-pe",
+                        ),
+                        s if s.starts_with("weidmuller-aitb-4-bb") => (
+                            "weidmuller-aitb-4-bb",
+                            "weidmuller-aitb-4-bb-bl",
+                            "weidmuller-aitb-4-bb-pe",
+                        ),
+                        s if s.starts_with("weidmuller-aitb-6-bb") => (
+                            "weidmuller-aitb-6-bb",
+                            "weidmuller-aitb-6-bb-bl",
+                            "weidmuller-aitb-6-bb-pe",
+                        ),
+                        s if s.starts_with("weidmuller-aitb-10-bb") => (
+                            "weidmuller-aitb-10-bb",
+                            "weidmuller-aitb-10-bb-bl",
+                            "weidmuller-aitb-10-bb-pe",
+                        ),
+                        s if s.starts_with("weidmuller-aitb-16-bb") => (
+                            "weidmuller-aitb-16-bb",
+                            "weidmuller-aitb-16-bb-bl",
+                            "weidmuller-aitb-16-bb-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a2c-15") => (
+                            "weidmuller-a2c-15",
+                            "weidmuller-a2c-15-bl",
+                            "weidmuller-a2c-15-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a2c-25")
+                            || s == "weidmuller-amc-25"
+                            || s == "weidmuller-adt-25" =>
+                        {
+                            let l = if s == "weidmuller-amc-25" || s == "weidmuller-adt-25" {
+                                id
+                            } else {
+                                "weidmuller-a2c-25"
+                            };
+                            (l, "weidmuller-a2c-25-bl", "weidmuller-a2c-25-pe")
+                        }
+                        s if s.starts_with("weidmuller-a2c-4")
+                            || s == "weidmuller-amc-4"
+                            || s == "weidmuller-adt-4-2c"
+                            || s.starts_with("weidmuller-afs-4") =>
+                        {
+                            let l = if s.starts_with("weidmuller-a2c-4") {
+                                "weidmuller-a2c-4"
+                            } else {
+                                id
+                            };
+                            (l, "weidmuller-a2c-4-bl", "weidmuller-a2c-4-pe")
+                        }
+                        s if s.starts_with("weidmuller-a2c-6") => (
+                            "weidmuller-a2c-6",
+                            "weidmuller-a2c-6-bl",
+                            "weidmuller-a2c-6-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a2c-10") => (
+                            "weidmuller-a2c-10",
+                            "weidmuller-a2c-10-bl",
+                            "weidmuller-a2c-10-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a2c-16") => (
+                            "weidmuller-a2c-16",
+                            "weidmuller-a2c-16-bl",
+                            "weidmuller-a2c-16-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a2c-35") => (
+                            "weidmuller-a2c-35",
+                            "weidmuller-a2c-35-bl",
+                            "weidmuller-a2c-35-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a2c-50-70") => (
+                            "weidmuller-a2c-50-70",
+                            "weidmuller-a2c-50-70-bl",
+                            "weidmuller-a2c-50-70-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a2c-95-120") => (
+                            "weidmuller-a2c-95-120",
+                            "weidmuller-a2c-95-120-bl",
+                            "weidmuller-a2c-95-120-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a3c-15") => (
+                            "weidmuller-a3c-15",
+                            "weidmuller-a3c-15-bl",
+                            "weidmuller-a3c-15-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a3c-25") || s == "weidmuller-adt-25-3c" => {
+                            let l = if s == "weidmuller-adt-25-3c" { id } else { "weidmuller-a3c-25" };
+                            (l, "weidmuller-a3c-25-bl", "weidmuller-a3c-25-pe")
+                        }
+                        s if s.starts_with("weidmuller-a3c-4") => (
+                            "weidmuller-a3c-4",
+                            "weidmuller-a3c-4-bl",
+                            "weidmuller-a3c-4-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a3c-6") => (
+                            "weidmuller-a3c-6",
+                            "weidmuller-a3c-6-bl",
+                            "weidmuller-a3c-6-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a3c-10") => (
+                            "weidmuller-a3c-10",
+                            "weidmuller-a3c-10-bl",
+                            "weidmuller-a3c-10-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a3c-16") => (
+                            "weidmuller-a3c-16",
+                            "weidmuller-a3c-16-bl",
+                            "weidmuller-a3c-16-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a4c-15") => (
+                            "weidmuller-a4c-15",
+                            "weidmuller-a4c-15-bl",
+                            "weidmuller-a4c-15-pe",
+                        ),
+                        s if s.starts_with("weidmuller-a4c-25") || s == "weidmuller-adt-25-4c" => {
+                            let l = if s == "weidmuller-adt-25-4c" { id } else { "weidmuller-a4c-25" };
+                            (l, "weidmuller-a4c-25-bl", "weidmuller-a4c-25-pe")
+                        }
+                        s if s.starts_with("weidmuller-a4c-4") => (
+                            "weidmuller-a4c-4",
+                            "weidmuller-a4c-4-bl",
+                            "weidmuller-a4c-4-pe",
+                        ),
+                        "weidmuller-wdu-15-zz" | "weidmuller-wdu-15-zz-bl" | "weidmuller-wpe-15-zz" => (
+                            "weidmuller-wdu-15-zz",
+                            "weidmuller-wdu-15-zz-bl",
+                            "weidmuller-wpe-15-zz",
+                        ),
+                        "weidmuller-wdu-25-15-zr"
+                        | "weidmuller-wdu-25-15-zr-bl"
+                        | "weidmuller-wpe-25-15-zr" => (
+                            "weidmuller-wdu-25-15-zr",
+                            "weidmuller-wdu-25-15-zr-bl",
+                            "weidmuller-wpe-25-15-zr",
+                        ),
+                        "weidmuller-wdu-25" | "weidmuller-wdu-25-bl" | "weidmuller-wpe-25" | "weidmuller-wtr-25" => (
+                            if id == "weidmuller-wtr-25" { id } else { "weidmuller-wdu-25" },
+                            "weidmuller-wdu-25-bl",
+                            "weidmuller-wpe-25",
+                        ),
+                        "weidmuller-wdu-4" | "weidmuller-wdu-4-bl" | "weidmuller-wpe-4" | "weidmuller-wtr-4" => (
+                            if id == "weidmuller-wtr-4" { id } else { "weidmuller-wdu-4" },
+                            "weidmuller-wdu-4-bl",
+                            "weidmuller-wpe-4",
+                        ),
+                        s if s.starts_with("weidmuller-wdu-6") || s == "weidmuller-wpe-6" || s.starts_with("weidmuller-wsi-6") => (
+                            if s.starts_with("weidmuller-wsi-6") { id } else { "weidmuller-wdu-6" },
+                            "weidmuller-wdu-6-bl",
+                            "weidmuller-wpe-6",
+                        ),
+                        "weidmuller-wdu-10" | "weidmuller-wdu-10-bl" | "weidmuller-wpe-10" | "weidmuller-wnt-10" => (
+                            "weidmuller-wdu-10",
+                            if is_nt { "weidmuller-wnt-10" } else { "weidmuller-wdu-10-bl" },
+                            "weidmuller-wpe-10",
+                        ),
+                        "weidmuller-wdu-16" | "weidmuller-wdu-16-bl" | "weidmuller-wpe-16" | "weidmuller-wnt-16n" => (
+                            "weidmuller-wdu-16",
+                            if is_nt { "weidmuller-wnt-16n" } else { "weidmuller-wdu-16-bl" },
+                            "weidmuller-wpe-16",
+                        ),
+                        "weidmuller-wdu-35" | "weidmuller-wdu-35-bl" | "weidmuller-wpe-35" => (
+                            "weidmuller-wdu-35",
+                            "weidmuller-wdu-35-bl",
+                            "weidmuller-wpe-35",
+                        ),
+                        "weidmuller-zdu-15" | "weidmuller-zdu-15-bl" | "weidmuller-zpe-15" => (
+                            "weidmuller-zdu-15",
+                            "weidmuller-zdu-15-bl",
+                            "weidmuller-zpe-15",
+                        ),
+                        "weidmuller-zdu-25-3an" | "weidmuller-zdu-25-3an-bl" | "weidmuller-zpe-25-3an" => (
+                            "weidmuller-zdu-25-3an",
+                            "weidmuller-zdu-25-3an-bl",
+                            "weidmuller-zpe-25-3an",
+                        ),
+                        "weidmuller-zdu-25-4an" | "weidmuller-zdu-25-4an-bl" | "weidmuller-zpe-25-4an" => (
+                            "weidmuller-zdu-25-4an",
+                            "weidmuller-zdu-25-4an-bl",
+                            "weidmuller-zpe-25-4an",
+                        ),
+                        "weidmuller-zdu-25" | "weidmuller-zdu-25-bl" | "weidmuller-zpe-25" | "weidmuller-ztr-25" => (
+                            if id == "weidmuller-ztr-25" { id } else { "weidmuller-zdu-25" },
+                            "weidmuller-zdu-25-bl",
+                            "weidmuller-zpe-25",
+                        ),
+                        "weidmuller-zdu-4" | "weidmuller-zdu-4-bl" | "weidmuller-zpe-4" => (
+                            "weidmuller-zdu-4",
+                            "weidmuller-zdu-4-bl",
+                            "weidmuller-zpe-4",
+                        ),
+                        "weidmuller-zdu-6" | "weidmuller-zdu-6-bl" | "weidmuller-zpe-6" => (
+                            "weidmuller-zdu-6",
+                            "weidmuller-zdu-6-bl",
+                            "weidmuller-zpe-6",
+                        ),
+                        _ => return None,
+                    };
+                    if poles == 1 {
+                        vec![l_id, n_id, pe_id]
+                    } else {
+                        vec![l_id, l_id, l_id, n_id, pe_id]
+                    }
+                } else {
+                    return None;
+                }
+            }
+            _ => return None,
+        };
+
+        let mut specs = Vec::with_capacity(seq_ids.len());
+        for sid in seq_ids {
+            specs.push(self.find_by_id(sid)?);
+        }
+        let summary = format_spec_sequence_summary(&specs);
+        Some(FeederBlockPlan { specs, summary })
     }
 
     /// Resolves matching accessories (end plate, jumpers, markers, end bracket) for `spec`.
@@ -1867,6 +3075,31 @@ impl TerminalCatalog {
             .map(|(idx, ts)| ConnectionPoint::new(idx, ts.behavior.clone(), ts.color))
             .collect();
     }
+}
+
+/// Precomputed sequence of terminals for inserting a `1-Polig` (`1× L + N + PE`) or `3-Polig` (`3× L + N + PE`) circuit.
+#[derive(Debug, Clone)]
+pub struct FeederBlockPlan<'a> {
+    pub specs: Vec<&'a TerminalSpec>,
+    pub summary: String,
+}
+
+fn short_spec_code(name: &str) -> &str {
+    name.split(" (").next().unwrap_or(name).trim()
+}
+
+fn format_spec_sequence_summary(specs: &[&TerminalSpec]) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    let mut i = 0;
+    while i < specs.len() {
+        let mut count = 1usize;
+        while i + count < specs.len() && specs[i + count].id == specs[i].id {
+            count += 1;
+        }
+        parts.push(format!("{count}× {}", short_spec_code(&specs[i].name)));
+        i += count;
+    }
+    parts.join(" + ")
 }
 
 /// Natural case-insensitive comparison (`PT 2,5` < `PT 4` < `PT 10`, `280` < `2001`).
@@ -2562,6 +3795,142 @@ mod tests {
             crate::catalog::accessories::end_bracket_by_id("wago-209-101")
                 .and_then(|eb| eb.image_url),
             Some("https://it.farnell.com/productimages/large/en_US/28K7529-40.jpg")
+        );
+    }
+
+    #[test]
+    fn compatibility_rank_and_feeder_plans_work_across_families() {
+        let catalog = TerminalCatalog::load_embedded();
+
+        // 1. Compatibility sorting places exact match & same family/levels first
+        let ref_2002 = catalog.find_by_id("wago-2002-1201").unwrap();
+        let ranked = catalog.filter_specs_for_reference(Some("WAGO"), "", Some(ref_2002));
+        assert_eq!(ranked.first().map(|s| s.id.as_str()), Some("wago-2002-1201"));
+        let top_family_ids: Vec<&str> = ranked.iter().take(6).map(|s| s.id.as_str()).collect();
+        assert!(top_family_ids.contains(&"wago-2002-1204"));
+        assert!(top_family_ids.contains(&"wago-2002-1207"));
+
+        let ref_pti = catalog.find_by_id("phoenix-pti-25-peln").unwrap();
+        let ranked_pti =
+            catalog.filter_specs_for_reference(Some("Phoenix Contact"), "", Some(ref_pti));
+        let top_pti: Vec<&str> = ranked_pti.iter().take(8).map(|s| s.id.as_str()).collect();
+        assert!(top_pti.contains(&"phoenix-pti-25-pelnt"));
+        assert!(top_pti.contains(&"phoenix-pti-25-pell"));
+
+        // 2. N <-> NT equivalence never touches L-only or PE-only blocks and resolves valid IDs
+        for spec in catalog.all() {
+            if let Some(nt_id) = spec.matching_nt_equivalent_id() {
+                assert!(spec.has_neutral_tier(), "{} should have neutral tier", spec.id);
+                let nt_spec = catalog.find_by_id(nt_id).unwrap_or_else(|| panic!("Missing {nt_id}"));
+                assert!(
+                    nt_spec.is_nt_disconnect_terminal(),
+                    "{} -> {nt_id} is not NT",
+                    spec.id
+                );
+            }
+            if let Some(n_id) = spec.matching_n_from_nt_id() {
+                assert!(spec.is_nt_disconnect_terminal());
+                let n_spec = catalog.find_by_id(n_id).unwrap_or_else(|| panic!("Missing {n_id}"));
+                assert!(n_spec.has_neutral_tier(), "{n_id} has no N tier");
+                assert!(!n_spec.is_nt_disconnect_terminal());
+                assert_eq!(n_spec.levels, spec.levels);
+            }
+        }
+        assert_eq!(
+            catalog.find_by_id("wago-2002-1201").unwrap().matching_nt_equivalent_id(),
+            None
+        );
+        assert_eq!(
+            catalog.find_by_id("wago-2003-7642").unwrap().matching_nt_equivalent_id(),
+            None
+        );
+        assert_eq!(
+            catalog.find_by_id("wago-2003-7646").unwrap().matching_nt_equivalent_id(),
+            Some("wago-2003-7641")
+        );
+        assert_eq!(
+            catalog.find_by_id("wago-2003-7641").unwrap().matching_n_from_nt_id(),
+            Some("wago-2003-7646")
+        );
+
+        // 3. Feeder block plans (1-Polig and 3-Polig) resolve across major families
+        let w1 = catalog.feeder_block_plan(ref_2002, 1).unwrap();
+        assert_eq!(
+            w1.specs.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+            vec!["wago-2002-1201", "wago-2002-1204", "wago-2002-1207"]
+        );
+        let w3 = catalog.feeder_block_plan(ref_2002, 3).unwrap();
+        assert_eq!(
+            w3.specs.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+            vec![
+                "wago-2002-1201",
+                "wago-2002-1201",
+                "wago-2002-1201",
+                "wago-2002-1204",
+                "wago-2002-1207"
+            ]
+        );
+
+        let pti_peln = catalog.find_by_id("phoenix-pti-25-peln").unwrap();
+        assert_eq!(
+            catalog
+                .feeder_block_plan(pti_peln, 1)
+                .unwrap()
+                .specs
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["phoenix-pti-25-peln"]
+        );
+        assert_eq!(
+            catalog
+                .feeder_block_plan(pti_peln, 3)
+                .unwrap()
+                .specs
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["phoenix-pti-25-ll", "phoenix-pti-25-peln"]
+        );
+
+        let pti_pelnt = catalog.find_by_id("phoenix-pti-25-pelnt").unwrap();
+        assert_eq!(
+            catalog
+                .feeder_block_plan(pti_pelnt, 3)
+                .unwrap()
+                .specs
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["phoenix-pti-25-ll", "phoenix-pti-25-pelnt"]
+        );
+
+        let pttb = catalog.find_by_id("phoenix-pttb-25").unwrap();
+        assert_eq!(
+            catalog
+                .feeder_block_plan(pttb, 3)
+                .unwrap()
+                .specs
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "phoenix-pttb-25",
+                "phoenix-pttb-25-ln-real",
+                "phoenix-pttb-25-pe"
+            ]
+        );
+
+        let wm_aitb = catalog.find_by_id("weidmuller-aitb-25-ntlp").unwrap();
+        assert_eq!(
+            catalog
+                .feeder_block_plan(wm_aitb, 3)
+                .unwrap()
+                .specs
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["weidmuller-aitb-25-ll", "weidmuller-aitb-25-ntlp"]
         );
     }
 }

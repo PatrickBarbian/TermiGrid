@@ -781,3 +781,127 @@ fn n_supply_places_before_first_install_or_nt_block_even_at_pos_8() {
     assert_eq!(strip.blocks[12].spec_id, "wago-2009-305");
 }
 
+#[test]
+fn batch_n_to_nt_and_nt_to_n_conversion_preserves_labels_and_overrides() {
+    let catalog = TerminalCatalog::load_embedded();
+
+    // Mixed installation terminals across all three manufacturers
+    let wago_n = catalog.find_by_id("wago-2003-7646").unwrap();
+    let wago_ll = catalog.find_by_id("wago-2003-7649").unwrap();
+    let phx_n = catalog.find_by_id("phoenix-pti-25-peln").unwrap();
+    let wm_n = catalog.find_by_id("weidmuller-aitb-25-nlp").unwrap();
+    let std_l = catalog.find_by_id("wago-2002-1201").unwrap();
+
+    let mut strip = TerminalStrip::generate_with_block_count("-XNT", 1, 10, 5, wago_n);
+    strip.reassign_blocks(&[1], wago_ll);
+    strip.reassign_blocks(&[2], phx_n);
+    strip.reassign_blocks(&[3], wm_n);
+    strip.reassign_blocks(&[4], std_l);
+
+    // Apply a custom override on block #0 L tier (tier index 1) and affix on block #2 N tier (tier index 2)
+    strip.blocks[0].tiers[1].custom_override = Some("L1_HAUPT".to_string());
+    strip.blocks[2].tiers[2].label_prefix = "N_".to_string();
+    strip.recalculate_labels();
+
+    // 4 blocks should convert (0: 2003-7646, 1: 2003-7649, 2: PTI-25-PE/L/N, 3: AITB-25-NLP); block 4 (2002-1201) stays
+    let converted_nt = strip.convert_n_to_nt_blocks(&catalog);
+    assert_eq!(converted_nt, 4);
+    assert_eq!(strip.blocks[0].spec_id, "wago-2003-7641");
+    assert_eq!(strip.blocks[1].spec_id, "wago-2003-7640");
+    assert_eq!(strip.blocks[2].spec_id, "phoenix-pti-25-pelnt");
+    assert_eq!(strip.blocks[3].spec_id, "weidmuller-aitb-25-ntlp");
+    assert_eq!(strip.blocks[4].spec_id, "wago-2002-1201");
+
+    // Overrides & affixes preserved across conversion
+    assert_eq!(strip.blocks[0].tiers[1].custom_override.as_deref(), Some("L1_HAUPT"));
+    assert_eq!(strip.blocks[0].tiers[1].computed_label, "L1_HAUPT");
+    assert_eq!(strip.blocks[2].tiers[2].label_prefix, "N_");
+    assert_eq!(strip.blocks[2].tiers[2].computed_label, "N_N");
+
+    // Round-trip back from NT -> N
+    let converted_n = strip.convert_nt_to_n_blocks(&catalog);
+    assert_eq!(converted_n, 4);
+    assert_eq!(strip.blocks[0].spec_id, "wago-2003-7646");
+    assert_eq!(strip.blocks[1].spec_id, "wago-2003-7649");
+    assert_eq!(strip.blocks[2].spec_id, "phoenix-pti-25-peln");
+    assert_eq!(strip.blocks[3].spec_id, "weidmuller-aitb-25-nlp");
+    assert_eq!(strip.blocks[0].tiers[1].computed_label, "L1_HAUPT");
+    assert_eq!(strip.blocks[2].tiers[2].computed_label, "N_N");
+}
+
+#[test]
+fn one_pole_and_three_pole_feeder_plans_insert_cleanly_across_families() {
+    use termigrid_core::catalog::accessories::calculate_end_plates;
+
+    let catalog = TerminalCatalog::load_embedded();
+
+    // 1. WAGO 2002-1201: 1-Polig (L + N + PE) & 3-Polig (3x L + N + PE)
+    let w2002 = catalog.find_by_id("wago-2002-1201").unwrap();
+    let plan_1p = catalog.feeder_block_plan(w2002, 1).unwrap();
+    let plan_3p = catalog.feeder_block_plan(w2002, 3).unwrap();
+    assert_eq!(
+        plan_1p.specs.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+        vec!["wago-2002-1201", "wago-2002-1204", "wago-2002-1207"]
+    );
+    assert_eq!(
+        plan_3p.specs.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+        vec![
+            "wago-2002-1201",
+            "wago-2002-1201",
+            "wago-2002-1201",
+            "wago-2002-1204",
+            "wago-2002-1207"
+        ]
+    );
+
+    let mut strip = TerminalStrip::generate_with_block_count("-XFEED", 1, 1, 0, w2002);
+    let ins1 = strip.insert_spec_sequence(0, &plan_1p.specs);
+    assert_eq!(ins1.len(), 3);
+    assert_eq!(strip.blocks[0].tiers[0].computed_label, "1");
+    assert_eq!(strip.blocks[1].tiers[0].computed_label, "N");
+    assert!(strip.blocks[2].tiers[0].behavior.is_pe());
+
+    let ins3 = strip.insert_spec_sequence(strip.blocks.len(), &plan_3p.specs);
+    assert_eq!(ins3.len(), 5);
+    assert_eq!(strip.blocks.len(), 8);
+    assert_eq!(strip.blocks[3].tiers[0].computed_label, "2");
+    assert_eq!(strip.blocks[4].tiers[0].computed_label, "3");
+    assert_eq!(strip.blocks[5].tiers[0].computed_label, "4");
+    assert_eq!(strip.blocks[6].tiers[0].computed_label, "N");
+    assert!(strip.blocks[7].tiers[0].behavior.is_pe());
+
+    // Homogeneous 2002 profile across L/N/PE -> only 1 end plate at the end of the strip
+    let plates = calculate_end_plates(&strip, &catalog);
+    assert_eq!(plates.len(), 1);
+    assert_eq!(plates[0].after_block_idx, 7);
+
+    // 2. Phoenix PTI 2,5 installation (standard N & NT) & Weidmüller A2C 2.5
+    let pti_peln = catalog.find_by_id("phoenix-pti-25-peln").unwrap();
+    let pti_3p = catalog.feeder_block_plan(pti_peln, 3).unwrap();
+    assert_eq!(
+        pti_3p.specs.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+        vec!["phoenix-pti-25-ll", "phoenix-pti-25-peln"]
+    );
+
+    let pti_nt = catalog.find_by_id("phoenix-pti-25-pelnt").unwrap();
+    let pti_nt_3p = catalog.feeder_block_plan(pti_nt, 3).unwrap();
+    assert_eq!(
+        pti_nt_3p.specs.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+        vec!["phoenix-pti-25-ll", "phoenix-pti-25-pelnt"]
+    );
+
+    let a2c = catalog.find_by_id("weidmuller-a2c-25").unwrap();
+    let a2c_3p = catalog.feeder_block_plan(a2c, 3).unwrap();
+    assert_eq!(
+        a2c_3p.specs.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+        vec![
+            "weidmuller-a2c-25",
+            "weidmuller-a2c-25",
+            "weidmuller-a2c-25",
+            "weidmuller-a2c-25-bl",
+            "weidmuller-a2c-25-pe"
+        ]
+    );
+}
+
+
