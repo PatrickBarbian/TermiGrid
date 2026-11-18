@@ -1,6 +1,6 @@
 [package]
 name = "termigrid"
-version = "1.2.11"
+version = "1.2.12"
 edition = "2024"
 description = "TermiGrid - Cross-platform Terminal Block Strip Designer & Labeling Exporter for Control Cabinet Manufacturing"
 authors = ["Patrick Barbian"]

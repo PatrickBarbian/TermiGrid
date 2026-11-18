@@ -85,17 +85,22 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
             jumpers: "2002-402 (2-fach) .. 2002-410 (10-fach)".to_string(),
             markers: markers_strip,
             end_bracket,
-            extra: Some("210-133 (N-Sammelschiene 10x3 Cu) + 2009-304 (Sammelschienenhalter)".to_string()),
+            extra: Some("210-133 (N-Sammelschiene 10x3 Cu) + 2016-7714 (16mm² N-Einspeiseklemme)".to_string()),
         };
     }
 
-    if id.starts_with("wago-2005") {
+    if id.starts_with("wago-2005") || id.starts_with("wago-2205") {
+        let end_plate = if id.starts_with("wago-2205") {
+            "2205-7692 (orange) / 2205-7691 (grau)"
+        } else {
+            "2005-7692 (orange) / 2005-7691 (grau)"
+        };
         return TerminalAccessories {
-            end_plate: "2005-7692 (orange) / 2005-7691 (grau)".to_string(),
+            end_plate: end_plate.to_string(),
             jumpers: "2004-402 (2-fach) .. 2004-410 (10-fach)".to_string(),
             markers: markers_strip,
             end_bracket,
-            extra: Some("210-133 (N-Sammelschiene 10x3 Cu)".to_string()),
+            extra: Some("210-133 (N-Sammelschiene 10x3 Cu) + 2016-7714 (16mm² N-Einspeiseklemme)".to_string()),
         };
     }
 
@@ -188,17 +193,27 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     if id.starts_with("wago-2016") || id.starts_with("wago-2216") || id.starts_with("wago-2116") {
-        let end_plate = if id.contains("-130") {
-            "2016-1391 (3-Leiter 16mm²)"
+        let (end_plate, extra) = if id.contains("-7714") {
+            (
+                "2016-7792 (orange) / 2016-7791 (grau)",
+                Some("210-133 (N-Sammelschiene 10x3 Cu) + 2009-305 (Sammelschienenhalter)".to_string()),
+            )
+        } else if id.contains("-7614") {
+            (
+                "2016-7692 (orange) / 2016-7691 (grau)",
+                Some("210-133 (N-Sammelschiene 10x3 Cu)".to_string()),
+            )
+        } else if id.contains("-130") {
+            ("2016-1391 (3-Leiter 16mm²)", None)
         } else {
-            "2016-1291 (2-Leiter 16mm²)"
+            ("2016-1291 (2-Leiter 16mm²)", None)
         };
         return TerminalAccessories {
             end_plate: end_plate.to_string(),
             jumpers: "2016-402 (2-fach) .. 2016-405 (5-fach)".to_string(),
             markers: markers_strip,
             end_bracket,
-            extra: None,
+            extra,
         };
     }
 
@@ -316,7 +331,17 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
             jumpers: "FBS 2-8 (3030284) .. FBS 5-8 (3030307)".to_string(),
             markers: "ZBF 8 / UCT-TMF 8".to_string(),
             end_bracket,
-            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)".to_string()),
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + PTI 16-NLS-FI BU".to_string()),
+        };
+    }
+
+    if id.contains("pti-16-nls") {
+        return TerminalAccessories {
+            end_plate: "D-PTI 16-NLS-FI (1030133)".to_string(),
+            jumpers: "FBS 2-12 (3005950)".to_string(),
+            markers: "ZBF 12 / UCT-TM 12".to_string(),
+            end_bracket,
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-PTI 16-NLS".to_string()),
         };
     }
 
@@ -501,7 +526,13 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
     let end_bracket = "AEB 35 SC/1 (1991920000) / WEW 35/2 (1061200000)".to_string();
 
     if id.contains("aitb") {
-        let (end_plate, jumpers, markers) = if id.contains("aitb-4") {
+        let (end_plate, jumpers, markers) = if id.contains("aitb-16") {
+            (
+                "AEP ITB 16 BB (2668980000)",
+                "ZQV 16N/2 (2497290000)",
+                "DEK 5/8 / WS 10/8",
+            )
+        } else if id.contains("aitb-4") {
             (
                 "AEP ITB 4 (2669120000)",
                 "ZQV 4N/2 .. ZQV 4N/10",
@@ -525,7 +556,7 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
             jumpers: jumpers.to_string(),
             markers: markers.to_string(),
             end_bracket,
-            extra: Some("SSch 10x3x1000 CU (0571300000 N-Sammelschiene)".to_string()),
+            extra: Some("SSch 10x3x1000 CU (0571300000 N-Sammelschiene) + AITB 16 BB NDT BL".to_string()),
         };
     }
 
@@ -695,7 +726,10 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
                 0
             } else if id.starts_with("wago-2000") || id.starts_with("wago-2200") {
                 7 // 0.7 mm (2000-1291 / 2000-2291)
-            } else if id.starts_with("wago-2006")
+            } else if id.contains("-7714") {
+                8 // 0.8 mm (2016-7792 for 2016-7714 / 2216-7714)
+            } else if id.starts_with("wago-2205")
+                || id.starts_with("wago-2006")
                 || id.starts_with("wago-2106")
                 || id.starts_with("wago-2206")
                 || id.starts_with("wago-2007")
@@ -707,7 +741,7 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
                 || id.starts_with("wago-2216")
                 || id.starts_with("wago-202")
             {
-                10 // 1.0 mm (2006-1291 / 2010-1291 / 2016-1291)
+                10 // 1.0 mm (2205-7692 / 2006-1291 / 2010-1291 / 2016-1291)
             } else if id.starts_with("wago-28") {
                 25 // 2.5 mm (280-308 / 281-317)
             } else {

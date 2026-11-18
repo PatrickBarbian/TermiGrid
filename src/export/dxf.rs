@@ -276,15 +276,11 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
 
             cursor_x += bw;
 
-            // End / partition plate right after block `idx`
+            // End / partition plate right after block `idx` (matching left block `idx` height)
             if let Some(plate) = end_plates.iter().find(|p| p.after_block_idx == idx) {
                 let pw = f64::from(plate.width_tenths_mm) / 10.0;
-                let (_, next_above, next_below) = block_bounds
-                    .get(idx + 1)
-                    .copied()
-                    .unwrap_or((bh, above, below));
-                let py0 = rail_cy - below.max(next_below);
-                let py1 = rail_cy + above.max(next_above);
+                let py0 = rail_cy - below;
+                let py1 = rail_cy + above;
                 draw_rect(
                     &mut entities,
                     &mut bounds,

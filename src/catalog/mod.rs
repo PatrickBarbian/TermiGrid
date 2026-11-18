@@ -112,6 +112,7 @@ impl TerminalSpec {
             || id.contains("2200-")
             || id.contains("2201-")
             || id.contains("2203-")
+            || id.contains("2205-")
             || id.contains("2010-")
             || id.contains("2016-")
             || id.contains("2110-")
@@ -252,7 +253,12 @@ impl TerminalSpec {
                     "2000"
                 } else if id.contains("2001") || id.contains("2201") {
                     "2001"
-                } else if id.contains("2004") || id.contains("2005") || id.contains("2104") || id.contains("2204") {
+                } else if id.contains("2004")
+                    || id.contains("2005")
+                    || id.contains("2104")
+                    || id.contains("2204")
+                    || id.contains("2205")
+                {
                     "2004"
                 } else if id.contains("2006") || id.contains("2106") || id.contains("2206") {
                     "2006"
@@ -391,7 +397,13 @@ impl TerminalSpec {
                     || id.starts_with("wago-2116")
                     || id.starts_with("wago-2216")
                 {
-                    698
+                    if id.contains("-7714") {
+                        997
+                    } else if id.contains("-7614") {
+                        857
+                    } else {
+                        698
+                    }
                 } else if id.starts_with("wago-2010")
                     || id.starts_with("wago-2110")
                     || id.starts_with("wago-2210")
@@ -410,7 +422,7 @@ impl TerminalSpec {
                     } else {
                         575
                     }
-                } else if id.starts_with("wago-2005") {
+                } else if id.starts_with("wago-2005") || id.starts_with("wago-2205") {
                     1050
                 } else if id.starts_with("wago-2004")
                     || id.starts_with("wago-2104")
@@ -593,7 +605,7 @@ impl TerminalSpec {
         }
         let id = self.id.as_str();
         // Multi-level N-busbar installation terminals sit asymmetrically higher above the TS 35 rail
-        if id.contains("wago-2005") {
+        if id.contains("wago-2005") || id.contains("wago-2205") {
             135
         } else if id.contains("pti-")
             || id.contains("sti-")
@@ -601,7 +613,7 @@ impl TerminalSpec {
             || id.contains("aitb")
         {
             130
-        } else if id.contains("wago-2003") || id.contains("wago-2203") {
+        } else if id.contains("wago-2003") || id.contains("wago-2203") || id.contains("-7714") {
             125
         } else if id.contains("zdl") {
             120
@@ -623,13 +635,151 @@ impl TerminalSpec {
             0
         }
     }
+
+    /// Returns `true` if this specification is a 16 mm² N-busbar supply terminal (`N-Einspeiseklemme`),
+    /// such as WAGO `2016-7714` / `2216-7714` / `2016-7614`, Phoenix `PTI 16-NLS-FI`, or Weidmüller `AITB 16 BB NDT`.
+    pub fn is_n_supply_terminal(&self) -> bool {
+        matches!(
+            self.id.as_str(),
+            "wago-2016-7714"
+                | "wago-2216-7714"
+                | "wago-2016-7614"
+                | "phoenix-pti-16-nls-bu"
+                | "phoenix-pti-16-nls"
+                | "weidmuller-aitb-16-ndt-bl"
+                | "weidmuller-aitb-16-nlo-bl"
+        )
+    }
+
+    /// Returns `true` if this terminal is an `NT` installation terminal with N-disconnect slide (`N-Trennschlitten`).
+    pub fn is_nt_disconnect_terminal(&self) -> bool {
+        if self.is_n_supply_terminal() {
+            return false;
+        }
+        let id = self.id.as_str();
+        self.name.contains("NT")
+            || self.name.contains("NDT")
+            || id.ends_with("-lnt")
+            || id.ends_with("-pelnt")
+            || id.ends_with("-ntlp")
+            || id.ends_with("-7640")
+            || id.ends_with("-7641")
+            || id.ends_with("-6640")
+            || id.ends_with("-6641")
+    }
+
+    /// Returns `true` if this terminal is a building-installation terminal (`2003`, `2203`, `2005`, `2205`,
+    /// `PTI`, `STI`, `UTI`, `AITB`, `ZDL`, `DLI`) or any `NT` terminal that should prompt for NT / N-Einspeiseklemme.
+    pub fn is_installation_or_nt_terminal(&self) -> bool {
+        if self.is_n_supply_terminal() {
+            return false;
+        }
+        let id = self.id.as_str();
+        id.starts_with("wago-2003-")
+            || id.starts_with("wago-2203-")
+            || id.starts_with("wago-2005-")
+            || id.starts_with("wago-2205-")
+            || id.starts_with("phoenix-pti-")
+            || id.starts_with("phoenix-sti-")
+            || id.starts_with("phoenix-uti-")
+            || id.starts_with("weidmuller-aitb-")
+            || id.starts_with("weidmuller-zdl-")
+            || id.starts_with("weidmuller-dli-")
+            || self.is_nt_disconnect_terminal()
+    }
+
+    /// If this terminal is an installation terminal without `NT` (e.g. `PE/L/N`, `PE/L/L`, `L/L`, `L/N` in
+    /// WAGO `2003`/`2203`/`2005`/`2205`, Phoenix `PTI`, or Weidmüller `AITB`), returns the matching `NT`
+    /// specification ID so the user can switch to the `NT` variant directly in the prompt dialog.
+    pub fn matching_nt_spec_id(&self) -> Option<&'static str> {
+        if self.is_nt_disconnect_terminal() || self.is_n_supply_terminal() {
+            return None;
+        }
+        let id = self.id.as_str();
+        if id.starts_with("wago-2003-66") {
+            Some("wago-2003-6640")
+        } else if id.starts_with("wago-2003-") {
+            if self.levels >= 3 {
+                Some("wago-2003-7641")
+            } else {
+                Some("wago-2003-7640")
+            }
+        } else if id.starts_with("wago-2203-66") {
+            Some("wago-2203-6640")
+        } else if id.starts_with("wago-2203-") {
+            if self.levels >= 3 {
+                Some("wago-2203-7641")
+            } else {
+                Some("wago-2203-7640")
+            }
+        } else if id.starts_with("wago-2005-") {
+            if self.levels >= 3 {
+                Some("wago-2005-7641")
+            } else {
+                Some("wago-2005-7640")
+            }
+        } else if id.starts_with("wago-2205-") {
+            if self.levels >= 3 {
+                Some("wago-2205-7641")
+            } else {
+                Some("wago-2205-7640")
+            }
+        } else if id.starts_with("phoenix-pti-25-") {
+            if self.levels >= 3 {
+                Some("phoenix-pti-25-pelnt")
+            } else {
+                Some("phoenix-pti-25-lnt")
+            }
+        } else if id.starts_with("phoenix-pti-4-") {
+            Some("phoenix-pti-4-pelnt")
+        } else if id.starts_with("phoenix-pti-6-") {
+            Some("phoenix-pti-6-pelnt")
+        } else if id.starts_with("weidmuller-aitb-25-") {
+            Some("weidmuller-aitb-25-ntlp")
+        } else if id.starts_with("weidmuller-aitb-4-") {
+            Some("weidmuller-aitb-4-ntlp")
+        } else {
+            None
+        }
+    }
+
+    /// Returns the default recommended 16 mm² N-supply terminal (`N-Einspeiseklemme`) for this installation block.
+    /// For WAGO (`2003`, `2005`, `2203`, `2205`), defaults to `"wago-2016-7714"` (`2016-7714`).
+    pub fn recommended_n_supply_spec_id(&self) -> &'static str {
+        match self.manufacturer.as_str() {
+            "Phoenix Contact" => "phoenix-pti-16-nls-bu",
+            "Weidmüller" => "weidmuller-aitb-16-ndt-bl",
+            _ => "wago-2016-7714",
+        }
+    }
+
+    /// Returns all compatible 16 mm² N-supply terminal specification IDs for this installation block's manufacturer.
+    pub fn compatible_n_supply_spec_ids(&self) -> &'static [&'static str] {
+        match self.manufacturer.as_str() {
+            "Phoenix Contact" => &[
+                "phoenix-pti-16-nls-bu",
+                "phoenix-pti-16-nls",
+                "wago-2016-7714",
+            ],
+            "Weidmüller" => &[
+                "weidmuller-aitb-16-ndt-bl",
+                "weidmuller-aitb-16-nlo-bl",
+                "wago-2016-7714",
+            ],
+            _ => &[
+                "wago-2016-7714",
+                "wago-2216-7714",
+                "wago-2016-7614",
+            ],
+        }
+    }
 }
 
 /// Verified `(article_number, direct_product_url, direct_cdn_image_url)` table for Phoenix Contact
 /// (`caas.phoenixcontact.com`) and Weidmüller (`assets.dam.weidmueller.com`) catalog items.
 fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static str, &'static str)> {
     match spec_id {
-        // --- PHOENIX CONTACT (84 specs) ---
+        // --- PHOENIX CONTACT ---
         "phoenix-pt-15s" => Some(("3208100", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-3208100", "https://caas.phoenixcontact.com/caas/v1/stable/media/213926/full/b408?format=jpg")),
         "phoenix-pt-15s-bu" => Some(("3208126", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-15s-bu-3208126", "https://caas.phoenixcontact.com/caas/v1/stable/media/254872/full/b408?format=jpg")),
         "phoenix-pt-15s-pe" => Some(("3208139", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-15s-pe-3208139", "https://caas.phoenixcontact.com/caas/v1/stable/media/212966/full/b408?format=jpg")),
@@ -660,15 +810,20 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-pt-25-3l" => Some(("3210499", "https://www.phoenixcontact.com/de-de/produkte/mehrstockklemme-pt-25-3l-3210499", "https://caas.phoenixcontact.com/caas/v1/stable/media/202242/full/b408?format=jpg")),
         "phoenix-pt-25-peln" => Some(("3210538", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-peln-3210538", "https://caas.phoenixcontact.com/caas/v1/stable/media/213800/full/b408?format=jpg")),
         "phoenix-pt-25-pell" => Some(("3210541", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-pell-3210541", "https://caas.phoenixcontact.com/caas/v1/stable/media/213800/full/b408?format=jpg")),
-        "phoenix-pti-25-peln" => Some(("3213946", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-pelnt-3213946", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
+        "phoenix-pti-16-nls-bu" => Some(("1030131", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16-nls-fi-bu-1030131", "https://caas.phoenixcontact.com/caas/v1/stable/media/253860/full/b408?format=jpg")),
+        "phoenix-pti-16-nls" => Some(("1030130", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16-nls-fi-1030130", "https://caas.phoenixcontact.com/caas/v1/stable/media/265136/full/b408?format=jpg")),
+        "phoenix-pti-25-peln" => Some(("3213950", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-peln-3213950", "https://caas.phoenixcontact.com/caas/v1/stable/media/244572/full/b408?format=jpg")),
+        "phoenix-pti-25-pelnt" => Some(("3213946", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-pelnt-3213946", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
         "phoenix-pti-25-pell" => Some(("3213949", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-pell-3213949", "https://caas.phoenixcontact.com/caas/v1/stable/media/212236/full/b408?format=jpg")),
         "phoenix-pti-25-ll" => Some(("3213953", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-25-ll-3213953", "https://caas.phoenixcontact.com/caas/v1/stable/media/212236/full/b408?format=jpg")),
         "phoenix-pti-25-ln" => Some(("3213952", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-25-n-3213952", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
         "phoenix-pti-25-lnt" => Some(("3213948", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-25-llt-3213948", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
-        "phoenix-pti-4-peln" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
+        "phoenix-pti-4-peln" => Some(("3214049", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-peln-3214049", "https://caas.phoenixcontact.com/caas/v1/stable/media/121390/full/b408?format=jpg")),
+        "phoenix-pti-4-pelnt" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
         "phoenix-pti-4-pell" => Some(("3214050", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pell-3214050", "https://caas.phoenixcontact.com/caas/v1/stable/media/227746/full/b408?format=jpg")),
         "phoenix-pti-4-ln" => Some(("3214052", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-4-ll-3214052", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
-        "phoenix-pti-6-peln" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
+        "phoenix-pti-6-peln" => Some(("3214049", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-peln-3214049", "https://caas.phoenixcontact.com/caas/v1/stable/media/121390/full/b408?format=jpg")),
+        "phoenix-pti-6-pelnt" => Some(("3214047", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pelnt-3214047", "https://caas.phoenixcontact.com/caas/v1/stable/media/198188/full/b408?format=jpg")),
         "phoenix-pti-6-pell" => Some(("3214050", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-4-pell-3214050", "https://caas.phoenixcontact.com/caas/v1/stable/media/227746/full/b408?format=jpg")),
         "phoenix-pt-4" => Some(("3211757", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-3211757", "https://caas.phoenixcontact.com/caas/v1/stable/media/270446/full/b408?format=jpg")),
         "phoenix-pt-4-bu" => Some(("3211760", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-pt-4-bu-3211760", "https://caas.phoenixcontact.com/caas/v1/stable/media/203340/full/b408?format=jpg")),
@@ -715,7 +870,7 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-uk-5n" => Some(("3004362", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-uk-5-n-3004362", "https://caas.phoenixcontact.com/caas/v1/stable/media/268498/full/b408?format=jpg")),
         "phoenix-uslkg-5" => Some(("0441504", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-uslkg-5-0441504", "https://caas.phoenixcontact.com/caas/v1/stable/media/253550/full/b408?format=jpg")),
 
-        // --- WEIDMÜLLER (71 specs) ---
+        // --- WEIDMÜLLER ---
         "weidmuller-a2c-15" => Some(("1552790000", "https://eshop.weidmueller.com/de/a2c-1-5/p/1552790000", "https://assets.dam.weidmueller.com/assets/api/e97bfd80-8178-485e-b52e-869943c7b95c/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a2c-15-bl" => Some(("1552820000", "https://eshop.weidmueller.com/de/a2c-1-5-bl/p/1552820000", "https://assets.dam.weidmueller.com/assets/api/80a54677-0c4a-41a5-865f-fbd26c3ae934/DAP_Master_PP,w_800,q_80")),
         "weidmuller-a2c-15-pe" => Some(("1552680000", "https://eshop.weidmueller.com/de/a2c-1-5-pe/p/1552680000", "https://assets.dam.weidmueller.com/assets/api/24634b68-2c52-4973-a8b2-39f4369157f1/DAP_Master_PP,w_800,q_80")),
@@ -753,10 +908,14 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "weidmuller-adt-25" => Some(("1989820000", "https://eshop.weidmueller.com/de/adt-2-5-2c-or/p/1989820000", "https://assets.dam.weidmueller.com/assets/api/617cbd15-c168-4f24-b8f7-657d3c3c19b5/DAP_Master_PP,w_800,q_80")),
         "weidmuller-afs-4" => Some(("2429860000", "https://eshop.weidmueller.com/de/afs-4-2c-bk/p/2429860000", "https://assets.dam.weidmueller.com/assets/api/7c4b5800-6c04-4b32-a267-63f4c09c89c6/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aio21" => Some(("1992260000", "https://eshop.weidmueller.com/de/aio21-1-5-si/p/1992260000", "https://assets.dam.weidmueller.com/assets/api/07381d74-59de-4526-8590-ef8cfab48422/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-16-ndt-bl" => Some(("2668770000", "https://eshop.weidmueller.com/de/aitb-16-bb-ndt-bl/p/2668770000", "https://assets.dam.weidmueller.com/assets/api/49458f66-30a0-4a55-ae92-01e97380e2bc/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-16-nlo-bl" => Some(("2669140000", "https://eshop.weidmueller.com/de/aitb-16-bb-nlo-bl/p/2669140000", "https://assets.dam.weidmueller.com/assets/api/d577c648-f962-4ac6-b5ca-3bba4407791a/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-25-ntlp" => Some(("2668950000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-ndt-l-pe/p/2668950000", "https://assets.dam.weidmueller.com/assets/api/3d42f558-d204-4df1-a36e-6e08cb5ee8c4/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-25-nlp" => Some(("2668940000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-n-l-pe/p/2668940000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-25-llp" => Some(("2668930000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-l-l-pe/p/2668930000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-25-ll" => Some(("2668930000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-l-l-pe/p/2668930000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-25-nl" => Some(("2668940000", "https://eshop.weidmueller.com/de/aitb-2-5-bb-n-l-pe/p/2668940000", "https://assets.dam.weidmueller.com/assets/api/e281c782-7fa1-4d4f-b663-47c8fcd43a7a/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aitb-4-ntlp" => Some(("2669100000", "https://eshop.weidmueller.com/de/aitb-4-bb-ndt-l-pe/p/2669100000", "https://assets.dam.weidmueller.com/assets/api/d763a83c-329c-4358-bb01-a2dffa7b157b/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-4-nlp" => Some(("2669090000", "https://eshop.weidmueller.com/de/aitb-4-bb-n-l-pe/p/2669090000", "https://assets.dam.weidmueller.com/assets/api/d763a83c-329c-4358-bb01-a2dffa7b157b/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-4-llp" => Some(("2669080000", "https://eshop.weidmueller.com/de/aitb-4-bb-l-l-pe/p/2669080000", "https://assets.dam.weidmueller.com/assets/api/ad0808fe-accb-4a1b-ae29-c579cd18f80b/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-6-nlp" => Some(("2669090000", "https://eshop.weidmueller.com/de/aitb-4-bb-n-l-pe/p/2669090000", "https://assets.dam.weidmueller.com/assets/api/d763a83c-329c-4358-bb01-a2dffa7b157b/DAP_Master_PP,w_800,q_80")),

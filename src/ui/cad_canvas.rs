@@ -626,24 +626,15 @@ pub fn show_cad_canvas(
 
                 cursor_x += w + block_gap;
 
-                // Render end/partition plate immediately after block `idx` spanning tallest adjacent terminal
+                // Render end/partition plate immediately after block `idx` matching left block's contour
                 if let Some(plate) = end_plates.iter().find(|p| p.after_block_idx == idx) {
                     let plate_px = if e_planer {
                         (f32::from(plate.width_tenths_mm) / 10.0) * px_per_mm
                     } else {
                         ((f32::from(plate.width_tenths_mm) / 10.0) * px_per_mm).max(5.5 * z)
                     };
-                    let (_, next_above_mm, next_below_mm) = block_bounds_mm
-                        .get(idx + 1)
-                        .copied()
-                        .unwrap_or((_bh_mm, above_mm, below_mm));
-                    let plate_above_px = above_mm.max(next_above_mm) * h_px_per_mm;
-                    let plate_below_px = below_mm.max(next_below_mm) * h_px_per_mm;
                     let (p_top, p_bottom) = if e_planer {
-                        (
-                            rail_center_y - plate_above_px,
-                            rail_center_y + plate_below_px,
-                        )
+                        (rail_center_y - above_px, rail_center_y + below_px)
                     } else {
                         let tier_p_top = baseline_bottom_y
                             - ((plate.max_visual_row + 1) as f32) * (tier_height + tier_gap)
@@ -653,8 +644,8 @@ pub fn show_cad_canvas(
                             - tier_gap
                             + 3.0 * z;
                         (
-                            tier_p_top.min(rail_center_y - plate_above_px),
-                            tier_p_bot.max(rail_center_y + plate_below_px),
+                            tier_p_top.min(rail_center_y - above_px),
+                            tier_p_bot.max(rail_center_y + below_px),
                         )
                     };
                     let plate_rect = Rect::from_min_max(

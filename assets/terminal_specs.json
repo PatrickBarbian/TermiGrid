@@ -336,14 +336,14 @@
   },
   {
     "id": "wago-2003-7641",
-    "name": "2003-7641 (Installationsklemme PE/L/N)",
+    "name": "2003-7641 (Installationsklemme PE/L/NT)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2003",
     "levels": 3,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Installations-Etagenklemme 2,5 mm² PE/L/N (NT-Bügel)",
-    "description_en": "Installation multi-level terminal 2.5 mm² PE/L/N",
+    "description_de": "3-Etagen-Installationsklemme mit N-Trennschlitten PE/L/NT (2,5 mm²)",
+    "description_en": "3-tier installation terminal with N-disconnect slide PE/L/NT (2.5 mm²)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
@@ -363,14 +363,14 @@
   },
   {
     "id": "wago-2003-7646",
-    "name": "2003-7646 (Installationsklemme PE/L/L)",
+    "name": "2003-7646 (Installationsklemme PE/L/N)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2003",
     "levels": 3,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Installations-Etagenklemme 2,5 mm² PE/L/L",
-    "description_en": "Installation multi-level terminal 2.5 mm² PE/L/L",
+    "description_de": "3-Etagen-Installationsklemme ohne N-Trennschlitten PE/L/N (2,5 mm²)",
+    "description_en": "3-tier installation terminal PE/L/N (2.5 mm²)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
@@ -381,8 +381,10 @@
         "color": "StandardGray"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
       }
     ]
   },
@@ -485,14 +487,14 @@
   },
   {
     "id": "wago-2005-7641",
-    "name": "2005-7641 (4mm² Install. PE/L/N)",
+    "name": "2005-7641 (4mm² Install. PE/L/NT)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2005",
     "levels": 3,
     "width_tenths_mm": 62,
     "numbering_order": "BottomToTop",
-    "description_de": "Installations-Etagenklemme 4 mm² PE/L/N (6,2 mm)",
-    "description_en": "Installation multi-level terminal 4 mm² PE/L/N (6.2 mm)",
+    "description_de": "3-Etagen-Installationsklemme 4 mm² mit N-Trennschlitten PE/L/NT (6,2 mm)",
+    "description_en": "3-tier installation terminal 4 mm² with N-disconnect PE/L/NT (6.2 mm)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
@@ -512,14 +514,14 @@
   },
   {
     "id": "wago-2005-7646",
-    "name": "2005-7646 (4mm² Install. PE/L/L)",
+    "name": "2005-7646 (4mm² Install. PE/L/N)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2005",
     "levels": 3,
     "width_tenths_mm": 62,
     "numbering_order": "BottomToTop",
-    "description_de": "Installations-Etagenklemme 4 mm² PE/L/L (6,2 mm)",
-    "description_en": "Installation multi-level terminal 4 mm² PE/L/L (6.2 mm)",
+    "description_de": "3-Etagen-Installationsklemme 4 mm² PE/L/N (6,2 mm)",
+    "description_en": "3-tier installation terminal 4 mm² PE/L/N (6.2 mm)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
@@ -530,8 +532,10 @@
         "color": "StandardGray"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
       }
     ]
   },
@@ -772,14 +776,14 @@
   },
   {
     "id": "wago-2203-7641",
-    "name": "2203-7641 (Drücker Install. PE/L/N)",
+    "name": "2203-7641 (Drücker Install. PE/L/NT)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2203 Push-in",
     "levels": 3,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Dreistock-Installationsklemme mit Drücker PE/L/N",
-    "description_en": "Triple-deck installation terminal with push-button PE/L/N",
+    "description_de": "Push-in-Installationsklemme mit Drücker & N-Trennschlitten PE/L/NT (2,5 mm²)",
+    "description_en": "Push-button installation terminal with N-disconnect PE/L/NT (2.5 mm²)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
@@ -799,14 +803,14 @@
   },
   {
     "id": "wago-2203-7646",
-    "name": "2203-7646 (Drücker Install. PE/L/L)",
+    "name": "2203-7646 (Drücker Install. PE/L/N)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2203 Push-in",
     "levels": 3,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Dreistock-Installationsklemme mit Drücker PE/L/L",
-    "description_en": "Triple-deck installation terminal with push-button PE/L/L",
+    "description_de": "Push-in-Installationsklemme mit Drücker PE/L/N (2,5 mm²)",
+    "description_en": "Push-button installation terminal PE/L/N (2.5 mm²)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",
@@ -817,8 +821,10 @@
         "color": "StandardGray"
       },
       {
-        "behavior": "Sequential",
-        "color": "StandardGray"
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
       }
     ]
   },
@@ -4052,24 +4058,26 @@
   },
   {
     "id": "wago-2003-7645",
-    "name": "2003-7645 (Inst. L/NT Blau)",
+    "name": "2003-7645 (Installationsklemme PE/L/L)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2003",
-    "levels": 2,
+    "levels": 3,
     "width_tenths_mm": 52,
     "numbering_order": "BottomToTop",
-    "description_de": "Installations-Etagenklemme 2,5 mm², L/NT",
-    "description_en": "Installation terminal 2.5 mm², L/NT",
+    "description_de": "3-Etagen-Installationsklemme PE/L/L (2,5 mm²)",
+    "description_en": "3-tier installation terminal PE/L/L (2.5 mm²)",
     "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
       {
         "behavior": "Sequential",
         "color": "StandardGray"
       },
       {
-        "behavior": {
-          "Fixed": "N"
-        },
-        "color": "BlueNeutral"
+        "behavior": "Sequential",
+        "color": "StandardGray"
       }
     ],
     "jumper_slots_per_tier": 1,
@@ -4157,24 +4165,26 @@
   },
   {
     "id": "wago-2005-7645",
-    "name": "2005-7645 (4mm² Inst. L/NT)",
+    "name": "2005-7645 (4mm² Install. PE/L/L)",
     "manufacturer": "WAGO",
     "series": "TOPJOB S 2005",
-    "levels": 2,
+    "levels": 3,
     "width_tenths_mm": 62,
     "numbering_order": "BottomToTop",
-    "description_de": "Installations-Etagenklemme 4 mm², L/NT",
-    "description_en": "Installation terminal 4 mm², L/NT",
+    "description_de": "3-Etagen-Installationsklemme 4 mm² PE/L/L (6,2 mm)",
+    "description_en": "3-tier installation terminal 4 mm² PE/L/L (6.2 mm)",
     "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
       {
         "behavior": "Sequential",
         "color": "StandardGray"
       },
       {
-        "behavior": {
-          "Fixed": "N"
-        },
-        "color": "BlueNeutral"
+        "behavior": "Sequential",
+        "color": "StandardGray"
       }
     ],
     "jumper_slots_per_tier": 1,
@@ -5673,6 +5683,1097 @@
     "numbering_order": "BottomToTop",
     "description_de": "Zugfeder-Installationsklemme PE/L/NT",
     "description_en": "Tension-clamp installation terminal PE/L/NT",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2016-7714",
+    "name": "2016-7714 (16mm² N-Einspeiseklemme Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2016",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "height_tenths_mm": 997,
+    "rail_offset_tenths_mm": 125,
+    "numbering_order": "BottomToTop",
+    "description_de": "TOPJOB S 1-Leiter-N-Trennklemme / N-Einspeiseklemme 16 mm² für N-Sammelschiene (10x3 mm), passend zu 2003/2005/2203/2205, blau (12,0 mm)",
+    "description_en": "TOPJOB S 1-conductor N-disconnect / N-supply terminal block 16 mm² for N-busbar (10x3 mm), matching 2003/2005/2203/2205, blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2,
+    "article_number": "2016-7714",
+    "product_url": "https://www.wago.com/de/reihenklemmen/1-leiter-n-trennklemme/p/2016-7714",
+    "image_url": "https://www.wago.com/medias/1024-13006825-DE.jpg?context=bWFzdGVyfGltYWdlc3wxMDcyNjF8aW1hZ2UvanBlZ3xhR1ZrTDJnMk5TOHhOalUxT0RFMk5EVTBNVFEzTUM4eE1ESTBYekV6TURBMk9ESTFYMFJGTG1wd1p3fGFhODU4ZmRiYWMyM2Q5MDlmMTlkYTRlZmFhZjg2MzI5OTBhMDljYzRhZTZhYjgxMTJhYTk5Y2VjYmUxODU1MTI"
+  },
+  {
+    "id": "wago-2216-7714",
+    "name": "2216-7714 (Drücker 16mm² N-Einspeiseklemme Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2216 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "height_tenths_mm": 997,
+    "rail_offset_tenths_mm": 125,
+    "numbering_order": "BottomToTop",
+    "description_de": "TOPJOB S 1-Leiter-N-Trennklemme / N-Einspeiseklemme mit Drücker 16 mm² für N-Sammelschiene (10x3 mm), passend zu 2203/2205/2003/2005, blau (12,0 mm)",
+    "description_en": "TOPJOB S 1-conductor N-disconnect / N-supply terminal block with push-button 16 mm² for N-busbar (10x3 mm), matching 2203/2205/2003/2005, blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2,
+    "article_number": "2216-7714",
+    "product_url": "https://www.wago.com/de/reihenklemmen/1-leiter-n-trennklemme/p/2216-7714",
+    "image_url": "https://www.wago.com/medias/1024-13006908-DE.jpg?context=bWFzdGVyfGltYWdlc3w5MTU3OHxpbWFnZS9qcGVnfGFEQTVMMmhpTnk4eE5qSTBOVEUwTURjNE16RXpOQzh4TURJMFh6RXpNREEyT1RBNFgwUkZMbXB3Wnd8MDc2NGJlOTI1ZjZhYmQ0NGM3YzlkMTg4YzE4MGMwNWQzMzcyMTgxMjY1MWJjYTcyOWI4YmNkM2Q4OGU3MjJmYQ"
+  },
+  {
+    "id": "wago-2016-7614",
+    "name": "2016-7614 (16mm² N-Ersatzeinspeiseklemme Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2016",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "height_tenths_mm": 857,
+    "rail_offset_tenths_mm": 110,
+    "numbering_order": "BottomToTop",
+    "description_de": "TOPJOB S 1-Leiter-N-Ersatzeinspeiseklemme 16 mm² für N-Sammelschiene (10x3 mm), blau (12,0 mm)",
+    "description_en": "TOPJOB S 1-conductor N-supply terminal block 16 mm² for N-busbar (10x3 mm), blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2,
+    "article_number": "2016-7614",
+    "product_url": "https://www.wago.com/de/reihenklemmen/ersatzeinspeiseklemme/p/2016-7614",
+    "image_url": "https://www.wago.com/medias/1024-020000190002d8c7000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3wxNzMwOXxpbWFnZS9qcGVnfGFHUmxMMmczWmk4eE5qVTFNRFUyTXpFeE9URXpOQzh4TURJMFh6QXlNREF3TURFNU1EQXdNbVE0WXpjd01EQXhNREJpTmw5RVJTNXFjR2N8YzUxMzllOTNmNTU1YTIzMmFmMmM5ODEwYjBiYTY0NTE3YzY4MjM0Yjk5ZjBiNjBjNzY3ZmFkMzZmZGJhZGQxMA"
+  },
+  {
+    "id": "wago-2003-7640",
+    "name": "2003-7640 (Installationsklemme L/NT)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2003",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Etagen-Installationsklemme mit N-Trennschlitten L/NT (2,5 mm²)",
+    "description_en": "2-tier installation terminal with N-disconnect L/NT (2.5 mm²)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2003-6645",
+    "name": "2003-6645 (Inst. PE/L/L Kompakt)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2003",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Kompakt-Installationsklemme 2,5 mm², PE/L/L",
+    "description_en": "Compact installation terminal 2.5 mm², PE/L/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2003-6646",
+    "name": "2003-6646 (Inst. PE/L/N Kompakt)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2003",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Kompakt-Installationsklemme 2,5 mm², PE/L/N",
+    "description_en": "Compact installation terminal 2.5 mm², PE/L/N",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2203-7640",
+    "name": "2203-7640 (Drücker Install. L/NT)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2203 Push-in",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Installationsklemme mit Drücker & N-Trennschlitten L/NT (2,5 mm²)",
+    "description_en": "Push-button installation terminal with N-disconnect L/NT (2.5 mm²)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2203-7645",
+    "name": "2203-7645 (Drücker Install. PE/L/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2203 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Installationsklemme mit Drücker PE/L/L (2,5 mm²)",
+    "description_en": "Push-button installation terminal PE/L/L (2.5 mm²)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2203-7649",
+    "name": "2203-7649 (Drücker Install. L/N)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2203 Push-in",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Installationsklemme mit Drücker L/N (2,5 mm²)",
+    "description_en": "Push-button installation terminal L/N (2.5 mm²)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2203-6641",
+    "name": "2203-6641 (Drücker Inst. PE/L/NT Kompakt)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2203 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Kompakt-Installationsklemme mit Drücker 2,5 mm², PE/L/NT",
+    "description_en": "Compact push-button installation terminal 2.5 mm², PE/L/NT",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2203-6645",
+    "name": "2203-6645 (Drücker Inst. PE/L/L Kompakt)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2203 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Kompakt-Installationsklemme mit Drücker 2,5 mm², PE/L/L",
+    "description_en": "Compact push-button installation terminal 2.5 mm², PE/L/L",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2203-6646",
+    "name": "2203-6646 (Drücker Inst. PE/L/N Kompakt)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2203 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Kompakt-Installationsklemme mit Drücker 2,5 mm², PE/L/N",
+    "description_en": "Compact push-button installation terminal 2.5 mm², PE/L/N",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2005-7649",
+    "name": "2005-7649 (4mm² Install. L/N)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2005",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Etagen-Installationsklemme 4 mm², L/N (6,2 mm)",
+    "description_en": "2-tier installation terminal 4 mm², L/N (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2005-7640",
+    "name": "2005-7640 (4mm² Install. L/NT)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2005",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Etagen-Installationsklemme 4 mm² mit N-Trennschlitten L/NT (6,2 mm)",
+    "description_en": "2-tier installation terminal 4 mm² with N-disconnect L/NT (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2205-7641",
+    "name": "2205-7641 (Drücker 4mm² Install. PE/L/NT)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2205 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1050,
+    "rail_offset_tenths_mm": 135,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Etagen-Installationsklemme mit Drücker 4 mm² und N-Trennschlitten PE/L/NT (6,2 mm)",
+    "description_en": "3-tier push-button installation terminal 4 mm² with N-disconnect PE/L/NT (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2205-7646",
+    "name": "2205-7646 (Drücker 4mm² Install. PE/L/N)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2205 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1050,
+    "rail_offset_tenths_mm": 135,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Etagen-Installationsklemme mit Drücker 4 mm² PE/L/N (6,2 mm)",
+    "description_en": "3-tier push-button installation terminal 4 mm² PE/L/N (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2205-7645",
+    "name": "2205-7645 (Drücker 4mm² Install. PE/L/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2205 Push-in",
+    "levels": 3,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1050,
+    "rail_offset_tenths_mm": 135,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Etagen-Installationsklemme mit Drücker 4 mm² PE/L/L (6,2 mm)",
+    "description_en": "3-tier push-button installation terminal 4 mm² PE/L/L (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2205-7642",
+    "name": "2205-7642 (Drücker 4mm² Install. L/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2205 Push-in",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1050,
+    "rail_offset_tenths_mm": 135,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Etagen-Installationsklemme mit Drücker 4 mm² L/L (6,2 mm)",
+    "description_en": "2-tier push-button installation terminal 4 mm² L/L (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2205-7649",
+    "name": "2205-7649 (Drücker 4mm² Install. L/N)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2205 Push-in",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1050,
+    "rail_offset_tenths_mm": 135,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Etagen-Installationsklemme mit Drücker 4 mm² L/N (6,2 mm)",
+    "description_en": "2-tier push-button installation terminal 4 mm² L/N (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2205-7640",
+    "name": "2205-7640 (Drücker 4mm² Install. L/NT)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2205 Push-in",
+    "levels": 2,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1050,
+    "rail_offset_tenths_mm": 135,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Etagen-Installationsklemme mit Drücker 4 mm² und N-Trennschlitten L/NT (6,2 mm)",
+    "description_en": "2-tier push-button installation terminal 4 mm² with N-disconnect L/NT (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "wago-2204-1301",
+    "name": "2204-1301 (Drücker 4mm² 3-Leiter Grau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Durchgangsklemme mit Drücker 4 mm², grau (6,2 mm)",
+    "description_en": "3-conductor through terminal with push-button 4 mm², gray (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
+  },
+  {
+    "id": "wago-2204-1304",
+    "name": "2204-1304 (Drücker 4mm² 3-Leiter N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Neutralleiterklemme mit Drücker 4 mm², blau (6,2 mm)",
+    "description_en": "3-conductor neutral terminal with push-button 4 mm², blue (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
+  },
+  {
+    "id": "wago-2204-1307",
+    "name": "2204-1307 (Drücker 4mm² 3-Leiter PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Schutzleiterklemme mit Drücker 4 mm², grün-gelb (6,2 mm)",
+    "description_en": "3-conductor ground terminal with push-button 4 mm², green-yellow (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "wago-2204-1401",
+    "name": "2204-1401 (Drücker 4mm² 4-Leiter Grau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Durchgangsklemme mit Drücker 4 mm², grau (6,2 mm)",
+    "description_en": "4-conductor through terminal with push-button 4 mm², gray (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
+  },
+  {
+    "id": "wago-2204-1404",
+    "name": "2204-1404 (Drücker 4mm² 4-Leiter N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Neutralleiterklemme mit Drücker 4 mm², blau (6,2 mm)",
+    "description_en": "4-conductor neutral terminal with push-button 4 mm², blue (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
+  },
+  {
+    "id": "wago-2204-1407",
+    "name": "2204-1407 (Drücker 4mm² 4-Leiter PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2204 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "numbering_order": "BottomToTop",
+    "description_de": "4-Leiter-Schutzleiterklemme mit Drücker 4 mm², grün-gelb (6,2 mm)",
+    "description_en": "4-conductor ground terminal with push-button 4 mm², green-yellow (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "wago-2206-1301",
+    "name": "2206-1301 (Drücker 6mm² 3-Leiter Grau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2206 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 75,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Durchgangsklemme mit Drücker 6 mm², grau (7,5 mm)",
+    "description_en": "3-conductor through terminal with push-button 6 mm², gray (7.5 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ]
+  },
+  {
+    "id": "wago-2206-1304",
+    "name": "2206-1304 (Drücker 6mm² 3-Leiter N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2206 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 75,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Neutralleiterklemme mit Drücker 6 mm², blau (7,5 mm)",
+    "description_en": "3-conductor neutral terminal with push-button 6 mm², blue (7.5 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
+  },
+  {
+    "id": "wago-2206-1307",
+    "name": "2206-1307 (Drücker 6mm² 3-Leiter PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2206 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 75,
+    "numbering_order": "BottomToTop",
+    "description_de": "3-Leiter-Schutzleiterklemme mit Drücker 6 mm², grün-gelb (7,5 mm)",
+    "description_en": "3-conductor ground terminal with push-button 6 mm², green-yellow (7.5 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "wago-2210-1204",
+    "name": "2210-1204 (Drücker 10mm² N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2210 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 100,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Neutralleiterklemme mit Drücker 10 mm², blau (10,0 mm)",
+    "description_en": "2-conductor neutral terminal with push-button 10 mm², blue (10.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
+  },
+  {
+    "id": "wago-2210-1207",
+    "name": "2210-1207 (Drücker 10mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2210 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 100,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Schutzleiterklemme mit Drücker 10 mm², grün-gelb (10,0 mm)",
+    "description_en": "2-conductor ground terminal with push-button 10 mm², green-yellow (10.0 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "wago-2216-1204",
+    "name": "2216-1204 (Drücker 16mm² N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2216 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Neutralleiterklemme mit Drücker 16 mm², blau (12,0 mm)",
+    "description_en": "2-conductor neutral terminal with push-button 16 mm², blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
+  },
+  {
+    "id": "wago-2216-1207",
+    "name": "2216-1207 (Drücker 16mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2216 Push-in",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Schutzleiterklemme mit Drücker 16 mm², grün-gelb (12,0 mm)",
+    "description_en": "2-conductor ground terminal with push-button 16 mm², green-yellow (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "wago-2110-1204",
+    "name": "2110-1204 (Hebel 10mm² N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2110 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 100,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Neutralleiterklemme mit Hebel 10 mm², blau (10,0 mm)",
+    "description_en": "2-conductor lever neutral terminal 10 mm², blue (10.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
+  },
+  {
+    "id": "wago-2110-1207",
+    "name": "2110-1207 (Hebel 10mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2110 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 100,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Schutzleiterklemme mit Hebel 10 mm², grün-gelb (10,0 mm)",
+    "description_en": "2-conductor lever ground terminal 10 mm², green-yellow (10.0 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "wago-2116-1204",
+    "name": "2116-1204 (Hebel 16mm² N Blau)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2116 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Neutralleiterklemme mit Hebel 16 mm², blau (12,0 mm)",
+    "description_en": "2-conductor lever neutral terminal 16 mm², blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ]
+  },
+  {
+    "id": "wago-2116-1207",
+    "name": "2116-1207 (Hebel 16mm² PE)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2116 Hebel",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "numbering_order": "BottomToTop",
+    "description_de": "2-Leiter-Schutzleiterklemme mit Hebel 16 mm², grün-gelb (12,0 mm)",
+    "description_en": "2-conductor lever ground terminal 16 mm², green-yellow (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ]
+  },
+  {
+    "id": "phoenix-pti-16-nls-bu",
+    "name": "PTI 16-NLS-FI BU (16mm² N-Einspeiseklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 122,
+    "height_tenths_mm": 1010,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "N-Einspeiseklemme / Installationsklemme 16 mm² mit N-Trennschlitten für N-Sammelschiene (NLS-CU 3/10), blau (12,2 mm)",
+    "description_en": "N-supply / installation terminal 16 mm² with N-disconnect slide for N-busbar (NLS-CU 3/10), blue (12.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-pti-16-nls",
+    "name": "PTI 16-NLS-FI (16mm² N-Einspeiseklemme Grau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 122,
+    "height_tenths_mm": 1010,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "N-Einspeiseklemme / Installationsklemme 16 mm² mit N-Trennschlitten für N-Sammelschiene (NLS-CU 3/10), grau (12,2 mm)",
+    "description_en": "N-supply / installation terminal 16 mm² with N-disconnect slide for N-busbar (NLS-CU 3/10), gray (12.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "phoenix-pti-25-pelnt",
+    "name": "PTI 2,5-PE/L/NT (3-Etagen NT)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 1010,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Dreistockklemme 2,5 mm² mit N-Trennschlitten PE/L/NT (5,2 mm)",
+    "description_en": "Installation triple-level terminal 2.5 mm² with N-disconnect PE/L/NT (5.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pti-4-pelnt",
+    "name": "PTI 4-PE/L/NT (4mm² 3-Etagen NT)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 3,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 1010,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Dreistockklemme 4 mm² mit N-Trennschlitten PE/L/NT (6,2 mm)",
+    "description_en": "Installation triple-level terminal 4 mm² with N-disconnect PE/L/NT (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "phoenix-pti-6-pelnt",
+    "name": "PTI 6-PE/L/NT (6mm² 3-Etagen NT)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 3,
+    "width_tenths_mm": 82,
+    "height_tenths_mm": 1010,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Dreistockklemme 6 mm² mit N-Trennschlitten PE/L/NT (8,2 mm)",
+    "description_en": "Installation triple-level terminal 6 mm² with N-disconnect PE/L/NT (8.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 5
+  },
+  {
+    "id": "weidmuller-aitb-16-ndt-bl",
+    "name": "AITB 16 BB NDT BL (16mm² N-Einspeiseklemme Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect AITB",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "height_tenths_mm": 1030,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "N-Einspeiseklemme / N-Trennklemme 16 mm² für N-Sammelschiene (10x3 mm), blau (12,0 mm)",
+    "description_en": "N-supply / N-disconnect terminal 16 mm² for N-busbar (10x3 mm), blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "weidmuller-aitb-16-nlo-bl",
+    "name": "AITB 16 BB NLO BL (16mm² N-Sammelschienenklemme Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect AITB",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "height_tenths_mm": 1030,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "N-Einspeiseklemme 16 mm² ohne Trennschlitten für N-Sammelschiene (10x3 mm), blau (12,0 mm)",
+    "description_en": "N-supply terminal 16 mm² without disconnect slide for N-busbar (10x3 mm), blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2
+  },
+  {
+    "id": "weidmuller-aitb-25-ntlp",
+    "name": "AITB 2.5 BB NDT-L-PE (Install. PE/L/NT)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect AITB",
+    "levels": 3,
+    "width_tenths_mm": 51,
+    "height_tenths_mm": 1030,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Installationsklemme 2,5 mm² mit N-Trennschlitten PE/L/NT (5,1 mm)",
+    "description_en": "Push-in installation terminal 2.5 mm² with N-disconnect PE/L/NT (5.1 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 10
+  },
+  {
+    "id": "weidmuller-aitb-4-ntlp",
+    "name": "AITB 4 BB NDT-L-PE (4mm² Install. PE/L/NT)",
+    "manufacturer": "Weidmüller",
+    "series": "Klippon Connect AITB",
+    "levels": 3,
+    "width_tenths_mm": 61,
+    "height_tenths_mm": 1030,
+    "rail_offset_tenths_mm": 130,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Installationsklemme 4 mm² mit N-Trennschlitten PE/L/NT (6,1 mm)",
+    "description_en": "Push-in installation terminal 4 mm² with N-disconnect PE/L/NT (6.1 mm)",
     "tiers": [
       {
         "behavior": "ProtectiveEarth",

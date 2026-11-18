@@ -35,7 +35,9 @@ use crate::ui::cad_canvas::{
 use crate::ui::guide_modal::{show_database_tab, show_guide_tab, CustomSpecDraft};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::new_strip_modal::{
-    show_end_bracket_picker, show_new_strip_modal, show_spec_picker, NewStripDialogState,
+    show_end_bracket_picker, show_install_supply_prompt_modal, show_new_strip_modal,
+    show_spec_picker, InstallPromptDialogState, InstallPromptResolution, InstallSupplyPlacement,
+    NewStripDialogState, PendingInstallAction,
 };
 use crate::ui::platform_io::{
     pick_export_csv_path, pick_export_dxf_path, pick_export_xlsx_path, pick_open_project_path,
@@ -75,6 +77,7 @@ pub struct TermiGridApp {
     selected_end_bracket: Option<bool>,
     canvas_state: CadCanvasState,
     new_strip_modal: NewStripDialogState,
+    install_prompt_modal: InstallPromptDialogState,
 
     // Reassign / insert picker state
     inspector_mfg_filter: Option<String>,
@@ -144,6 +147,7 @@ impl TermiGridApp {
             selected_end_bracket: None,
             canvas_state: CadCanvasState::new(),
             new_strip_modal: NewStripDialogState::default(),
+            install_prompt_modal: InstallPromptDialogState::default(),
             inspector_mfg_filter: None,
             inspector_search: String::new(),
             inspector_spec_id: "wago-2002-2204".to_string(),
@@ -620,12 +624,34 @@ impl eframe::App for TermiGridApp {
             s,
             self.lang,
         ) {
-            self.project.strips.push(new_strip);
-            self.active_strip = self.project.strips.len().saturating_sub(1);
-            self.selected_blocks.clear();
-            self.selected_end_bracket = None;
-            self.show_welcome = false;
-            self.active_tab = ActiveTab::Editor;
+            if let Some(spec) = self.catalog.find_by_id(&new_strip.default_spec_id)
+                && spec.is_installation_or_nt_terminal()
+            {
+                self.install_prompt_modal.open_for_action(
+                    PendingInstallAction::CreateStrip(new_strip),
+                    spec,
+                    false,
+                );
+            } else {
+                self.project.strips.push(new_strip);
+                self.active_strip = self.project.strips.len().saturating_sub(1);
+                self.selected_blocks.clear();
+                self.selected_end_bracket = None;
+                self.show_welcome = false;
+                self.active_tab = ActiveTab::Editor;
+            }
+        }
+
+        // Modal dialog for NT / 2003 / 2203 / 2005 / 2205 installation terminal & N-Einspeiseklemme
+        if let Some(res) = show_install_supply_prompt_modal(
+            ui.ctx(),
+            &mut self.install_prompt_modal,
+            &self.catalog,
+            &self.logos,
+            &self.product_media,
+            s,
+        ) {
+            self.apply_install_prompt_resolution(res);
         }
 
         // Automatically record project state changes onto the Undo stack once pointer drag finishes
@@ -641,6 +667,120 @@ impl eframe::App for TermiGridApp {
 }
 
 impl TermiGridApp {
+    fn strip_has_n_supply(&self, strip_idx: usize) -> bool {
+        self.project
+            .strips
+            .get(strip_idx)
+            .is_some_and(|strip| {
+                strip.blocks.iter().any(|b| {
+                    self.catalog
+                        .find_by_id(&b.spec_id)
+                        .is_some_and(|s| s.is_n_supply_terminal())
+                })
+            })
+    }
+
+    fn apply_install_prompt_resolution(&mut self, res: InstallPromptResolution) {
+        let Some(effective_spec) = self.catalog.find_by_id(&res.effective_spec_id) else {
+            return;
+        };
+        let supply_spec = if res.supply_placement != InstallSupplyPlacement::None {
+            self.catalog.find_by_id(&res.supply_spec_id)
+        } else {
+            None
+        };
+
+        match res.action {
+            PendingInstallAction::CreateStrip(mut new_strip) => {
+                if new_strip.default_spec_id != effective_spec.id {
+                    new_strip.default_spec_id = effective_spec.id.clone();
+                    let all_indices: Vec<usize> = (0..new_strip.blocks.len()).collect();
+                    new_strip.reassign_blocks(&all_indices, effective_spec);
+                }
+                if let Some(sup) = supply_spec {
+                    match res.supply_placement {
+                        InstallSupplyPlacement::BeforeGroup => {
+                            new_strip.insert_blocks(0, 1, sup);
+                        }
+                        InstallSupplyPlacement::AfterGroup => {
+                            new_strip.append_blocks(1, sup);
+                        }
+                        InstallSupplyPlacement::None => {}
+                    }
+                }
+                self.project.strips.push(new_strip);
+                self.active_strip = self.project.strips.len().saturating_sub(1);
+                self.selected_blocks.clear();
+                self.selected_end_bracket = None;
+                self.show_welcome = false;
+                self.active_tab = ActiveTab::Editor;
+            }
+            PendingInstallAction::ReassignSelection {
+                strip_idx,
+                indices,
+                ..
+            } => {
+                if let Some(strip) = self.project.strips.get_mut(strip_idx) {
+                    strip.reassign_blocks(&indices, effective_spec);
+                    if let Some(sup) = supply_spec {
+                        match res.supply_placement {
+                            InstallSupplyPlacement::BeforeGroup => {
+                                if let Some(&first) = indices.first() {
+                                    strip.insert_blocks(first, 1, sup);
+                                    self.selected_blocks = indices
+                                        .iter()
+                                        .map(|&i| if i >= first { i + 1 } else { i })
+                                        .collect();
+                                }
+                            }
+                            InstallSupplyPlacement::AfterGroup => {
+                                if let Some(&last) = indices.last() {
+                                    strip.insert_blocks(last + 1, 1, sup);
+                                }
+                            }
+                            InstallSupplyPlacement::None => {}
+                        }
+                    }
+                }
+                self.inspector_spec_id = effective_spec.id.clone();
+            }
+            PendingInstallAction::InsertBlocks {
+                strip_idx,
+                at_index,
+                count,
+                select_inserted,
+                ..
+            } => {
+                if let Some(strip) = self.project.strips.get_mut(strip_idx) {
+                    let insert_pos = at_index.min(strip.blocks.len());
+                    strip.insert_blocks(insert_pos, count, effective_spec);
+                    if let Some(sup) = supply_spec {
+                        match res.supply_placement {
+                            InstallSupplyPlacement::BeforeGroup => {
+                                strip.insert_blocks(insert_pos, 1, sup);
+                                if select_inserted {
+                                    self.selected_blocks =
+                                        (insert_pos + 1..=insert_pos + count).collect();
+                                }
+                            }
+                            InstallSupplyPlacement::AfterGroup => {
+                                strip.insert_blocks(insert_pos + count, 1, sup);
+                                if select_inserted {
+                                    self.selected_blocks =
+                                        (insert_pos..insert_pos + count).collect();
+                                }
+                            }
+                            InstallSupplyPlacement::None => {}
+                        }
+                    } else if select_inserted {
+                        self.selected_blocks = (insert_pos..insert_pos + count).collect();
+                    }
+                }
+                self.inspector_spec_id = effective_spec.id.clone();
+            }
+        }
+    }
+
     fn show_header_prefs(&mut self, ui: &mut egui::Ui, combo_width: f32) {
         let s = strings(self.lang);
         egui::ComboBox::from_id_salt("language_selector")
@@ -1884,7 +2024,23 @@ impl TermiGridApp {
         if let Some(spec_id) = append_spec_id
             && let Some(spec) = self.catalog.find_by_id(&spec_id)
         {
-            self.project.strips[self.active_strip].append_blocks(1, spec);
+            if spec.is_installation_or_nt_terminal() {
+                let has_supply = self.strip_has_n_supply(self.active_strip);
+                let len = self.project.strips[self.active_strip].blocks.len();
+                self.install_prompt_modal.open_for_action(
+                    PendingInstallAction::InsertBlocks {
+                        strip_idx: self.active_strip,
+                        at_index: len,
+                        count: 1,
+                        spec_id: spec.id.clone(),
+                        select_inserted: false,
+                    },
+                    spec,
+                    has_supply,
+                );
+            } else {
+                self.project.strips[self.active_strip].append_blocks(1, spec);
+            }
         }
         if trigger_dxf_export {
             self.export_dxf();

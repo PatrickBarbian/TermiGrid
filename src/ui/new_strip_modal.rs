@@ -453,3 +453,330 @@ pub fn show_spec_picker(
         });
     }
 }
+
+/// Where to place the matching N-busbar supply terminal (`N-Einspeiseklemme`, e.g. WAGO `2016-7714`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InstallSupplyPlacement {
+    BeforeGroup,
+    AfterGroup,
+    None,
+}
+
+/// Action deferred while the user answers the NT / N-Einspeiseklemme prompt.
+#[derive(Debug, Clone)]
+pub enum PendingInstallAction {
+    CreateStrip(TerminalStrip),
+    ReassignSelection {
+        strip_idx: usize,
+        indices: Vec<usize>,
+        spec_id: String,
+    },
+    InsertBlocks {
+        strip_idx: usize,
+        at_index: usize,
+        count: usize,
+        spec_id: String,
+        select_inserted: bool,
+    },
+}
+
+/// State of the interactive prompt for NT / 2003 / 2203 / 2005 / 2205 installation terminals.
+#[derive(Debug, Clone)]
+pub struct InstallPromptDialogState {
+    pub open: bool,
+    pub action: Option<PendingInstallAction>,
+    pub base_spec_id: String,
+    pub use_nt_variant: bool,
+    pub supply_placement: InstallSupplyPlacement,
+    pub supply_spec_id: String,
+    pub strip_already_has_supply: bool,
+}
+
+impl Default for InstallPromptDialogState {
+    fn default() -> Self {
+        Self {
+            open: false,
+            action: None,
+            base_spec_id: "wago-2003-7646".to_string(),
+            use_nt_variant: false,
+            supply_placement: InstallSupplyPlacement::BeforeGroup,
+            supply_spec_id: "wago-2016-7714".to_string(),
+            strip_already_has_supply: false,
+        }
+    }
+}
+
+impl InstallPromptDialogState {
+    pub fn open_for_action(
+        &mut self,
+        action: PendingInstallAction,
+        spec: &crate::catalog::TerminalSpec,
+        strip_already_has_supply: bool,
+    ) {
+        self.open = true;
+        self.action = Some(action);
+        self.base_spec_id = spec.id.clone();
+        self.use_nt_variant = spec.is_nt_disconnect_terminal();
+        self.supply_placement = if strip_already_has_supply {
+            InstallSupplyPlacement::None
+        } else {
+            InstallSupplyPlacement::BeforeGroup
+        };
+        self.supply_spec_id = spec.recommended_n_supply_spec_id().to_string();
+        self.strip_already_has_supply = strip_already_has_supply;
+    }
+}
+
+/// Confirmed choice from the NT & N-Einspeiseklemme modal dialog.
+#[derive(Debug, Clone)]
+pub struct InstallPromptResolution {
+    pub action: PendingInstallAction,
+    pub effective_spec_id: String,
+    pub supply_placement: InstallSupplyPlacement,
+    pub supply_spec_id: String,
+}
+
+/// Renders the interactive confirmation dialog asking whether an NT disconnect terminal
+/// and/or a matching N-supply terminal (`2016-7714`, `2216-7714`, `PTI 16-NLS-FI BU`, `AITB 16 BB NDT BL`)
+/// should be placed when using WAGO `2003` / `2203` / `2005` / `2205` or NT installation terminals.
+#[allow(clippy::too_many_arguments)]
+pub fn show_install_supply_prompt_modal(
+    ctx: &Context,
+    state: &mut InstallPromptDialogState,
+    catalog: &TerminalCatalog,
+    logos: &BrandLogos,
+    media_cache: &ProductMediaCache,
+    strings: &Strings,
+) -> Option<InstallPromptResolution> {
+    if !state.open || state.action.is_none() {
+        return None;
+    }
+
+    let Some(base_spec) = catalog.find_by_id(&state.base_spec_id) else {
+        state.open = false;
+        state.action = None;
+        return None;
+    };
+
+    let matching_nt = base_spec
+        .matching_nt_spec_id()
+        .and_then(|id| catalog.find_by_id(id));
+
+    let effective_spec = if state.use_nt_variant
+        && let Some(nt_spec) = matching_nt
+    {
+        nt_spec
+    } else {
+        base_spec
+    };
+
+    let mut resolution: Option<InstallPromptResolution> = None;
+    let mut should_close = false;
+
+    let screen_size = ctx.content_rect().size();
+    let max_w = (screen_size.x - 24.0).max(280.0);
+    let max_h = (screen_size.y - 40.0).max(240.0);
+    let target_w = 560.0_f32.min(max_w);
+
+    egui::Window::new("⚡ Installations- / NT-Klemme & N-Einspeiseklemme")
+        .collapsible(false)
+        .resizable(true)
+        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+        .default_width(target_w)
+        .min_width(460.0_f32.min(max_w))
+        .max_width(max_w)
+        .max_height(max_h)
+        .show(ctx, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.label(
+                    egui::RichText::new(
+                        "Für Installationsklemmen (Serie 2003 / 2203 / 2005 / 2205 / PTI / AITB) und NT-Klemmen bitte Ausführung und N-Einspeiseklemme wählen:",
+                    )
+                    .color(secondary_text_color(ui)),
+                );
+                ui.add_space(6.0);
+
+                // 1. NT-Klemmen-Auswahl (N-Trennschlitten vs. Standard)
+                ui.group(|ui| {
+                    ui.label(
+                        egui::RichText::new("1. Ausführung der Installationsklemme (NT / Standard)")
+                            .strong(),
+                    );
+                    ui.add_space(2.0);
+
+                    if let Some(nt_spec) = matching_nt {
+                        ui.radio_value(
+                            &mut state.use_nt_variant,
+                            false,
+                            format!(
+                                "Gewählte Klemme beibehalten: {} {} [{}]",
+                                base_spec.manufacturer,
+                                base_spec.name,
+                                base_spec.pattern_summary()
+                            ),
+                        );
+                        ui.radio_value(
+                            &mut state.use_nt_variant,
+                            true,
+                            format!(
+                                "Als NT-Trennklemme (mit N-Trennschlitten) setzen: {} {} [{}]",
+                                nt_spec.manufacturer,
+                                nt_spec.name,
+                                nt_spec.pattern_summary()
+                            ),
+                        );
+                    } else if base_spec.is_nt_disconnect_terminal() {
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "✔ NT-Trennklemme mit N-Trennschlitten ausgewählt: {} {}",
+                                base_spec.manufacturer, base_spec.name
+                            ))
+                            .color(egui::Color32::from_rgb(16, 185, 129))
+                            .strong(),
+                        );
+                    } else {
+                        ui.label(format!(
+                            "Ausgewählt: {} {} [{}]",
+                            base_spec.manufacturer,
+                            base_spec.name,
+                            base_spec.pattern_summary()
+                        ));
+                    }
+
+                    ui.add_space(4.0);
+                    show_product_preview_card(
+                        ui,
+                        effective_spec,
+                        logos,
+                        media_cache,
+                        strings.open_product_page,
+                        strings.bridge_chambers_unit,
+                        strings.height_label,
+                    );
+                });
+
+                ui.add_space(6.0);
+
+                // 2. Passende N-Sammelschienen-Einspeiseklemme (z. B. WAGO 2016-7714)
+                ui.group(|ui| {
+                    ui.label(
+                        egui::RichText::new(
+                            "2. Passende N-Einspeiseklemme (z. B. WAGO 2016-7714) setzen?",
+                        )
+                        .strong(),
+                    );
+                    if state.strip_already_has_supply {
+                        ui.label(
+                            egui::RichText::new(
+                                "ℹ Hinweis: In dieser Klemmleiste befindet sich bereits eine N-Einspeiseklemme.",
+                            )
+                            .color(secondary_text_color(ui))
+                            .small(),
+                        );
+                    }
+                    ui.add_space(2.0);
+
+                    ui.radio_value(
+                        &mut state.supply_placement,
+                        InstallSupplyPlacement::BeforeGroup,
+                        "Ja – Vor den Installationsklemmen einfügen (links einspeisen)",
+                    );
+                    ui.radio_value(
+                        &mut state.supply_placement,
+                        InstallSupplyPlacement::AfterGroup,
+                        "Ja – Nach den Installationsklemmen einfügen (rechts einspeisen)",
+                    );
+                    ui.radio_value(
+                        &mut state.supply_placement,
+                        InstallSupplyPlacement::None,
+                        "Nein – Keine N-Einspeiseklemme hinzufügen",
+                    );
+
+                    if state.supply_placement != InstallSupplyPlacement::None {
+                        ui.add_space(4.0);
+                        let compat_ids = effective_spec.compatible_n_supply_spec_ids();
+                        if !compat_ids.contains(&state.supply_spec_id.as_str())
+                            && let Some(&first_id) = compat_ids.first()
+                        {
+                            state.supply_spec_id = first_id.to_string();
+                        }
+
+                        let selected_supply = catalog.find_by_id(&state.supply_spec_id);
+                        let selected_supply_text = selected_supply
+                            .map(|s| {
+                                format!(
+                                    "{} {} (Art. {}, {:.1} mm)",
+                                    s.manufacturer,
+                                    s.name,
+                                    s.effective_article_number().unwrap_or("—"),
+                                    f32::from(s.width_tenths_mm) / 10.0
+                                )
+                            })
+                            .unwrap_or_else(|| state.supply_spec_id.clone());
+
+                        ui.label("Auswahl N-Einspeiseklemme:");
+                        egui::ComboBox::from_id_salt("install_supply_spec_combo")
+                            .width((ui.available_width() - 8.0).max(200.0))
+                            .selected_text(selected_supply_text)
+                            .show_ui(ui, |ui| {
+                                for &cid in compat_ids {
+                                    if let Some(cspec) = catalog.find_by_id(cid) {
+                                        let label = format!(
+                                            "{} {} (Art. {}, {:.1} mm)",
+                                            cspec.manufacturer,
+                                            cspec.name,
+                                            cspec.effective_article_number().unwrap_or("—"),
+                                            f32::from(cspec.width_tenths_mm) / 10.0
+                                        );
+                                        ui.selectable_value(
+                                            &mut state.supply_spec_id,
+                                            cspec.id.clone(),
+                                            label,
+                                        );
+                                    }
+                                }
+                            });
+
+                        if let Some(sup_spec) = catalog.find_by_id(&state.supply_spec_id) {
+                            ui.add_space(4.0);
+                            show_product_preview_card(
+                                ui,
+                                sup_spec,
+                                logos,
+                                media_cache,
+                                strings.open_product_page,
+                                strings.bridge_chambers_unit,
+                                strings.height_label,
+                            );
+                        }
+                    }
+                });
+
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    if primary_button(ui, "✔ Übernehmen & Einfügen").clicked()
+                        && let Some(action) = state.action.take()
+                    {
+                        resolution = Some(InstallPromptResolution {
+                            action,
+                            effective_spec_id: effective_spec.id.clone(),
+                            supply_placement: state.supply_placement,
+                            supply_spec_id: state.supply_spec_id.clone(),
+                        });
+                        should_close = true;
+                    }
+                    if ui.button(strings.btn_cancel).clicked() {
+                        should_close = true;
+                    }
+                });
+            });
+        });
+
+    if should_close {
+        state.open = false;
+        state.action = None;
+    }
+
+    resolution
+}
+

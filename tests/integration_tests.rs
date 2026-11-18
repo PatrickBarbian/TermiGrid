@@ -362,3 +362,51 @@ fn dxf_places_standard_blocks_symmetrically_and_installation_blocks_with_real_of
     assert!((env_h - 101.0).abs() < 0.05, "expected 101.0 mm, got {env_h}");
 }
 
+#[test]
+fn installation_nt_and_n_supply_terminals_resolve_correctly() {
+    use termigrid_core::catalog::accessories::resolve_accessories;
+
+    let catalog = TerminalCatalog::load_embedded();
+    assert!(
+        catalog.all().len() >= 320,
+        "Expected expanded catalog (>= 320 specs), got {}",
+        catalog.all().len()
+    );
+
+    // WAGO 2016-7714 N-Einspeiseklemme
+    let wago_supply = catalog
+        .find_by_id("wago-2016-7714")
+        .expect("wago-2016-7714 must exist");
+    assert!(wago_supply.is_n_supply_terminal());
+    assert_eq!(wago_supply.effective_article_number(), Some("2016-7714"));
+    assert_eq!(wago_supply.width_tenths_mm, 120);
+    let sup_acc = resolve_accessories(wago_supply);
+    assert!(sup_acc.end_plate.contains("2016-7792"));
+
+    // WAGO 2003, 2203, 2005, 2205 installation terminals & NT pairing
+    for (base_id, expected_nt_id) in [
+        ("wago-2003-7646", "wago-2003-7641"),
+        ("wago-2203-7646", "wago-2203-7641"),
+        ("wago-2005-7646", "wago-2005-7641"),
+        ("wago-2205-7646", "wago-2205-7641"),
+        ("phoenix-pti-25-peln", "phoenix-pti-25-pelnt"),
+        ("weidmuller-aitb-25-nlp", "weidmuller-aitb-25-ntlp"),
+    ] {
+        let base = catalog.find_by_id(base_id).expect(base_id);
+        assert!(base.is_installation_or_nt_terminal(), "{base_id} must trigger prompt");
+        assert_eq!(base.matching_nt_spec_id(), Some(expected_nt_id));
+
+        let nt = catalog.find_by_id(expected_nt_id).expect(expected_nt_id);
+        assert!(nt.is_installation_or_nt_terminal());
+        assert!(nt.is_nt_disconnect_terminal());
+
+        let rec_supply = catalog
+            .find_by_id(base.recommended_n_supply_spec_id())
+            .expect("recommended N-supply must exist in catalog");
+        assert!(rec_supply.is_n_supply_terminal());
+        if base.manufacturer == "WAGO" {
+            assert_eq!(rec_supply.id, "wago-2016-7714");
+        }
+    }
+}
+
