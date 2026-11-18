@@ -10,6 +10,7 @@ use crate::catalog::accessories::EndBracketSpec;
 use crate::catalog::TerminalSpec;
 use crate::i18n::Language;
 use crate::model::TierColor;
+use crate::ui::icons::{icon_button, UiIcon};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::net::{http_get_bytes, http_get_text};
 use crate::ui::theme::secondary_text_color;
@@ -371,16 +372,21 @@ pub fn show_product_preview_card(
                     .wrap(),
                 );
             }
+            let slot_summary = if slots == 0 {
+                format!("0× {chambers_label} (nicht brückbar)")
+            } else {
+                format!("{slots}× {chambers_label} (max. {max_poles}p)")
+            };
             ui.add(
                 egui::Label::new(
-                    egui::RichText::new(format!("{slots}× {chambers_label} (max. {max_poles}p)"))
+                    egui::RichText::new(slot_summary)
                         .color(sec)
                         .small(),
                 )
                 .wrap(),
             );
             ui.add_space(3.0);
-            if ui.button(open_product_label).clicked() {
+            if icon_button(ui, UiIcon::ExternalLink, open_product_label).clicked() {
                 open_external_url(ui.ctx(), &spec.effective_product_url());
             }
         };
@@ -479,7 +485,7 @@ pub fn show_end_bracket_preview_card(
             };
             ui.add(egui::Label::new(egui::RichText::new(mounting).color(sec).small()).wrap());
             ui.add_space(3.0);
-            if ui.button(open_product_label).clicked() {
+            if icon_button(ui, UiIcon::ExternalLink, open_product_label).clicked() {
                 open_external_url(ui.ctx(), eb.product_url);
             }
         };
@@ -668,14 +674,14 @@ fn draw_technical_profile(ui: &mut Ui, spec: &TerminalSpec, size: Vec2, dark: bo
         }
     }
 
-    // Center jumper pockets (1 vs 2 slots clearly illustrated!)
+    // Center jumper pockets (0 vs 1 vs 2 slots clearly illustrated!)
     let slots = spec.effective_jumper_slots();
     let cx = rect.center().x;
     let slot_y = rect.min.y + 14.0;
     if slots >= 2 {
         painter.circle_filled(Pos2::new(cx - 5.0, slot_y), 3.0, Color32::from_rgb(245, 158, 11));
         painter.circle_filled(Pos2::new(cx + 5.0, slot_y), 3.0, Color32::from_rgb(245, 158, 11));
-    } else {
+    } else if slots == 1 {
         painter.circle_filled(Pos2::new(cx, slot_y), 3.0, Color32::from_rgb(245, 158, 11));
     }
 

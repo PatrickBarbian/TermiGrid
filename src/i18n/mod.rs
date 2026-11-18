@@ -268,7 +268,7 @@ pub static DE: Strings = Strings {
 
     project_name: "Projektname",
     strips_heading: "Klemmleisten",
-    btn_new_strip: "+ Neue Leiste",
+    btn_new_strip: "Neue Leiste",
     btn_delete_strip: "Löschen",
     blocks_unit: "Klemmen",
     labels_unit: "Schilder",
@@ -294,7 +294,7 @@ pub static DE: Strings = Strings {
     btn_clear_selection: "Auswahl aufheben",
     selected_count: "Ausgewählt",
     strip_start_number: "Start-Nr.",
-    btn_append_block: "+ Klemme anhängen",
+    btn_append_block: "Klemme anhängen",
     type_display_label: "Typ-Anzeige",
     type_display_groups: "Horizontal (Gruppen)",
     type_display_vertical: "Vertikal (je Klemme)",
@@ -376,7 +376,7 @@ pub static DE: Strings = Strings {
     update_error: "Update-Prüfung fehlgeschlagen",
     about_vibecoded: "VibeCoded mit KI-Unterstützung (Google Antigravity / Gemini) — Open Source",
     btn_github: "GitHub",
-    btn_coffee: "☕ Buy Me a Coffee",
+    btn_coffee: "Buy Me a Coffee",
 
     status_ready: "Bereit.",
     status_saved: "Projekt gespeichert",
@@ -408,7 +408,7 @@ pub static DE: Strings = Strings {
 
     bridge_heading: "Brücken-Modus & Potentiale",
     bridge_new_potential: "Potential (z.B. +24V)",
-    bridge_add_btn: "+ Potential",
+    bridge_add_btn: "Potential",
     bridge_assign_hint: "Potential wählen und im CAD auf Ebenen klicken oder mit gedrückter linker Maustaste darüberziehen.",
     bridge_bom_heading: "Berechnete Brücken & Stückliste",
     bridge_cut_pins: "Pin entfernen",
@@ -431,7 +431,7 @@ pub static DE: Strings = Strings {
     welcome_step_1: "1. Projekt",
     welcome_step_2: "2. Klemmleiste",
     welcome_step_3: "3. CAD-Editor",
-    welcome_new_project: "+ Neues Projekt erstellen",
+    welcome_new_project: "Neues Projekt erstellen",
     welcome_load_project: "Bestehendes Projekt laden (.termi / .json)",
     welcome_demo_project: "Beispielprojekt (-X1) ansehen",
 
@@ -450,7 +450,7 @@ pub static DE: Strings = Strings {
     preview_before_apply: "Vorschau vor Übernahme",
 
     menu_export_dxf: "EPLAN DXF (1:1)",
-    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner: "e-Planer (1:1)",
     mode_eplaner_tip: "Schaltet auf das maßstabsgetreue 1:1-Aufbaubild (mm) mit Hutschiene TS 35, Bemaßung und EPLAN-Layout um.",
     cad_scale_1_1: "Aufbaubild 1:1 (mm)",
     max_height_label: "Max. Bauhöhe",
@@ -471,7 +471,7 @@ pub static EN: Strings = Strings {
 
     project_name: "Project Name",
     strips_heading: "Terminal Strips",
-    btn_new_strip: "+ New Strip",
+    btn_new_strip: "New Strip",
     btn_delete_strip: "Delete",
     blocks_unit: "blocks",
     labels_unit: "labels",
@@ -497,7 +497,7 @@ pub static EN: Strings = Strings {
     btn_clear_selection: "Clear Selection",
     selected_count: "Selected",
     strip_start_number: "Start No.",
-    btn_append_block: "+ Append Block",
+    btn_append_block: "Append Block",
     type_display_label: "Type Labels",
     type_display_groups: "Horizontal (Groups)",
     type_display_vertical: "Vertical (Per Block)",
@@ -579,7 +579,7 @@ pub static EN: Strings = Strings {
     update_error: "Update check failed",
     about_vibecoded: "VibeCoded with AI assistance (Google Antigravity / Gemini) — Open Source",
     btn_github: "GitHub",
-    btn_coffee: "☕ Buy Me a Coffee",
+    btn_coffee: "Buy Me a Coffee",
 
     status_ready: "Ready.",
     status_saved: "Project saved",
@@ -611,7 +611,7 @@ pub static EN: Strings = Strings {
 
     bridge_heading: "Bridge Mode & Potentials",
     bridge_new_potential: "Potential (e.g. +24V)",
-    bridge_add_btn: "+ Potential",
+    bridge_add_btn: "Potential",
     bridge_assign_hint: "Select a potential and click or drag across terminal tiers in the CAD canvas.",
     bridge_bom_heading: "Calculated Jumpers & BOM",
     bridge_cut_pins: "Cut pin(s)",
@@ -634,7 +634,7 @@ pub static EN: Strings = Strings {
     welcome_step_1: "1. Project",
     welcome_step_2: "2. Terminal Strip",
     welcome_step_3: "3. CAD Editor",
-    welcome_new_project: "+ Create New Project",
+    welcome_new_project: "Create New Project",
     welcome_load_project: "Open Existing Project (.termi / .json)",
     welcome_demo_project: "Open Sample Project (-X1)",
 
@@ -653,7 +653,7 @@ pub static EN: Strings = Strings {
     preview_before_apply: "Preview before apply",
 
     menu_export_dxf: "EPLAN DXF (1:1)",
-    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner: "e-Planer (1:1)",
     mode_eplaner_tip: "Switch to true-to-scale 1:1 mm front elevation (Aufbaubild) with TS 35 DIN rail, dimension lines, and EPLAN title block.",
     cad_scale_1_1: "Elevation 1:1 (mm)",
     max_height_label: "Max. Height",
@@ -674,7 +674,7 @@ pub static FR: Strings = Strings {
 
     project_name: "Nom du projet",
     strips_heading: "Borniers",
-    btn_new_strip: "+ Nouveau bornier",
+    btn_new_strip: "Nouveau bornier",
     btn_delete_strip: "Supprimer",
     blocks_unit: "bornes",
     labels_unit: "repères",
@@ -700,7 +700,7 @@ pub static FR: Strings = Strings {
     btn_clear_selection: "Désélectionner",
     selected_count: "Sélectionné(s)",
     strip_start_number: "N° début",
-    btn_append_block: "+ Ajouter borne",
+    btn_append_block: "Ajouter borne",
     type_display_label: "Affichage type",
     type_display_groups: "Horizontal (Groupes)",
     type_display_vertical: "Vertical (Par borne)",
@@ -782,7 +782,7 @@ pub static FR: Strings = Strings {
     update_error: "Échec de vérification",
     about_vibecoded: "VibeCoded avec l'aide de l'IA (Google Antigravity / Gemini) — Open Source",
     btn_github: "GitHub",
-    btn_coffee: "☕ Buy Me a Coffee",
+    btn_coffee: "Buy Me a Coffee",
 
     status_ready: "Prêt.",
     status_saved: "Projet enregistré",
@@ -814,7 +814,7 @@ pub static FR: Strings = Strings {
 
     bridge_heading: "Mode Pontage & Potentiels",
     bridge_new_potential: "Potentiel (ex. +24V)",
-    bridge_add_btn: "+ Potentiel",
+    bridge_add_btn: "Potentiel",
     bridge_assign_hint: "Sélectionnez un potentiel puis cliquez ou glissez sur les étages dans la CAO.",
     bridge_bom_heading: "Ponts calculés & Nomenclature",
     bridge_cut_pins: "Couper broche(s)",
@@ -837,7 +837,7 @@ pub static FR: Strings = Strings {
     welcome_step_1: "1. Projet",
     welcome_step_2: "2. Bornier",
     welcome_step_3: "3. Éditeur CAO",
-    welcome_new_project: "+ Créer un nouveau projet",
+    welcome_new_project: "Créer un nouveau projet",
     welcome_load_project: "Charger un projet existant (.termi / .json)",
     welcome_demo_project: "Voir le projet exemple (-X1)",
 
@@ -856,7 +856,7 @@ pub static FR: Strings = Strings {
     preview_before_apply: "Aperçu avant application",
 
     menu_export_dxf: "EPLAN DXF (1:1)",
-    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner: "e-Planer (1:1)",
     mode_eplaner_tip: "Afficher l'élévation 1:1 réelle (mm) avec rail DIN TS 35, cotes et cartouche EPLAN.",
     cad_scale_1_1: "Implantation 1:1 (mm)",
     max_height_label: "Hauteur max.",
@@ -877,7 +877,7 @@ pub static IT: Strings = Strings {
 
     project_name: "Nome progetto",
     strips_heading: "Morsettiere",
-    btn_new_strip: "+ Nuova morsettiera",
+    btn_new_strip: "Nuova morsettiera",
     btn_delete_strip: "Elimina",
     blocks_unit: "morsetti",
     labels_unit: "etichette",
@@ -903,7 +903,7 @@ pub static IT: Strings = Strings {
     btn_clear_selection: "Deseleziona",
     selected_count: "Selezionati",
     strip_start_number: "N° inizio",
-    btn_append_block: "+ Aggiungi morsetto",
+    btn_append_block: "Aggiungi morsetto",
     type_display_label: "Etichetta tipo",
     type_display_groups: "Orizzontale (Gruppi)",
     type_display_vertical: "Verticale (Singolo)",
@@ -985,7 +985,7 @@ pub static IT: Strings = Strings {
     update_error: "Controllo fallito",
     about_vibecoded: "VibeCoded con supporto IA (Google Antigravity / Gemini) — Open Source",
     btn_github: "GitHub",
-    btn_coffee: "☕ Buy Me a Coffee",
+    btn_coffee: "Buy Me a Coffee",
 
     status_ready: "Pronto.",
     status_saved: "Progetto salvato",
@@ -1017,7 +1017,7 @@ pub static IT: Strings = Strings {
 
     bridge_heading: "Modo Ponticelli & Potenziali",
     bridge_new_potential: "Potenziale (es. +24V)",
-    bridge_add_btn: "+ Potenziale",
+    bridge_add_btn: "Potenziale",
     bridge_assign_hint: "Scegli un potenziale e clicca o trascina sui piani dei morsetti nel CAD.",
     bridge_bom_heading: "Ponticelli calcolati & Distinta",
     bridge_cut_pins: "Rimuovere pin",
@@ -1040,7 +1040,7 @@ pub static IT: Strings = Strings {
     welcome_step_1: "1. Progetto",
     welcome_step_2: "2. Morsettiera",
     welcome_step_3: "3. Editor CAD",
-    welcome_new_project: "+ Crea nuovo progetto",
+    welcome_new_project: "Crea nuovo progetto",
     welcome_load_project: "Carica progetto esistente (.termi / .json)",
     welcome_demo_project: "Apri progetto di esempio (-X1)",
 
@@ -1059,7 +1059,7 @@ pub static IT: Strings = Strings {
     preview_before_apply: "Anteprima prima di applicare",
 
     menu_export_dxf: "EPLAN DXF (1:1)",
-    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner: "e-Planer (1:1)",
     mode_eplaner_tip: "Attiva la vista frontale in scala 1:1 reale (mm) con guida DIN TS 35, quote e cartiglio EPLAN.",
     cad_scale_1_1: "Disposizione 1:1 (mm)",
     max_height_label: "Altezza max.",
@@ -1080,7 +1080,7 @@ pub static ES: Strings = Strings {
 
     project_name: "Nombre del proyecto",
     strips_heading: "Regleteros",
-    btn_new_strip: "+ Nuevo regletero",
+    btn_new_strip: "Nuevo regletero",
     btn_delete_strip: "Eliminar",
     blocks_unit: "bornes",
     labels_unit: "etiquetas",
@@ -1106,7 +1106,7 @@ pub static ES: Strings = Strings {
     btn_clear_selection: "Limpiar selección",
     selected_count: "Seleccionados",
     strip_start_number: "N° inicio",
-    btn_append_block: "+ Añadir borne",
+    btn_append_block: "Añadir borne",
     type_display_label: "Mostrar tipo",
     type_display_groups: "Horizontal (Grupos)",
     type_display_vertical: "Vertical (Por borne)",
@@ -1188,7 +1188,7 @@ pub static ES: Strings = Strings {
     update_error: "Error al comprobar",
     about_vibecoded: "VibeCoded con asistencia de IA (Google Antigravity / Gemini) — Código abierto",
     btn_github: "GitHub",
-    btn_coffee: "☕ Buy Me a Coffee",
+    btn_coffee: "Buy Me a Coffee",
 
     status_ready: "Listo.",
     status_saved: "Proyecto guardado",
@@ -1220,7 +1220,7 @@ pub static ES: Strings = Strings {
 
     bridge_heading: "Modo Puentes y Potenciales",
     bridge_new_potential: "Potencial (ej. +24V)",
-    bridge_add_btn: "+ Potencial",
+    bridge_add_btn: "Potencial",
     bridge_assign_hint: "Selecciona un potencial y haz clic o arrastra sobre los niveles en el CAD.",
     bridge_bom_heading: "Puentes calculados y Lista",
     bridge_cut_pins: "Quitar pin(es)",
@@ -1243,7 +1243,7 @@ pub static ES: Strings = Strings {
     welcome_step_1: "1. Proyecto",
     welcome_step_2: "2. Regletero",
     welcome_step_3: "3. Editor CAD",
-    welcome_new_project: "+ Crear nuevo proyecto",
+    welcome_new_project: "Crear nuevo proyecto",
     welcome_load_project: "Abrir proyecto existente (.termi / .json)",
     welcome_demo_project: "Ver proyecto de ejemplo (-X1)",
 
@@ -1262,7 +1262,7 @@ pub static ES: Strings = Strings {
     preview_before_apply: "Vista previa antes de aplicar",
 
     menu_export_dxf: "EPLAN DXF (1:1)",
-    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner: "e-Planer (1:1)",
     mode_eplaner_tip: "Cambia a vista frontal a escala real 1:1 (mm) con carril DIN TS 35, cotas y cajetín EPLAN.",
     cad_scale_1_1: "Disposición 1:1 (mm)",
     max_height_label: "Altura máx.",
@@ -1283,7 +1283,7 @@ pub static PL: Strings = Strings {
 
     project_name: "Nazwa projektu",
     strips_heading: "Listwy zaciskowe",
-    btn_new_strip: "+ Nowa listwa",
+    btn_new_strip: "Nowa listwa",
     btn_delete_strip: "Usuń",
     blocks_unit: "złączek",
     labels_unit: "oznaczników",
@@ -1309,7 +1309,7 @@ pub static PL: Strings = Strings {
     btn_clear_selection: "Odznacz",
     selected_count: "Zaznaczono",
     strip_start_number: "Nr start.",
-    btn_append_block: "+ Dodaj złączkę",
+    btn_append_block: "Dodaj złączkę",
     type_display_label: "Opis typu",
     type_display_groups: "Poziomo (Grupy)",
     type_display_vertical: "Pionowo (Każda)",
@@ -1391,7 +1391,7 @@ pub static PL: Strings = Strings {
     update_error: "Błąd sprawdzania",
     about_vibecoded: "VibeCoded z pomocą AI (Google Antigravity / Gemini) — Open Source",
     btn_github: "GitHub",
-    btn_coffee: "☕ Buy Me a Coffee",
+    btn_coffee: "Buy Me a Coffee",
 
     status_ready: "Gotowy.",
     status_saved: "Zapisano projekt",
@@ -1423,7 +1423,7 @@ pub static PL: Strings = Strings {
 
     bridge_heading: "Tryb Mostków i Potencjały",
     bridge_new_potential: "Potencjał (np. +24V)",
-    bridge_add_btn: "+ Potencjał",
+    bridge_add_btn: "Potencjał",
     bridge_assign_hint: "Wybierz potencjał i kliknij lub przeciągnij po poziomach złączek w widoku CAD.",
     bridge_bom_heading: "Obliczone mostki i lista",
     bridge_cut_pins: "Wyłamać pin(y)",
@@ -1446,7 +1446,7 @@ pub static PL: Strings = Strings {
     welcome_step_1: "1. Projekt",
     welcome_step_2: "2. Listwa zacisków",
     welcome_step_3: "3. Edytor CAD",
-    welcome_new_project: "+ Utwórz nowy projekt",
+    welcome_new_project: "Utwórz nowy projekt",
     welcome_load_project: "Wczytaj istniejący projekt (.termi / .json)",
     welcome_demo_project: "Zobacz projekt przykładowy (-X1)",
 
@@ -1465,7 +1465,7 @@ pub static PL: Strings = Strings {
     preview_before_apply: "Podgląd przed zastosowaniem",
 
     menu_export_dxf: "EPLAN DXF (1:1)",
-    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner: "e-Planer (1:1)",
     mode_eplaner_tip: "Widok elewacji w skali 1:1 (mm) z szyną DIN TS 35, wymiarowaniem i ramką EPLAN.",
     cad_scale_1_1: "Układ 1:1 (mm)",
     max_height_label: "Wys. maks.",
@@ -1486,7 +1486,7 @@ pub static NL: Strings = Strings {
 
     project_name: "Projectnaam",
     strips_heading: "Klemmenstroken",
-    btn_new_strip: "+ Nieuwe strook",
+    btn_new_strip: "Nieuwe strook",
     btn_delete_strip: "Verwijderen",
     blocks_unit: "klemmen",
     labels_unit: "labels",
@@ -1512,7 +1512,7 @@ pub static NL: Strings = Strings {
     btn_clear_selection: "Selectie wissen",
     selected_count: "Geselecteerd",
     strip_start_number: "Startnr.",
-    btn_append_block: "+ Klem toevoegen",
+    btn_append_block: "Klem toevoegen",
     type_display_label: "Type-weergave",
     type_display_groups: "Horizontaal (Groepen)",
     type_display_vertical: "Verticaal (Per klem)",
@@ -1594,7 +1594,7 @@ pub static NL: Strings = Strings {
     update_error: "Updatecontrole mislukt",
     about_vibecoded: "VibeCoded met AI-ondersteuning (Google Antigravity / Gemini) — Open Source",
     btn_github: "GitHub",
-    btn_coffee: "☕ Buy Me a Coffee",
+    btn_coffee: "Buy Me a Coffee",
 
     status_ready: "Gereed.",
     status_saved: "Project opgeslagen",
@@ -1626,7 +1626,7 @@ pub static NL: Strings = Strings {
 
     bridge_heading: "Brug-modus & Potentialen",
     bridge_new_potential: "Potentiaal (bijv. +24V)",
-    bridge_add_btn: "+ Potentiaal",
+    bridge_add_btn: "Potentiaal",
     bridge_assign_hint: "Kies een potentiaal en klik of sleep over klemniveaus in het CAD-overzicht.",
     bridge_bom_heading: "Berekende bruggen & stuklijst",
     bridge_cut_pins: "Pin(s) verwijderen",
@@ -1649,7 +1649,7 @@ pub static NL: Strings = Strings {
     welcome_step_1: "1. Project",
     welcome_step_2: "2. Klemmenstrook",
     welcome_step_3: "3. CAD-editor",
-    welcome_new_project: "+ Nieuw project maken",
+    welcome_new_project: "Nieuw project maken",
     welcome_load_project: "Bestaand project laden (.termi / .json)",
     welcome_demo_project: "Voorbeeldproject (-X1) openen",
 
@@ -1668,7 +1668,7 @@ pub static NL: Strings = Strings {
     preview_before_apply: "Voorbeeld vóór toepassen",
 
     menu_export_dxf: "EPLAN DXF (1:1)",
-    mode_eplaner: "📐 e-Planer (1:1)",
+    mode_eplaner: "e-Planer (1:1)",
     mode_eplaner_tip: "Schakel naar het ware schaal 1:1-aanzicht (mm) met TS 35 DIN-rail, maatlijnen en EPLAN-kader.",
     cad_scale_1_1: "Opstelling 1:1 (mm)",
     max_height_label: "Max. hoogte",

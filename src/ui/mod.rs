@@ -1,6 +1,7 @@
 pub mod android_insets;
 pub mod cad_canvas;
 pub mod guide_modal;
+pub mod icons;
 pub mod logos;
 pub mod net;
 pub mod new_strip_modal;
@@ -35,6 +36,10 @@ use crate::ui::cad_canvas::{
 use crate::ui::guide_modal::{
     show_about_modal, show_database_tab, show_guide_tab, CustomSpecDraft,
 };
+use crate::ui::icons::{
+    danger_icon_button, draw_icon, icon_button, icon_only_button, primary_icon_button,
+    selectable_icon_button, success_icon_button, UiIcon,
+};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::new_strip_modal::{
     show_end_bracket_picker, show_install_supply_prompt_modal, show_new_strip_modal,
@@ -49,8 +54,7 @@ use crate::ui::product_media::{
     show_end_bracket_preview_card, show_product_preview_card, ProductMediaCache,
 };
 use crate::ui::theme::{
-    apply_theme_mode, danger_button, install_system_fonts, primary_button, secondary_text_color,
-    success_button, ThemeMode,
+    apply_theme_mode, install_system_fonts, secondary_text_color, ThemeMode,
 };
 use crate::ui::updater::{
     open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, GITHUB_REPO_URL,
@@ -436,17 +440,19 @@ impl eframe::App for TermiGridApp {
             let wide_header = avail_w >= 760.0;
             ui.add_space(4.0);
 
-            let menu_label = match self.updater.status() {
-                UpdateStatus::UpdateAvailable { .. } => "☰ Info ●",
-                _ => "☰ Info ▾",
-            };
+            let has_update = matches!(self.updater.status(), UpdateStatus::UpdateAvailable { .. });
             let draw_top_left_menu = |ui: &mut egui::Ui,
                                       show_about: &mut bool,
                                       updater: &UpdateChecker,
                                       s: &crate::i18n::Strings| {
-                ui.menu_button(menu_label, |ui| {
-                    ui.set_min_width(210.0);
-                    if ui.button("ℹ Über TermiGrid & Lizenzen").clicked() {
+                let menu_btn = if has_update {
+                    primary_icon_button(ui, UiIcon::Menu, "Info (Update)")
+                } else {
+                    icon_button(ui, UiIcon::Menu, "Info")
+                };
+                egui::Popup::menu(&menu_btn).show(|ui| {
+                    ui.set_min_width(220.0);
+                    if icon_button(ui, UiIcon::Info, "Über TermiGrid & Lizenzen").clicked() {
                         *show_about = true;
                         ui.close();
                     }
@@ -456,13 +462,13 @@ impl eframe::App for TermiGridApp {
                             latest_tag,
                             release_url,
                         } => {
-                            if ui
-                                .button(
-                                    egui::RichText::new(format!("⬆ Update: {latest_tag}"))
-                                        .strong(),
-                                )
-                                .on_hover_text(s.update_open_release)
-                                .clicked()
+                            if primary_icon_button(
+                                ui,
+                                UiIcon::DownloadUpdate,
+                                &format!("Update: {latest_tag}"),
+                            )
+                            .on_hover_text(s.update_open_release)
+                            .clicked()
                             {
                                 open_external_url(ui.ctx(), &release_url);
                                 ui.close();
@@ -472,21 +478,54 @@ impl eframe::App for TermiGridApp {
                             ui.label(s.update_checking);
                         }
                         _ => {
-                            if ui.button(s.btn_check_update).clicked() {
+                            if icon_button(ui, UiIcon::RefreshCheck, s.btn_check_update).clicked() {
                                 updater.check_async(ui.ctx().clone());
                                 ui.close();
                             }
                         }
                     }
-                    if ui.button(s.btn_github).clicked() {
+                    if icon_button(ui, UiIcon::GitHub, s.btn_github).clicked() {
                         open_external_url(ui.ctx(), GITHUB_REPO_URL);
                         ui.close();
                     }
-                    if ui.button(s.btn_coffee).clicked() {
+                    if icon_button(ui, UiIcon::Coffee, s.btn_coffee).clicked() {
                         open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
                         ui.close();
                     }
                 });
+            };
+
+            let draw_main_tabs = |ui: &mut egui::Ui, active_tab: &mut ActiveTab, s: &crate::i18n::Strings| {
+                if selectable_icon_button(
+                    ui,
+                    *active_tab == ActiveTab::Editor,
+                    UiIcon::CadEditor,
+                    s.tab_editor,
+                )
+                .clicked()
+                {
+                    *active_tab = ActiveTab::Editor;
+                }
+                if selectable_icon_button(
+                    ui,
+                    *active_tab == ActiveTab::Database,
+                    UiIcon::Database,
+                    s.tab_database,
+                )
+                .clicked()
+                {
+                    *active_tab = ActiveTab::Database;
+                }
+                if selectable_icon_button(
+                    ui,
+                    *active_tab == ActiveTab::Guide,
+                    UiIcon::Guide,
+                    s.tab_guide,
+                )
+                .clicked()
+                {
+                    *active_tab = ActiveTab::Guide;
+                }
             };
 
             if wide_header {
@@ -495,12 +534,10 @@ impl eframe::App for TermiGridApp {
                     ui.heading(egui::RichText::new("TermiGrid").strong());
                     ui.separator();
 
-                    ui.selectable_value(&mut self.active_tab, ActiveTab::Editor, s.tab_editor);
-                    ui.selectable_value(&mut self.active_tab, ActiveTab::Database, s.tab_database);
-                    ui.selectable_value(&mut self.active_tab, ActiveTab::Guide, s.tab_guide);
+                    draw_main_tabs(ui, &mut self.active_tab, s);
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        self.show_header_prefs(ui, 110.0, avail_w >= 960.0);
+                        self.show_header_prefs(ui, 92.0, avail_w >= 960.0);
                     });
                 });
             } else {
@@ -508,19 +545,21 @@ impl eframe::App for TermiGridApp {
                     draw_top_left_menu(ui, &mut self.show_about_modal, &self.updater, s);
                     ui.heading(egui::RichText::new("TermiGrid").strong());
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        self.show_header_prefs(ui, 88.0, false);
+                        self.show_header_prefs(ui, 76.0, false);
                     });
                 });
                 ui.horizontal_wrapped(|ui| {
-                    ui.selectable_value(&mut self.active_tab, ActiveTab::Editor, s.tab_editor);
-                    ui.selectable_value(&mut self.active_tab, ActiveTab::Database, s.tab_database);
-                    ui.selectable_value(&mut self.active_tab, ActiveTab::Guide, s.tab_guide);
+                    draw_main_tabs(ui, &mut self.active_tab, s);
                 });
             }
 
+            let has_active_project = !self.show_welcome && !self.project.strips.is_empty();
+            let in_cad_editor = self.active_tab == ActiveTab::Editor && has_active_project;
+
             ui.separator();
             ui.horizontal_wrapped(|ui| {
-                if primary_button(ui, s.menu_new_project).clicked() {
+                // Group 1: Project file actions
+                if primary_icon_button(ui, UiIcon::NewFile, s.menu_new_project).clicked() {
                     self.project = Project::default();
                     self.catalog = TerminalCatalog::load_embedded();
                     self.undo_stack.clear();
@@ -534,46 +573,68 @@ impl eframe::App for TermiGridApp {
                     self.active_tab = ActiveTab::Editor;
                     self.new_strip_modal.open_for_next_strip(0);
                 }
-                if ui.button(s.menu_open_project).clicked() {
+                if icon_button(ui, UiIcon::FolderOpen, s.menu_open_project).clicked() {
                     self.open_project();
                 }
-                if success_button(ui, s.menu_save_project).clicked() {
+                if has_active_project
+                    && success_icon_button(ui, UiIcon::Save, s.menu_save_project).clicked()
+                {
                     self.save_project();
                 }
 
-                ui.separator();
+                // Group 2: Undo / Redo (only in active CAD Editor with a project)
+                if in_cad_editor {
+                    ui.separator();
+                    let undo_clicked = ui
+                        .add_enabled_ui(!self.undo_stack.is_empty(), |ui| {
+                            icon_only_button(
+                                ui,
+                                UiIcon::Undo,
+                                false,
+                                "Rückgängig / Undo (Strg+Z)",
+                            )
+                        })
+                        .inner
+                        .clicked();
+                    if undo_clicked {
+                        self.perform_undo();
+                    }
+                    let redo_clicked = ui
+                        .add_enabled_ui(!self.redo_stack.is_empty(), |ui| {
+                            icon_only_button(
+                                ui,
+                                UiIcon::Redo,
+                                false,
+                                "Wiederholen / Redo (Strg+Y)",
+                            )
+                        })
+                        .inner
+                        .clicked();
+                    if redo_clicked {
+                        self.perform_redo();
+                    }
+                }
 
-                if ui
-                    .add_enabled(!self.undo_stack.is_empty(), egui::Button::new("↩"))
-                    .on_hover_text("Rückgängig / Undo (Strg+Z)")
-                    .clicked()
-                {
-                    self.perform_undo();
-                }
-                if ui
-                    .add_enabled(!self.redo_stack.is_empty(), egui::Button::new("↪"))
-                    .on_hover_text("Wiederholen / Redo (Strg+Y)")
-                    .clicked()
-                {
-                    self.perform_redo();
-                }
-
-                ui.separator();
-
-                if primary_button(ui, s.menu_export_xlsx).clicked() {
-                    self.export_xlsx();
-                }
-                if ui.button(s.menu_export_csv).clicked() {
-                    self.export_csv();
-                }
-                if ui
-                    .button(s.menu_export_dxf)
-                    .on_hover_text(
-                        "Exportiert alle Klemmleisten maßstabsgetreu (1:1 mm) als eine DXF-Datei für EPLAN Electric P8.",
-                    )
-                    .clicked()
-                {
-                    self.export_dxf();
+                // Group 3: Exports (only when a project with strips is active;
+                // DXF Export strictly ONLY in EPLAN mode!)
+                if has_active_project {
+                    ui.separator();
+                    if primary_icon_button(ui, UiIcon::ExportXlsx, s.menu_export_xlsx).clicked() {
+                        self.export_xlsx();
+                    }
+                    if icon_button(ui, UiIcon::ExportCsv, s.menu_export_csv).clicked() {
+                        self.export_csv();
+                    }
+                    if self.active_tab == ActiveTab::Editor
+                        && self.canvas_state.e_planer_mode
+                        && primary_icon_button(ui, UiIcon::ExportDxf, s.menu_export_dxf)
+                            .on_hover_text(
+                                "Exportiert alle Klemmleisten maßstabsgetreu (1:1 mm) als eine DXF-Datei für EPLAN Electric P8.",
+                            )
+                            .clicked()
+                    {
+                        self.export_dxf();
+                    }
                 }
 
                 if avail_w >= 1120.0 {
@@ -589,7 +650,7 @@ impl eframe::App for TermiGridApp {
         // Bottom Status Bar (never overlapping on narrow screens)
         egui::Panel::bottom("status_bar").show(ui, |ui| {
             let avail_w = ui.available_width();
-            if self.active_tab == ActiveTab::Editor && avail_w >= 1020.0 {
+            if self.active_tab == ActiveTab::Editor && !self.show_welcome && avail_w >= 1020.0 {
                 ui.horizontal(|ui| {
                     let left_max = (avail_w - 580.0).max(160.0);
                     ui.allocate_ui_with_layout(
@@ -825,19 +886,27 @@ impl TermiGridApp {
         let s = strings(self.lang);
         egui::ComboBox::from_id_salt("language_selector")
             .width(combo_width)
-            .selected_text(format!("🌐 {}", self.lang.code()))
+            .selected_text(self.lang.code())
             .show_ui(ui, |ui| {
                 for lang_opt in Language::ALL {
                     ui.selectable_value(&mut self.lang, lang_opt, lang_opt.display_name());
                 }
             });
+        let (lang_icon_r, _) =
+            ui.allocate_exact_size(egui::Vec2::splat(16.0), egui::Sense::hover());
+        draw_icon(
+            ui.painter(),
+            lang_icon_r,
+            UiIcon::Language,
+            secondary_text_color(ui),
+        );
 
-        let theme_btn = match self.theme_mode {
-            ThemeMode::System => format!("◐ {}", s.theme_system),
-            ThemeMode::Light => format!("☀ {}", s.theme_light),
-            ThemeMode::Dark => format!("🌙 {}", s.theme_dark),
+        let (theme_icon, theme_label) = match self.theme_mode {
+            ThemeMode::System => (UiIcon::ThemeSystem, s.theme_system),
+            ThemeMode::Light => (UiIcon::ThemeLight, s.theme_light),
+            ThemeMode::Dark => (UiIcon::ThemeDark, s.theme_dark),
         };
-        if ui.button(theme_btn).clicked() {
+        if icon_button(ui, theme_icon, theme_label).clicked() {
             self.theme_mode = self.theme_mode.next();
             apply_theme_mode(ui.ctx(), self.theme_mode);
         }
@@ -845,9 +914,9 @@ impl TermiGridApp {
         if show_sidebar_toggles && self.active_tab == ActiveTab::Editor && !self.show_welcome {
             ui.separator();
             // Right-to-left layout: paint right icon first, then left icon, so visual order is [Left] [Right]
-            if sidebar_toggle_icon_button(
+            if icon_only_button(
                 ui,
-                false,
+                UiIcon::SidebarRight(self.show_inspector),
                 self.show_inspector,
                 "Rechte Seitenleiste (Eigenschaften) ein-/ausblenden",
             )
@@ -855,9 +924,9 @@ impl TermiGridApp {
             {
                 self.show_inspector = !self.show_inspector;
             }
-            if sidebar_toggle_icon_button(
+            if icon_only_button(
                 ui,
-                true,
+                UiIcon::SidebarLeft(self.show_left_sidebar),
                 self.show_left_sidebar,
                 "Linke Seitenleiste (Klemmleisten) ein-/ausblenden",
             )
@@ -928,7 +997,9 @@ impl TermiGridApp {
 
                             // High-contrast primary actions
                             ui.horizontal_wrapped(|ui| {
-                                if primary_button(ui, s.welcome_new_project).clicked() {
+                                if primary_icon_button(ui, UiIcon::Add, s.welcome_new_project)
+                                    .clicked()
+                                {
                                     self.project.strips.clear();
                                     self.catalog = TerminalCatalog::load_embedded();
                                     self.current_file = None;
@@ -937,7 +1008,13 @@ impl TermiGridApp {
                                     self.selected_end_bracket = None;
                                     self.new_strip_modal.open_for_next_strip(0);
                                 }
-                                if success_button(ui, s.welcome_load_project).clicked() {
+                                if success_icon_button(
+                                    ui,
+                                    UiIcon::FolderOpen,
+                                    s.welcome_load_project,
+                                )
+                                .clicked()
+                                {
                                     self.open_project();
                                 }
                             });
@@ -945,7 +1022,7 @@ impl TermiGridApp {
                             ui.add_space(12.0);
                             ui.separator();
                             ui.add_space(6.0);
-                            if ui.button(s.welcome_demo_project).clicked() {
+                            if icon_button(ui, UiIcon::CadEditor, s.welcome_demo_project).clicked() {
                                 self.project = create_demo_project(&self.catalog);
                                 self.active_strip = 0;
                                 self.selected_blocks.clear();
@@ -969,23 +1046,27 @@ impl TermiGridApp {
             // Smartphone / Folded Cover layout: touch-friendly sub-pane bar
             egui::Panel::bottom("mobile_nav_bar").show(ui, |ui| {
                 ui.add_space(4.0);
-                let tab_w = ((ui.available_width() - 24.0) / 3.0).clamp(80.0, 200.0);
-                ui.horizontal(|ui| {
-                    ui.add_sized(
-                        egui::Vec2::new(tab_w, 36.0),
-                        egui::Button::selectable(
-                            self.mobile_pane == MobilePane::Strips,
-                            s.strips_heading,
-                        ),
+                ui.horizontal_wrapped(|ui| {
+                    if selectable_icon_button(
+                        ui,
+                        self.mobile_pane == MobilePane::Strips,
+                        UiIcon::SidebarLeft(true),
+                        s.strips_heading,
                     )
                     .clicked()
-                    .then(|| self.mobile_pane = MobilePane::Strips);
-                    ui.add_sized(
-                        egui::Vec2::new(tab_w, 36.0),
-                        egui::Button::selectable(self.mobile_pane == MobilePane::Cad, s.tab_editor),
+                    {
+                        self.mobile_pane = MobilePane::Strips;
+                    }
+                    if selectable_icon_button(
+                        ui,
+                        self.mobile_pane == MobilePane::Cad,
+                        UiIcon::CadEditor,
+                        s.tab_editor,
                     )
                     .clicked()
-                    .then(|| self.mobile_pane = MobilePane::Cad);
+                    {
+                        self.mobile_pane = MobilePane::Cad;
+                    }
                     let insp_label = if self.selected_end_bracket.is_some() {
                         format!("{} (EH)", s.inspector_title)
                     } else if self.selected_blocks.is_empty() {
@@ -993,15 +1074,16 @@ impl TermiGridApp {
                     } else {
                         format!("{} ({})", s.inspector_title, self.selected_blocks.len())
                     };
-                    ui.add_sized(
-                        egui::Vec2::new(tab_w, 36.0),
-                        egui::Button::selectable(
-                            self.mobile_pane == MobilePane::Inspector,
-                            insp_label,
-                        ),
+                    if selectable_icon_button(
+                        ui,
+                        self.mobile_pane == MobilePane::Inspector,
+                        UiIcon::Edit,
+                        &insp_label,
                     )
                     .clicked()
-                    .then(|| self.mobile_pane = MobilePane::Inspector);
+                    {
+                        self.mobile_pane = MobilePane::Inspector;
+                    }
                 });
                 ui.add_space(4.0);
             });
@@ -1061,7 +1143,7 @@ impl TermiGridApp {
 
         ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new(s.strips_heading).strong());
-            if success_button(ui, s.btn_new_strip).clicked() {
+            if success_icon_button(ui, UiIcon::Add, s.btn_new_strip).clicked() {
                 self.new_strip_modal
                     .open_for_next_strip(self.project.strips.len());
             }
@@ -1111,7 +1193,7 @@ impl TermiGridApp {
 
         if !self.project.strips.is_empty() {
             ui.add_space(8.0);
-            if danger_button(ui, s.btn_delete_strip).clicked() {
+            if danger_icon_button(ui, UiIcon::Delete, s.btn_delete_strip).clicked() {
                 delete_idx = Some(self.active_strip);
             }
         }
@@ -1167,7 +1249,9 @@ impl TermiGridApp {
                                     .hint_text(s.bridge_new_potential)
                                     .desired_width(110.0),
                             );
-                            if success_button(ui, s.bridge_add_btn).clicked() {
+                            if success_icon_button(ui, UiIcon::Potential, s.bridge_add_btn)
+                                .clicked()
+                            {
                                 let name = if self.new_potential_name.trim().is_empty() {
                                     format!("P{}", strip.potentials.len() + 1)
                                 } else {
@@ -1213,7 +1297,14 @@ impl TermiGridApp {
                                     self.canvas_state.interaction_mode =
                                         CanvasInteractionMode::BridgeAssign;
                                 }
-                                if ui.small_button("×").clicked() {
+                                if icon_only_button(
+                                    ui,
+                                    UiIcon::Close,
+                                    false,
+                                    "Potential entfernen",
+                                )
+                                .clicked()
+                                {
                                     del_pot = Some(pot.id);
                                 }
                             });
@@ -1227,7 +1318,8 @@ impl TermiGridApp {
 
                         if !self.selected_blocks.is_empty()
                             && let Some(active_id) = self.active_potential_id
-                            && ui.button(s.bridge_assign_selected).clicked()
+                            && icon_button(ui, UiIcon::BridgeBar, s.bridge_assign_selected)
+                                .clicked()
                         {
                             for &b_idx in &self.selected_blocks {
                                 strip.toggle_potential_member(active_id, b_idx, 0);
@@ -1471,65 +1563,120 @@ impl TermiGridApp {
 
                         ui.add_space(4.0);
 
-                        if primary_button(ui, s.btn_apply_type).clicked()
+                        let mut pending_install: Option<(PendingInstallAction, String)> = None;
+
+                        if primary_icon_button(ui, UiIcon::Apply, s.btn_apply_type).clicked()
                             && let Some(spec) = self.catalog.find_by_id(&self.inspector_spec_id)
                         {
                             let indices: Vec<usize> =
                                 self.selected_blocks.iter().copied().collect();
-                            self.project.strips[self.active_strip].reassign_blocks(&indices, spec);
+                            if spec.is_installation_or_nt_terminal() {
+                                pending_install = Some((
+                                    PendingInstallAction::ReassignSelection {
+                                        strip_idx: self.active_strip,
+                                        indices,
+                                        spec_id: spec.id.clone(),
+                                    },
+                                    spec.id.clone(),
+                                ));
+                            } else {
+                                self.project.strips[self.active_strip]
+                                    .reassign_blocks(&indices, spec);
+                            }
                         }
 
                         ui.horizontal_wrapped(|ui| {
-                            if ui.button(s.btn_insert_before).clicked()
+                            if icon_button(ui, UiIcon::InsertBefore, s.btn_insert_before).clicked()
                                 && let (Some(&first), Some(spec)) = (
                                     self.selected_blocks.iter().next(),
                                     self.catalog.find_by_id(&self.inspector_spec_id),
                                 )
                             {
-                                self.project.strips[self.active_strip]
-                                    .insert_blocks(first, 1, spec);
-                                self.selected_blocks.clear();
-                                self.selected_blocks.insert(first);
+                                if spec.is_installation_or_nt_terminal() {
+                                    pending_install = Some((
+                                        PendingInstallAction::InsertBlocks {
+                                            strip_idx: self.active_strip,
+                                            at_index: first,
+                                            count: 1,
+                                            spec_id: spec.id.clone(),
+                                            select_inserted: true,
+                                        },
+                                        spec.id.clone(),
+                                    ));
+                                } else {
+                                    self.project.strips[self.active_strip]
+                                        .insert_blocks(first, 1, spec);
+                                    self.selected_blocks.clear();
+                                    self.selected_blocks.insert(first);
+                                }
                             }
-                            if ui.button(s.btn_insert_after).clicked()
+                            if icon_button(ui, UiIcon::InsertAfter, s.btn_insert_after).clicked()
                                 && let (Some(&last), Some(spec)) = (
                                     self.selected_blocks.iter().next_back(),
                                     self.catalog.find_by_id(&self.inspector_spec_id),
                                 )
                             {
-                                self.project.strips[self.active_strip]
-                                    .insert_blocks(last + 1, 1, spec);
-                                self.selected_blocks.clear();
-                                self.selected_blocks.insert(last + 1);
+                                if spec.is_installation_or_nt_terminal() {
+                                    pending_install = Some((
+                                        PendingInstallAction::InsertBlocks {
+                                            strip_idx: self.active_strip,
+                                            at_index: last + 1,
+                                            count: 1,
+                                            spec_id: spec.id.clone(),
+                                            select_inserted: true,
+                                        },
+                                        spec.id.clone(),
+                                    ));
+                                } else {
+                                    self.project.strips[self.active_strip]
+                                        .insert_blocks(last + 1, 1, spec);
+                                    self.selected_blocks.clear();
+                                    self.selected_blocks.insert(last + 1);
+                                }
                             }
                         });
 
+                        if let Some((action, spec_id)) = pending_install
+                            && let Some(spec) = self.catalog.find_by_id(&spec_id)
+                        {
+                            let has_supply = self.strip_has_n_supply(self.active_strip);
+                            self.install_prompt_modal
+                                .open_for_action(action, spec, has_supply);
+                        }
+
                         ui.horizontal_wrapped(|ui| {
-                            if ui
-                                .button("◀")
-                                .on_hover_text("Nach links verschieben (Alt+Links)")
-                                .clicked()
+                            if icon_only_button(
+                                ui,
+                                UiIcon::MoveLeft,
+                                false,
+                                "Nach links verschieben (Alt+Links)",
+                            )
+                            .clicked()
                             {
                                 self.selected_blocks = self.project.strips[self.active_strip]
                                     .move_selected_blocks(&self.selected_blocks, -1);
                             }
-                            if ui
-                                .button("▶")
-                                .on_hover_text("Nach rechts verschieben (Alt+Rechts)")
-                                .clicked()
+                            if icon_only_button(
+                                ui,
+                                UiIcon::MoveRight,
+                                false,
+                                "Nach rechts verschieben (Alt+Rechts)",
+                            )
+                            .clicked()
                             {
                                 self.selected_blocks = self.project.strips[self.active_strip]
                                     .move_selected_blocks(&self.selected_blocks, 1);
                             }
-                            if ui
-                                .button("⧉ Duplizieren")
+                            if icon_button(ui, UiIcon::Duplicate, "Duplizieren")
                                 .on_hover_text("Auswahl klonen (Strg+D)")
                                 .clicked()
                             {
                                 self.selected_blocks = self.project.strips[self.active_strip]
                                     .duplicate_selected_blocks(&self.selected_blocks);
                             }
-                            if danger_button(ui, s.btn_delete_selected).clicked() {
+                            if danger_icon_button(ui, UiIcon::Delete, s.btn_delete_selected)
+                                .clicked()
+                            {
                                 let indices: Vec<usize> =
                                     self.selected_blocks.iter().copied().collect();
                                 self.project.strips[self.active_strip].delete_blocks(&indices);
@@ -1611,6 +1758,7 @@ impl TermiGridApp {
                                     block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
                                 let field_w = (ui.available_width() - 24.0).clamp(90.0, 220.0);
                                 for (t_idx, tier) in block.tiers.iter_mut().enumerate().rev() {
+                                    let tier_title_owned: String;
                                     let tier_title = match (total_tiers, t_idx) {
                                         (1, 0) => s.tier_lower,
                                         (2, 0) => s.tier_lower,
@@ -1618,6 +1766,10 @@ impl TermiGridApp {
                                         (3, 0) => s.tier_lower,
                                         (3, 1) => s.tier_middle,
                                         (3, 2) => s.tier_upper,
+                                        _ if total_tiers > 3 => {
+                                            tier_title_owned = format!("E{}", t_idx + 1);
+                                            tier_title_owned.as_str()
+                                        }
                                         _ => s.tier_middle,
                                     };
                                     let pe_tag = if tier.behavior.is_pe() {
@@ -1653,7 +1805,12 @@ impl TermiGridApp {
                                             needs_recalc = true;
                                         }
                                         if tier.custom_override.is_some()
-                                            && ui.button(s.btn_reset_override).clicked()
+                                            && icon_button(
+                                                ui,
+                                                UiIcon::FlipOrder,
+                                                s.btn_reset_override,
+                                            )
+                                            .clicked()
                                         {
                                             tier.custom_override = None;
                                             needs_recalc = true;
@@ -1712,7 +1869,7 @@ impl TermiGridApp {
                             ui.selectable_value(&mut self.batch_target_row, Some(-1), "PE");
                         });
                         ui.horizontal_wrapped(|ui| {
-                            if primary_button(ui, s.affix_apply).clicked() {
+                            if primary_icon_button(ui, UiIcon::Check, s.affix_apply).clicked() {
                                 let indices: Vec<usize> =
                                     self.selected_blocks.iter().copied().collect();
                                 self.project.strips[self.active_strip]
@@ -1723,7 +1880,7 @@ impl TermiGridApp {
                                         &self.batch_suffix,
                                     );
                             }
-                            if ui.button(s.affix_clear).clicked() {
+                            if icon_button(ui, UiIcon::Clear, s.affix_clear).clicked() {
                                 self.batch_prefix.clear();
                                 self.batch_suffix.clear();
                                 let indices: Vec<usize> =
@@ -1964,49 +2121,53 @@ impl TermiGridApp {
                 );
             }
 
-            ui.add_space(6.0);
-            ui.separator();
-            egui::CollapsingHeader::new(s.export_settings_heading)
-                .default_open(false)
-                .show(ui, |ui| {
-                    ui.label(s.print_order_label);
-                    let order_text = match self.export_options.print_order {
-                        PrintOrder::ByBlockBottomToTop => s.print_order_block_btt,
-                        PrintOrder::ByBlockTopToBottom => s.print_order_block_ttb,
-                        PrintOrder::ByTierStrip => s.print_order_tier_strip,
-                    };
-                    let combo_w = (ui.available_width() - 16.0).clamp(100.0, 280.0);
-                    egui::ComboBox::from_id_salt("print_order_combo")
-                        .width(combo_w)
-                        .truncate()
-                        .selected_text(order_text)
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.export_options.print_order,
-                                PrintOrder::ByBlockBottomToTop,
-                                s.print_order_block_btt,
-                            );
-                            ui.selectable_value(
-                                &mut self.export_options.print_order,
-                                PrintOrder::ByBlockTopToBottom,
-                                s.print_order_block_ttb,
-                            );
-                            ui.selectable_value(
-                                &mut self.export_options.print_order,
-                                PrintOrder::ByTierStrip,
-                                s.print_order_tier_strip,
-                            );
-                        });
+            if !self.canvas_state.e_planer_mode
+                && self.canvas_state.interaction_mode != CanvasInteractionMode::BridgeAssign
+            {
+                ui.add_space(6.0);
+                ui.separator();
+                egui::CollapsingHeader::new(s.export_settings_heading)
+                    .default_open(false)
+                    .show(ui, |ui| {
+                        ui.label(s.print_order_label);
+                        let order_text = match self.export_options.print_order {
+                            PrintOrder::ByBlockBottomToTop => s.print_order_block_btt,
+                            PrintOrder::ByBlockTopToBottom => s.print_order_block_ttb,
+                            PrintOrder::ByTierStrip => s.print_order_tier_strip,
+                        };
+                        let combo_w = (ui.available_width() - 16.0).clamp(100.0, 280.0);
+                        egui::ComboBox::from_id_salt("print_order_combo")
+                            .width(combo_w)
+                            .truncate()
+                            .selected_text(order_text)
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(
+                                    &mut self.export_options.print_order,
+                                    PrintOrder::ByBlockBottomToTop,
+                                    s.print_order_block_btt,
+                                );
+                                ui.selectable_value(
+                                    &mut self.export_options.print_order,
+                                    PrintOrder::ByBlockTopToBottom,
+                                    s.print_order_block_ttb,
+                                );
+                                ui.selectable_value(
+                                    &mut self.export_options.print_order,
+                                    PrintOrder::ByTierStrip,
+                                    s.print_order_tier_strip,
+                                );
+                            });
 
-                    ui.checkbox(
-                        &mut self.export_options.include_pe_labels,
-                        s.include_pe_checkbox,
-                    );
-                    ui.checkbox(
-                        &mut self.export_options.all_strips,
-                        s.export_all_strips_checkbox,
-                    );
-                });
+                        ui.checkbox(
+                            &mut self.export_options.include_pe_labels,
+                            s.include_pe_checkbox,
+                        );
+                        ui.checkbox(
+                            &mut self.export_options.all_strips,
+                            s.export_all_strips_checkbox,
+                        );
+                    });
+            }
         });
     }
 
@@ -2024,29 +2185,41 @@ impl TermiGridApp {
         let mut append_spec_id: Option<String> = None;
 
         ui.horizontal_wrapped(|ui| {
-            // CAD Tool Switcher: Pan/Tap (mobile/touch) vs Box Select vs Bridge Mode
+            // Group 1: CAD Interaction & Drafting Mode Switcher
             #[cfg(any(target_os = "android", target_os = "ios"))]
-            ui.selectable_value(
-                &mut self.canvas_state.interaction_mode,
-                CanvasInteractionMode::Pan,
+            if selectable_icon_button(
+                ui,
+                self.canvas_state.interaction_mode == CanvasInteractionMode::Pan,
+                UiIcon::ModePan,
                 s.mode_pan,
             )
-            .on_hover_text(s.mode_pan_tip);
-            ui.selectable_value(
-                &mut self.canvas_state.interaction_mode,
-                CanvasInteractionMode::SelectBox,
+            .on_hover_text(s.mode_pan_tip)
+            .clicked()
+            {
+                self.canvas_state.interaction_mode = CanvasInteractionMode::Pan;
+            }
+            if selectable_icon_button(
+                ui,
+                self.canvas_state.interaction_mode == CanvasInteractionMode::SelectBox,
+                UiIcon::ModeSelect,
                 s.mode_select,
             )
-            .on_hover_text(s.mode_select_tip);
-            if ui
-                .selectable_value(
-                    &mut self.canvas_state.interaction_mode,
-                    CanvasInteractionMode::BridgeAssign,
-                    s.mode_bridge,
-                )
-                .on_hover_text(s.mode_bridge_tip)
-                .clicked()
+            .on_hover_text(s.mode_select_tip)
+            .clicked()
             {
+                self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
+            }
+            if selectable_icon_button(
+                ui,
+                self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign,
+                UiIcon::ModeBridge,
+                s.mode_bridge,
+            )
+            .on_hover_text(s.mode_bridge_tip)
+            .clicked()
+            {
+                self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
+                self.canvas_state.e_planer_mode = false;
                 self.selected_end_bracket = None;
                 let strip = &mut self.project.strips[self.active_strip];
                 if strip.potentials.is_empty() {
@@ -2056,71 +2229,86 @@ impl TermiGridApp {
                     self.active_potential_id = strip.potentials.first().map(|p| p.id);
                 }
             }
-
-            ui.separator();
-            let strip = &mut self.project.strips[self.active_strip];
-            ui.label(s.strip_start_number);
-            if ui
-                .add(egui::DragValue::new(&mut strip.start_number).range(1..=99999))
-                .changed()
+            if selectable_icon_button(
+                ui,
+                self.canvas_state.e_planer_mode,
+                UiIcon::ModeEplan,
+                s.mode_eplaner,
+            )
+            .on_hover_text(s.mode_eplaner_tip)
+            .clicked()
             {
-                recalc_needed = true;
+                self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
+                if self.canvas_state.e_planer_mode
+                    && self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign
+                {
+                    self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
+                }
             }
 
-            ui.separator();
-            ui.label(s.n_mode_label);
-            let n_text = match strip.neutral_mode {
-                NeutralLabelMode::Fixed => s.n_mode_fixed,
-                NeutralLabelMode::SharedSequenceNumber => s.n_mode_shared_num,
-                NeutralLabelMode::SharedSequenceSuffixN => s.n_mode_shared_n,
-                NeutralLabelMode::SeparateCounterSuffixN => s.n_mode_own_n,
-            };
-            egui::ComboBox::from_id_salt("n_mode_combo")
-                .truncate()
-                .selected_text(n_text)
-                .show_ui(ui, |ui| {
-                    for (mode, lbl) in [
-                        (NeutralLabelMode::Fixed, s.n_mode_fixed),
-                        (NeutralLabelMode::SharedSequenceNumber, s.n_mode_shared_num),
-                        (NeutralLabelMode::SharedSequenceSuffixN, s.n_mode_shared_n),
-                        (NeutralLabelMode::SeparateCounterSuffixN, s.n_mode_own_n),
-                    ] {
-                        if ui.selectable_value(&mut strip.neutral_mode, mode, lbl).changed() {
-                            recalc_needed = true;
-                        }
-                    }
-                });
+            // Group 2: Numbering controls (hidden in BridgeAssign mode where numbering isn't edited)
+            if self.canvas_state.interaction_mode != CanvasInteractionMode::BridgeAssign {
+                ui.separator();
+                let strip = &mut self.project.strips[self.active_strip];
+                ui.label(s.strip_start_number);
+                if ui
+                    .add(egui::DragValue::new(&mut strip.start_number).range(1..=99999))
+                    .changed()
+                {
+                    recalc_needed = true;
+                }
 
-            ui.label(s.pe_mode_label);
-            let pe_text = match strip.pe_mode {
-                PeLabelMode::Fixed => s.pe_mode_fixed,
-                PeLabelMode::SharedSequenceNumber => s.pe_mode_shared_num,
-                PeLabelMode::SharedSequenceSuffixPe => s.pe_mode_shared_pe,
-                PeLabelMode::SeparateCounterSuffixPe => s.pe_mode_own_pe,
-            };
-            egui::ComboBox::from_id_salt("pe_mode_combo")
-                .truncate()
-                .selected_text(pe_text)
-                .show_ui(ui, |ui| {
-                    for (mode, lbl) in [
-                        (PeLabelMode::Fixed, s.pe_mode_fixed),
-                        (PeLabelMode::SharedSequenceNumber, s.pe_mode_shared_num),
-                        (PeLabelMode::SharedSequenceSuffixPe, s.pe_mode_shared_pe),
-                        (PeLabelMode::SeparateCounterSuffixPe, s.pe_mode_own_pe),
-                    ] {
-                        if ui.selectable_value(&mut strip.pe_mode, mode, lbl).changed() {
-                            recalc_needed = true;
+                ui.label(s.n_mode_label);
+                let n_text = match strip.neutral_mode {
+                    NeutralLabelMode::Fixed => s.n_mode_fixed,
+                    NeutralLabelMode::SharedSequenceNumber => s.n_mode_shared_num,
+                    NeutralLabelMode::SharedSequenceSuffixN => s.n_mode_shared_n,
+                    NeutralLabelMode::SeparateCounterSuffixN => s.n_mode_own_n,
+                };
+                egui::ComboBox::from_id_salt("n_mode_combo")
+                    .truncate()
+                    .selected_text(n_text)
+                    .show_ui(ui, |ui| {
+                        for (mode, lbl) in [
+                            (NeutralLabelMode::Fixed, s.n_mode_fixed),
+                            (NeutralLabelMode::SharedSequenceNumber, s.n_mode_shared_num),
+                            (NeutralLabelMode::SharedSequenceSuffixN, s.n_mode_shared_n),
+                            (NeutralLabelMode::SeparateCounterSuffixN, s.n_mode_own_n),
+                        ] {
+                            if ui.selectable_value(&mut strip.neutral_mode, mode, lbl).changed() {
+                                recalc_needed = true;
+                            }
                         }
-                    }
-                });
+                    });
 
+                ui.label(s.pe_mode_label);
+                let pe_text = match strip.pe_mode {
+                    PeLabelMode::Fixed => s.pe_mode_fixed,
+                    PeLabelMode::SharedSequenceNumber => s.pe_mode_shared_num,
+                    PeLabelMode::SharedSequenceSuffixPe => s.pe_mode_shared_pe,
+                    PeLabelMode::SeparateCounterSuffixPe => s.pe_mode_own_pe,
+                };
+                egui::ComboBox::from_id_salt("pe_mode_combo")
+                    .truncate()
+                    .selected_text(pe_text)
+                    .show_ui(ui, |ui| {
+                        for (mode, lbl) in [
+                            (PeLabelMode::Fixed, s.pe_mode_fixed),
+                            (PeLabelMode::SharedSequenceNumber, s.pe_mode_shared_num),
+                            (PeLabelMode::SharedSequenceSuffixPe, s.pe_mode_shared_pe),
+                            (PeLabelMode::SeparateCounterSuffixPe, s.pe_mode_own_pe),
+                        ] {
+                            if ui.selectable_value(&mut strip.pe_mode, mode, lbl).changed() {
+                                recalc_needed = true;
+                            }
+                        }
+                    });
+            }
+
+            // Group 3: View, Zoom & Type display
             ui.separator();
             ui.label(s.zoom_label);
-            if ui
-                .button("−")
-                .on_hover_text("Verkleinern")
-                .clicked()
-            {
+            if icon_only_button(ui, UiIcon::ZoomOut, false, "Verkleinern").clicked() {
                 self.canvas_state.zoom = (self.canvas_state.zoom / 1.15).clamp(0.4, 2.5);
             }
             ui.scope(|ui| {
@@ -2134,11 +2322,7 @@ impl TermiGridApp {
                     egui::Slider::new(&mut self.canvas_state.zoom, 0.4..=2.5).show_value(false),
                 );
             });
-            if ui
-                .button("+")
-                .on_hover_text("Vergrößern")
-                .clicked()
-            {
+            if icon_only_button(ui, UiIcon::ZoomIn, false, "Vergrößern").clicked() {
                 self.canvas_state.zoom = (self.canvas_state.zoom * 1.15).clamp(0.4, 2.5);
             }
             ui.label(
@@ -2146,26 +2330,10 @@ impl TermiGridApp {
                     .monospace()
                     .strong(),
             );
-            if ui.button(format!("↺ {}", s.btn_fit_zoom)).clicked() {
+            if icon_button(ui, UiIcon::ZoomReset, s.btn_fit_zoom).clicked() {
                 self.canvas_state.zoom = 1.0;
             }
 
-            ui.separator();
-            if ui.button(s.btn_select_all).clicked() {
-                self.selected_blocks = (0..strip.blocks.len()).collect();
-                self.selected_end_bracket = None;
-            }
-            if ui.button(s.btn_clear_selection).clicked() {
-                self.selected_blocks.clear();
-                self.selected_end_bracket = None;
-            }
-
-            ui.separator();
-            if success_button(ui, s.btn_append_block).clicked() {
-                append_spec_id = Some(strip.default_spec_id.clone());
-            }
-
-            ui.separator();
             ui.label(s.type_display_label);
             let td_text = match self.canvas_state.type_display {
                 TypeDisplayMode::HorizontalGroups => s.type_display_groups,
@@ -2193,28 +2361,31 @@ impl TermiGridApp {
                     );
                 });
 
+            // Group 4: Strip block selection & append actions
+            let strip = &self.project.strips[self.active_strip];
+            let has_selection =
+                !self.selected_blocks.is_empty() || self.selected_end_bracket.is_some();
             ui.separator();
-            let eplaner_btn = egui::Button::new(s.mode_eplaner)
-                .selected(self.canvas_state.e_planer_mode);
-            if ui
-                .add(eplaner_btn)
-                .on_hover_text(s.mode_eplaner_tip)
-                .clicked()
+            if !strip.blocks.is_empty()
+                && icon_button(ui, UiIcon::SelectAll, s.btn_select_all).clicked()
             {
-                self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
-                if self.canvas_state.e_planer_mode
-                    && self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign
-                {
-                    self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
-                }
+                self.selected_blocks = (0..strip.blocks.len()).collect();
+                self.selected_end_bracket = None;
+            }
+            if has_selection
+                && icon_button(ui, UiIcon::SelectNone, s.btn_clear_selection).clicked()
+            {
+                self.selected_blocks.clear();
+                self.selected_end_bracket = None;
+            }
+            if success_icon_button(ui, UiIcon::Add, s.btn_append_block).clicked() {
+                append_spec_id = Some(strip.default_spec_id.clone());
             }
             if is_compact
-                && (!self.selected_blocks.is_empty() || self.selected_end_bracket.is_some())
+                && has_selection
+                && primary_icon_button(ui, UiIcon::Edit, "Bearbeiten").clicked()
             {
-                ui.separator();
-                if primary_button(ui, "✏ Bearbeiten").clicked() {
-                    self.mobile_pane = MobilePane::Inspector;
-                }
+                self.mobile_pane = MobilePane::Inspector;
             }
         });
 
@@ -2279,7 +2450,11 @@ impl TermiGridApp {
                     if ui.add(btn).clicked() {
                         self.active_potential_id = Some(pot.id);
                     }
-                    if is_active && strip.potentials.len() > 1 && ui.small_button("×").clicked() {
+                    if is_active
+                        && strip.potentials.len() > 1
+                        && icon_only_button(ui, UiIcon::Close, false, "Potential entfernen")
+                            .clicked()
+                    {
                         remove_id = Some(pot.id);
                     }
                 }
@@ -2296,7 +2471,7 @@ impl TermiGridApp {
                         .hint_text(s.bridge_new_potential)
                         .desired_width(110.0),
                 );
-                if success_button(ui, s.bridge_add_btn).clicked() {
+                if success_icon_button(ui, UiIcon::Potential, s.bridge_add_btn).clicked() {
                     let name = if self.new_potential_name.trim().is_empty() {
                         format!("P{}", strip.potentials.len() + 1)
                     } else {
@@ -2465,72 +2640,3 @@ fn draw_virtual_jumper_strip(ui: &mut egui::Ui, seg: &CombJumperSegment) {
         );
     }
 }
-
-/// Renders a crisp, modern vector layout-panel toggle icon (inspired by Antigravity / VS Code)
-/// with a filled left/right sidebar pane slice when `open` is true and an outline when collapsed.
-fn sidebar_toggle_icon_button(
-    ui: &mut egui::Ui,
-    is_left: bool,
-    open: bool,
-    tooltip: &str,
-) -> egui::Response {
-    let size = egui::Vec2::new(26.0, 22.0);
-    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
-    if ui.is_rect_visible(rect) {
-        let hovered = response.hovered();
-        if hovered {
-            ui.painter().rect_filled(
-                rect,
-                egui::CornerRadius::same(4),
-                ui.visuals().widgets.hovered.bg_fill,
-            );
-        }
-
-        let icon_rect = egui::Rect::from_center_size(rect.center(), egui::Vec2::new(16.0, 12.5));
-        let fg = if hovered {
-            ui.visuals().strong_text_color()
-        } else if open {
-            ui.visuals().text_color()
-        } else {
-            secondary_text_color(ui)
-        };
-
-        let split_x = if is_left {
-            icon_rect.min.x + icon_rect.width() * 0.36
-        } else {
-            icon_rect.max.x - icon_rect.width() * 0.36
-        };
-
-        if open {
-            let pane_rect = if is_left {
-                egui::Rect::from_min_max(
-                    icon_rect.min,
-                    egui::Pos2::new(split_x, icon_rect.max.y),
-                )
-            } else {
-                egui::Rect::from_min_max(
-                    egui::Pos2::new(split_x, icon_rect.min.y),
-                    icon_rect.max,
-                )
-            };
-            ui.painter()
-                .rect_filled(pane_rect, egui::CornerRadius::same(1), fg);
-        }
-
-        ui.painter().rect_stroke(
-            icon_rect,
-            egui::CornerRadius::same(2),
-            egui::Stroke::new(1.3, fg),
-            egui::StrokeKind::Inside,
-        );
-        ui.painter().line_segment(
-            [
-                egui::Pos2::new(split_x, icon_rect.min.y + 1.0),
-                egui::Pos2::new(split_x, icon_rect.max.y - 1.0),
-            ],
-            egui::Stroke::new(1.3, fg),
-        );
-    }
-    response.on_hover_text(tooltip)
-}
-

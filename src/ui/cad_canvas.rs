@@ -1428,7 +1428,7 @@ fn draw_terminal_block(
         let vrow = block.tier_visual_row(level);
         let tier_bottom = baseline_bottom_y - (vrow as f32) * (tier_height + tier_gap) - tier_gap;
         let tier_top = tier_bottom - tier_height;
-        let inset = (vrow.max(0) as f32) * 1.2 * zoom;
+        let inset = ((vrow.max(0) as f32) * 1.2 * zoom).min(width * 0.22);
 
         let tier_rect = Rect::from_min_max(
             Pos2::new(x + inset, tier_top),

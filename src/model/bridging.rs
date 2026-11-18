@@ -286,7 +286,23 @@ pub fn calculate_bridges(strip: &TerminalStrip, catalog: &TerminalCatalog) -> Br
                     continue;
                 }
 
-                let max_poles = usize::from(block_metas[run[0].0].max_poles.max(2));
+                let meta0 = &block_metas[run[0].0];
+                if meta0.slots == 0 || meta0.max_poles < 2 {
+                    for win in run.windows(2) {
+                        plan.wire_bridges.push(WireBridge {
+                            potential_id: pot.id,
+                            potential_name: pot.name.clone(),
+                            color_rgb: pot.color_rgb,
+                            from: win[0],
+                            to: win[1],
+                            reason: WireBridgeReason::IncompatiblePitchOrGap,
+                        });
+                    }
+                    components.push(run.iter().map(|&(b, l)| (b, l, vrow)).collect());
+                    continue;
+                }
+
+                let max_poles = usize::from(meta0.max_poles.max(2));
                 let mut seg_cursor = 0usize;
                 let mut current_slot: u8 = find_free_slot(&chamber_owner, &block_metas, pot.id, vrow, run[0].0).unwrap_or(0);
                 let mut active_component: Vec<(usize, usize, isize)> =
@@ -477,7 +493,10 @@ fn find_free_slot(
     vrow: isize,
     b_idx: usize,
 ) -> Option<u8> {
-    let slots = metas[b_idx].slots.max(1);
+    let slots = metas[b_idx].slots;
+    if slots == 0 {
+        return None;
+    }
     for slot in 0..slots {
         match chamber_owner.get(&(b_idx, vrow, slot)) {
             None => return Some(slot),
@@ -510,6 +529,9 @@ fn can_comb_span(
     }
 
     for mid in from_b..=to_b {
+        if metas[mid].slots == 0 || metas[mid].max_poles < 2 {
+            return false;
+        }
         if mid < to_b
             && (end_plate_after.contains(&mid)
                 || metas[mid].end_plate_key != metas[mid + 1].end_plate_key)
@@ -674,5 +696,31 @@ mod tests {
         assert_eq!(plan.wire_bridges[0].from, (1, 1));
         assert_eq!(plan.wire_bridges[0].to, (2, 0));
         assert_eq!(plan.wire_bridges[0].reason, WireBridgeReason::EndPlateBarrier);
+    }
+
+    #[test]
+    fn zero_slot_terminals_never_produce_comb_jumpers_only_wire_bridges() {
+        let catalog = TerminalCatalog::load_embedded();
+        let ptrv = catalog.find_by_id("phoenix-ptrv-4-whrd").unwrap();
+        let uslkg = catalog.find_by_id("phoenix-uslkg-5").unwrap();
+        assert_eq!(ptrv.effective_jumper_slots(), 0);
+        assert_eq!(uslkg.effective_jumper_slots(), 0);
+
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 8, 2, ptrv);
+        let pot = strip.add_potential("SIG", POTENTIAL_PALETTE[0]);
+        strip.toggle_potential_member(pot, 0, 0);
+        strip.toggle_potential_member(pot, 1, 0);
+
+        let plan = calculate_bridges(&strip, &catalog);
+        assert!(plan.comb_segments.is_empty());
+        assert_eq!(plan.wire_bridges.len(), 1);
+
+        let mut pe_strip = TerminalStrip::generate_with_block_count("-X2", 1, 2, 2, uslkg);
+        let pe_pot = pe_strip.add_potential("PE", POTENTIAL_PALETTE[4]);
+        pe_strip.toggle_potential_member(pe_pot, 0, 0);
+        pe_strip.toggle_potential_member(pe_pot, 1, 0);
+        let pe_plan = calculate_bridges(&pe_strip, &catalog);
+        assert!(pe_plan.comb_segments.is_empty());
+        assert_eq!(pe_plan.wire_bridges.len(), 1);
     }
 }

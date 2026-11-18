@@ -4,6 +4,10 @@ use crate::catalog::accessories::all_end_brackets;
 use crate::catalog::{TerminalCatalog, TerminalSpec, TierSpec};
 use crate::i18n::{Language, Strings};
 use crate::model::{NumberingOrder, TierBehavior, TierColor};
+use crate::ui::icons::{
+    draw_icon, icon_button, icon_only_button, primary_icon_button, show_responsive_modal,
+    success_icon_button, UiIcon,
+};
 use crate::ui::logos::{logo_filter_button, show_logo_badge, BrandLogos};
 use crate::ui::theme::secondary_text_color;
 use crate::ui::updater::{
@@ -69,7 +73,7 @@ pub fn show_guide_tab(ui: &mut Ui, updater: &UpdateChecker, strings: &Strings) {
                     ui.set_min_width(ui.available_width().min(860.0));
                     ui.label(egui::RichText::new(*title).strong().size(16.0));
                     ui.add_space(4.0);
-                    ui.label(*body);
+                    ui.add(egui::Label::new(*body).wrap());
                 });
             ui.add_space(8.0);
         }
@@ -84,48 +88,32 @@ pub fn show_guide_tab(ui: &mut Ui, updater: &UpdateChecker, strings: &Strings) {
     });
 }
 
-/// Renders the dedicated Info & Open-Source Licenses modal dialog (`ℹ Info`), available in all builds
-/// (Windows, macOS, Android).
+/// Renders the dedicated Info & Open-Source Licenses modal dialog, available in all builds
+/// (Windows, macOS, Android) with responsive viewport clamping and sticky header/footer.
 pub fn show_about_modal(
     ctx: &egui::Context,
     open: &mut bool,
     updater: &UpdateChecker,
     strings: &Strings,
 ) {
-    if !*open {
-        return;
-    }
-
-    let screen_size = ctx.content_rect().size();
-    let max_w = (screen_size.x - 24.0).max(280.0);
-    let max_h = (screen_size.y - 40.0).max(240.0);
-    let target_w = 560.0_f32.min(max_w);
-
-    let mut close_clicked = false;
-    egui::Window::new("ℹ Über TermiGrid – Info & Lizenzen")
-        .open(open)
-        .collapsible(false)
-        .resizable(true)
-        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-        .default_width(target_w)
-        .min_width(300.0_f32.min(max_w))
-        .max_width(max_w)
-        .max_height(max_h)
-        .show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                show_about_license_contents(ui, updater, strings, true);
-                ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    if crate::ui::theme::primary_button(ui, "Schließen / Close").clicked() {
-                        close_clicked = true;
-                    }
-                });
-            });
-        });
-
-    if close_clicked {
-        *open = false;
-    }
+    let mut unit = ();
+    show_responsive_modal(
+        ctx,
+        "about_termi_modal",
+        UiIcon::Info,
+        "Über TermiGrid – Info & Lizenzen",
+        580.0,
+        open,
+        &mut unit,
+        |ui, ()| {
+            show_about_license_contents(ui, updater, strings, true);
+        },
+        |ui, (), close_requested| {
+            if primary_icon_button(ui, UiIcon::Close, "Schließen / Close").clicked() {
+                *close_requested = true;
+            }
+        },
+    );
 }
 
 fn show_about_license_contents(
@@ -169,13 +157,13 @@ fn show_about_license_contents(
 
     ui.add_space(6.0);
     ui.horizontal_wrapped(|ui| {
-        if ui.button(strings.btn_github).clicked() {
+        if icon_button(ui, UiIcon::GitHub, strings.btn_github).clicked() {
             open_external_url(ui.ctx(), GITHUB_REPO_URL);
         }
-        if ui.button(strings.btn_coffee).clicked() {
+        if icon_button(ui, UiIcon::Coffee, strings.btn_coffee).clicked() {
             open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
         }
-        if ui.button(strings.btn_check_update).clicked() {
+        if icon_button(ui, UiIcon::RefreshCheck, strings.btn_check_update).clicked() {
             updater.check_async(ui.ctx().clone());
         }
 
@@ -185,7 +173,17 @@ fn show_about_license_contents(
                 ui.label(strings.update_checking);
             }
             UpdateStatus::UpToDate(tag) => {
-                ui.label(format!("✓ {} ({tag})", strings.update_up_to_date));
+                ui.horizontal(|ui| {
+                    let (cr, _) =
+                        ui.allocate_exact_size(egui::Vec2::splat(14.0), egui::Sense::hover());
+                    draw_icon(
+                        ui.painter(),
+                        cr,
+                        UiIcon::Check,
+                        egui::Color32::from_rgb(22, 163, 74),
+                    );
+                    ui.label(format!("{} ({tag})", strings.update_up_to_date));
+                });
             }
             UpdateStatus::UpdateAvailable {
                 latest_tag,
@@ -195,7 +193,9 @@ fn show_about_license_contents(
                     egui::RichText::new(format!("{}: {latest_tag}", strings.update_available))
                         .strong(),
                 );
-                if ui.button(strings.update_open_release).clicked() {
+                if primary_icon_button(ui, UiIcon::DownloadUpdate, strings.update_open_release)
+                    .clicked()
+                {
                     open_external_url(ui.ctx(), &release_url);
                 }
             }
@@ -306,11 +306,18 @@ pub fn show_database_tab(
     egui::CollapsingHeader::new(strings.custom_spec_heading)
         .default_open(false)
         .show(ui, |ui| {
+            let form_w = ui.available_width();
             ui.horizontal_wrapped(|ui| {
                 ui.label(strings.db_col_manufacturer);
-                ui.add(egui::TextEdit::singleline(&mut draft.manufacturer).desired_width(130.0));
+                ui.add(
+                    egui::TextEdit::singleline(&mut draft.manufacturer)
+                        .desired_width((form_w * 0.22).clamp(90.0, 140.0)),
+                );
                 ui.label(strings.db_col_name);
-                ui.add(egui::TextEdit::singleline(&mut draft.name).desired_width(170.0));
+                ui.add(
+                    egui::TextEdit::singleline(&mut draft.name)
+                        .desired_width((form_w * 0.28).clamp(110.0, 180.0)),
+                );
                 ui.label(strings.db_col_width);
                 ui.add(
                     egui::DragValue::new(&mut draft.width_mm)
@@ -327,7 +334,7 @@ pub fn show_database_tab(
 
             ui.add_space(4.0);
             for lvl in 0..draft.levels {
-                ui.horizontal(|ui| {
+                ui.horizontal_wrapped(|ui| {
                     ui.label(format!("E{}:", lvl + 1));
                     ui.selectable_value(
                         &mut draft.tier_kinds[lvl],
@@ -353,7 +360,9 @@ pub fn show_database_tab(
                 });
             }
 
-            if ui.button(strings.custom_spec_add).clicked() && !draft.name.trim().is_empty() {
+            if success_icon_button(ui, UiIcon::Add, strings.custom_spec_add).clicked()
+                && !draft.name.trim().is_empty()
+            {
                 let tiers: Vec<TierSpec> = (0..draft.levels)
                     .map(|lvl| match draft.tier_kinds[lvl] {
                         CustomTierKind::Sequential => TierSpec {
@@ -418,6 +427,9 @@ pub fn show_database_tab(
         });
 
     ui.add_space(6.0);
+    let q = search_query.trim().to_lowercase();
+    let global_active = !q.is_empty();
+
     ui.horizontal_wrapped(|ui| {
         ui.label(strings.filter_manufacturer);
         if ui
@@ -434,64 +446,91 @@ pub fn show_database_tab(
         }
 
         ui.add_space(8.0);
+        let search_w = (ui.available_width() - 56.0).clamp(130.0, 260.0);
+        let (sr, _) = ui.allocate_exact_size(egui::Vec2::splat(16.0), egui::Sense::hover());
+        draw_icon(ui.painter(), sr, UiIcon::Search, secondary_text_color(ui));
         ui.add(
             egui::TextEdit::singleline(search_query)
                 .hint_text(strings.search_hint)
-                .desired_width(240.0),
+                .desired_width(search_w),
         );
+        if !search_query.is_empty()
+            && icon_only_button(ui, UiIcon::Clear, false, "Suche leeren").clicked()
+        {
+            search_query.clear();
+        }
+        if global_active && mfg_filter.is_some() {
+            ui.label(
+                egui::RichText::new("Globale Suche (alle Hersteller)")
+                    .color(egui::Color32::from_rgb(14, 165, 233))
+                    .small()
+                    .strong(),
+            );
+        }
     });
     ui.add_space(8.0);
 
-    let q = search_query.trim().to_lowercase();
     let all_eb = all_end_brackets();
     egui::CollapsingHeader::new(format!("{} ({})", strings.end_bracket_db_heading, all_eb.len()))
         .default_open(false)
         .show(ui, |ui| {
-            egui::Grid::new("end_bracket_db_grid")
-                .striped(true)
-                .spacing([14.0, 6.0])
+            egui::ScrollArea::horizontal()
+                .id_salt("end_bracket_db_hscroll")
                 .show(ui, |ui| {
-                    ui.strong(strings.db_col_manufacturer);
-                    ui.strong(strings.db_col_name);
-                    ui.strong("Art.-Nr.");
-                    ui.strong(strings.db_col_width);
-                    ui.strong(strings.db_col_height);
-                    ui.strong(strings.db_col_desc);
-                    ui.strong("");
-                    ui.end_row();
+                    egui::Grid::new("end_bracket_db_grid")
+                        .striped(true)
+                        .spacing([14.0, 6.0])
+                        .show(ui, |ui| {
+                            ui.strong(strings.db_col_manufacturer);
+                            ui.strong(strings.db_col_name);
+                            ui.strong("Art.-Nr.");
+                            ui.strong(strings.db_col_width);
+                            ui.strong(strings.db_col_height);
+                            ui.strong(strings.db_col_desc);
+                            ui.strong("");
+                            ui.end_row();
 
-                    for eb in all_eb {
-                        let mfg_ok = mfg_filter
-                            .as_deref()
-                            .is_none_or(|m| eb.manufacturer == m);
-                        let q_ok = q.is_empty()
-                            || eb.name.to_lowercase().contains(&q)
-                            || eb.manufacturer.to_lowercase().contains(&q)
-                            || eb.article_number.to_lowercase().contains(&q)
-                            || eb.mounting_de.to_lowercase().contains(&q)
-                            || eb.mounting_en.to_lowercase().contains(&q);
-                        if !mfg_ok || !q_ok {
-                            continue;
-                        }
-                        show_logo_badge(ui, logos, eb.manufacturer, 18.0);
-                        ui.label(eb.name);
-                        ui.monospace(eb.article_number);
-                        ui.label(format!("{:.1} mm", f32::from(eb.width_tenths_mm) / 10.0));
-                        ui.label(format!("{:.1} mm", f32::from(eb.height_tenths_mm) / 10.0));
-                        let desc = match lang {
-                            Language::De => eb.mounting_de,
-                            _ => eb.mounting_en,
-                        };
-                        ui.label(desc);
-                        if ui.small_button("Web ↗").clicked() {
-                            open_external_url(ui.ctx(), eb.product_url);
-                        }
-                        ui.end_row();
-                    }
+                            for eb in all_eb {
+                                let mfg_ok = global_active
+                                    || mfg_filter
+                                        .as_deref()
+                                        .is_none_or(|m| eb.manufacturer == m);
+                                let q_ok = q.is_empty()
+                                    || eb.name.to_lowercase().contains(&q)
+                                    || eb.manufacturer.to_lowercase().contains(&q)
+                                    || eb.article_number.to_lowercase().contains(&q)
+                                    || eb.mounting_de.to_lowercase().contains(&q)
+                                    || eb.mounting_en.to_lowercase().contains(&q);
+                                if !mfg_ok || !q_ok {
+                                    continue;
+                                }
+                                show_logo_badge(ui, logos, eb.manufacturer, 18.0);
+                                ui.label(eb.name);
+                                ui.monospace(eb.article_number);
+                                ui.label(format!(
+                                    "{:.1} mm",
+                                    f32::from(eb.width_tenths_mm) / 10.0
+                                ));
+                                ui.label(format!(
+                                    "{:.1} mm",
+                                    f32::from(eb.height_tenths_mm) / 10.0
+                                ));
+                                let desc = match lang {
+                                    Language::De => eb.mounting_de,
+                                    _ => eb.mounting_en,
+                                };
+                                ui.label(desc);
+                                if icon_button(ui, UiIcon::ExternalLink, "Web").clicked() {
+                                    open_external_url(ui.ctx(), eb.product_url);
+                                }
+                                ui.end_row();
+                            }
+                        });
                 });
         });
     ui.add_space(4.0);
 
+    let filtered_specs = catalog.filter_specs(mfg_filter.as_deref(), search_query);
     egui::ScrollArea::both().show(ui, |ui| {
         egui::Grid::new("terminal_db_grid")
             .striped(true)
@@ -509,24 +548,7 @@ pub fn show_database_tab(
                 ui.strong("");
                 ui.end_row();
 
-                for spec in catalog.all() {
-                    let mfg_ok = mfg_filter
-                        .as_deref()
-                        .is_none_or(|m| spec.manufacturer == m);
-                    let q_ok = q.is_empty()
-                        || spec.name.to_lowercase().contains(&q)
-                        || spec.manufacturer.to_lowercase().contains(&q)
-                        || spec.series.to_lowercase().contains(&q)
-                        || spec.pattern_summary().to_lowercase().contains(&q)
-                        || spec.description_de.to_lowercase().contains(&q)
-                        || spec.description_en.to_lowercase().contains(&q)
-                        || spec
-                            .effective_article_number()
-                            .is_some_and(|a| a.to_lowercase().contains(&q));
-                    if !mfg_ok || !q_ok {
-                        continue;
-                    }
-
+                for spec in filtered_specs {
                     show_logo_badge(ui, logos, &spec.manufacturer, 18.0);
                     ui.label(&spec.name);
                     ui.label(spec.levels.to_string());
@@ -544,7 +566,7 @@ pub fn show_database_tab(
                         _ => &spec.description_en,
                     };
                     ui.label(desc);
-                    if ui.small_button("Web ↗").clicked() {
+                    if icon_button(ui, UiIcon::ExternalLink, "Web").clicked() {
                         open_external_url(ui.ctx(), &spec.effective_product_url());
                     }
                     ui.end_row();
