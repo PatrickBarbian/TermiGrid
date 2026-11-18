@@ -1,4 +1,5 @@
 pub mod bridging;
+pub mod library;
 pub mod numbering;
 
 use serde::{Deserialize, Serialize};

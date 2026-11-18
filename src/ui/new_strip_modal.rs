@@ -554,7 +554,7 @@ pub enum PendingInstallAction {
     },
 }
 
-/// State of the interactive prompt for NT / 2003 / 2203 / 2005 / 2205 installation terminals.
+/// State of the interactive prompt for NT / 2003 / 2203 / 2005 / 2205 / PTI / AITB installation terminals.
 #[derive(Debug, Clone)]
 pub struct InstallPromptDialogState {
     pub open: bool,
@@ -564,6 +564,11 @@ pub struct InstallPromptDialogState {
     pub supply_placement: InstallSupplyPlacement,
     pub supply_spec_id: String,
     pub strip_already_has_supply: bool,
+    pub add_outer_busbar_carriers: bool,
+    pub outer_carrier_spec_id: String,
+    pub add_intermediate_busbar_supports: bool,
+    pub intermediate_support_spec_id: String,
+    pub strip_already_has_carriers: bool,
 }
 
 impl Default for InstallPromptDialogState {
@@ -576,6 +581,11 @@ impl Default for InstallPromptDialogState {
             supply_placement: InstallSupplyPlacement::BeforeGroup,
             supply_spec_id: "wago-2016-7714".to_string(),
             strip_already_has_supply: false,
+            add_outer_busbar_carriers: true,
+            outer_carrier_spec_id: "wago-2009-305".to_string(),
+            add_intermediate_busbar_supports: true,
+            intermediate_support_spec_id: "wago-2009-304".to_string(),
+            strip_already_has_carriers: false,
         }
     }
 }
@@ -586,6 +596,7 @@ impl InstallPromptDialogState {
         action: PendingInstallAction,
         spec: &crate::catalog::TerminalSpec,
         strip_already_has_supply: bool,
+        strip_already_has_carriers: bool,
     ) {
         self.open = true;
         self.action = Some(action);
@@ -598,21 +609,40 @@ impl InstallPromptDialogState {
         };
         self.supply_spec_id = spec.recommended_n_supply_spec_id().to_string();
         self.strip_already_has_supply = strip_already_has_supply;
+        self.strip_already_has_carriers = strip_already_has_carriers;
+
+        if let Some(outer_id) = spec.recommended_outer_busbar_carrier_spec_id() {
+            self.outer_carrier_spec_id = outer_id.to_string();
+            self.add_outer_busbar_carriers = !strip_already_has_carriers;
+        } else {
+            self.outer_carrier_spec_id.clear();
+            self.add_outer_busbar_carriers = false;
+        }
+        if let Some(support_id) = spec.recommended_intermediate_busbar_support_spec_id() {
+            self.intermediate_support_spec_id = support_id.to_string();
+            self.add_intermediate_busbar_supports = true;
+        } else {
+            self.intermediate_support_spec_id.clear();
+            self.add_intermediate_busbar_supports = false;
+        }
     }
 }
 
-/// Confirmed choice from the NT & N-Einspeiseklemme modal dialog.
+/// Confirmed choice from the NT, N-Einspeiseklemme & Sammelschienenträger modal dialog.
 #[derive(Debug, Clone)]
 pub struct InstallPromptResolution {
     pub action: PendingInstallAction,
     pub effective_spec_id: String,
     pub supply_placement: InstallSupplyPlacement,
     pub supply_spec_id: String,
+    pub outer_carrier_spec_id: Option<String>,
+    pub intermediate_support_spec_id: Option<String>,
 }
 
-/// Renders the interactive confirmation dialog asking whether an NT disconnect terminal
-/// and/or a matching N-supply terminal (`2016-7714`, `2216-7714`, `PTI 16-NLS-FI BU`, `AITB 16 BB NDT BL`)
-/// should be placed when using WAGO `2003` / `2203` / `2005` / `2205` or NT installation terminals.
+/// Renders the interactive confirmation dialog asking whether an NT disconnect terminal,
+/// matching N-supply terminal (`2016-7714`, `2216-7714`, `PTI 16-NLS-FI BU`, `AITB 16 BB NDT BL`),
+/// and N-busbar carriers (`2009-305`, `2009-304` every 200 mm, Phoenix `AB-*` Auflagebock, Weidmüller `AEB ITB`)
+/// should be placed when using WAGO `2003`/`2203`/`2005`/`2205`, Phoenix `PTI`/`UTI`/`STI`, or NT terminals.
 #[allow(clippy::too_many_arguments)]
 pub fn show_install_supply_prompt_modal(
     ctx: &Context,
@@ -643,15 +673,15 @@ pub fn show_install_supply_prompt_modal(
         ctx,
         "install_supply_prompt_modal",
         UiIcon::Bolt,
-        "Installations- / NT-Klemme & N-Einspeiseklemme",
-        580.0,
+        "Installations- / NT-Klemme, N-Einspeisung & Sammelschienenträger",
+        600.0,
         &mut open,
         state,
         |ui, state| {
             ui.add(
                 egui::Label::new(
                     egui::RichText::new(
-                        "Für Installationsklemmen (Serie 2003 / 2203 / 2005 / 2205 / PTI / AITB) und NT-Klemmen bitte Ausführung und N-Einspeiseklemme wählen:",
+                        "Für Installationsklemmen (Serie 2003 / 2203 / 2005 / 2205 / PTI / UTI / STI / AITB) und NT-Klemmen bitte Ausführung, N-Einspeiseklemme und Sammelschienenträger (Auflagebock) wählen:",
                     )
                     .color(secondary_text_color(ui)),
                 )
@@ -817,7 +847,7 @@ pub fn show_install_supply_prompt_modal(
                         .unwrap_or_else(|| state.supply_spec_id.clone());
 
                     ui.label("Auswahl N-Einspeiseklemme:");
-                    let combo_w = (ui.available_width() - 12.0).clamp(140.0, 420.0);
+                    let combo_w = (ui.available_width() - 12.0).clamp(140.0, 440.0);
                     egui::ComboBox::from_id_salt("install_supply_spec_combo")
                         .width(combo_w)
                         .truncate()
@@ -855,6 +885,172 @@ pub fn show_install_supply_prompt_modal(
                     }
                 }
             });
+
+            // 3. Sammelschienenträger / Auflagebock (N-Sammelschiene 10×3 mm)
+            let active_spec = if state.use_nt_variant
+                && let Some(nt_spec) = matching_nt
+            {
+                nt_spec
+            } else {
+                base_spec
+            };
+            let compat_carriers = active_spec.compatible_busbar_carrier_spec_ids();
+            if !compat_carriers.is_empty() {
+                ui.add_space(6.0);
+                ui.group(|ui| {
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new(
+                                "3. Sammelschienenträger / Auflagebock (N-Sammelschiene 10×3 mm)",
+                            )
+                            .strong(),
+                        )
+                        .wrap(),
+                    );
+                    if state.strip_already_has_carriers {
+                        ui.add(
+                            egui::Label::new(
+                                egui::RichText::new(
+                                    "Hinweis: In dieser Klemmleiste sind bereits Sammelschienenträger / Auflageböcke platziert.",
+                                )
+                                .color(secondary_text_color(ui))
+                                .small(),
+                            )
+                            .wrap(),
+                        );
+                    }
+                    ui.add_space(2.0);
+
+                    if !compat_carriers.contains(&state.outer_carrier_spec_id.as_str())
+                        && let Some(rec) = active_spec.recommended_outer_busbar_carrier_spec_id()
+                    {
+                        state.outer_carrier_spec_id = rec.to_string();
+                    }
+                    if !compat_carriers.contains(&state.intermediate_support_spec_id.as_str())
+                        && let Some(rec) = active_spec.recommended_intermediate_busbar_support_spec_id()
+                    {
+                        state.intermediate_support_spec_id = rec.to_string();
+                    }
+
+                    ui.checkbox(
+                        &mut state.add_outer_busbar_carriers,
+                        "Äußere Sammelschienenträger / Auflageböcke vor N-Einspeiseklemme & nach letzter Klemme setzen",
+                    );
+
+                    if state.add_outer_busbar_carriers {
+                        let selected_outer = catalog.find_by_id(&state.outer_carrier_spec_id);
+                        let selected_outer_text = selected_outer
+                            .map(|s| {
+                                format!(
+                                    "{} {} (Art. {}, {:.1} mm)",
+                                    s.manufacturer,
+                                    s.name,
+                                    s.effective_article_number().unwrap_or("—"),
+                                    f32::from(s.width_tenths_mm) / 10.0
+                                )
+                            })
+                            .unwrap_or_else(|| state.outer_carrier_spec_id.clone());
+
+                        let combo_w = (ui.available_width() - 12.0).clamp(140.0, 440.0);
+                        egui::ComboBox::from_id_salt("install_outer_carrier_combo")
+                            .width(combo_w)
+                            .truncate()
+                            .selected_text(selected_outer_text)
+                            .show_ui(ui, |ui| {
+                                for &cid in compat_carriers {
+                                    if let Some(cspec) = catalog.find_by_id(cid) {
+                                        let label = format!(
+                                            "{} {} (Art. {}, {:.1} mm)",
+                                            cspec.manufacturer,
+                                            cspec.name,
+                                            cspec.effective_article_number().unwrap_or("—"),
+                                            f32::from(cspec.width_tenths_mm) / 10.0
+                                        );
+                                        ui.selectable_value(
+                                            &mut state.outer_carrier_spec_id,
+                                            cspec.id.clone(),
+                                            label,
+                                        );
+                                    }
+                                }
+                            });
+
+                        if let Some(car_spec) = catalog.find_by_id(&state.outer_carrier_spec_id) {
+                            ui.add_space(4.0);
+                            show_product_preview_card(
+                                ui,
+                                car_spec,
+                                logos,
+                                media_cache,
+                                strings.open_product_page,
+                                strings.bridge_chambers_unit,
+                                strings.height_label,
+                            );
+                        }
+                    }
+
+                    ui.add_space(4.0);
+                    ui.checkbox(
+                        &mut state.add_intermediate_busbar_supports,
+                        "Bei langen Klemmenreihen automatisch alle 200 mm Zwischenstütze einfügen",
+                    );
+
+                    if state.add_intermediate_busbar_supports {
+                        let selected_mid = catalog.find_by_id(&state.intermediate_support_spec_id);
+                        let selected_mid_text = selected_mid
+                            .map(|s| {
+                                format!(
+                                    "{} {} (Art. {}, {:.1} mm)",
+                                    s.manufacturer,
+                                    s.name,
+                                    s.effective_article_number().unwrap_or("—"),
+                                    f32::from(s.width_tenths_mm) / 10.0
+                                )
+                            })
+                            .unwrap_or_else(|| state.intermediate_support_spec_id.clone());
+
+                        let combo_w = (ui.available_width() - 12.0).clamp(140.0, 440.0);
+                        egui::ComboBox::from_id_salt("install_mid_support_combo")
+                            .width(combo_w)
+                            .truncate()
+                            .selected_text(selected_mid_text)
+                            .show_ui(ui, |ui| {
+                                for &cid in compat_carriers {
+                                    if let Some(cspec) = catalog.find_by_id(cid) {
+                                        let label = format!(
+                                            "{} {} (Art. {}, {:.1} mm)",
+                                            cspec.manufacturer,
+                                            cspec.name,
+                                            cspec.effective_article_number().unwrap_or("—"),
+                                            f32::from(cspec.width_tenths_mm) / 10.0
+                                        );
+                                        ui.selectable_value(
+                                            &mut state.intermediate_support_spec_id,
+                                            cspec.id.clone(),
+                                            label,
+                                        );
+                                    }
+                                }
+                            });
+
+                        if let Some(mid_spec) = catalog.find_by_id(&state.intermediate_support_spec_id)
+                            && (!state.add_outer_busbar_carriers
+                                || mid_spec.id != state.outer_carrier_spec_id)
+                        {
+                            ui.add_space(4.0);
+                            show_product_preview_card(
+                                ui,
+                                mid_spec,
+                                logos,
+                                media_cache,
+                                strings.open_product_page,
+                                strings.bridge_chambers_unit,
+                                strings.height_label,
+                            );
+                        }
+                    }
+                });
+            }
         },
         |ui, state, close_requested| {
             let final_spec = if state.use_nt_variant
@@ -872,6 +1068,14 @@ pub fn show_install_supply_prompt_modal(
                     effective_spec_id: final_spec.id.clone(),
                     supply_placement: state.supply_placement,
                     supply_spec_id: state.supply_spec_id.clone(),
+                    outer_carrier_spec_id: state
+                        .add_outer_busbar_carriers
+                        .then(|| state.outer_carrier_spec_id.clone())
+                        .filter(|s| !s.is_empty()),
+                    intermediate_support_spec_id: state
+                        .add_intermediate_busbar_supports
+                        .then(|| state.intermediate_support_spec_id.clone())
+                        .filter(|s| !s.is_empty()),
                 });
                 *close_requested = true;
             }

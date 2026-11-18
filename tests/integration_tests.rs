@@ -483,4 +483,232 @@ fn multi_level_pe_alignment_and_export_handles_pure_and_hybrid_pe() {
     let _ = std::fs::remove_file(&out_path);
 }
 
+#[test]
+fn strip_library_preserves_custom_specs_potentials_and_avoids_name_collisions() {
+    use termigrid_core::catalog::{TerminalSpec, TierSpec};
+    use termigrid_core::model::library::{
+        instantiate_strip_from_template, merge_template_custom_specs, StripLibrary,
+    };
+    use termigrid_core::model::{NumberingOrder, TierBehavior, TierColor};
+
+    let custom_spec = TerminalSpec {
+        id: "custom-test-ab1".to_string(),
+        name: "Test-Klemme 4mm".to_string(),
+        manufacturer: "Custom".to_string(),
+        series: "Eigene".to_string(),
+        levels: 2,
+        width_tenths_mm: 62,
+        numbering_order: NumberingOrder::BottomToTop,
+        description_de: "Benutzerdefinierte Testklemme".to_string(),
+        description_en: "Custom test terminal".to_string(),
+        tiers: vec![
+            TierSpec {
+                behavior: TierBehavior::Sequential,
+                color: TierColor::StandardGray,
+            },
+            TierSpec {
+                behavior: TierBehavior::ProtectiveEarth,
+                color: TierColor::GreenYellowPe,
+            },
+        ],
+        accessories: None,
+        jumper_slots_per_tier: Some(1),
+        max_jumper_poles: Some(10),
+        article_number: Some("9990001".to_string()),
+        product_url: None,
+        image_url: None,
+        height_tenths_mm: None,
+        rail_offset_tenths_mm: None,
+    };
+
+    let mut catalog = TerminalCatalog::load_embedded();
+    catalog.reload_with_custom(std::slice::from_ref(&custom_spec));
+
+    let mut strip = TerminalStrip::generate_with_block_count("-X1", 10, 15, 3, &custom_spec);
+    strip.description = "Antriebsgruppe A".to_string();
+    let p_id = strip.add_potential("+24V_DRV", [14, 165, 233]);
+    strip.toggle_potential_member(p_id, 0, 0);
+    strip.toggle_potential_member(p_id, 1, 0);
+
+    let mut lib = StripLibrary::default();
+    let tpl_id = lib.save_template(
+        "Antriebs-Vorlage",
+        "Motorabgang mit Custom-Klemme",
+        &strip,
+        std::slice::from_ref(&custom_spec),
+        None,
+    );
+
+    let tpl = lib.find_by_id(&tpl_id).unwrap();
+    assert_eq!(tpl.custom_specs.len(), 1);
+    assert_eq!(tpl.custom_specs[0].id, "custom-test-ab1");
+
+    // Simulate loading into a fresh project that already has -X1 and no custom specs yet
+    let mut fresh_project = Project::default();
+    fresh_project.strips.push(strip);
+    assert!(merge_template_custom_specs(tpl, &mut fresh_project.custom_specs));
+    assert!(!merge_template_custom_specs(tpl, &mut fresh_project.custom_specs));
+    assert_eq!(fresh_project.custom_specs.len(), 1);
+
+    let cloned_strip = instantiate_strip_from_template(tpl, None, &fresh_project.strips);
+    assert_eq!(cloned_strip.name, "-X2");
+    assert_eq!(cloned_strip.blocks.len(), 3);
+    assert_eq!(cloned_strip.potentials.len(), 1);
+    assert_eq!(cloned_strip.blocks[0].tiers[0].computed_label, "10");
+}
+
+#[test]
+fn busbar_carriers_frame_install_group_and_support_every_200_mm() {
+    use termigrid_core::catalog::accessories::calculate_end_plates;
+    use termigrid_core::model::numbering::{apply_n_busbar_carriers_around, BusbarCarrierPlan};
+
+    let catalog = TerminalCatalog::load_embedded();
+
+    // 1. WAGO 2003-7641 short group with 2016-7714 supply + 2009-305 outer carriers
+    let wago_nt = catalog.find_by_id("wago-2003-7641").unwrap();
+    let wago_supply = catalog.find_by_id("wago-2016-7714").unwrap();
+    let wago_outer = catalog.find_by_id("wago-2009-305").unwrap();
+    let wago_mid = catalog.find_by_id("wago-2009-304").unwrap();
+
+    assert_eq!(wago_nt.recommended_outer_busbar_carrier_spec_id(), Some("wago-2009-305"));
+    assert_eq!(wago_nt.recommended_intermediate_busbar_support_spec_id(), Some("wago-2009-304"));
+    assert_eq!(wago_outer.width_tenths_mm, 75);
+    assert_eq!(wago_mid.width_tenths_mm, 15);
+
+    let mut short_strip = TerminalStrip::generate_with_block_count("-XINST1", 1, 10, 5, wago_nt);
+    short_strip.insert_blocks(0, 1, wago_supply);
+    let end = short_strip.blocks.len();
+    apply_n_busbar_carriers_around(
+        &mut short_strip,
+        0,
+        end,
+        &catalog,
+        &BusbarCarrierPlan {
+            outer_carrier: Some(wago_outer),
+            intermediate_support: Some(wago_mid),
+            max_unsupported_span_tenths_mm: 2000,
+        },
+    );
+
+    // Must be: [2009-305, 2016-7714, 5x 2003-7641, 2009-305]
+    assert_eq!(short_strip.blocks.len(), 8);
+    assert_eq!(short_strip.blocks[0].spec_id, "wago-2009-305");
+    assert_eq!(short_strip.blocks[1].spec_id, "wago-2016-7714");
+    assert_eq!(short_strip.blocks[7].spec_id, "wago-2009-305");
+    // No intermediate 2009-304 needed when unsupported span is well under 200 mm
+    assert_eq!(
+        short_strip.blocks.iter().filter(|b| b.spec_id == "wago-2009-304").count(),
+        0
+    );
+
+    // 2. Long WAGO 2003-7641 row (45 blocks * 5.2 mm + 12.0 mm supply = 246.0 mm > 200.0 mm)
+    let mut long_strip = TerminalStrip::generate_with_block_count("-XINST2", 1, 90, 45, wago_nt);
+    long_strip.insert_blocks(0, 1, wago_supply);
+    let long_end = long_strip.blocks.len();
+    apply_n_busbar_carriers_around(
+        &mut long_strip,
+        0,
+        long_end,
+        &catalog,
+        &BusbarCarrierPlan {
+            outer_carrier: Some(wago_outer),
+            intermediate_support: Some(wago_mid),
+            max_unsupported_span_tenths_mm: 2000,
+        },
+    );
+
+    assert_eq!(long_strip.blocks.first().unwrap().spec_id, "wago-2009-305");
+    assert_eq!(long_strip.blocks[1].spec_id, "wago-2016-7714");
+    assert_eq!(long_strip.blocks.last().unwrap().spec_id, "wago-2009-305");
+    assert_eq!(
+        long_strip.blocks.iter().filter(|b| b.spec_id == "wago-2009-304").count(),
+        1,
+        "Expected one 2009-304 intermediate support at ~200 mm span"
+    );
+
+    // Verify no unsupported distance between any two busbar carriers exceeds 200.0 mm
+    let mut span_tenths: u16 = 0;
+    for blk in &long_strip.blocks {
+        if catalog.find_by_id(&blk.spec_id).is_some_and(|s| s.is_busbar_carrier()) {
+            assert!(
+                span_tenths <= 2000,
+                "Unsupported N-busbar span exceeded 200.0 mm: {} tenths mm",
+                span_tenths
+            );
+            span_tenths = 0;
+        } else {
+            span_tenths += blk.width_tenths_mm;
+        }
+    }
+
+    // Re-running placement must be idempotent (zero duplicate carriers added)
+    let count_before = long_strip.blocks.len();
+    let end2 = long_strip.blocks.len();
+    apply_n_busbar_carriers_around(
+        &mut long_strip,
+        0,
+        end2,
+        &catalog,
+        &BusbarCarrierPlan {
+            outer_carrier: Some(wago_outer),
+            intermediate_support: Some(wago_mid),
+            max_unsupported_span_tenths_mm: 2000,
+        },
+    );
+    assert_eq!(long_strip.blocks.len(), count_before);
+
+    // Busbar carriers must not trigger end plates before themselves and must be omitted from printer labels
+    let plates = calculate_end_plates(&long_strip, &catalog);
+    for p in &plates {
+        let next_blk = long_strip.blocks.get(p.after_block_idx + 1);
+        assert!(
+            next_blk.is_none_or(|nb| !catalog.find_by_id(&nb.spec_id).unwrap().is_busbar_carrier()),
+            "No intermediate end plate should be placed before a busbar carrier at idx {}",
+            p.after_block_idx
+        );
+    }
+
+    let proj = Project {
+        format_version: 1,
+        project_name: "BusbarCarrierExport".to_string(),
+        strips: vec![long_strip],
+        ..Default::default()
+    };
+    let print_rows = build_print_rows(&proj, 0, &ExportOptions::default());
+    assert!(
+        !print_rows.iter().any(|r| r.terminal_type.contains("2009-30")),
+        "Unlabeled busbar carriers must not pollute printer label rows"
+    );
+
+    let out_path = std::env::temp_dir().join("termigrid_busbar_carrier_test.xlsx");
+    let _ = std::fs::remove_file(&out_path);
+    export_to_xlsx(&out_path, &proj, 0, &ExportOptions::default(), true).unwrap();
+    assert!(out_path.exists());
+    let _ = std::fs::remove_file(&out_path);
+
+    // 3. Phoenix Contact PTI 2,5-PE/L/NT with AB-PTI/3 Auflagebock (every 200 mm)
+    let phx_nt = catalog.find_by_id("phoenix-pti-25-pelnt").unwrap();
+    let phx_ab = catalog.find_by_id("phoenix-ab-pti-3").unwrap();
+    assert_eq!(phx_nt.recommended_outer_busbar_carrier_spec_id(), Some("phoenix-ab-pti-3"));
+    assert_eq!(phx_nt.recommended_intermediate_busbar_support_spec_id(), Some("phoenix-ab-pti-3"));
+
+    let mut phx_strip = TerminalStrip::generate_with_block_count("-XPHX", 1, 90, 45, phx_nt);
+    let phx_end = phx_strip.blocks.len();
+    apply_n_busbar_carriers_around(
+        &mut phx_strip,
+        0,
+        phx_end,
+        &catalog,
+        &BusbarCarrierPlan {
+            outer_carrier: Some(phx_ab),
+            intermediate_support: Some(phx_ab),
+            max_unsupported_span_tenths_mm: 2000,
+        },
+    );
+    // 2 outer AB-PTI/3 + 1 intermediate AB-PTI/3 (45 * 5.2 mm = 234.0 mm > 200.0 mm)
+    assert_eq!(
+        phx_strip.blocks.iter().filter(|b| b.spec_id == "phoenix-ab-pti-3").count(),
+        3
+    );
+}
 

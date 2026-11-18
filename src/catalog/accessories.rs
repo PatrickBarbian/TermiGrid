@@ -39,6 +39,26 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
     let end_bracket = "249-116 (grau) / 249-117 (schwarz)".to_string();
     let markers_strip = "2009-110 (Beschriftungsstreifen) / 2009-115 (WMB)".to_string();
 
+    if id == "wago-2009-305" {
+        return TerminalAccessories {
+            end_plate: "Integrierte ausbrechbare Trennplatte (kein Enddeckel nötig)".to_string(),
+            jumpers: "210-133 (N-Sammelschiene 10x3 Cu)".to_string(),
+            markers: "793-5501 (WMB 5mm)".to_string(),
+            end_bracket: "2009-305 wirkt gleichzeitig als Endklammer".to_string(),
+            extra: Some("Alle 200 mm zusätzlich 2009-304 als Zwischenstütze einsetzen".to_string()),
+        };
+    }
+
+    if id == "wago-2009-304" {
+        return TerminalAccessories {
+            end_plate: "Geschlossene Zwischenstütze (kein Enddeckel nötig)".to_string(),
+            jumpers: "210-133 (N-Sammelschiene 10x3 Cu)".to_string(),
+            markers: "—".to_string(),
+            end_bracket: "Nicht als Endklammer geeignet (nur Zwischenstütze alle 200 mm)".to_string(),
+            extra: Some("Außenbegrenzung über 2009-305".to_string()),
+        };
+    }
+
     if id.starts_with("wago-2000") || id.starts_with("wago-2200") {
         let end_plate = if id.starts_with("wago-2000-53") {
             "2000-5391 (Sensor/Aktor 3-Etagen)"
@@ -108,7 +128,7 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
             jumpers: "2002-402 (2-fach) .. 2002-410 (10-fach)".to_string(),
             markers: markers_strip,
             end_bracket,
-            extra: Some("210-133 (N-Sammelschiene 10x3 Cu) + 2016-7714 (16mm² N-Einspeiseklemme)".to_string()),
+            extra: Some("210-133 (N-Sammelschiene 10x3 Cu) + 2016-7714 (N-Einspeiseklemme) + 2009-305 / 2009-304 (Sammelschienenträger)".to_string()),
         };
     }
 
@@ -123,7 +143,7 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
             jumpers: "2004-402 (2-fach) .. 2004-410 (10-fach)".to_string(),
             markers: markers_strip,
             end_bracket,
-            extra: Some("210-133 (N-Sammelschiene 10x3 Cu) + 2016-7714 (16mm² N-Einspeiseklemme)".to_string()),
+            extra: Some("210-133 (N-Sammelschiene 10x3 Cu) + 2016-7714 (N-Einspeiseklemme) + 2009-305 / 2009-304 (Sammelschienenträger)".to_string()),
         };
     }
 
@@ -370,6 +390,16 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
 fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
     let id = spec.id.as_str();
     let end_bracket = "CLIPFIX 35 (3022218) / CLIPFIX 35-5 (3022276)".to_string();
+
+    if spec.is_busbar_carrier() {
+        return TerminalAccessories {
+            end_plate: "Auflagebock mit integrierter Kontur (kein Enddeckel nötig)".to_string(),
+            jumpers: "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)".to_string(),
+            markers: "ZB 5 / ZBF 5".to_string(),
+            end_bracket,
+            extra: Some("Rastermaß auf Hutschiene max. 200 mm".to_string()),
+        };
+    }
 
     if id.contains("pt-15s") || id.contains("pttb-15s") || id.contains("ptio") {
         let (end_plate, markers) = if id.contains("ptio-in") {
@@ -850,6 +880,16 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
     let id = spec.id.as_str();
     let end_bracket = "AEB 35 SC/1 (1991920000) / WEW 35/2 (1061200000)".to_string();
 
+    if spec.is_busbar_carrier() {
+        return TerminalAccessories {
+            end_plate: "Keine (geschlossener Sammelschienenträger / Auflagebock)".to_string(),
+            jumpers: "Keine (Träger für N-Sammelschiene 10x3 mm)".to_string(),
+            markers: "DEK 5/5 / WS 12/5".to_string(),
+            end_bracket,
+            extra: Some("Alle 200 mm für N-Sammelschiene SSch 10x3x1000 CU setzen".to_string()),
+        };
+    }
+
     if id.contains("aitb") {
         let is_bb_1level = id.contains("-bb");
         let is_bb_cover = is_bb_1level
@@ -1228,6 +1268,9 @@ fn resolve_weidmuller(spec: &TerminalSpec) -> TerminalAccessories {
 /// Real physical thickness of the end/partition plate for `spec` in tenths of a millimeter (`0.1 mm`),
 /// or `0` if the terminal block has a closed housing requiring no separate end plate.
 pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
+    if spec.is_busbar_carrier() {
+        return 0;
+    }
     let id = spec.id.as_str();
     match spec.manufacturer.as_str() {
         "WAGO" => {
@@ -1361,8 +1404,13 @@ pub fn calculate_end_plates(
             None => true,
             Some(next_block) => {
                 if let Some(next_spec) = catalog.find_by_id(&next_block.spec_id) {
-                    let next_acc = catalog.accessories_for(next_spec);
-                    next_acc.end_plate != acc.end_plate || next_block.manufacturer != block.manufacturer
+                    if next_spec.is_busbar_carrier() {
+                        false
+                    } else {
+                        let next_acc = catalog.accessories_for(next_spec);
+                        next_acc.end_plate != acc.end_plate
+                            || next_block.manufacturer != block.manufacturer
+                    }
                 } else {
                     true
                 }

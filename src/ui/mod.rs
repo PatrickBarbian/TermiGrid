@@ -2,6 +2,7 @@ pub mod android_insets;
 pub mod cad_canvas;
 pub mod guide_modal;
 pub mod icons;
+pub mod library_modal;
 pub mod logos;
 pub mod net;
 pub mod new_strip_modal;
@@ -26,6 +27,9 @@ use crate::i18n::{strings, Language};
 use crate::model::bridging::{
     calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
 };
+use crate::model::library::{
+    instantiate_strip_from_template, merge_template_custom_specs, StripLibrary,
+};
 use crate::model::{
     NeutralLabelMode, NumberingOrder, PeLabelMode, Project, TerminalStrip,
 };
@@ -39,6 +43,10 @@ use crate::ui::guide_modal::{
 use crate::ui::icons::{
     danger_icon_button, draw_icon, icon_button, icon_only_button, primary_icon_button,
     selectable_icon_button, success_icon_button, UiIcon,
+};
+use crate::ui::library_modal::{
+    show_save_strip_to_library_modal, show_strip_library_modal, SaveStripLibraryDialogState,
+    StripLibraryAction, StripLibraryDialogState,
 };
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::new_strip_modal::{
@@ -131,6 +139,11 @@ pub struct TermiGridApp {
     undo_stack: Vec<Project>,
     redo_stack: Vec<Project>,
     last_snapshot: Project,
+
+    // Personal Terminal Strip Library (persisted across sessions)
+    strip_library: StripLibrary,
+    save_strip_library_modal: SaveStripLibraryDialogState,
+    strip_library_modal: StripLibraryDialogState,
 }
 
 impl TermiGridApp {
@@ -139,6 +152,7 @@ impl TermiGridApp {
         let logos = BrandLogos::load(&cc.egui_ctx);
         let project = Project::default();
         let last_snapshot = project.clone();
+        let strip_library = StripLibrary::load_default();
 
         // Load native system fonts & apply high-contrast Light+Dark themes with System default
         install_system_fonts(&cc.egui_ctx);
@@ -188,6 +202,9 @@ impl TermiGridApp {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             last_snapshot,
+            strip_library,
+            save_strip_library_modal: SaveStripLibraryDialogState::default(),
+            strip_library_modal: StripLibraryDialogState::default(),
         }
     }
 
@@ -724,6 +741,7 @@ impl eframe::App for TermiGridApp {
                     PendingInstallAction::CreateStrip(new_strip),
                     spec,
                     false,
+                    false,
                 );
             } else {
                 self.project.strips.push(new_strip);
@@ -749,6 +767,97 @@ impl eframe::App for TermiGridApp {
 
         // Cross-platform Info & Open-Source Licenses modal dialog
         show_about_modal(ui.ctx(), &mut self.show_about_modal, &self.updater, s);
+
+        // Save active terminal strip into personal library
+        let target_strip = self
+            .project
+            .strips
+            .get(self.save_strip_library_modal.strip_idx);
+        if let Some(confirm) = show_save_strip_to_library_modal(
+            ui.ctx(),
+            &mut self.save_strip_library_modal,
+            target_strip,
+            &self.strip_library,
+            s,
+        ) && let Some(strip) = self.project.strips.get(confirm.strip_idx)
+        {
+            self.strip_library.save_template(
+                confirm.template_name.clone(),
+                confirm.description,
+                strip,
+                &self.project.custom_specs,
+                confirm.overwrite_id.as_deref(),
+            );
+            match self.strip_library.save_default() {
+                Ok(_) => {
+                    self.status_message = format!(
+                        "Vorlage „{}“ in persönlicher Bibliothek gespeichert.",
+                        confirm.template_name
+                    );
+                }
+                Err(e) => {
+                    self.status_message = format!("{}: {e}", s.status_error);
+                }
+            }
+        }
+
+        // Personal Terminal Strip Library browser modal (search, rename, delete, insert)
+        let has_active_project = !self.show_welcome && !self.project.strips.is_empty();
+        let can_save_active =
+            has_active_project && self.active_strip < self.project.strips.len();
+        if let Some(lib_action) = show_strip_library_modal(
+            ui.ctx(),
+            &mut self.strip_library_modal,
+            &mut self.strip_library,
+            &self.catalog,
+            has_active_project,
+            can_save_active,
+            s,
+            &mut self.status_message,
+        ) {
+            match lib_action {
+                StripLibraryAction::InsertTemplate {
+                    template_id,
+                    target_designation,
+                } => {
+                    if let Some(tpl) = self.strip_library.find_by_id(&template_id).cloned() {
+                        if self.show_welcome {
+                            self.project.strips.clear();
+                            self.catalog = TerminalCatalog::load_embedded();
+                            self.undo_stack.clear();
+                            self.redo_stack.clear();
+                            self.current_file = None;
+                        }
+                        if merge_template_custom_specs(&tpl, &mut self.project.custom_specs) {
+                            self.catalog.reload_with_custom(&self.project.custom_specs);
+                        }
+                        let new_strip = instantiate_strip_from_template(
+                            &tpl,
+                            target_designation.as_deref(),
+                            &self.project.strips,
+                        );
+                        let inserted_name = new_strip.name.clone();
+                        self.project.strips.push(new_strip);
+                        self.active_strip = self.project.strips.len().saturating_sub(1);
+                        self.selected_blocks.clear();
+                        self.selected_end_bracket = None;
+                        self.show_welcome = false;
+                        self.active_tab = ActiveTab::Editor;
+                        self.mobile_pane = MobilePane::Cad;
+                        self.status_message = format!(
+                            "Klemmleiste „{}“ aus Vorlage „{}“ eingefügt.",
+                            inserted_name, tpl.name
+                        );
+                    }
+                }
+                StripLibraryAction::SaveActiveStrip => {
+                    if let Some(strip) = self.project.strips.get(self.active_strip) {
+                        self.save_strip_library_modal
+                            .open_for_strip(self.active_strip, strip);
+                    }
+                }
+            }
+        }
 
         // Automatically record project state changes onto the Undo stack once pointer drag finishes
         if !ui.input(|i| i.pointer.any_down()) && self.project != self.last_snapshot {
@@ -776,7 +885,22 @@ impl TermiGridApp {
             })
     }
 
+    fn strip_has_busbar_carriers(&self, strip_idx: usize) -> bool {
+        self.project
+            .strips
+            .get(strip_idx)
+            .is_some_and(|strip| {
+                strip.blocks.iter().any(|b| {
+                    self.catalog
+                        .find_by_id(&b.spec_id)
+                        .is_some_and(|s| s.is_busbar_carrier())
+                })
+            })
+    }
+
     fn apply_install_prompt_resolution(&mut self, res: InstallPromptResolution) {
+        use crate::model::numbering::{apply_n_busbar_carriers_around, BusbarCarrierPlan};
+
         let Some(effective_spec) = self.catalog.find_by_id(&res.effective_spec_id) else {
             return;
         };
@@ -784,6 +908,19 @@ impl TermiGridApp {
             self.catalog.find_by_id(&res.supply_spec_id)
         } else {
             None
+        };
+        let outer_carrier = res
+            .outer_carrier_spec_id
+            .as_deref()
+            .and_then(|id| self.catalog.find_by_id(id));
+        let intermediate_support = res
+            .intermediate_support_spec_id
+            .as_deref()
+            .and_then(|id| self.catalog.find_by_id(id));
+        let carrier_plan = BusbarCarrierPlan {
+            outer_carrier,
+            intermediate_support,
+            max_unsupported_span_tenths_mm: 2000,
         };
 
         match res.action {
@@ -804,6 +941,16 @@ impl TermiGridApp {
                         InstallSupplyPlacement::None => {}
                     }
                 }
+                let end = new_strip.blocks.len();
+                if end > 0 && (outer_carrier.is_some() || intermediate_support.is_some()) {
+                    apply_n_busbar_carriers_around(
+                        &mut new_strip,
+                        0,
+                        end,
+                        &self.catalog,
+                        &carrier_plan,
+                    );
+                }
                 self.project.strips.push(new_strip);
                 self.active_strip = self.project.strips.len().saturating_sub(1);
                 self.selected_blocks.clear();
@@ -817,26 +964,57 @@ impl TermiGridApp {
                 ..
             } => {
                 if let Some(strip) = self.project.strips.get_mut(strip_idx) {
+                    let selected_ids: Vec<u64> = indices
+                        .iter()
+                        .filter_map(|&i| strip.blocks.get(i).map(|b| b.id))
+                        .collect();
                     strip.reassign_blocks(&indices, effective_spec);
+
+                    let mut anchor_start = indices.iter().copied().min().unwrap_or(0);
+                    let mut anchor_end = indices
+                        .iter()
+                        .copied()
+                        .max()
+                        .map(|m| m + 1)
+                        .unwrap_or(anchor_start);
                     if let Some(sup) = supply_spec {
                         match res.supply_placement {
                             InstallSupplyPlacement::BeforeGroup => {
                                 if let Some(&first) = indices.first() {
                                     strip.insert_blocks(first, 1, sup);
-                                    self.selected_blocks = indices
-                                        .iter()
-                                        .map(|&i| if i >= first { i + 1 } else { i })
-                                        .collect();
+                                    anchor_start = anchor_start.min(first);
+                                    anchor_end += 1;
                                 }
                             }
                             InstallSupplyPlacement::AfterGroup => {
                                 if let Some(&last) = indices.last() {
-                                    strip.insert_blocks(last + 1, 1, sup);
+                                    let pos = last + 1;
+                                    strip.insert_blocks(pos, 1, sup);
+                                    anchor_end = anchor_end.max(pos + 1);
                                 }
                             }
                             InstallSupplyPlacement::None => {}
                         }
                     }
+                    if anchor_end > anchor_start
+                        && anchor_end <= strip.blocks.len()
+                        && (outer_carrier.is_some() || intermediate_support.is_some())
+                    {
+                        apply_n_busbar_carriers_around(
+                            strip,
+                            anchor_start,
+                            anchor_end,
+                            &self.catalog,
+                            &carrier_plan,
+                        );
+                    }
+                    self.selected_blocks = strip
+                        .blocks
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, b)| selected_ids.contains(&b.id))
+                        .map(|(i, _)| i)
+                        .collect();
                 }
                 self.inspector_spec_id = effective_spec.id.clone();
             }
@@ -848,28 +1026,69 @@ impl TermiGridApp {
                 ..
             } => {
                 if let Some(strip) = self.project.strips.get_mut(strip_idx) {
-                    let insert_pos = at_index.min(strip.blocks.len());
-                    strip.insert_blocks(insert_pos, count, effective_spec);
-                    if let Some(sup) = supply_spec {
-                        match res.supply_placement {
-                            InstallSupplyPlacement::BeforeGroup => {
-                                strip.insert_blocks(insert_pos, 1, sup);
-                                if select_inserted {
-                                    self.selected_blocks =
-                                        (insert_pos + 1..=insert_pos + count).collect();
-                                }
-                            }
-                            InstallSupplyPlacement::AfterGroup => {
-                                strip.insert_blocks(insert_pos + count, 1, sup);
-                                if select_inserted {
-                                    self.selected_blocks =
-                                        (insert_pos..insert_pos + count).collect();
-                                }
-                            }
-                            InstallSupplyPlacement::None => {}
+                    let mut insert_pos = at_index.min(strip.blocks.len());
+                    if insert_pos == strip.blocks.len() && strip.blocks.len() >= 2 {
+                        let last_is_carrier = self
+                            .catalog
+                            .find_by_id(&strip.blocks[insert_pos - 1].spec_id)
+                            .is_some_and(|s| s.is_busbar_carrier());
+                        let prev_is_install_zone = self
+                            .catalog
+                            .find_by_id(&strip.blocks[insert_pos - 2].spec_id)
+                            .is_some_and(|s| {
+                                s.is_installation_or_nt_terminal() || s.is_n_supply_terminal()
+                            });
+                        if last_is_carrier && prev_is_install_zone {
+                            insert_pos -= 1;
                         }
-                    } else if select_inserted {
-                        self.selected_blocks = (insert_pos..insert_pos + count).collect();
+                    }
+
+                    strip.insert_blocks(insert_pos, count, effective_spec);
+                    let mut anchor_end = insert_pos + count;
+                    let inserted_range = match (supply_spec, res.supply_placement) {
+                        (Some(sup), InstallSupplyPlacement::BeforeGroup) => {
+                            strip.insert_blocks(insert_pos, 1, sup);
+                            anchor_end += 1;
+                            (insert_pos + 1)..(insert_pos + 1 + count)
+                        }
+                        (Some(sup), InstallSupplyPlacement::AfterGroup) => {
+                            strip.insert_blocks(insert_pos + count, 1, sup);
+                            anchor_end += 1;
+                            insert_pos..(insert_pos + count)
+                        }
+                        _ => insert_pos..(insert_pos + count),
+                    };
+
+                    let inserted_ids: Vec<u64> = if select_inserted {
+                        strip.blocks[inserted_range]
+                            .iter()
+                            .map(|b| b.id)
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
+
+                    if anchor_end > insert_pos
+                        && anchor_end <= strip.blocks.len()
+                        && (outer_carrier.is_some() || intermediate_support.is_some())
+                    {
+                        apply_n_busbar_carriers_around(
+                            strip,
+                            insert_pos,
+                            anchor_end,
+                            &self.catalog,
+                            &carrier_plan,
+                        );
+                    }
+
+                    if select_inserted {
+                        self.selected_blocks = strip
+                            .blocks
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, b)| inserted_ids.contains(&b.id))
+                            .map(|(i, _)| i)
+                            .collect();
                     }
                 }
                 self.inspector_spec_id = effective_spec.id.clone();
@@ -1017,6 +1236,22 @@ impl TermiGridApp {
                                 {
                                     self.open_project();
                                 }
+                                let lib_btn_label = if self.strip_library.templates.is_empty() {
+                                    "Aus Bibliothek".to_string()
+                                } else {
+                                    format!(
+                                        "Aus Bibliothek ({})",
+                                        self.strip_library.templates.len()
+                                    )
+                                };
+                                if icon_button(ui, UiIcon::Library, &lib_btn_label)
+                                    .on_hover_text(
+                                        "Persönliche Klemmleisten-Bibliothek durchsuchen & laden",
+                                    )
+                                    .clicked()
+                                {
+                                    self.strip_library_modal.open_browser();
+                                }
                             });
 
                             ui.add_space(12.0);
@@ -1147,14 +1382,27 @@ impl TermiGridApp {
                 self.new_strip_modal
                     .open_for_next_strip(self.project.strips.len());
             }
+            let lib_label = if self.strip_library.templates.is_empty() {
+                "Bibliothek".to_string()
+            } else {
+                format!("Bibliothek ({})", self.strip_library.templates.len())
+            };
+            if icon_button(ui, UiIcon::Library, &lib_label)
+                .on_hover_text("Vorgefertigte Klemmleiste aus persönlicher Bibliothek einfügen")
+                .clicked()
+            {
+                self.strip_library_modal.open_browser();
+            }
         });
         ui.add_space(4.0);
 
         let mut delete_idx: Option<usize> = None;
         let left_max_w = (ui.available_width() - 12.0).max(120.0);
+        let list_max_h = (ui.available_height() - 52.0).max(90.0);
         egui::ScrollArea::both()
             .id_salt("strips_scroll")
-            .auto_shrink([false, false])
+            .max_height(list_max_h)
+            .auto_shrink([false, true])
             .show(ui, |ui| {
                 ui.set_max_width(left_max_w);
                 for (idx, strip) in self.project.strips.iter().enumerate() {
@@ -1193,9 +1441,21 @@ impl TermiGridApp {
 
         if !self.project.strips.is_empty() {
             ui.add_space(8.0);
-            if danger_icon_button(ui, UiIcon::Delete, s.btn_delete_strip).clicked() {
-                delete_idx = Some(self.active_strip);
-            }
+            ui.horizontal_wrapped(|ui| {
+                if icon_button(ui, UiIcon::Bookmark, "In Bibliothek")
+                    .on_hover_text(
+                        "Aktive Klemmleiste unter eigenem Namen in der persönlichen Bibliothek speichern",
+                    )
+                    .clicked()
+                    && let Some(strip) = self.project.strips.get(self.active_strip)
+                {
+                    self.save_strip_library_modal
+                        .open_for_strip(self.active_strip, strip);
+                }
+                if danger_icon_button(ui, UiIcon::Delete, s.btn_delete_strip).clicked() {
+                    delete_idx = Some(self.active_strip);
+                }
+            });
         }
 
         if let Some(idx) = delete_idx
@@ -1640,8 +1900,9 @@ impl TermiGridApp {
                             && let Some(spec) = self.catalog.find_by_id(&spec_id)
                         {
                             let has_supply = self.strip_has_n_supply(self.active_strip);
+                            let has_carriers = self.strip_has_busbar_carriers(self.active_strip);
                             self.install_prompt_modal
-                                .open_for_action(action, spec, has_supply);
+                                .open_for_action(action, spec, has_supply, has_carriers);
                         }
 
                         ui.horizontal_wrapped(|ui| {
@@ -2397,6 +2658,7 @@ impl TermiGridApp {
         {
             if spec.is_installation_or_nt_terminal() {
                 let has_supply = self.strip_has_n_supply(self.active_strip);
+                let has_carriers = self.strip_has_busbar_carriers(self.active_strip);
                 let len = self.project.strips[self.active_strip].blocks.len();
                 self.install_prompt_modal.open_for_action(
                     PendingInstallAction::InsertBlocks {
@@ -2408,6 +2670,7 @@ impl TermiGridApp {
                     },
                     spec,
                     has_supply,
+                    has_carriers,
                 );
             } else {
                 self.project.strips[self.active_strip].append_blocks(1, spec);

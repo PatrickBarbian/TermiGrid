@@ -553,6 +553,10 @@ pub fn show_cad_canvas(
                 let above_px = above_mm * h_px_per_mm;
                 let below_px = below_mm * h_px_per_mm;
 
+                let is_carrier = catalog
+                    .find_by_id(&block.spec_id)
+                    .is_some_and(|s| s.is_busbar_carrier());
+
                 if e_planer {
                     let y0 = rail_center_y - above_px;
                     let y1 = rail_center_y + below_px;
@@ -570,6 +574,7 @@ pub fn show_cad_canvas(
                         pos_top_y,
                         &mut max_pos_bottom_y,
                         is_selected,
+                        is_carrier,
                         dark,
                         z,
                         state.editing_tier,
@@ -619,6 +624,7 @@ pub fn show_cad_canvas(
                         tier_height,
                         tier_gap,
                         is_selected,
+                        is_carrier,
                         dark,
                         z,
                         state.editing_tier,
@@ -1379,6 +1385,7 @@ fn draw_terminal_block(
     tier_height: f32,
     tier_gap: f32,
     is_selected: bool,
+    is_carrier: bool,
     dark: bool,
     zoom: f32,
     editing_tier: Option<(usize, usize)>,
@@ -1447,8 +1454,14 @@ fn draw_terminal_block(
             painter.rect_filled(strip_rect, CornerRadius::same(2), brand_color);
         }
 
-        // PE yellow accent bar at bottom
-        if tier.behavior.is_pe() {
+        // PE yellow accent bar at bottom, or copper 10x3 N-busbar accent bar on busbar carriers
+        if is_carrier {
+            let cu_bar = Rect::from_min_size(
+                Pos2::new(tier_rect.min.x, tier_rect.max.y - (5.0 * zoom).max(3.0)),
+                Vec2::new(tier_rect.width(), (5.0 * zoom).max(3.0)),
+            );
+            painter.rect_filled(cu_bar, CornerRadius::same(1), Color32::from_rgb(217, 119, 6));
+        } else if tier.behavior.is_pe() {
             let pe_bar = Rect::from_min_size(
                 Pos2::new(tier_rect.min.x, tier_rect.max.y - (5.0 * zoom).max(3.0)),
                 Vec2::new(tier_rect.width(), (5.0 * zoom).max(3.0)),
@@ -1466,10 +1479,12 @@ fn draw_terminal_block(
         let is_being_edited = editing_tier == Some((block_idx, level));
         if !is_being_edited && tag_rect.width() > 8.0 && tag_rect.height() > 8.0 {
             painter.rect_filled(tag_rect, CornerRadius::same(2), badge_fill);
-            let display = if tier.cad_display_label.is_empty() {
-                "—"
-            } else {
+            let display = if !tier.cad_display_label.is_empty() {
                 tier.cad_display_label.as_str()
+            } else if is_carrier {
+                "N-ST"
+            } else {
+                "—"
             };
             let base_sz = if display.len() >= 4 {
                 10.5 * zoom
@@ -1498,10 +1513,12 @@ fn draw_terminal_block(
             }
         }
 
-        // High-contrast tier level pill (E1, E2, E3, PE, PE1, PE2) in dedicated top-right header strip
+        // High-contrast tier level pill (E1, E2, E3, PE, PE1, PE2, ST) in dedicated top-right header strip
         if zoom >= 0.7 && tier_rect.width() >= 22.0 {
             let pe_count = block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
-            let row_tag = if tier.behavior.is_pe() {
+            let row_tag = if is_carrier {
+                "ST".to_string()
+            } else if tier.behavior.is_pe() {
                 if pe_count > 1 {
                     format!("PE{}", level + 1)
                 } else {
@@ -1510,7 +1527,12 @@ fn draw_terminal_block(
             } else {
                 format!("E{}", (vrow.max(0) + 1))
             };
-            let (pill_bg, pill_fg) = if tier.behavior.is_pe() {
+            let (pill_bg, pill_fg) = if is_carrier {
+                (
+                    Color32::from_rgba_unmultiplied(154, 52, 18, 235),
+                    Color32::from_rgb(254, 243, 199),
+                )
+            } else if tier.behavior.is_pe() {
                 (
                     Color32::from_rgba_unmultiplied(20, 83, 45, 235),
                     Color32::from_rgb(254, 240, 138),
@@ -2062,6 +2084,7 @@ fn draw_e_planer_block(
     pos_top_y: f32,
     max_pos_bottom_y: &mut f32,
     is_selected: bool,
+    is_carrier: bool,
     dark: bool,
     zoom: f32,
     editing_tier: Option<(usize, usize)>,
@@ -2110,6 +2133,15 @@ fn draw_e_planer_block(
         );
         painter.rect_filled(band_rect, CornerRadius::ZERO, tint);
 
+        if is_carrier {
+            let cu_slot_h = (band_h * 0.14).clamp(3.0, 9.0);
+            let cu_slot = Rect::from_min_max(
+                Pos2::new(band_rect.min.x, band_rect.max.y - cu_slot_h),
+                Pos2::new(band_rect.max.x, band_rect.max.y),
+            );
+            painter.rect_filled(cu_slot, CornerRadius::ZERO, Color32::from_rgb(217, 119, 6));
+        }
+
         if band_pos > 0 {
             painter.line_segment(
                 [Pos2::new(band_rect.min.x, y0), Pos2::new(band_rect.max.x, y0)],
@@ -2124,6 +2156,8 @@ fn draw_e_planer_block(
         if !is_being_edited && band_rect.width() >= 9.0 && band_rect.height() >= 10.0 {
             let display = if !tier.cad_display_label.is_empty() {
                 tier.cad_display_label.as_str()
+            } else if is_carrier {
+                "ST"
             } else if tier.behavior.is_pe() {
                 "PE"
             } else {

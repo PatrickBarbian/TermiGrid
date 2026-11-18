@@ -68,6 +68,8 @@ pub enum UiIcon {
     Coffee,
     Bolt,
     Check,
+    Library,
+    Bookmark,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -573,6 +575,33 @@ pub fn draw_icon(painter: &Painter, rect: Rect, icon: UiIcon, color: Color32) {
             painter.add(Shape::line(handle, thin));
             painter.line_segment([p(-0.24, -0.34), p(-0.18, -0.62)], thin);
             painter.line_segment([p(0.08, -0.34), p(0.14, -0.62)], thin);
+        }
+        UiIcon::Library => {
+            // Three upright catalog / template spines on a shelf
+            let b1 = Rect::from_min_max(p(-0.68, -0.64), p(-0.28, 0.64));
+            let b2 = Rect::from_min_max(p(-0.18, -0.64), p(0.22, 0.64));
+            painter.rect_stroke(b1, CornerRadius::same(1), st, StrokeKind::Inside);
+            painter.rect_stroke(b2, CornerRadius::same(1), st, StrokeKind::Inside);
+            let b3 = vec![
+                p(0.32, -0.58),
+                p(0.58, -0.64),
+                p(0.76, 0.56),
+                p(0.50, 0.64),
+                p(0.32, -0.58),
+            ];
+            painter.add(Shape::line(b3, st));
+            painter.line_segment([p(-0.78, 0.68), p(0.78, 0.68)], thin);
+        }
+        UiIcon::Bookmark => {
+            let ribbon = vec![
+                p(-0.42, -0.68),
+                p(0.42, -0.68),
+                p(0.42, 0.72),
+                p(0.0, 0.34),
+                p(-0.42, 0.72),
+                p(-0.42, -0.68),
+            ];
+            painter.add(Shape::line(ribbon, st));
         }
     }
 }

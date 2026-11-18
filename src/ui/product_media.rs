@@ -185,7 +185,8 @@ fn photo_cache_dir() -> std::path::PathBuf {
     }
     #[cfg(target_os = "android")]
     {
-        let pkg_cache = std::path::PathBuf::from("/data/user/0/de.patrickbarbian.termigrid/cache/photo_cache");
+        let pkg_cache =
+            std::path::PathBuf::from("/data/user/0/com.patrickbarbian.termigrid/cache/photo_cache");
         if pkg_cache.exists() || std::fs::create_dir_all(&pkg_cache).is_ok() {
             return pkg_cache;
         }
@@ -235,40 +236,41 @@ fn fetch_product_image_bytes(page_url: &str) -> Option<Vec<u8>> {
 }
 
 fn extract_product_image_url(html: &str, base_url: &str) -> Option<String> {
-    // 1. WAGO /medias/, Phoenix Contact CaaS, Weidmüller DAM, or JSON-LD/OpenGraph product image
-    for marker in [
-        "https://www.wago.com/medias/",
-        "https://caas.phoenixcontact.com/caas/v1/stable/media/",
-        "https://assets.dam.weidmueller.com/assets/api/",
-        "/medias/480-",
-        "/medias/768-",
-        "/medias/200-",
-        "\"contentUrl\":\"https://",
-        "property=\"og:image\" content=\"",
-        "content=\"https://",
+    let normalized = html.replace("\\/", "/").replace("&amp;", "&");
+    // Prefer raster product media URLs over SVG logos, favicons, or banners.
+    for (marker, prefix_len) in [
+        ("https://www.wago.com/medias/1024-", 0usize),
+        ("https://www.wago.com/medias/480-", 0),
+        ("https://www.wago.com/medias/", 0),
+        ("https://caas.phoenixcontact.com/caas/v1/stable/media/", 0),
+        ("https://assets.dam.weidmueller.com/assets/", 0),
+        ("/medias/1024-", 0),
+        ("/medias/480-", 0),
+        ("/medias/768-", 0),
+        ("/medias/200-", 0),
+        ("property=\"og:image\" content=\"", "property=\"og:image\" content=\"".len()),
+        ("\"contentUrl\":\"https://", "\"contentUrl\":\"".len()),
+        ("content=\"https://", "content=\"".len()),
     ] {
-        if let Some(pos) = html.find(marker) {
-            let slice = &html[pos..];
-            let start = if marker.starts_with("\"contentUrl\":\"") {
-                "\"contentUrl\":\"".len()
-            } else if marker.starts_with("property=\"og:image\"") {
-                "property=\"og:image\" content=\"".len()
-            } else if marker.starts_with("content=\"") {
-                "content=\"".len()
-            } else {
-                0
-            };
-            let rest = &slice[start..];
+        for (pos, _) in normalized.match_indices(marker) {
+            let rest = &normalized[pos + prefix_len..];
             let end = rest
-                .find(['"', '\'', ' ', '<'])
-                .unwrap_or(rest.len().min(500));
+                .find(['"', '\'', ' ', '<', '\\'])
+                .unwrap_or(rest.len().min(600));
             let candidate = &rest[..end];
-            if candidate.contains(".jpg")
-                || candidate.contains(".jpeg")
-                || candidate.contains(".png")
-                || candidate.contains("/medias/")
-                || candidate.contains("caas.phoenixcontact.com")
-                || candidate.contains("assets.dam.weidmueller.com")
+            let lower = candidate.to_ascii_lowercase();
+            if lower.contains(".svg")
+                || lower.contains("favicon")
+                || lower.contains("wago-logo")
+                || lower.contains("/logo")
+            {
+                continue;
+            }
+            if lower.contains(".jpg")
+                || lower.contains(".jpeg")
+                || lower.contains(".png")
+                || lower.contains("caas.phoenixcontact.com")
+                || lower.contains("assets.dam.weidmueller.com")
             {
                 if candidate.starts_with("http") {
                     return Some(candidate.to_string());
@@ -713,3 +715,33 @@ fn draw_technical_profile(ui: &mut Ui, spec: &TerminalSpec, size: Vec2, dark: bo
         },
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::extract_product_image_url;
+
+    #[test]
+    fn extract_product_image_url_skips_svg_logos_and_normalizes_entities() {
+        let html = r#"
+            <html><head>
+            <img src="https://www.wago.com/medias/wago-logo.svg?context=abc" />
+            <meta property="og:image" content="https://www.wago.com/medias/1024-020000030000c83b000100b6-DE.jpg?context=xyz&amp;v=1" />
+            </head></html>
+        "#;
+        let url = extract_product_image_url(html, "https://www.wago.com/de/p/2002-2201")
+            .expect("should find raster product image");
+        assert_eq!(
+            url,
+            "https://www.wago.com/medias/1024-020000030000c83b000100b6-DE.jpg?context=xyz&v=1"
+        );
+
+        let escaped = r#"{"contentUrl":"https:\/\/www.wago.com\/medias\/480-test-product.png?context=1"}"#;
+        let url2 = extract_product_image_url(escaped, "https://www.wago.com/de/p/2002-2201")
+            .expect("should unescape slashes");
+        assert_eq!(
+            url2,
+            "https://www.wago.com/medias/480-test-product.png?context=1"
+        );
+    }
+}
+

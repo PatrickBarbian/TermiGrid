@@ -307,6 +307,101 @@ impl TerminalStrip {
     }
 }
 
+/// Configuration for automatic placement of N-busbar carriers (`Sammelschienenträger` / `Auflagebock`)
+/// framing an N-busbar installation zone and supporting long rows every 200 mm.
+#[derive(Debug, Clone, Copy)]
+pub struct BusbarCarrierPlan<'a> {
+    /// Outer carrier placed before the left-most member (or N-supply terminal) and after the right-most member
+    /// (e.g. WAGO `2009-305`, Phoenix `AB-PTI/3`, Weidmüller `AEB ITB 2.5/4 BB BL`).
+    pub outer_carrier: Option<&'a TerminalSpec>,
+    /// Intermediate support inserted whenever the unsupported terminal span exceeds
+    /// `max_unsupported_span_tenths_mm` (e.g. WAGO `2009-304` 1.5 mm, Phoenix `AB-*`).
+    pub intermediate_support: Option<&'a TerminalSpec>,
+    /// Maximum unsupported distance along the N-busbar in `0.1 mm` (default `2000` = `200.0 mm`).
+    pub max_unsupported_span_tenths_mm: u16,
+}
+
+/// Frames the contiguous N-busbar installation / supply zone containing `anchor_start..anchor_end`
+/// with optional outer carriers and inserts intermediate supports before any unsupported span exceeds
+/// `plan.max_unsupported_span_tenths_mm` (200.0 mm). Returns the updated `(zone_start, zone_end)` bounds.
+pub fn apply_n_busbar_carriers_around(
+    strip: &mut TerminalStrip,
+    anchor_start: usize,
+    anchor_end: usize,
+    catalog: &TerminalCatalog,
+    plan: &BusbarCarrierPlan<'_>,
+) -> (usize, usize) {
+    if strip.blocks.is_empty() || anchor_start >= anchor_end || anchor_end > strip.blocks.len() {
+        return (0, 0);
+    }
+
+    let is_carrier = |spec_id: &str| {
+        catalog
+            .find_by_id(spec_id)
+            .is_some_and(|s| s.is_busbar_carrier())
+    };
+    let is_zone_member = |spec_id: &str| {
+        catalog.find_by_id(spec_id).is_some_and(|s| {
+            s.is_installation_or_nt_terminal()
+                || s.is_n_supply_terminal()
+                || s.is_busbar_carrier()
+        })
+    };
+
+    let mut zone_start = anchor_start;
+    let mut zone_end = anchor_end;
+
+    while zone_start > 0 && is_zone_member(&strip.blocks[zone_start - 1].spec_id) {
+        zone_start -= 1;
+    }
+    while zone_end < strip.blocks.len() && is_zone_member(&strip.blocks[zone_end].spec_id) {
+        zone_end += 1;
+    }
+
+    if let Some(outer) = plan.outer_carrier {
+        if !is_carrier(&strip.blocks[zone_start].spec_id) {
+            let id = strip.allocate_block_id();
+            strip.blocks.insert(zone_start, outer.instantiate_block(id));
+            zone_end += 1;
+        }
+        if zone_end == zone_start + 1 || !is_carrier(&strip.blocks[zone_end - 1].spec_id) {
+            let id = strip.allocate_block_id();
+            strip.blocks.insert(zone_end, outer.instantiate_block(id));
+            zone_end += 1;
+        }
+    }
+
+    if let Some(support) = plan.intermediate_support
+        && plan.max_unsupported_span_tenths_mm > 0
+    {
+        let mut unsupported_tenths: u16 = 0;
+        let mut idx = zone_start;
+        while idx < zone_end {
+            if is_carrier(&strip.blocks[idx].spec_id) {
+                unsupported_tenths = 0;
+                idx += 1;
+                continue;
+            }
+            let w = strip.blocks[idx].width_tenths_mm;
+            if unsupported_tenths > 0
+                && unsupported_tenths.saturating_add(w) > plan.max_unsupported_span_tenths_mm
+            {
+                let id = strip.allocate_block_id();
+                strip.blocks.insert(idx, support.instantiate_block(id));
+                zone_end += 1;
+                unsupported_tenths = w;
+                idx += 2;
+            } else {
+                unsupported_tenths = unsupported_tenths.saturating_add(w);
+                idx += 1;
+            }
+        }
+    }
+
+    strip.recalculate_labels();
+    (zone_start, zone_end)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

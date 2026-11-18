@@ -660,6 +660,16 @@ impl TerminalSpec {
         }
     }
 
+    /// Returns `true` if this specification is a DIN-rail N-busbar carrier / support block
+    /// (`Sammelschienenträger` / `Auflagebock`), such as WAGO `2009-305` / `2009-304`,
+    /// Phoenix Contact `AB-*`, or Weidmüller `AEB ITB*`.
+    pub fn is_busbar_carrier(&self) -> bool {
+        let id = self.id.as_str();
+        id.starts_with("wago-2009-30")
+            || id.starts_with("phoenix-ab-")
+            || id.starts_with("weidmuller-aeb-itb-")
+    }
+
     /// Returns `true` if this specification is a 16 mm² N-busbar supply terminal (`N-Einspeiseklemme`),
     /// such as WAGO `2016-7714` / `2216-7714` / `2016-7614`, Phoenix `PTI 16-NLS-FI`, or Weidmüller `AITB 16 BB NDT`.
     pub fn is_n_supply_terminal(&self) -> bool {
@@ -677,7 +687,7 @@ impl TerminalSpec {
 
     /// Returns `true` if this terminal is an `NT` installation terminal with N-disconnect slide (`N-Trennschlitten`).
     pub fn is_nt_disconnect_terminal(&self) -> bool {
-        if self.is_n_supply_terminal() {
+        if self.is_n_supply_terminal() || self.is_busbar_carrier() {
             return false;
         }
         let id = self.id.as_str();
@@ -695,7 +705,7 @@ impl TerminalSpec {
     /// Returns `true` if this terminal is a building-installation terminal (`2003`, `2203`, `2005`, `2205`,
     /// `PTI`, `STI`, `UTI`, `AITB`, `ZDL`, `DLI`) or any `NT` terminal that should prompt for NT / N-Einspeiseklemme.
     pub fn is_installation_or_nt_terminal(&self) -> bool {
-        if self.is_n_supply_terminal() {
+        if self.is_n_supply_terminal() || self.is_busbar_carrier() {
             return false;
         }
         let id = self.id.as_str();
@@ -716,7 +726,7 @@ impl TerminalSpec {
     /// WAGO `2003`/`2203`/`2005`/`2205`, Phoenix `PTI`, or Weidmüller `AITB`), returns the matching `NT`
     /// specification ID so the user can switch to the `NT` variant directly in the prompt dialog.
     pub fn matching_nt_spec_id(&self) -> Option<&'static str> {
-        if self.is_nt_disconnect_terminal() || self.is_n_supply_terminal() {
+        if self.is_nt_disconnect_terminal() || self.is_n_supply_terminal() || self.is_busbar_carrier() {
             return None;
         }
         let id = self.id.as_str();
@@ -811,6 +821,81 @@ impl TerminalSpec {
                 "wago-2216-7714",
                 "wago-2016-7614",
             ],
+        }
+    }
+
+    /// Returns the recommended outer DIN-rail busbar carrier (`Sammelschienenträger` / `Auflagebock`)
+    /// placed before the N-supply terminal and after the last installation/NT block.
+    pub fn recommended_outer_busbar_carrier_spec_id(&self) -> Option<&'static str> {
+        if !(self.is_installation_or_nt_terminal() || self.is_n_supply_terminal()) {
+            return None;
+        }
+        let id = self.id.as_str();
+        match self.manufacturer.as_str() {
+            "WAGO" => Some("wago-2009-305"),
+            "Phoenix Contact" => {
+                if id.starts_with("phoenix-uti-6") {
+                    Some("phoenix-ab-uti-6-3")
+                } else if id.starts_with("phoenix-uti-") {
+                    Some("phoenix-ab-uti-3")
+                } else if id.starts_with("phoenix-sti-") {
+                    Some("phoenix-ab-sti-3")
+                } else if id.starts_with("phoenix-pti-16-") {
+                    Some("phoenix-ab-pti-16-nls-bu")
+                } else if id.starts_with("phoenix-pti-6") {
+                    Some("phoenix-ab-pti-6")
+                } else if id.starts_with("phoenix-pti-4") {
+                    Some("phoenix-ab-pti-4-3")
+                } else if id.starts_with("phoenix-pti-") {
+                    if self.levels <= 1 {
+                        Some("phoenix-ab-pti")
+                    } else {
+                        Some("phoenix-ab-pti-3")
+                    }
+                } else {
+                    Some("phoenix-ab-ss")
+                }
+            }
+            "Weidmüller" => {
+                if id.contains("aitb-16") {
+                    Some("weidmuller-aeb-itb-16-bl")
+                } else if id.contains("aitb") {
+                    Some("weidmuller-aeb-itb-25-4-bl")
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns the recommended intermediate busbar support (`Zwischenstütze`) inserted every 200 mm
+    /// on long installation terminal rows (e.g., WAGO `2009-304` 1.5 mm, Phoenix Contact `AB-*` 200 mm pitch).
+    pub fn recommended_intermediate_busbar_support_spec_id(&self) -> Option<&'static str> {
+        let outer = self.recommended_outer_busbar_carrier_spec_id()?;
+        match self.manufacturer.as_str() {
+            "WAGO" => Some("wago-2009-304"),
+            _ => Some(outer),
+        }
+    }
+
+    /// Returns all compatible busbar carrier / support bracket IDs for the prompt dropdown.
+    pub fn compatible_busbar_carrier_spec_ids(&self) -> &'static [&'static str] {
+        match self.manufacturer.as_str() {
+            "WAGO" => &["wago-2009-305", "wago-2009-304"],
+            "Phoenix Contact" => &[
+                "phoenix-ab-pti-3",
+                "phoenix-ab-pti-4-3",
+                "phoenix-ab-pti",
+                "phoenix-ab-pti-6",
+                "phoenix-ab-pti-16-nls-bu",
+                "phoenix-ab-uti-3",
+                "phoenix-ab-uti-6-3",
+                "phoenix-ab-sti-3",
+                "phoenix-ab-ss",
+            ],
+            "Weidmüller" => &["weidmuller-aeb-itb-25-4-bl", "weidmuller-aeb-itb-16-bl"],
+            _ => &[],
         }
     }
 
@@ -1098,6 +1183,15 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-ut-6-pe" => Some(("3044157", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-ut-6-pe-3044157", "https://caas.phoenixcontact.com/caas/v1/stable/media/253550/full/b408?format=jpg")),
         "phoenix-ut-10-pe" => Some(("3044186", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-ut-10-pe-3044186", "https://caas.phoenixcontact.com/caas/v1/stable/media/119830/full/b408?format=jpg")),
         "phoenix-ut-35" => Some(("3044225", "https://www.phoenixcontact.com/de-de/produkte/durchgangsklemme-ut-35-3044225", "https://caas.phoenixcontact.com/caas/v1/stable/media/49680/full/b408?format=jpg")),
+        "phoenix-ab-pti-3" => Some(("3213974", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-pti3-3213974", "https://caas.phoenixcontact.com/caas/v1/stable/media/266030/full/b408?format=jpg")),
+        "phoenix-ab-pti-4-3" => Some(("3214053", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-pti-43-3214053", "https://caas.phoenixcontact.com/caas/v1/stable/media/266030/full/b408?format=jpg")),
+        "phoenix-ab-pti" => Some(("3214006", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-pti-3214006", "https://caas.phoenixcontact.com/caas/v1/stable/media/215234/full/b408?format=jpg")),
+        "phoenix-ab-pti-6" => Some(("3214008", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-pti-6-3214008", "https://caas.phoenixcontact.com/caas/v1/stable/media/246774/full/b408?format=jpg")),
+        "phoenix-ab-pti-16-nls-bu" => Some(("1030138", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-pti-16-nls-bu-1030138", "https://caas.phoenixcontact.com/caas/v1/stable/media/221880/full/b408?format=jpg")),
+        "phoenix-ab-uti-3" => Some(("3076038", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-uti3-3076038", "https://caas.phoenixcontact.com/caas/v1/stable/media/270338/full/b408?format=jpg")),
+        "phoenix-ab-uti-6-3" => Some(("1037092", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-uti-63-1037092", "https://caas.phoenixcontact.com/caas/v1/stable/media/202414/full/b408?format=jpg")),
+        "phoenix-ab-sti-3" => Some(("3030831", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-ab-sti3-3030831", "https://caas.phoenixcontact.com/caas/v1/stable/media/266030/full/b408?format=jpg")),
+        "phoenix-ab-ss" => Some(("0404428", "https://www.phoenixcontact.com/de-de/produkte/auflagebock-abss-0404428", "https://caas.phoenixcontact.com/caas/v1/stable/media/244668/full/b408?format=jpg")),
 
         // --- WEIDMÜLLER ---
         "weidmuller-a2c-15" => Some(("1552790000", "https://eshop.weidmueller.com/de/a2c-1-5/p/1552790000", "https://assets.dam.weidmueller.com/assets/api/e97bfd80-8178-485e-b52e-869943c7b95c/DAP_Master_PP,w_800,q_80")),
@@ -1150,6 +1244,8 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "weidmuller-aitb-4-nlp" => Some(("2669090000", "https://eshop.weidmueller.com/de/aitb-4-bb-n-l-pe/p/2669090000", "https://assets.dam.weidmueller.com/assets/api/d763a83c-329c-4358-bb01-a2dffa7b157b/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-4-llp" => Some(("2669080000", "https://eshop.weidmueller.com/de/aitb-4-bb-l-l-pe/p/2669080000", "https://assets.dam.weidmueller.com/assets/api/ad0808fe-accb-4a1b-ae29-c579cd18f80b/DAP_Master_PP,w_800,q_80")),
         "weidmuller-aitb-4-ll" => Some(("2669040000", "https://eshop.weidmueller.com/de/aitb-4-bb-l-l/p/2669040000", "https://assets.dam.weidmueller.com/assets/api/ad0808fe-accb-4a1b-ae29-c579cd18f80b/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aeb-itb-25-4-bl" => Some(("2690440000", "https://eshop.weidmueller.com/de/aeb-itb-2-5-4-bb-bl/p/2690440000", "https://assets.dam.weidmueller.com/assets/api/d577c648-f962-4ac6-b5ca-3bba4407791a/DAP_Master_PP,w_800,q_80")),
+        "weidmuller-aeb-itb-16-bl" => Some(("2669130000", "https://eshop.weidmueller.com/de/aeb-itb-16-bb-bl/p/2669130000", "https://assets.dam.weidmueller.com/assets/api/450f5df0-a55d-44c9-bb3c-ba888ae6feee/DAP_Master_PP,w_800,q_80")),
         "weidmuller-wdu-25" => Some(("1020000000", "https://eshop.weidmueller.com/de/wdu-2-5/p/1020000000", "https://assets.dam.weidmueller.com/assets/api/39e06f09-d8ee-4912-beb4-700715a2acf1/DAP_Master_PP,w_800,q_80")),
         "weidmuller-wdu-25-bl" => Some(("1020080000", "https://eshop.weidmueller.com/de/wdu-2-5-bl/p/1020080000", "https://assets.dam.weidmueller.com/assets/api/953044f8-26dc-4809-87f3-3d76eee0107b/DAP_Master_PP,w_800,q_80")),
         "weidmuller-wpe-25" => Some(("1010000000", "https://eshop.weidmueller.com/de/wpe-2-5/p/1010000000", "https://assets.dam.weidmueller.com/assets/api/8fdcddfc-2a0e-47db-8a7b-025cd551ecce/DAP_Master_PP,w_800,q_80")),
@@ -1652,9 +1748,13 @@ mod tests {
             assert_eq!(spec.effective_rail_offset_tenths_mm(), 0);
         }
 
-        // Phoenix Contact 260-spec catalog verifications
+        // Phoenix Contact 260-spec terminal block catalog verifications
         assert_eq!(
-            catalog.all().iter().filter(|s| s.manufacturer == "Phoenix Contact").count(),
+            catalog
+                .all()
+                .iter()
+                .filter(|s| s.manufacturer == "Phoenix Contact" && !s.is_busbar_carrier())
+                .count(),
             260
         );
         assert_eq!(
@@ -1702,9 +1802,13 @@ mod tests {
         let pt15tg = catalog.find_by_id("phoenix-pt-15s-tg").unwrap();
         assert_eq!(end_plate_width_tenths_mm(pt15tg), 8);
 
-        // WAGO 260-spec catalog verifications
+        // WAGO 260-spec terminal block catalog verifications
         assert_eq!(
-            catalog.all().iter().filter(|s| s.manufacturer == "WAGO").count(),
+            catalog
+                .all()
+                .iter()
+                .filter(|s| s.manufacturer == "WAGO" && !s.is_busbar_carrier())
+                .count(),
             260
         );
         let wago_2202_3227 = catalog.find_by_id("wago-2202-3227").unwrap();
@@ -1732,13 +1836,16 @@ mod tests {
             assert_eq!(end_plate_width_tenths_mm(spec), 10);
         }
 
-        // Weidmüller 190-spec & 10-end-bracket verifications + collision checks
+        // Weidmüller 190-spec terminal block & 10-end-bracket verifications + collision checks
         let wm_specs: Vec<_> = catalog
             .all()
             .iter()
             .filter(|s| s.manufacturer == "Weidmüller")
             .collect();
-        assert_eq!(wm_specs.len(), 190);
+        assert_eq!(
+            wm_specs.iter().filter(|s| !s.is_busbar_carrier()).count(),
+            190
+        );
         assert_eq!(
             crate::catalog::accessories::all_end_brackets()
                 .iter()
@@ -1792,6 +1899,57 @@ mod tests {
     }
 
     #[test]
+    fn busbar_carriers_and_auflagebock_specs_are_complete_and_accurate() {
+        use crate::catalog::accessories::{end_plate_width_tenths_mm, resolve_accessories};
+
+        let catalog = TerminalCatalog::load_embedded();
+        let carriers: Vec<_> = catalog
+            .all()
+            .iter()
+            .filter(|s| s.is_busbar_carrier())
+            .collect();
+        assert_eq!(carriers.len(), 13);
+
+        for carrier in &carriers {
+            assert_eq!(carrier.effective_jumper_slots(), 0);
+            assert_eq!(carrier.effective_max_jumper_poles(), 0);
+            assert_eq!(end_plate_width_tenths_mm(carrier), 0);
+            assert!(!carrier.is_installation_or_nt_terminal());
+            assert!(!carrier.is_n_supply_terminal());
+            let _ = resolve_accessories(carrier);
+        }
+
+        let c_305 = catalog.find_by_id("wago-2009-305").unwrap();
+        assert_eq!(c_305.width_tenths_mm, 75);
+        assert_eq!(c_305.effective_article_number(), Some("2009-305"));
+        assert!(c_305.effective_image_url().is_some());
+
+        let c_304 = catalog.find_by_id("wago-2009-304").unwrap();
+        assert_eq!(c_304.width_tenths_mm, 15);
+        assert_eq!(c_304.effective_article_number(), Some("2009-304"));
+
+        let wago_2003 = catalog.find_by_id("wago-2003-7641").unwrap();
+        assert_eq!(
+            wago_2003.recommended_outer_busbar_carrier_spec_id(),
+            Some("wago-2009-305")
+        );
+        assert_eq!(
+            wago_2003.recommended_intermediate_busbar_support_spec_id(),
+            Some("wago-2009-304")
+        );
+
+        let phx_pti = catalog.find_by_id("phoenix-pti-25-pelnt").unwrap();
+        assert_eq!(
+            phx_pti.recommended_outer_busbar_carrier_spec_id(),
+            Some("phoenix-ab-pti-3")
+        );
+        assert_eq!(
+            phx_pti.recommended_intermediate_busbar_support_spec_id(),
+            Some("phoenix-ab-pti-3")
+        );
+    }
+
+    #[test]
     fn global_search_ignores_manufacturer_filter_when_query_present() {
         let catalog = TerminalCatalog::load_embedded();
 
@@ -1807,5 +1965,33 @@ mod tests {
         // Searching a Weidmüller article number while Phoenix is preselected still finds Weidmüller
         let wm_hits = catalog.filter_specs(Some("Phoenix Contact"), "1547650000");
         assert!(wm_hits.iter().any(|s| s.id == "weidmuller-a2t-25-vl"));
+    }
+
+    #[test]
+    fn core_wago_specs_including_2002_2201_have_direct_image_urls() {
+        let catalog = TerminalCatalog::load_embedded();
+        for id in [
+            "wago-2002-1201",
+            "wago-2002-1204",
+            "wago-2002-1207",
+            "wago-2002-1401",
+            "wago-2002-2201",
+            "wago-2002-2204",
+            "wago-2002-3201",
+            "wago-2003-7641",
+            "wago-2003-7646",
+            "wago-2202-2201",
+            "wago-2203-7641",
+            "wago-2203-7646",
+        ] {
+            let spec = catalog.find_by_id(id).unwrap_or_else(|| panic!("Missing {id}"));
+            let img = spec
+                .effective_image_url()
+                .unwrap_or_else(|| panic!("Missing image_url for {id}"));
+            assert!(
+                img.starts_with("https://www.wago.com/medias/"),
+                "Unexpected image URL for {id}: {img}"
+            );
+        }
     }
 }

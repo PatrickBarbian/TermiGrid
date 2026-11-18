@@ -368,15 +368,25 @@ pub fn export_to_xlsx(
             });
             entry.4 += 1;
         }
-        for (_, (mfg, name, art, w10, qty)) in block_counts {
+        for (spec_id, (mfg, name, art, w10, qty)) in block_counts {
+            let is_carrier = catalog
+                .find_by_id(&spec_id)
+                .is_some_and(|s| s.is_busbar_carrier());
+            let category_label = if is_carrier {
+                if german_headers {
+                    "Sammelschienenträger"
+                } else {
+                    "Busbar Carrier"
+                }
+            } else if german_headers {
+                "Reihenklemme"
+            } else {
+                "Terminal Block"
+            };
             ws4.write_string_with_format(
                 r4,
                 0,
-                if german_headers {
-                    "Reihenklemme"
-                } else {
-                    "Terminal Block"
-                },
+                category_label,
                 &cell_text_fmt,
             )?;
             ws4.write_string_with_format(r4, 1, &strip.name, &cell_text_fmt)?;
