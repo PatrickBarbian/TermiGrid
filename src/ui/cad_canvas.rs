@@ -82,15 +82,34 @@ impl CadCanvasState {
     }
 }
 
-fn block_front_height_mm(block: &TerminalBlock, catalog: &TerminalCatalog) -> f32 {
-    catalog
-        .find_by_id(&block.spec_id)
-        .map(|sp| f32::from(sp.effective_height_tenths_mm()) / 10.0)
-        .unwrap_or_else(|| match block.tiers.len() {
+fn block_front_bounds_mm(block: &TerminalBlock, catalog: &TerminalCatalog) -> (f32, f32, f32) {
+    let (h, offset) = if let Some(sp) = catalog.find_by_id(&block.spec_id) {
+        (
+            f32::from(sp.effective_height_tenths_mm()) / 10.0,
+            f32::from(sp.effective_rail_offset_tenths_mm()) / 10.0,
+        )
+    } else {
+        let h = match block.tiers.len() {
             1 => 48.5,
             2 => 69.7,
             _ => 93.3,
-        })
+        };
+        (h, 0.0)
+    };
+    let above = (h * 0.5 + offset).max(5.0);
+    let below = (h * 0.5 - offset).max(5.0);
+    (h, above, below)
+}
+
+fn pos_label_and_font(block_w: f32, index: usize, base_sz: f32) -> (String, f32) {
+    let label = if block_w >= 26.0 {
+        format!("#{}", index + 1)
+    } else {
+        format!("{}", index + 1)
+    };
+    let max_for_w = (block_w - 2.0).max(4.0) / (label.len().max(1) as f32 * 0.62);
+    let font_sz = base_sz.min(max_for_w).clamp(5.5, 13.5);
+    (label, font_sz)
 }
 
 /// Renders the interactive 2D CAD view of `strip`, updating `selected` indices and
@@ -188,56 +207,131 @@ pub fn show_cad_canvas(
         .sum();
     let total_rail_mm = strip.total_width_mm() + plates_mm + brackets_mm;
 
-    let block_heights_mm: Vec<f32> = strip
+    let block_bounds_mm: Vec<(f32, f32, f32)> = strip
         .blocks
         .iter()
-        .map(|b| block_front_height_mm(b, catalog))
+        .map(|b| block_front_bounds_mm(b, catalog))
         .collect();
     let eb_height_mm = f32::from(end_bracket.height_tenths_mm) / 10.0;
-    let max_block_h_mm = block_heights_mm.iter().copied().fold(0.0_f32, f32::max);
+    let eb_half_mm = eb_height_mm * 0.5;
+    let mut max_above_mm = block_bounds_mm
+        .iter()
+        .map(|&(_, above, _)| above)
+        .fold(17.5_f32, f32::max);
+    let mut max_below_mm = block_bounds_mm
+        .iter()
+        .map(|&(_, _, below)| below)
+        .fold(17.5_f32, f32::max);
+    if !strip.blocks.is_empty() && bracket_count > 0 {
+        max_above_mm = max_above_mm.max(eb_half_mm);
+        max_below_mm = max_below_mm.max(eb_half_mm);
+    }
     let max_strip_h_mm = if strip.blocks.is_empty() {
         35.0
-    } else if bracket_count > 0 {
-        max_block_h_mm.max(eb_height_mm).max(35.0)
     } else {
-        max_block_h_mm.max(35.0)
+        (max_above_mm + max_below_mm).max(35.0)
     };
 
     // Layout metrics depend on standard CAD mode vs strict 1:1 mm e-Planer Aufbaubild mode
     let e_planer = state.e_planer_mode;
     let px_per_mm = if e_planer { 6.2 * z } else { 8.2 * z };
-    let h_px_per_mm = if e_planer { px_per_mm } else { 2.55 * z };
+    let h_px_per_mm = if e_planer { px_per_mm } else { 3.25 * z };
 
-    let tier_height = 56.0 * z;
-    let tier_gap = 34.0 * z;
+    let tier_height = 48.0 * z;
+    let tier_gap = 28.0 * z;
     let block_gap = if e_planer { 0.0 } else { 3.0 * z };
     let margin_x = if e_planer {
-        (92.0 * z).max(70.0)
+        (92.0 * z).max(74.0)
     } else {
-        (46.0 * z).max(38.0)
+        (50.0 * z).max(42.0)
     };
-    let margin_top = if e_planer { 68.0 + 30.0 * z } else { 42.0 + 14.0 * z };
+
+    // Prepare wrapped canvas header before layout calculation so margin_top never collides
+    let title_color = if dark {
+        Color32::from_rgb(226, 232, 240)
+    } else {
+        Color32::from_rgb(30, 41, 59)
+    };
+    let mut detail_parts = Vec::new();
+    if !end_plates.is_empty() || bracket_count > 0 {
+        detail_parts.push(format!("{:.1}", strip.total_width_mm()));
+        if !end_plates.is_empty() {
+            detail_parts.push(format!(
+                "{:.1} mm {}× {}",
+                plates_mm,
+                end_plates.len(),
+                strings.acc_end_plate
+            ));
+        }
+        if bracket_count > 0 {
+            detail_parts.push(format!(
+                "{:.1} mm {}× {}",
+                brackets_mm, bracket_count, end_bracket.name
+            ));
+        }
+    }
+    let scale_badge = if e_planer {
+        format!("  |  {}", strings.cad_scale_1_1)
+    } else {
+        String::new()
+    };
+    let header_text = if detail_parts.is_empty() {
+        format!(
+            "{}  |  {} {}  |  {:.1} × {:.1} mm{}",
+            strip.name,
+            strip.blocks.len(),
+            strings.blocks_unit,
+            total_rail_mm,
+            max_strip_h_mm,
+            scale_badge
+        )
+    } else {
+        format!(
+            "{}  |  {} {}  |  {:.1} × {:.1} mm ({}){}",
+            strip.name,
+            strip.blocks.len(),
+            strings.blocks_unit,
+            total_rail_mm,
+            max_strip_h_mm,
+            detail_parts.join(" + "),
+            scale_badge
+        )
+    };
+    let header_wrap_w = (canvas_avail.width() - 28.0).max(260.0);
+    let header_galley = ui.painter().layout(
+        header_text,
+        FontId::proportional(14.5),
+        title_color,
+        header_wrap_w,
+    );
+    let header_h = header_galley.size().y;
+
+    let margin_top = if e_planer {
+        let dim_clearance = (18.0 * z).max(16.0)
+            + (11.5 * z).clamp(9.5, 14.0) * 1.45
+            + (7.0 * z).max(7.0)
+            + (10.5 * z).clamp(8.5, 13.0) * 1.45
+            + 16.0;
+        12.0 + header_h + dim_clearance
+    } else {
+        12.0 + header_h + 16.0 * z + 10.0
+    };
+
+    let max_short_chars = strip
+        .blocks
+        .iter()
+        .map(|b| b.short_type_name().chars().count())
+        .max()
+        .unwrap_or(10);
+    let est_pos_band =
+        ((if e_planer { 11.0 } else { 12.5 }) * z).clamp(7.5, 13.5) * 1.45 + (14.0 * z).max(12.0);
     let footer_height = match state.type_display {
-        TypeDisplayMode::Off => {
-            if e_planer {
-                92.0 * z
-            } else {
-                38.0 * z
-            }
-        }
-        TypeDisplayMode::HorizontalGroups => {
-            if e_planer {
-                118.0 * z
-            } else {
-                74.0 * z
-            }
-        }
+        TypeDisplayMode::Off => est_pos_band + 18.0,
+        TypeDisplayMode::HorizontalGroups => est_pos_band + (25.0 * z).max(20.0) + 22.0,
         TypeDisplayMode::VerticalPerBlock => {
-            if e_planer {
-                195.0 * z
-            } else {
-                155.0 * z
-            }
+            let est_type_h = (max_short_chars as f32 * (12.5 * z).clamp(7.5, 13.5) * 0.66)
+                .max(120.0 * z);
+            est_pos_band + est_type_h + 28.0
         }
     };
 
@@ -250,13 +344,6 @@ pub fn show_cad_canvas(
             min_visual_row = min_visual_row.min(r);
         }
     }
-
-    let above_rows = (max_visual_row + 1) as f32;
-    let below_rows = if min_visual_row < 0 {
-        (-min_visual_row) as f32
-    } else {
-        0.0
-    };
 
     let bracket_px = if e_planer {
         (f32::from(end_bracket.width_tenths_mm) / 10.0) * px_per_mm
@@ -291,15 +378,28 @@ pub fn show_cad_canvas(
         })
         .sum();
 
-    let max_envelope_h_px = max_strip_h_mm * h_px_per_mm;
-    let tier_stack_span = (above_rows + below_rows) * (tier_height + tier_gap);
-    let stack_height = if e_planer {
-        max_envelope_h_px
+    let tier_span_rows = (max_visual_row - min_visual_row + 1).max(1) as f32;
+    let tier_half_from_rail_px =
+        (tier_span_rows * (tier_height + tier_gap) - tier_gap).max(tier_height) * 0.5;
+    let max_above_px = max_above_mm * h_px_per_mm;
+    let max_below_px = max_below_mm * h_px_per_mm;
+    let req_above_px = if e_planer {
+        max_above_px
+    } else if strip.blocks.is_empty() {
+        60.0 * z
     } else {
-        tier_stack_span.max(max_envelope_h_px + 12.0 * z)
+        max_above_px.max(tier_half_from_rail_px + 6.0 * z)
     };
+    let req_below_px = if e_planer {
+        max_below_px
+    } else if strip.blocks.is_empty() {
+        60.0 * z
+    } else {
+        max_below_px.max(tier_half_from_rail_px + 6.0 * z)
+    };
+    let stack_height = req_above_px + req_below_px;
 
-    let right_extra = if e_planer { 110.0 * z } else { 0.0 };
+    let right_extra = if e_planer { 116.0 * z } else { 0.0 };
     let content_width = (margin_x * 2.0
         + total_blocks_width
         + total_plates_width
@@ -334,92 +434,20 @@ pub fn show_cad_canvas(
             let grid_step = if e_planer { 10.0 * px_per_mm } else { 24.0 * z };
             draw_cad_grid(&painter, canvas_rect, grid_step, dark);
 
-            // Strip title watermark at top-left
-            let title_color = if dark {
-                Color32::from_rgb(226, 232, 240)
-            } else {
-                Color32::from_rgb(30, 41, 59)
-            };
-            let mut detail_parts = Vec::new();
-            if !end_plates.is_empty() || bracket_count > 0 {
-                detail_parts.push(format!("{:.1}", strip.total_width_mm()));
-                if !end_plates.is_empty() {
-                    detail_parts.push(format!(
-                        "{:.1} mm {}× {}",
-                        plates_mm,
-                        end_plates.len(),
-                        strings.acc_end_plate
-                    ));
-                }
-                if bracket_count > 0 {
-                    detail_parts.push(format!(
-                        "{:.1} mm {}× {}",
-                        brackets_mm, bracket_count, end_bracket.name
-                    ));
-                }
-            }
-            let scale_badge = if e_planer {
-                format!("  |  {}", strings.cad_scale_1_1)
-            } else {
-                String::new()
-            };
-            let header_text = if detail_parts.is_empty() {
-                format!(
-                    "{}  |  {} {}  |  {:.1} × {:.1} mm{}",
-                    strip.name,
-                    strip.blocks.len(),
-                    strings.blocks_unit,
-                    total_rail_mm,
-                    max_strip_h_mm,
-                    scale_badge
-                )
-            } else {
-                format!(
-                    "{}  |  {} {}  |  {:.1} × {:.1} mm ({}){}",
-                    strip.name,
-                    strip.blocks.len(),
-                    strings.blocks_unit,
-                    total_rail_mm,
-                    max_strip_h_mm,
-                    detail_parts.join(" + "),
-                    scale_badge
-                )
-            };
-            painter.text(
+            // Wrapped strip header at top-left
+            painter.galley(
                 canvas_rect.min + Vec2::new(14.0, 10.0),
-                Align2::LEFT_TOP,
-                header_text,
-                FontId::proportional(15.0),
+                header_galley,
                 title_color,
             );
 
-            // Compute vertical anchor (`rail_center_y` and `baseline_bottom_y`)
-            let extra_top_pad = ((max_envelope_h_px - tier_stack_span).max(0.0)) * 0.5;
-            let baseline_bottom_y = canvas_rect.min.y
-                + margin_top
-                + extra_top_pad
-                + above_rows * (tier_height + tier_gap);
-
-            // Vertical center of all active visual rows (and thus center of the TS 35 DIN rail)
-            let tier_top_span_y =
-                baseline_bottom_y - ((max_visual_row + 1) as f32) * (tier_height + tier_gap);
-            let tier_bot_span_y =
-                baseline_bottom_y - (min_visual_row as f32) * (tier_height + tier_gap) - tier_gap;
-            let rail_center_y = if e_planer {
-                canvas_rect.min.y + margin_top + max_envelope_h_px * 0.5
-            } else if strip.blocks.is_empty() {
-                canvas_rect.min.y + margin_top + 60.0 * z
-            } else {
-                (tier_top_span_y + tier_bot_span_y) * 0.5
-            };
-
-            let envelope_bottom_y = rail_center_y + max_envelope_h_px * 0.5;
-            let lowest_bottom_y = if e_planer {
-                envelope_bottom_y
-            } else {
-                (baseline_bottom_y + below_rows * (tier_height + tier_gap))
-                    .max(envelope_bottom_y + 6.0 * z)
-            };
+            // Exact TS 35 DIN-rail center anchor (`rail_center_y`) and visual row baseline
+            let rail_center_y = canvas_rect.min.y + margin_top + req_above_px;
+            let baseline_bottom_y = rail_center_y
+                + (((max_visual_row + min_visual_row + 1) as f32) * (tier_height + tier_gap)
+                    + tier_gap)
+                    * 0.5;
+            let lowest_bottom_y = rail_center_y + req_below_px;
 
             // Draw subtle row labels on the left margin (E3, E2, E1, PE) in normal CAD mode
             if !e_planer {
@@ -465,7 +493,7 @@ pub fn show_cad_canvas(
             let rail_overhang = if e_planer {
                 15.0 * px_per_mm
             } else {
-                26.0 * z
+                (34.0 * z).max(28.0)
             };
             draw_ts35_din_rail(
                 &painter,
@@ -476,6 +504,7 @@ pub fn show_cad_canvas(
                 dark,
                 e_planer,
                 z,
+                rail_overhang,
             );
 
             // 2. Compute block & tier bounding boxes and render end brackets, terminal blocks & end plates
@@ -486,7 +515,10 @@ pub fn show_cad_canvas(
             let mut bracket_hit_rects: Vec<(Rect, bool)> = Vec::new();
             let mut cursor_x = strip_start_x;
 
-            let eb_half_h = (eb_height_mm * h_px_per_mm * 0.5).max(18.0 * z);
+            let pos_top_y = lowest_bottom_y + (5.0 * z).max(4.0);
+            let mut max_pos_bottom_y = pos_top_y + 10.0 * z;
+
+            let eb_half_h = (eb_half_mm * h_px_per_mm).max(if e_planer { 0.0 } else { 18.0 * z });
             let eb_top = rail_center_y - eb_half_h;
             let eb_bottom = rail_center_y + eb_half_h;
 
@@ -498,7 +530,8 @@ pub fn show_cad_canvas(
                 draw_end_bracket_cad(
                     &painter,
                     eb_rect,
-                    lowest_bottom_y,
+                    pos_top_y,
+                    &mut max_pos_bottom_y,
                     end_bracket,
                     *selected_end_bracket == Some(true),
                     dark,
@@ -514,13 +547,15 @@ pub fn show_cad_canvas(
                 } else {
                     ((f32::from(block.width_tenths_mm) / 10.0) * px_per_mm).max(24.0 * z)
                 };
-                let bh_mm = block_heights_mm[idx];
-                let bh_px = bh_mm * h_px_per_mm;
+                let (_bh_mm, above_mm, below_mm) = block_bounds_mm[idx];
+                let above_px = above_mm * h_px_per_mm;
+                let below_px = below_mm * h_px_per_mm;
 
                 if e_planer {
-                    let y0 = rail_center_y - bh_px * 0.5;
-                    let y1 = rail_center_y + bh_px * 0.5;
-                    let block_rect = Rect::from_min_max(Pos2::new(cursor_x, y0), Pos2::new(cursor_x + w, y1));
+                    let y0 = rail_center_y - above_px;
+                    let y1 = rail_center_y + below_px;
+                    let block_rect =
+                        Rect::from_min_max(Pos2::new(cursor_x, y0), Pos2::new(cursor_x + w, y1));
                     block_rects.push(block_rect);
                     block_x_spans.push((cursor_x, cursor_x + w));
 
@@ -530,7 +565,8 @@ pub fn show_cad_canvas(
                         block,
                         idx,
                         block_rect,
-                        lowest_bottom_y,
+                        pos_top_y,
+                        &mut max_pos_bottom_y,
                         is_selected,
                         dark,
                         z,
@@ -548,13 +584,16 @@ pub fn show_cad_canvas(
                         .unwrap_or(0);
 
                     let tiers_top = baseline_bottom_y
-                        - ((block_max_row + 1) as f32) * (tier_height + tier_gap);
-                    let tiers_bottom =
-                        baseline_bottom_y - (block_min_row as f32) * (tier_height + tier_gap);
-                    let prop_top = rail_center_y - bh_px * 0.5;
-                    let prop_bottom = rail_center_y + bh_px * 0.5;
+                        - ((block_max_row + 1) as f32) * (tier_height + tier_gap)
+                        - 3.0 * z;
+                    let tiers_bottom = baseline_bottom_y
+                        - (block_min_row as f32) * (tier_height + tier_gap)
+                        - tier_gap
+                        + 3.0 * z;
+                    let prop_top = rail_center_y - above_px;
+                    let prop_bottom = rail_center_y + below_px;
                     let outer_top = tiers_top.min(prop_top);
-                    let outer_bottom = (tiers_bottom - tier_gap + 4.0 * z).max(prop_bottom);
+                    let outer_bottom = tiers_bottom.max(prop_bottom);
 
                     let hit_rect = Rect::from_min_max(
                         Pos2::new(cursor_x, outer_top),
@@ -573,7 +612,8 @@ pub fn show_cad_canvas(
                         outer_top,
                         outer_bottom,
                         baseline_bottom_y,
-                        lowest_bottom_y,
+                        pos_top_y,
+                        &mut max_pos_bottom_y,
                         tier_height,
                         tier_gap,
                         is_selected,
@@ -586,28 +626,35 @@ pub fn show_cad_canvas(
 
                 cursor_x += w + block_gap;
 
-                // Render end/partition plate immediately after block `idx` at its real width in mm
+                // Render end/partition plate immediately after block `idx` spanning tallest adjacent terminal
                 if let Some(plate) = end_plates.iter().find(|p| p.after_block_idx == idx) {
                     let plate_px = if e_planer {
                         (f32::from(plate.width_tenths_mm) / 10.0) * px_per_mm
                     } else {
                         ((f32::from(plate.width_tenths_mm) / 10.0) * px_per_mm).max(5.5 * z)
                     };
-                    let next_bh_mm = block_heights_mm.get(idx + 1).copied().unwrap_or(bh_mm);
-                    let plate_h_px = bh_mm.max(next_bh_mm) * h_px_per_mm;
+                    let (_, next_above_mm, next_below_mm) = block_bounds_mm
+                        .get(idx + 1)
+                        .copied()
+                        .unwrap_or((_bh_mm, above_mm, below_mm));
+                    let plate_above_px = above_mm.max(next_above_mm) * h_px_per_mm;
+                    let plate_below_px = below_mm.max(next_below_mm) * h_px_per_mm;
                     let (p_top, p_bottom) = if e_planer {
-                        (rail_center_y - plate_h_px * 0.5, rail_center_y + plate_h_px * 0.5)
+                        (
+                            rail_center_y - plate_above_px,
+                            rail_center_y + plate_below_px,
+                        )
                     } else {
                         let tier_p_top = baseline_bottom_y
                             - ((plate.max_visual_row + 1) as f32) * (tier_height + tier_gap)
-                            - 2.0 * z;
+                            - 3.0 * z;
                         let tier_p_bot = baseline_bottom_y
                             - (plate.min_visual_row as f32) * (tier_height + tier_gap)
                             - tier_gap
-                            + 2.0 * z;
+                            + 3.0 * z;
                         (
-                            tier_p_top.min(rail_center_y - plate_h_px * 0.5),
-                            tier_p_bot.max(rail_center_y + plate_h_px * 0.5),
+                            tier_p_top.min(rail_center_y - plate_above_px),
+                            tier_p_bot.max(rail_center_y + plate_below_px),
                         )
                     };
                     let plate_rect = Rect::from_min_max(
@@ -632,17 +679,23 @@ pub fn show_cad_canvas(
                         Stroke::new(1.0, Color32::from_rgb(120, 53, 15)),
                         StrokeKind::Inside,
                     );
-                    if z >= 0.75 && !e_planer {
-                        painter.text(
-                            Pos2::new(plate_rect.center().x, lowest_bottom_y + 6.0 * z),
-                            Align2::CENTER_TOP,
-                            format!("{:.1}", f32::from(plate.width_tenths_mm) / 10.0),
-                            FontId::proportional((8.0 * z).max(6.5)),
-                            if dark {
-                                Color32::from_rgb(251, 191, 36)
-                            } else {
-                                Color32::from_rgb(180, 83, 9)
-                            },
+                    if !e_planer && plate_rect.width() >= 18.0 {
+                        let pw_txt = format!("{:.1}", f32::from(plate.width_tenths_mm) / 10.0);
+                        let p_col = if dark {
+                            Color32::from_rgb(251, 191, 36)
+                        } else {
+                            Color32::from_rgb(180, 83, 9)
+                        };
+                        let g = painter.layout_no_wrap(
+                            pw_txt,
+                            FontId::proportional((8.0 * z).clamp(6.5, 10.0)),
+                            p_col,
+                        );
+                        max_pos_bottom_y = max_pos_bottom_y.max(pos_top_y + g.size().y);
+                        painter.galley(
+                            Pos2::new(plate_rect.center().x - g.size().x * 0.5, pos_top_y),
+                            g,
+                            p_col,
                         );
                     }
                     plate_hit_rects.push((plate_rect, plate));
@@ -658,7 +711,8 @@ pub fn show_cad_canvas(
                 draw_end_bracket_cad(
                     &painter,
                     eb_rect,
-                    lowest_bottom_y,
+                    pos_top_y,
+                    &mut max_pos_bottom_y,
                     end_bracket,
                     *selected_end_bracket == Some(false),
                     dark,
@@ -684,6 +738,8 @@ pub fn show_cad_canvas(
                     strip_start_x,
                     assembly_end_x,
                     rail_center_y,
+                    max_above_mm,
+                    max_below_mm,
                     max_strip_h_mm,
                     total_rail_mm,
                     h_px_per_mm,
@@ -694,8 +750,8 @@ pub fn show_cad_canvas(
                 );
             }
 
-            // Draw terminal type annotations below the block numbers (#1, #2, ...)
-            let type_row_top_y = lowest_bottom_y + 26.0 * z;
+            // Draw terminal type annotations clearly separated beneath all block position numbers
+            let type_row_top_y = max_pos_bottom_y + (7.0 * z).max(6.0);
             match state.type_display {
                 TypeDisplayMode::Off => {}
                 TypeDisplayMode::HorizontalGroups => {
@@ -1189,16 +1245,22 @@ fn draw_vertical_type_labels(
     } else {
         Color32::from_rgb(15, 23, 42)
     };
-    let font = FontId::proportional((13.0 * zoom).max(11.0));
 
     for (idx, block) in strip.blocks.iter().enumerate() {
         let Some(&(x0, x1)) = spans.get(idx) else {
             continue;
         };
+        let block_w = x1 - x0;
+        if block_w < 8.5 {
+            continue;
+        }
         let center_x = (x0 + x1) * 0.5;
+        let font_sz = (12.5 * zoom)
+            .clamp(6.0, 13.5)
+            .min((block_w * 0.62).max(5.5));
         let galley = painter.layout_no_wrap(
             block.short_type_name().to_string(),
-            font.clone(),
+            FontId::proportional(font_sz),
             text_color,
         );
         let text_w = galley.size().x;
@@ -1258,7 +1320,8 @@ fn draw_terminal_block(
     outer_top: f32,
     outer_bottom: f32,
     baseline_bottom_y: f32,
-    lowest_bottom_y: f32,
+    pos_top_y: f32,
+    max_pos_bottom_y: &mut f32,
     tier_height: f32,
     tier_gap: f32,
     is_selected: bool,
@@ -1341,8 +1404,8 @@ fn draw_terminal_block(
 
         // Inner marker tag box placed cleanly below the header/corner-badge zone
         let tag_rect = Rect::from_min_max(
-            Pos2::new(tier_rect.min.x + 3.5 * zoom, tier_rect.min.y + 15.5 * zoom),
-            Pos2::new(tier_rect.max.x - 3.5 * zoom, tier_rect.max.y - 6.5 * zoom),
+            Pos2::new(tier_rect.min.x + 3.0 * zoom, tier_rect.min.y + 13.5 * zoom),
+            Pos2::new(tier_rect.max.x - 3.0 * zoom, tier_rect.max.y - 5.5 * zoom),
         );
         tier_hit_rects.push((block_idx, level, tier_rect, tag_rect));
 
@@ -1354,12 +1417,16 @@ fn draw_terminal_block(
             } else {
                 tier.cad_display_label.as_str()
             };
-            let font_size = if display.len() >= 4 {
-                (11.0 * zoom).max(9.0)
+            let base_sz = if display.len() >= 4 {
+                10.5 * zoom
             } else {
-                (14.5 * zoom).max(11.0)
+                13.5 * zoom
             };
-            painter.text(
+            let max_w_sz =
+                (tag_rect.width() - 2.0).max(4.0) / (display.len().max(1) as f32 * 0.66);
+            let font_size = base_sz.min(max_w_sz).min(tag_rect.height() * 0.72).clamp(6.0, 14.0);
+            let clipped_tag = painter.with_clip_rect(tag_rect);
+            clipped_tag.text(
                 tag_rect.center(),
                 Align2::CENTER_CENTER,
                 display,
@@ -1378,7 +1445,7 @@ fn draw_terminal_block(
         }
 
         // High-contrast tier level pill (E1, E2, E3, PE) in dedicated top-right header strip
-        if zoom >= 0.65 {
+        if zoom >= 0.7 && tier_rect.width() >= 22.0 {
             let row_tag = if tier.behavior.is_pe() && vrow < 0 {
                 "PE".to_string()
             } else {
@@ -1395,12 +1462,12 @@ fn draw_terminal_block(
                     Color32::from_rgb(248, 250, 252),
                 )
             };
-            let pill_w = (row_tag.len() as f32 * 6.5 + 6.0) * zoom;
-            let pill_h = 11.5 * zoom;
+            let pill_w = ((row_tag.len() as f32 * 6.0 + 5.0) * zoom).min(tier_rect.width() * 0.55);
+            let pill_h = 10.5 * zoom;
             let pill_rect = Rect::from_min_size(
                 Pos2::new(
                     tier_rect.max.x - pill_w - 2.0 * zoom,
-                    tier_rect.min.y + 3.5 * zoom,
+                    tier_rect.min.y + 3.0 * zoom,
                 ),
                 Vec2::new(pill_w, pill_h),
             );
@@ -1409,7 +1476,7 @@ fn draw_terminal_block(
                 pill_rect.center(),
                 Align2::CENTER_CENTER,
                 row_tag,
-                FontId::proportional((9.0 * zoom).max(8.0)),
+                FontId::proportional((8.5 * zoom).clamp(7.0, 10.0)),
                 pill_fg,
             );
         }
@@ -1434,7 +1501,7 @@ fn draw_terminal_block(
         );
     }
 
-    // Block position index aligned along the bottom of the strip
+    // Block position index aligned along the bottom of the strip without overflowing neighbor width
     let pos_color = if is_selected {
         if dark {
             Color32::from_rgb(56, 189, 248)
@@ -1446,13 +1513,21 @@ fn draw_terminal_block(
     } else {
         Color32::from_rgb(30, 41, 59)
     };
-    painter.text(
-        Pos2::new(x + width * 0.5, lowest_bottom_y + 6.0 * zoom),
-        Align2::CENTER_TOP,
-        format!("#{}", block_idx + 1),
-        FontId::proportional((12.5 * zoom).max(10.0)),
-        pos_color,
-    );
+    if width >= 9.0 {
+        let (pos_label, pos_font_sz) = pos_label_and_font(width, block_idx, 12.5 * zoom);
+        let pos_galley =
+            painter.layout_no_wrap(pos_label, FontId::proportional(pos_font_sz), pos_color);
+        *max_pos_bottom_y = (*max_pos_bottom_y).max(pos_top_y + pos_galley.size().y);
+        let pos_clip = Rect::from_min_max(
+            Pos2::new(x - 1.0, pos_top_y - 2.0),
+            Pos2::new(x + width + 1.0, pos_top_y + pos_galley.size().y + 4.0),
+        );
+        painter.with_clip_rect(pos_clip).galley(
+            Pos2::new(x + width * 0.5 - pos_galley.size().x * 0.5, pos_top_y),
+            pos_galley,
+            pos_color,
+        );
+    }
 }
 
 fn tier_palette(color: TierColor, dark: bool) -> (Color32, Color32, Color32) {
@@ -1723,10 +1798,12 @@ fn draw_bridge_overlay(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn draw_end_bracket_cad(
     painter: &egui::Painter,
     rect: Rect,
-    lowest_bottom_y: f32,
+    pos_top_y: f32,
+    max_pos_bottom_y: &mut f32,
     spec: &EndBracketSpec,
     is_selected: bool,
     dark: bool,
@@ -1781,15 +1858,18 @@ fn draw_end_bracket_cad(
     painter.rect_filled(bot_foot, CornerRadius::same(1), foot_col);
 
     // Center clamp mark
-    painter.text(
-        rect.center(),
-        Align2::CENTER_CENTER,
-        "EH",
-        FontId::proportional((10.0 * zoom).max(8.5)),
-        Color32::WHITE,
-    );
+    if rect.width() >= 11.0 {
+        let eh_sz = (10.0 * zoom).min(rect.width() * 0.45).clamp(6.0, 11.5);
+        painter.with_clip_rect(rect).text(
+            rect.center(),
+            Align2::CENTER_CENTER,
+            "EH",
+            FontId::proportional(eh_sz),
+            Color32::WHITE,
+        );
+    }
 
-    if zoom >= 0.7 {
+    if zoom >= 0.75 && rect.width() >= 18.0 {
         let lbl_col = if is_selected {
             if dark {
                 Color32::from_rgb(56, 189, 248)
@@ -1801,11 +1881,19 @@ fn draw_end_bracket_cad(
         } else {
             Color32::from_rgb(51, 65, 85)
         };
-        painter.text(
-            Pos2::new(rect.center().x, lowest_bottom_y + 6.0 * zoom),
-            Align2::CENTER_TOP,
-            format!("{:.1}", f32::from(spec.width_tenths_mm) / 10.0),
-            FontId::proportional((8.0 * zoom).max(6.5)),
+        let w_txt = format!("{:.1}", f32::from(spec.width_tenths_mm) / 10.0);
+        let w_sz = (8.5 * zoom)
+            .min((rect.width() - 2.0).max(4.0) / (w_txt.len().max(1) as f32 * 0.6))
+            .clamp(5.5, 10.0);
+        let g = painter.layout_no_wrap(w_txt, FontId::proportional(w_sz), lbl_col);
+        *max_pos_bottom_y = (*max_pos_bottom_y).max(pos_top_y + g.size().y);
+        let clip = Rect::from_min_max(
+            Pos2::new(rect.min.x - 1.0, pos_top_y - 2.0),
+            Pos2::new(rect.max.x + 1.0, pos_top_y + g.size().y + 4.0),
+        );
+        painter.with_clip_rect(clip).galley(
+            Pos2::new(rect.center().x - g.size().x * 0.5, pos_top_y),
+            g,
             lbl_col,
         );
     }
@@ -1821,6 +1909,7 @@ fn draw_ts35_din_rail(
     dark: bool,
     e_planer: bool,
     zoom: f32,
+    rail_overhang: f32,
 ) {
     let half_h = 17.5 * h_px_per_mm;
     let flange_h = 13.5 * h_px_per_mm;
@@ -1888,12 +1977,18 @@ fn draw_ts35_din_rail(
         Stroke::new(0.8, rail_stroke),
     );
 
-    if zoom >= 0.55 {
-        painter.text(
+    if zoom >= 0.55 && rail_overhang >= 24.0 {
+        let max_sz = ((rail_overhang - 6.0) / 3.4).clamp(6.5, 10.5);
+        let ts_sz = (9.5 * zoom).min(max_sz).clamp(6.5, 10.5);
+        let clip = Rect::from_min_max(
+            Pos2::new(x0 + 2.0, rail_center_y - half_h),
+            Pos2::new(x0 + rail_overhang - 2.0, rail_center_y + half_h),
+        );
+        painter.with_clip_rect(clip).text(
             Pos2::new(x0 + 4.0, rail_center_y),
             Align2::LEFT_CENTER,
             "TS 35",
-            FontId::monospace((9.5 * zoom).max(7.5)),
+            FontId::monospace(ts_sz),
             lbl_col,
         );
     }
@@ -1905,7 +2000,8 @@ fn draw_e_planer_block(
     block: &TerminalBlock,
     block_idx: usize,
     block_rect: Rect,
-    lowest_bottom_y: f32,
+    pos_top_y: f32,
+    max_pos_bottom_y: &mut f32,
     is_selected: bool,
     dark: bool,
     zoom: f32,
@@ -1966,7 +2062,7 @@ fn draw_e_planer_block(
         tier_hit_rects.push((block_idx, t_idx, band_rect, tag_rect));
 
         let is_being_edited = editing_tier == Some((block_idx, t_idx));
-        if !is_being_edited && band_rect.width() >= 10.0 && band_rect.height() >= 12.0 {
+        if !is_being_edited && band_rect.width() >= 9.0 && band_rect.height() >= 10.0 {
             let display = if !tier.cad_display_label.is_empty() {
                 tier.cad_display_label.as_str()
             } else if tier.behavior.is_pe() {
@@ -1978,9 +2074,12 @@ fn draw_e_planer_block(
                 TierColor::StandardGray if !dark => Color32::from_rgb(15, 23, 42),
                 _ => Color32::WHITE,
             };
+            let max_w_sz =
+                (band_rect.width() - 2.0).max(4.0) / (display.len().max(1) as f32 * 0.66);
             let font_sz = (band_rect.width() * 0.42)
                 .min(band_rect.height() * 0.34)
-                .clamp(7.5, 13.0);
+                .min(max_w_sz)
+                .clamp(5.5, 12.5);
             let clipped = painter.with_clip_rect(band_rect);
             clipped.text(
                 band_rect.center(),
@@ -2000,7 +2099,7 @@ fn draw_e_planer_block(
         StrokeKind::Inside,
     );
 
-    // Position index directly beneath the strip envelope
+    // Position index directly beneath the strip envelope without overflowing adjacent blocks
     let pos_col = if is_selected {
         Color32::from_rgb(14, 165, 233)
     } else if dark {
@@ -2008,13 +2107,25 @@ fn draw_e_planer_block(
     } else {
         Color32::from_rgb(30, 41, 59)
     };
-    painter.text(
-        Pos2::new(block_rect.center().x, lowest_bottom_y + 6.0 * zoom),
-        Align2::CENTER_TOP,
-        format!("#{}", block_idx + 1),
-        FontId::proportional((11.0 * zoom).max(8.5)),
-        pos_col,
-    );
+    if block_rect.width() >= 8.5 {
+        let (pos_label, pos_font_sz) =
+            pos_label_and_font(block_rect.width(), block_idx, 11.0 * zoom);
+        let pos_galley =
+            painter.layout_no_wrap(pos_label, FontId::proportional(pos_font_sz), pos_col);
+        *max_pos_bottom_y = (*max_pos_bottom_y).max(pos_top_y + pos_galley.size().y);
+        let pos_clip = Rect::from_min_max(
+            Pos2::new(block_rect.min.x - 1.0, pos_top_y - 2.0),
+            Pos2::new(block_rect.max.x + 1.0, pos_top_y + pos_galley.size().y + 4.0),
+        );
+        painter.with_clip_rect(pos_clip).galley(
+            Pos2::new(
+                block_rect.center().x - pos_galley.size().x * 0.5,
+                pos_top_y,
+            ),
+            pos_galley,
+            pos_col,
+        );
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2024,7 +2135,9 @@ fn draw_e_planer_dimensions_and_title(
     start_x: f32,
     end_x: f32,
     rail_center_y: f32,
-    max_h_mm: f32,
+    max_above_mm: f32,
+    max_below_mm: f32,
+    envelope_h_mm: f32,
     total_w_mm: f32,
     px_per_mm: f32,
     end_bracket: &EndBracketSpec,
@@ -2037,14 +2150,13 @@ fn draw_e_planer_dimensions_and_title(
     } else {
         Color32::from_rgb(185, 28, 28)
     };
-    let half_h_px = max_h_mm * px_per_mm * 0.5;
-    let top_edge_y = rail_center_y - half_h_px;
-    let bot_edge_y = rail_center_y + half_h_px;
+    let top_edge_y = rail_center_y - max_above_mm * px_per_mm;
+    let bot_edge_y = rail_center_y + max_below_mm * px_per_mm;
     let dim_stroke = Stroke::new(1.1, dim_col);
     let tick = 3.5 * zoom;
 
     // 1. Horizontal total-width dimension line above the assembly
-    let dim_y = top_edge_y - 22.0 * zoom;
+    let dim_y = top_edge_y - (18.0 * zoom).max(15.0);
     painter.line_segment(
         [Pos2::new(start_x, top_edge_y - 3.0), Pos2::new(start_x, dim_y - 4.0)],
         dim_stroke,
@@ -2065,15 +2177,20 @@ fn draw_e_planer_dimensions_and_title(
         [Pos2::new(end_x - tick, dim_y + tick), Pos2::new(end_x + tick, dim_y - tick)],
         dim_stroke,
     );
-    painter.text(
-        Pos2::new((start_x + end_x) * 0.5, dim_y - 4.0),
-        Align2::CENTER_BOTTOM,
+    let w_galley = painter.layout_no_wrap(
         format!("{total_w_mm:.1} mm"),
-        FontId::monospace((11.5 * zoom).max(9.5)),
+        FontId::monospace((11.5 * zoom).clamp(9.5, 14.0)),
+        dim_col,
+    );
+    let w_text_h = w_galley.size().y;
+    let w_text_w = w_galley.size().x;
+    painter.galley(
+        Pos2::new((start_x + end_x) * 0.5 - w_text_w * 0.5, dim_y - 4.0 - w_text_h),
+        w_galley,
         dim_col,
     );
 
-    // 2. Vertical max-height dimension line on the right
+    // 2. Vertical max-envelope height dimension line on the right
     let dim_x = end_x + 15.0 * px_per_mm + 18.0 * zoom;
     painter.line_segment(
         [Pos2::new(end_x + 4.0, top_edge_y), Pos2::new(dim_x + 4.0, top_edge_y)],
@@ -2096,14 +2213,15 @@ fn draw_e_planer_dimensions_and_title(
         dim_stroke,
     );
     let h_galley = painter.layout_no_wrap(
-        format!("{max_h_mm:.1} mm"),
-        FontId::monospace((11.0 * zoom).max(9.0)),
+        format!("{envelope_h_mm:.1} mm"),
+        FontId::monospace((11.0 * zoom).clamp(9.0, 14.0)),
         dim_col,
     );
-    let h_pos = Pos2::new(dim_x - h_galley.size().y - 3.0, rail_center_y + h_galley.size().x * 0.5);
+    let h_mid_y = (top_edge_y + bot_edge_y) * 0.5;
+    let h_pos = Pos2::new(dim_x - h_galley.size().y - 3.0, h_mid_y + h_galley.size().x * 0.5);
     painter.add(egui::epaint::TextShape::new(h_pos, h_galley, dim_col).with_angle(-FRAC_PI_2));
 
-    // 3. Compact EPLAN title strip / legend (`Schriftfeld`) above dim line
+    // 3. Compact EPLAN title strip / legend (`Schriftfeld`) cleanly above width dimension label
     let note_col = if dark {
         Color32::from_rgb(148, 163, 184)
     } else {
@@ -2114,16 +2232,18 @@ fn draw_e_planer_dimensions_and_title(
     } else {
         strings.end_bracket_none.to_string()
     };
+    let note_bottom_y = dim_y - 4.0 - w_text_h - (7.0 * zoom).max(7.0);
     painter.text(
-        Pos2::new(start_x, dim_y - 19.0 * zoom),
+        Pos2::new(start_x, note_bottom_y),
         Align2::LEFT_BOTTOM,
         format!(
             "EPLAN Aufbaubild 1:1  |  {}  |  {}: {:.1} mm  |  EH: {}  |  TS 35 (35.0 mm)",
-            strip.name, strings.max_height_label, max_h_mm, eb_info
+            strip.name, strings.max_height_label, envelope_h_mm, eb_info
         ),
-        FontId::proportional((10.5 * zoom).max(8.5)),
+        FontId::proportional((10.5 * zoom).clamp(8.5, 13.0)),
         note_col,
     );
 }
+
 
 

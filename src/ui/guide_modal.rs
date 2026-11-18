@@ -258,6 +258,7 @@ pub fn show_database_tab(
                     product_url: None,
                     image_url: None,
                     height_tenths_mm: None,
+                    rail_offset_tenths_mm: None,
                 };
 
                 custom_specs.push(spec.clone());

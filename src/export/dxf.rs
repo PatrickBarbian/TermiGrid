@@ -5,6 +5,25 @@ use crate::catalog::accessories::{calculate_end_plates, find_end_bracket};
 use crate::catalog::TerminalCatalog;
 use crate::model::{Project, TerminalStrip};
 
+fn block_bounds_mm(block: &crate::model::TerminalBlock, catalog: &TerminalCatalog) -> (f64, f64, f64) {
+    let (h, off) = if let Some(sp) = catalog.find_by_id(&block.spec_id) {
+        (
+            f64::from(sp.effective_height_tenths_mm()) / 10.0,
+            f64::from(sp.effective_rail_offset_tenths_mm()) / 10.0,
+        )
+    } else {
+        let h = match block.tiers.len() {
+            1 => 48.5,
+            2 => 69.7,
+            _ => 93.3,
+        };
+        (h, 0.0)
+    };
+    let above = (h * 0.5 + off).max(5.0);
+    let below = (h * 0.5 - off).max(5.0);
+    (h, above, below)
+}
+
 /// Generates an EPLAN Electric P8–compatible ASCII DXF (`AC1009` / AutoCAD R12) in 1:1 millimeters
 /// containing **all terminal strips** of `project` in a single drawing file (`Aufbaubild`).
 ///
@@ -16,39 +35,36 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
     let mut bounds = Bounds::default();
 
     let mut rail_cy: f64 = 0.0;
-    let strip_spacing_mm = 78.0;
 
     for strip in &project.strips {
         let eb = find_end_bracket(&strip.end_bracket_id);
         let eb_w = f64::from(eb.width_tenths_mm) / 10.0;
         let eb_h = f64::from(eb.height_tenths_mm) / 10.0;
+        let eb_half = eb_h * 0.5;
         let end_plates = calculate_end_plates(strip, catalog);
 
-        let block_heights: Vec<f64> = strip
+        let block_bounds: Vec<(f64, f64, f64)> = strip
             .blocks
             .iter()
-            .map(|b| {
-                catalog
-                    .find_by_id(&b.spec_id)
-                    .map(|sp| f64::from(sp.effective_height_tenths_mm()) / 10.0)
-                    .unwrap_or_else(|| match b.tiers.len() {
-                        1 => 48.5,
-                        2 => 69.7,
-                        _ => 93.3,
-                    })
-            })
+            .map(|b| block_bounds_mm(b, catalog))
             .collect();
 
-        let max_block_h = block_heights.iter().copied().fold(0.0_f64, f64::max);
+        let mut max_above = block_bounds
+            .iter()
+            .map(|&(_, a, _)| a)
+            .fold(17.5_f64, f64::max);
+        let mut max_below = block_bounds
+            .iter()
+            .map(|&(_, _, b)| b)
+            .fold(17.5_f64, f64::max);
+        if !strip.blocks.is_empty() && strip.end_bracket_count() > 0 {
+            max_above = max_above.max(eb_half);
+            max_below = max_below.max(eb_half);
+        }
         let max_h = if strip.blocks.is_empty() {
             35.0
         } else {
-            let with_eb = if strip.end_bracket_count() > 0 {
-                max_block_h.max(eb_h)
-            } else {
-                max_block_h
-            };
-            with_eb.max(35.0)
+            (max_above + max_below).max(35.0)
         };
 
         // Compute total strip width in exact millimeters
@@ -114,6 +130,11 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
             "TS 35",
         );
 
+        let top_edge = rail_cy + max_above;
+        let bot_edge = rail_cy - max_below;
+        let pos_label_y = bot_edge - 4.8;
+        let type_label_y = bot_edge - 9.8;
+
         // 2. Left end bracket
         if !strip.blocks.is_empty() && strip.end_bracket_left {
             draw_end_bracket_dxf(
@@ -123,20 +144,18 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
                 rail_cy,
                 eb_w,
                 eb_h,
-                max_h,
+                pos_label_y,
             );
             cursor_x += eb_w;
         }
 
         // 3. Terminal blocks + end/partition plates in true 1:1 mm scale
-        let pos_label_y = rail_cy - max_h * 0.5 - 5.2;
-        let type_label_y = rail_cy - max_h * 0.5 - 10.5;
-
+        let mut max_type_chars: usize = 0;
         for (idx, block) in strip.blocks.iter().enumerate() {
             let bw = f64::from(block.width_tenths_mm) / 10.0;
-            let bh = block_heights[idx];
-            let y0 = rail_cy - bh * 0.5;
-            let y1 = rail_cy + bh * 0.5;
+            let (bh, above, below) = block_bounds[idx];
+            let y0 = rail_cy - below;
+            let y1 = rail_cy + above;
 
             let is_all_pe = !block.tiers.is_empty()
                 && block.tiers.iter().all(|t| t.behavior.is_pe());
@@ -200,8 +219,19 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
                         let max_char_w = (bw - 0.8) / (lbl.len().max(1) as f64 * 0.82);
                         max_char_w.min(band_h * 0.45).clamp(1.5, 3.0)
                     };
-                    let tx = cursor_x + bw * 0.5 + if rotate_vertical { text_h * 0.4 } else { -(lbl.len() as f64 * text_h * 0.35) };
-                    let ty = band_cy - if rotate_vertical { lbl.len() as f64 * text_h * 0.35 } else { text_h * 0.5 };
+                    let tx = cursor_x
+                        + bw * 0.5
+                        + if rotate_vertical {
+                            text_h * 0.4
+                        } else {
+                            -(lbl.len() as f64 * text_h * 0.35)
+                        };
+                    let ty = band_cy
+                        - if rotate_vertical {
+                            lbl.len() as f64 * text_h * 0.35
+                        } else {
+                            text_h * 0.5
+                        };
                     draw_text(
                         &mut entities,
                         &mut bounds,
@@ -217,7 +247,7 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
 
             // Position index below block
             let pos_str = format!("{}", idx + 1);
-            let pos_h = (bw * 0.42).clamp(1.5, 2.4);
+            let pos_h = ((bw - 0.8).max(1.2) / (pos_str.len().max(1) as f64 * 0.82)).clamp(1.3, 2.4);
             draw_text(
                 &mut entities,
                 &mut bounds,
@@ -231,13 +261,14 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
 
             // Vertical (90° CCW) short type designation below position index
             let short_type = block.short_type_name();
-            let type_h = (bw * 0.42).clamp(1.6, 2.3);
+            max_type_chars = max_type_chars.max(short_type.chars().count());
+            let type_h = (bw * 0.42).clamp(1.5, 2.3);
             draw_text(
                 &mut entities,
                 &mut bounds,
                 "TERMI_LABEL",
                 cursor_x + bw * 0.5 + type_h * 0.4,
-                type_label_y - (short_type.len() as f64 * type_h * 0.72),
+                type_label_y - (short_type.chars().count() as f64 * type_h * 0.72),
                 type_h,
                 90.0,
                 short_type,
@@ -248,10 +279,12 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
             // End / partition plate right after block `idx`
             if let Some(plate) = end_plates.iter().find(|p| p.after_block_idx == idx) {
                 let pw = f64::from(plate.width_tenths_mm) / 10.0;
-                let next_h = block_heights.get(idx + 1).copied().unwrap_or(bh);
-                let ph = bh.max(next_h);
-                let py0 = rail_cy - ph * 0.5;
-                let py1 = rail_cy + ph * 0.5;
+                let (_, next_above, next_below) = block_bounds
+                    .get(idx + 1)
+                    .copied()
+                    .unwrap_or((bh, above, below));
+                let py0 = rail_cy - below.max(next_below);
+                let py1 = rail_cy + above.max(next_above);
                 draw_rect(
                     &mut entities,
                     &mut bounds,
@@ -284,7 +317,7 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
                 rail_cy,
                 eb_w,
                 eb_h,
-                max_h,
+                pos_label_y,
             );
             cursor_x += eb_w;
         }
@@ -295,8 +328,6 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
         } else {
             cursor_x
         };
-        let top_edge = rail_cy + max_h * 0.5;
-        let bot_edge = rail_cy - max_h * 0.5;
         let dim_y = top_edge + 12.0;
 
         // Horizontal total-width dimension
@@ -311,7 +342,7 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
             &mut bounds,
             "TERMI_DIM",
             dim_x_end * 0.5 - (w_text.len() as f64 * 1.1),
-            dim_y + 1.6,
+            dim_y + 2.0,
             3.0,
             0.0,
             &w_text,
@@ -325,12 +356,13 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
         draw_dim_tick(&mut entities, &mut bounds, dim_x, bot_edge);
         draw_dim_tick(&mut entities, &mut bounds, dim_x, top_edge);
         let h_text = format!("{max_h:.1} mm");
+        let h_mid_y = (top_edge + bot_edge) * 0.5;
         draw_text(
             &mut entities,
             &mut bounds,
             "TERMI_DIM",
             dim_x - 1.8,
-            rail_cy - (h_text.len() as f64 * 1.1),
+            h_mid_y - (h_text.len() as f64 * 1.1),
             3.0,
             90.0,
             &h_text,
@@ -349,19 +381,20 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
             &mut bounds,
             "TERMI_LABEL",
             0.0,
-            dim_y + 8.0,
+            dim_y + 8.5,
             4.2,
             0.0,
             &header,
         );
 
-        // Advance downward for next terminal strip in the project
-        let strip_step = max_h + strip_spacing_mm;
+        // Advance downward for next terminal strip in the project with clear vertical margin
+        let type_extend = (max_type_chars as f64 * 2.3 * 0.72).max(18.0);
+        let strip_step = max_h + type_extend + 46.0;
         rail_cy -= strip_step;
     }
 
     // 6. Project title / legend block (`Schriftfeld`) below all strips
-    let title_top = bounds.min_y - 14.0;
+    let title_top = bounds.min_y - 16.0;
     let title_bot = title_top - 22.0;
     let title_right = bounds.max_x.max(160.0);
     draw_rect(
@@ -415,26 +448,28 @@ pub fn export_to_dxf(
 /// Computes `(total_width_mm, max_front_height_mm)` of a single strip for EPLAN / CAD layout display.
 pub fn strip_envelope_mm(strip: &TerminalStrip, catalog: &TerminalCatalog) -> (f64, f64) {
     let eb = find_end_bracket(&strip.end_bracket_id);
-    let eb_w = f64::from(eb.width_tenths_mm) / 10.0;
-    let eb_h = f64::from(eb.height_tenths_mm) / 10.0;
+    let eb_half = f64::from(eb.height_tenths_mm) / 20.0;
     let plates_w: f64 = calculate_end_plates(strip, catalog)
         .iter()
         .map(|p| f64::from(p.width_tenths_mm) / 10.0)
         .sum();
-    let total_w = f64::from(strip.total_width_mm()) + plates_w + f64::from(strip.end_brackets_width_mm());
-    let _ = eb_w;
-    let max_block_h = strip
-        .blocks
-        .iter()
-        .filter_map(|b| catalog.find_by_id(&b.spec_id))
-        .map(|sp| f64::from(sp.effective_height_tenths_mm()) / 10.0)
-        .fold(0.0_f64, f64::max);
+    let total_w =
+        f64::from(strip.total_width_mm()) + plates_w + f64::from(strip.end_brackets_width_mm());
+    let mut max_above = 17.5_f64;
+    let mut max_below = 17.5_f64;
+    for b in &strip.blocks {
+        let (_, above, below) = block_bounds_mm(b, catalog);
+        max_above = max_above.max(above);
+        max_below = max_below.max(below);
+    }
+    if !strip.blocks.is_empty() && strip.end_bracket_count() > 0 {
+        max_above = max_above.max(eb_half);
+        max_below = max_below.max(eb_half);
+    }
     let max_h = if strip.blocks.is_empty() {
         35.0
-    } else if strip.end_bracket_count() > 0 {
-        max_block_h.max(eb_h).max(35.0)
     } else {
-        max_block_h.max(35.0)
+        (max_above + max_below).max(35.0)
     };
     (total_w, max_h)
 }
@@ -446,7 +481,7 @@ fn draw_end_bracket_dxf(
     rail_cy: f64,
     w: f64,
     h: f64,
-    max_h: f64,
+    pos_label_y: f64,
 ) {
     let y0 = rail_cy - h * 0.5;
     let y1 = rail_cy + h * 0.5;
@@ -464,15 +499,17 @@ fn draw_end_bracket_dxf(
         0.0,
         "EH",
     );
+    let w_h = (w * 0.34).clamp(1.2, 1.8);
+    let w_txt = format!("{w:.1}");
     draw_text(
         out,
         bounds,
         "TERMI_LABEL",
-        x0 + w * 0.5 - 1.8,
-        rail_cy - max_h * 0.5 - 5.2,
-        1.6,
+        x0 + w * 0.5 - (w_txt.len() as f64 * w_h * 0.35),
+        pos_label_y,
+        w_h,
         0.0,
-        &format!("{w:.1}"),
+        &w_txt,
     );
 }
 

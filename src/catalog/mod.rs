@@ -48,6 +48,10 @@ pub struct TerminalSpec {
     /// Optional front-view vertical height across the TS 35 DIN rail in tenths of a millimeter (e.g., `485` = `48.5 mm`).
     #[serde(default)]
     pub height_tenths_mm: Option<u16>,
+    /// Optional vertical center offset relative to the TS 35 DIN rail center in tenths of a millimeter
+    /// (positive values shift the housing upward above the rail center; `0` = symmetric on TS 35).
+    #[serde(default)]
+    pub rail_offset_tenths_mm: Option<i16>,
 }
 
 impl TerminalSpec {
@@ -580,6 +584,45 @@ impl TerminalSpec {
             },
         }
     }
+
+    /// Vertical center offset relative to the TS 35 DIN rail center in tenths of a millimeter
+    /// (`> 0` shifts the housing upward above the rail center; `0` = symmetric on TS 35).
+    pub fn effective_rail_offset_tenths_mm(&self) -> i16 {
+        if let Some(off) = self.rail_offset_tenths_mm {
+            return off;
+        }
+        let id = self.id.as_str();
+        // Multi-level N-busbar installation terminals sit asymmetrically higher above the TS 35 rail
+        if id.contains("wago-2005") {
+            135
+        } else if id.contains("pti-")
+            || id.contains("sti-")
+            || id.contains("uti-")
+            || id.contains("aitb")
+        {
+            130
+        } else if id.contains("wago-2003") || id.contains("wago-2203") {
+            125
+        } else if id.contains("zdl") {
+            120
+        } else if id.contains("dli") {
+            60
+        } else if id.contains("ptio") || id.contains("aio") || id.contains("280-560") {
+            80
+        } else if id.contains("-hesi")
+            || id.contains("wsi")
+            || id.contains("afs-4")
+            || id.contains("2006-161")
+            || id.contains("2006-168")
+            || id.contains("2002-161")
+            || id.contains("281-611")
+            || id.contains("281-623")
+        {
+            45
+        } else {
+            0
+        }
+    }
 }
 
 /// Verified `(article_number, direct_product_url, direct_cdn_image_url)` table for Phoenix Contact
@@ -1067,6 +1110,39 @@ mod tests {
         assert_eq!(
             catalog.find_by_id("weidmuller-a2c-25").unwrap().effective_height_tenths_mm(),
             550
+        );
+    }
+
+    #[test]
+    fn rail_offsets_distinguish_symmetric_and_asymmetric_installation_blocks() {
+        let catalog = TerminalCatalog::load_embedded();
+        assert_eq!(
+            catalog.find_by_id("phoenix-pt-25").unwrap().effective_rail_offset_tenths_mm(),
+            0
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-pt-25-quattro").unwrap().effective_rail_offset_tenths_mm(),
+            0
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-ptpower-50").unwrap().effective_rail_offset_tenths_mm(),
+            0
+        );
+        assert_eq!(
+            catalog.find_by_id("wago-2002-1201").unwrap().effective_rail_offset_tenths_mm(),
+            0
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-pti-25-ln").unwrap().effective_rail_offset_tenths_mm(),
+            130
+        );
+        assert_eq!(
+            catalog.find_by_id("wago-2003-7641").unwrap().effective_rail_offset_tenths_mm(),
+            125
+        );
+        assert_eq!(
+            catalog.find_by_id("weidmuller-aitb-25-nlp").unwrap().effective_rail_offset_tenths_mm(),
+            130
         );
     }
 }

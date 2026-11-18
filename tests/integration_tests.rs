@@ -330,4 +330,35 @@ fn dxf_export_writes_single_true_scale_eplan_file_for_all_strips() {
     let _ = std::fs::remove_file(&out_path);
 }
 
+#[test]
+fn dxf_places_standard_blocks_symmetrically_and_installation_blocks_with_real_offset() {
+    use termigrid_core::export::dxf::{export_to_dxf_string, strip_envelope_mm};
+
+    let catalog = TerminalCatalog::load_embedded();
+    let pt25 = catalog.find_by_id("phoenix-pt-25").unwrap(); // 48.6 mm symmetric -> +-24.300
+    let pti_ln = catalog.find_by_id("phoenix-pti-25-ln").unwrap(); // 101.0 mm, +13.0 mm offset -> -37.500 .. +63.500
+
+    let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 2, 2, pt25);
+    strip.end_bracket_left = false;
+    strip.end_bracket_right = false;
+    strip.reassign_blocks(&[1], pti_ln);
+
+    let project = Project {
+        format_version: 1,
+        project_name: "RailOffset".to_string(),
+        strips: vec![strip.clone()],
+        ..Default::default()
+    };
+
+    let dxf = export_to_dxf_string(&project, &catalog);
+    // Standard PT 2,5 centered on TS 35 (`rail_cy = 0`)
+    assert!(dxf.contains("\n-24.300\n"), "PT 2,5 bottom should be -24.300");
+    assert!(dxf.contains("\n24.300\n"), "PT 2,5 top should be +24.300");
+    // Installation PTI 2,5-L/N shifted upward (+63.500 above, -37.500 below)
+    assert!(dxf.contains("\n-37.500\n"), "PTI 2,5-L/N bottom should be -37.500");
+    assert!(dxf.contains("\n63.500\n"), "PTI 2,5-L/N top should be +63.500");
+
+    let (_w, env_h) = strip_envelope_mm(&strip, &catalog);
+    assert!((env_h - 101.0).abs() < 0.05, "expected 101.0 mm, got {env_h}");
+}
 
