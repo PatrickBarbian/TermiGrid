@@ -13,7 +13,7 @@ use crate::model::TierColor;
 use crate::ui::icons::{icon_button, UiIcon};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
 use crate::ui::net::{http_get_bytes, http_get_text};
-use crate::ui::theme::secondary_text_color;
+use crate::ui::theme::{recessed_card, secondary_text_color};
 use crate::ui::updater::open_external_url;
 
 enum PhotoEntry {
@@ -318,12 +318,12 @@ pub fn show_product_preview_card(
     let dark = ui.visuals().dark_mode;
     let sec = secondary_text_color(ui);
 
-    ui.group(|ui| {
+    recessed_card(ui, |ui| {
         ui.horizontal_wrapped(|ui| {
             show_logo_badge(ui, logos, &spec.manufacturer, 18.0);
             ui.add(egui::Label::new(egui::RichText::new(&spec.name).strong()).wrap());
         });
-        ui.add_space(4.0);
+        ui.add_space(5.0);
 
         let stack_vertically = ui.available_width() < 265.0;
         let preview_size = if stack_vertically {
@@ -340,16 +340,16 @@ pub fn show_product_preview_card(
                 // Real manufacturer product photo on a bright studio frame
                 let (rect, _) = ui.allocate_exact_size(preview_size, egui::Sense::hover());
                 ui.painter()
-                    .rect_filled(rect, CornerRadius::same(4), Color32::WHITE);
+                    .rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
                 ui.painter().rect_stroke(
                     rect,
-                    CornerRadius::same(4),
+                    CornerRadius::same(6),
                     Stroke::new(1.0, Color32::from_rgb(203, 213, 225)),
                     StrokeKind::Inside,
                 );
                 let img = egui::Image::from_texture(tex)
                     .max_size(preview_size - Vec2::splat(6.0))
-                    .corner_radius(3);
+                    .corner_radius(4);
                 ui.put(rect.shrink(3.0), img);
             } else {
                 draw_technical_profile(ui, spec, preview_size, dark);
@@ -363,7 +363,7 @@ pub fn show_product_preview_card(
             ui.add(
                 egui::Label::new(
                     egui::RichText::new(format!(
-                        "{:.1} mm | {} Etagen",
+                        "{:.1} mm · {} Etagen",
                         f32::from(spec.width_tenths_mm) / 10.0,
                         spec.levels
                     ))
@@ -402,7 +402,7 @@ pub fn show_product_preview_card(
                 )
                 .wrap(),
             );
-            ui.add_space(3.0);
+            ui.add_space(4.0);
             if icon_button(ui, UiIcon::ExternalLink, open_product_label).clicked() {
                 open_external_url(ui.ctx(), &spec.effective_product_url());
             }
@@ -438,12 +438,12 @@ pub fn show_end_bracket_preview_card(
     let dark = ui.visuals().dark_mode;
     let sec = secondary_text_color(ui);
 
-    ui.group(|ui| {
+    recessed_card(ui, |ui| {
         ui.horizontal_wrapped(|ui| {
             show_logo_badge(ui, logos, eb.manufacturer, 18.0);
             ui.add(egui::Label::new(egui::RichText::new(eb.name).strong()).wrap());
         });
-        ui.add_space(4.0);
+        ui.add_space(5.0);
 
         let stack_vertically = ui.available_width() < 265.0;
         let preview_size = if stack_vertically {
@@ -459,16 +459,16 @@ pub fn show_end_bracket_preview_card(
             if let Some(tex) = tex_opt.as_ref() {
                 let (rect, _) = ui.allocate_exact_size(preview_size, egui::Sense::hover());
                 ui.painter()
-                    .rect_filled(rect, CornerRadius::same(4), Color32::WHITE);
+                    .rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
                 ui.painter().rect_stroke(
                     rect,
-                    CornerRadius::same(4),
+                    CornerRadius::same(6),
                     Stroke::new(1.0, Color32::from_rgb(203, 213, 225)),
                     StrokeKind::Inside,
                 );
                 let img = egui::Image::from_texture(tex)
                     .max_size(preview_size - Vec2::splat(6.0))
-                    .corner_radius(3);
+                    .corner_radius(4);
                 ui.put(rect.shrink(3.0), img);
             } else {
                 draw_end_bracket_profile(ui, eb, preview_size, dark);
@@ -479,7 +479,7 @@ pub fn show_end_bracket_preview_card(
             ui.add(
                 egui::Label::new(
                     egui::RichText::new(format!(
-                        "{:.1} mm | {height_label}: {:.1} mm",
+                        "{:.1} mm · {height_label}: {:.1} mm",
                         f32::from(eb.width_tenths_mm) / 10.0,
                         f32::from(eb.height_tenths_mm) / 10.0
                     ))
@@ -501,7 +501,7 @@ pub fn show_end_bracket_preview_card(
                 _ => eb.mounting_en,
             };
             ui.add(egui::Label::new(egui::RichText::new(mounting).color(sec).small()).wrap());
-            ui.add_space(3.0);
+            ui.add_space(4.0);
             if icon_button(ui, UiIcon::ExternalLink, open_product_label).clicked() {
                 open_external_url(ui.ctx(), eb.product_url);
             }

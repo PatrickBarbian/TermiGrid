@@ -428,27 +428,38 @@ pub fn show_cad_canvas(
             let painter = ui.painter_at(canvas_rect);
 
             // 1. Canvas background & CAD drafting grid
+            let t = crate::ui::theme::ThemeTokens::for_mode(dark);
             let bg_color = if e_planer {
                 if dark {
-                    Color32::from_rgb(16, 23, 38)
+                    Color32::from_rgb(13, 18, 29)
                 } else {
                     Color32::from_rgb(252, 253, 255)
                 }
-            } else if dark {
-                Color32::from_rgb(20, 24, 31)
             } else {
-                Color32::from_rgb(245, 247, 250)
+                t.bg_canvas
             };
             painter.rect_filled(canvas_rect, 0.0, bg_color);
             let grid_step = if e_planer { 10.0 * px_per_mm } else { 24.0 * z };
             draw_cad_grid(&painter, canvas_rect, grid_step, dark);
 
-            // Wrapped strip header at top-left
-            painter.galley(
-                canvas_rect.min + Vec2::new(14.0, 10.0),
-                header_galley,
-                title_color,
+            // Wrapped strip header pill at top-left
+            let hdr_pos = canvas_rect.min + Vec2::new(14.0, 10.0);
+            let hdr_pill = Rect::from_min_size(
+                hdr_pos - Vec2::new(8.0, 4.0),
+                header_galley.size() + Vec2::new(16.0, 8.0),
             );
+            painter.rect_filled(
+                hdr_pill,
+                CornerRadius::same(7),
+                t.bg_panel.gamma_multiply(0.92),
+            );
+            painter.rect_stroke(
+                hdr_pill,
+                CornerRadius::same(7),
+                Stroke::new(1.0, t.border_hairline),
+                StrokeKind::Inside,
+            );
+            painter.galley(hdr_pos, header_galley, title_color);
 
             // Exact TS 35 DIN-rail center anchor (`rail_center_y`) and visual row baseline
             let rail_center_y = canvas_rect.min.y + margin_top + req_above_px;

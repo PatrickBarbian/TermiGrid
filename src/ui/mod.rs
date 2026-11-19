@@ -1,5 +1,6 @@
 pub mod android_insets;
 pub mod cad_canvas;
+pub mod components;
 pub mod guide_modal;
 pub mod icons;
 pub mod library_modal;
@@ -40,12 +41,16 @@ use crate::ui::android_insets::{current_safe_insets, SafeAreaInsets};
 use crate::ui::cad_canvas::{
     show_cad_canvas, CadCanvasState, CanvasInteractionMode, TypeDisplayMode,
 };
+use crate::ui::components::{
+    CommandPaletteState, PaletteCommand, ToastActionKind, ToastQueue, ToastTone,
+};
 use crate::ui::guide_modal::{
     show_about_modal, show_database_tab, show_guide_tab, CustomSpecDraft,
 };
 use crate::ui::icons::{
-    danger_icon_button, draw_icon, icon_button, icon_only_button, primary_icon_button,
-    selectable_icon_button, success_icon_button, UiIcon,
+    danger_icon_button, draw_icon, ghost_icon_button, icon_button, icon_only_button,
+    primary_icon_button, segmented_control, selectable_icon_button, subtle_success_icon_button,
+    UiIcon,
 };
 use crate::ui::library_modal::{
     show_save_strip_to_library_modal, show_strip_library_modal, SaveStripLibraryDialogState,
@@ -66,10 +71,12 @@ use crate::ui::product_media::{
     show_end_bracket_preview_card, show_product_preview_card, ProductMediaCache,
 };
 use crate::ui::theme::{
-    apply_theme_mode, install_system_fonts, secondary_text_color, ThemeMode,
+    apply_theme_mode, install_system_fonts, kbd_chip, pill_badge, recessed_card,
+    secondary_text_color, section_card, tokens, ThemeMode,
 };
 use crate::ui::updater::{
-    open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, GITHUB_REPO_URL,
+    open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, CURRENT_VERSION,
+    GITHUB_REPO_URL,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -165,6 +172,11 @@ pub struct TermiGridApp {
     // Intelligent PDF BOM Importer & sequential NT configuration queue
     pdf_import_modal: PdfImportDialogState,
     nt_popup_queue: VecDeque<NtQueueEntry>,
+
+    // Modern UI components (Sonner-style toasts + Strg+K command palette)
+    toast_queue: ToastQueue,
+    command_palette: CommandPaletteState,
+    ui_time: f64,
 }
 
 impl TermiGridApp {
@@ -233,7 +245,27 @@ impl TermiGridApp {
             strip_library_modal: StripLibraryDialogState::default(),
             pdf_import_modal: PdfImportDialogState::default(),
             nt_popup_queue: VecDeque::new(),
+            toast_queue: ToastQueue::default(),
+            command_palette: CommandPaletteState::default(),
+            ui_time: 0.0,
         }
+    }
+
+    fn notify(&mut self, tone: ToastTone, msg: impl Into<String>) {
+        let text = msg.into();
+        self.status_message = text.clone();
+        self.toast_queue.push(self.ui_time, tone, text);
+    }
+
+    fn notify_undoable(&mut self, tone: ToastTone, msg: impl Into<String>) {
+        let text = msg.into();
+        self.status_message = text.clone();
+        self.toast_queue.push_with_action(
+            self.ui_time,
+            tone,
+            text,
+            Some(("Rückgängig".to_string(), ToastActionKind::Undo)),
+        );
     }
 
     fn reload_catalog_with_all_custom(&mut self) {
@@ -253,6 +285,7 @@ impl TermiGridApp {
                 .min(self.project.strips.len().saturating_sub(1));
             self.selected_blocks.clear();
             self.selected_end_bracket = None;
+            self.notify(ToastTone::Info, "Schritt rückgängig gemacht.");
         }
     }
 
@@ -267,6 +300,7 @@ impl TermiGridApp {
                 .min(self.project.strips.len().saturating_sub(1));
             self.selected_blocks.clear();
             self.selected_end_bracket = None;
+            self.notify(ToastTone::Info, "Schritt wiederhergestellt.");
         }
     }
 
@@ -284,14 +318,19 @@ impl TermiGridApp {
                 Ok(json) => match std::fs::write(&path, json) {
                     Ok(()) => {
                         self.current_file = Some(path.clone());
-                        self.status_message = format!("{}: {}", s.status_saved, path.display());
+                        let name = path
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .map(str::to_string)
+                            .unwrap_or_else(|| path.display().to_string());
+                        self.notify(ToastTone::Success, format!("{}: {name}", s.status_saved));
                     }
                     Err(e) => {
-                        self.status_message = format!("{}: {e}", s.status_error);
+                        self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                     }
                 },
                 Err(e) => {
-                    self.status_message = format!("{}: {e}", s.status_error);
+                    self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                 }
             }
         }
@@ -315,14 +354,19 @@ impl TermiGridApp {
                         self.current_file = Some(path.clone());
                         self.show_welcome = false;
                         self.active_tab = ActiveTab::Editor;
-                        self.status_message = format!("{}: {}", s.status_loaded, path.display());
+                        let name = path
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .map(str::to_string)
+                            .unwrap_or_else(|| path.display().to_string());
+                        self.notify(ToastTone::Success, format!("{}: {name}", s.status_loaded));
                     }
                     Err(e) => {
-                        self.status_message = format!("{}: {e}", s.status_error);
+                        self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                     }
                 },
                 Err(e) => {
-                    self.status_message = format!("{}: {e}", s.status_error);
+                    self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                 }
             }
         }
@@ -341,7 +385,7 @@ impl TermiGridApp {
                 }
                 Err(err) => {
                     self.pdf_import_modal.open_with_error(label, err.clone());
-                    self.status_message = format!("PDF-Import fehlgeschlagen: {err}");
+                    self.notify(ToastTone::Error, format!("PDF-Import fehlgeschlagen: {err}"));
                 }
             }
         }
@@ -355,7 +399,7 @@ impl TermiGridApp {
             Err(err) => {
                 self.pdf_import_modal
                     .open_with_error(source_label, err.clone());
-                self.status_message = format!("PDF-Import fehlgeschlagen: {err}");
+                self.notify(ToastTone::Error, format!("PDF-Import fehlgeschlagen: {err}"));
             }
         }
     }
@@ -373,11 +417,18 @@ impl TermiGridApp {
                 german,
             ) {
                 Ok(count) => {
-                    self.status_message =
-                        format!("{}: {} ({} {})", s.status_exported, path.display(), count, s.labels_unit);
+                    let name = path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .map(str::to_string)
+                        .unwrap_or_else(|| path.display().to_string());
+                    self.notify(
+                        ToastTone::Success,
+                        format!("{}: {name} ({count} {})", s.status_exported, s.labels_unit),
+                    );
                 }
                 Err(e) => {
-                    self.status_message = format!("{}: {e}", s.status_error);
+                    self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                 }
             }
         }
@@ -396,11 +447,18 @@ impl TermiGridApp {
                 german,
             ) {
                 Ok(count) => {
-                    self.status_message =
-                        format!("{}: {} ({} {})", s.status_exported, path.display(), count, s.labels_unit);
+                    let name = path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .map(str::to_string)
+                        .unwrap_or_else(|| path.display().to_string());
+                    self.notify(
+                        ToastTone::Success,
+                        format!("{}: {name} ({count} {})", s.status_exported, s.labels_unit),
+                    );
                 }
                 Err(e) => {
-                    self.status_message = format!("{}: {e}", s.status_error);
+                    self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                 }
             }
         }
@@ -415,16 +473,21 @@ impl TermiGridApp {
         if let Some(path) = pick_export_dxf_path(&default_name) {
             match export_to_dxf(&path, &self.project, &self.catalog) {
                 Ok(strip_count) => {
-                    self.status_message = format!(
-                        "{}: {} ({} {}, 1:1 mm)",
-                        s.status_exported,
-                        path.display(),
-                        strip_count,
-                        s.strips_heading
+                    let name = path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .map(str::to_string)
+                        .unwrap_or_else(|| path.display().to_string());
+                    self.notify(
+                        ToastTone::Success,
+                        format!(
+                            "{}: {name} ({strip_count} {}, 1:1 mm)",
+                            s.status_exported, s.strips_heading
+                        ),
                     );
                 }
                 Err(e) => {
-                    self.status_message = format!("{}: {e}", s.status_error);
+                    self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                 }
             }
         }
@@ -434,6 +497,8 @@ impl TermiGridApp {
 impl eframe::App for TermiGridApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let s = strings(self.lang);
+        let t = tokens(ui);
+        self.ui_time = ui.ctx().input(|i| i.time);
 
         // Drag & Drop support for EPLAN PDF parts lists
         let dropped_files = ui.ctx().input(|i| i.raw.dropped_files.clone());
@@ -460,14 +525,26 @@ impl eframe::App for TermiGridApp {
             }
         }
 
-        // Global keyboard shortcuts when no text field or modal is active
+        // Global keyboard shortcuts when no modal is blocking
         let any_modal_open = self.new_strip_modal.open
             || self.install_prompt_modal.open
             || self.pdf_import_modal.open
             || self.strip_library_modal.open
             || self.save_strip_library_modal.open
             || self.show_about_modal;
+
         if !any_modal_open
+            && ui.input(|i| (i.modifiers.ctrl || i.modifiers.mac_cmd) && i.key_pressed(egui::Key::K))
+        {
+            if self.command_palette.open {
+                self.command_palette.close();
+            } else {
+                self.command_palette.open_now();
+            }
+        }
+
+        if !any_modal_open
+            && !self.command_palette.open
             && !ui.ctx().egui_wants_keyboard_input()
             && self.canvas_state.editing_tier.is_none()
         {
@@ -511,7 +588,10 @@ impl eframe::App for TermiGridApp {
                     self.selected_blocks.clear();
                     self.selected_end_bracket = None;
                     self.canvas_state.selection_anchor = None;
-                    self.status_message = format!("{deleted_count} Klemme(n) gelöscht.");
+                    self.notify_undoable(
+                        ToastTone::Info,
+                        format!("{deleted_count} Klemme(n) gelöscht."),
+                    );
                 }
             }
         }
@@ -562,256 +642,335 @@ impl eframe::App for TermiGridApp {
                 .show(ui, |_| {});
         }
 
-        // Top Menu & Toolbar
-        egui::Panel::top("top_bar").show(ui, |ui| {
-            let avail_w = ui.available_width();
-            let wide_header = avail_w >= 760.0;
-            ui.add_space(4.0);
+        // Top Menu & Calm Toolbar
+        egui::Panel::top("top_bar")
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.bg_panel)
+                    .stroke(egui::Stroke::new(1.0, t.border_hairline))
+                    .inner_margin(egui::Margin::symmetric(10, 6)),
+            )
+            .show(ui, |ui| {
+                let avail_w = ui.available_width();
+                let wide_header = avail_w >= 820.0;
 
-            let has_update = matches!(self.updater.status(), UpdateStatus::UpdateAvailable { .. });
-            let draw_top_left_menu = |ui: &mut egui::Ui,
-                                      show_about: &mut bool,
-                                      updater: &UpdateChecker,
-                                      s: &crate::i18n::Strings| {
-                let menu_btn = if has_update {
-                    primary_icon_button(ui, UiIcon::Menu, "Info (Update)")
-                } else {
-                    icon_button(ui, UiIcon::Menu, "Info")
+                let has_update = matches!(self.updater.status(), UpdateStatus::UpdateAvailable { .. });
+                let draw_top_left_menu = |ui: &mut egui::Ui,
+                                          show_about: &mut bool,
+                                          updater: &UpdateChecker,
+                                          s: &crate::i18n::Strings| {
+                    let menu_btn = if has_update {
+                        primary_icon_button(ui, UiIcon::Menu, "Update")
+                    } else {
+                        ghost_icon_button(ui, UiIcon::Menu, "")
+                            .on_hover_text("Info, Updates & Open-Source-Lizenzen")
+                    };
+                    egui::Popup::menu(&menu_btn).show(|ui| {
+                        ui.set_min_width(230.0);
+                        if icon_button(ui, UiIcon::Info, "Über TermiGrid & Lizenzen").clicked() {
+                            *show_about = true;
+                            ui.close();
+                        }
+                        ui.separator();
+                        match updater.status() {
+                            UpdateStatus::UpdateAvailable {
+                                latest_tag,
+                                release_url,
+                            } => {
+                                if primary_icon_button(
+                                    ui,
+                                    UiIcon::DownloadUpdate,
+                                    &format!("Update: {latest_tag}"),
+                                )
+                                .on_hover_text(s.update_open_release)
+                                .clicked()
+                                {
+                                    open_external_url(ui.ctx(), &release_url);
+                                    ui.close();
+                                }
+                            }
+                            UpdateStatus::Checking => {
+                                ui.label(s.update_checking);
+                            }
+                            _ => {
+                                if icon_button(ui, UiIcon::RefreshCheck, s.btn_check_update).clicked()
+                                {
+                                    updater.check_async(ui.ctx().clone());
+                                    ui.close();
+                                }
+                            }
+                        }
+                        if icon_button(ui, UiIcon::GitHub, s.btn_github).clicked() {
+                            open_external_url(ui.ctx(), GITHUB_REPO_URL);
+                            ui.close();
+                        }
+                        if icon_button(ui, UiIcon::Coffee, s.btn_coffee).clicked() {
+                            open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
+                            ui.close();
+                        }
+                    });
                 };
-                egui::Popup::menu(&menu_btn).show(|ui| {
-                    ui.set_min_width(220.0);
-                    if icon_button(ui, UiIcon::Info, "Über TermiGrid & Lizenzen").clicked() {
-                        *show_about = true;
-                        ui.close();
-                    }
-                    ui.separator();
-                    match updater.status() {
-                        UpdateStatus::UpdateAvailable {
-                            latest_tag,
-                            release_url,
-                        } => {
-                            if primary_icon_button(
-                                ui,
-                                UiIcon::DownloadUpdate,
-                                &format!("Update: {latest_tag}"),
-                            )
-                            .on_hover_text(s.update_open_release)
-                            .clicked()
-                            {
-                                open_external_url(ui.ctx(), &release_url);
-                                ui.close();
+
+                let tab_items = [
+                    (ActiveTab::Editor, UiIcon::CadEditor, s.tab_editor, ""),
+                    (ActiveTab::Database, UiIcon::Database, s.tab_database, ""),
+                    (ActiveTab::Guide, UiIcon::Guide, s.tab_guide, ""),
+                ];
+
+                if wide_header {
+                    ui.horizontal(|ui| {
+                        draw_top_left_menu(ui, &mut self.show_about_modal, &self.updater, s);
+                        ui.label(
+                            egui::RichText::new("TermiGrid")
+                                .size(16.5)
+                                .strong()
+                                .color(t.text_primary),
+                        );
+                        pill_badge(
+                            ui,
+                            &format!("v{CURRENT_VERSION}"),
+                            t.text_secondary,
+                            t.bg_recessed,
+                        );
+                        ui.add_space(4.0);
+                        segmented_control(ui, &mut self.active_tab, &tab_items);
+
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            self.show_header_prefs(ui, 82.0, avail_w >= 960.0);
+                            if !cfg!(target_os = "android") {
+                                let cmd_btn = ui
+                                    .add(
+                                        egui::Button::new(
+                                            egui::RichText::new("Befehle  Strg+K")
+                                                .size(12.0)
+                                                .color(t.text_secondary),
+                                        )
+                                        .fill(t.bg_recessed)
+                                        .stroke(egui::Stroke::new(1.0, t.border_hairline))
+                                        .corner_radius(egui::CornerRadius::same(6)),
+                                    )
+                                    .on_hover_text("Befehlspalette & Klemmen-Schnellsuche öffnen (Strg+K)");
+                                if cmd_btn.clicked() {
+                                    self.command_palette.open_now();
+                                }
                             }
-                        }
-                        UpdateStatus::Checking => {
-                            ui.label(s.update_checking);
-                        }
-                        _ => {
-                            if icon_button(ui, UiIcon::RefreshCheck, s.btn_check_update).clicked() {
-                                updater.check_async(ui.ctx().clone());
-                                ui.close();
-                            }
-                        }
-                    }
-                    if icon_button(ui, UiIcon::GitHub, s.btn_github).clicked() {
-                        open_external_url(ui.ctx(), GITHUB_REPO_URL);
-                        ui.close();
-                    }
-                    if icon_button(ui, UiIcon::Coffee, s.btn_coffee).clicked() {
-                        open_external_url(ui.ctx(), BUYMEACOFFEE_URL);
-                        ui.close();
-                    }
-                });
-            };
-
-            let draw_main_tabs = |ui: &mut egui::Ui, active_tab: &mut ActiveTab, s: &crate::i18n::Strings| {
-                if selectable_icon_button(
-                    ui,
-                    *active_tab == ActiveTab::Editor,
-                    UiIcon::CadEditor,
-                    s.tab_editor,
-                )
-                .clicked()
-                {
-                    *active_tab = ActiveTab::Editor;
-                }
-                if selectable_icon_button(
-                    ui,
-                    *active_tab == ActiveTab::Database,
-                    UiIcon::Database,
-                    s.tab_database,
-                )
-                .clicked()
-                {
-                    *active_tab = ActiveTab::Database;
-                }
-                if selectable_icon_button(
-                    ui,
-                    *active_tab == ActiveTab::Guide,
-                    UiIcon::Guide,
-                    s.tab_guide,
-                )
-                .clicked()
-                {
-                    *active_tab = ActiveTab::Guide;
-                }
-            };
-
-            if wide_header {
-                ui.horizontal(|ui| {
-                    draw_top_left_menu(ui, &mut self.show_about_modal, &self.updater, s);
-                    ui.heading(egui::RichText::new("TermiGrid").strong());
-                    ui.separator();
-
-                    draw_main_tabs(ui, &mut self.active_tab, s);
-
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        self.show_header_prefs(ui, 92.0, avail_w >= 960.0);
+                        });
                     });
-                });
-            } else {
-                ui.horizontal(|ui| {
-                    draw_top_left_menu(ui, &mut self.show_about_modal, &self.updater, s);
-                    ui.heading(egui::RichText::new("TermiGrid").strong());
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        self.show_header_prefs(ui, 76.0, false);
+                } else {
+                    ui.horizontal(|ui| {
+                        draw_top_left_menu(ui, &mut self.show_about_modal, &self.updater, s);
+                        ui.label(
+                            egui::RichText::new("TermiGrid")
+                                .size(16.0)
+                                .strong()
+                                .color(t.text_primary),
+                        );
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            self.show_header_prefs(ui, 72.0, false);
+                        });
                     });
-                });
+                    ui.add_space(4.0);
+                    ui.horizontal_wrapped(|ui| {
+                        segmented_control(ui, &mut self.active_tab, &tab_items);
+                        if icon_only_button(
+                            ui,
+                            UiIcon::Search,
+                            self.command_palette.open,
+                            "Befehlspalette öffnen (Strg+K)",
+                        )
+                        .clicked()
+                        {
+                            self.command_palette.open_now();
+                        }
+                    });
+                }
+
+                let has_active_project = !self.show_welcome && !self.project.strips.is_empty();
+                let in_cad_editor = self.active_tab == ActiveTab::Editor && has_active_project;
+
+                ui.add_space(5.0);
                 ui.horizontal_wrapped(|ui| {
-                    draw_main_tabs(ui, &mut self.active_tab, s);
-                });
-            }
-
-            let has_active_project = !self.show_welcome && !self.project.strips.is_empty();
-            let in_cad_editor = self.active_tab == ActiveTab::Editor && has_active_project;
-
-            ui.separator();
-            ui.horizontal_wrapped(|ui| {
-                // Group 1: Project file actions
-                if primary_icon_button(ui, UiIcon::NewFile, s.menu_new_project).clicked() {
-                    self.project = Project::default();
-                    self.reload_catalog_with_all_custom();
-                    self.undo_stack.clear();
-                    self.redo_stack.clear();
-                    self.last_snapshot = self.project.clone();
-                    self.current_file = None;
-                    self.active_strip = 0;
-                    self.selected_blocks.clear();
-                    self.selected_end_bracket = None;
-                    self.show_welcome = true;
-                    self.active_tab = ActiveTab::Editor;
-                    self.new_strip_modal.open_for_next_strip(0);
-                }
-                if icon_button(ui, UiIcon::FolderOpen, s.menu_open_project).clicked() {
-                    self.open_project();
-                }
-                if icon_button(ui, UiIcon::ImportPdf, "Stückliste (PDF)")
-                    .on_hover_text(
-                        "EPLAN-Stückliste (.pdf) intelligent importieren (auch per Drag & Drop)",
-                    )
-                    .clicked()
-                {
-                    self.import_pdf_dialog();
-                }
-                if has_active_project
-                    && success_icon_button(ui, UiIcon::Save, s.menu_save_project).clicked()
-                {
-                    self.save_project();
-                }
-
-                // Group 2: Undo / Redo (only in active CAD Editor with a project)
-                if in_cad_editor {
-                    ui.separator();
-                    let undo_clicked = ui
-                        .add_enabled_ui(!self.undo_stack.is_empty(), |ui| {
-                            icon_only_button(
-                                ui,
-                                UiIcon::Undo,
-                                false,
-                                "Rückgängig / Undo (Strg+Z)",
-                            )
-                        })
-                        .inner
-                        .clicked();
-                    if undo_clicked {
-                        self.perform_undo();
+                    // Group 1: Project file actions (calm, neutral surfaces)
+                    if icon_button(ui, UiIcon::NewFile, s.menu_new_project).clicked() {
+                        self.project = Project::default();
+                        self.reload_catalog_with_all_custom();
+                        self.undo_stack.clear();
+                        self.redo_stack.clear();
+                        self.last_snapshot = self.project.clone();
+                        self.current_file = None;
+                        self.active_strip = 0;
+                        self.selected_blocks.clear();
+                        self.selected_end_bracket = None;
+                        self.show_welcome = true;
+                        self.active_tab = ActiveTab::Editor;
+                        self.new_strip_modal.open_for_next_strip(0);
                     }
-                    let redo_clicked = ui
-                        .add_enabled_ui(!self.redo_stack.is_empty(), |ui| {
-                            icon_only_button(
-                                ui,
-                                UiIcon::Redo,
-                                false,
-                                "Wiederholen / Redo (Strg+Y)",
-                            )
-                        })
-                        .inner
-                        .clicked();
-                    if redo_clicked {
-                        self.perform_redo();
+                    if icon_button(ui, UiIcon::FolderOpen, s.menu_open_project).clicked() {
+                        self.open_project();
                     }
-                }
-
-                // Group 3: Exports (only when a project with strips is active;
-                // DXF Export strictly ONLY in EPLAN mode!)
-                if has_active_project {
-                    ui.separator();
-                    if primary_icon_button(ui, UiIcon::ExportXlsx, s.menu_export_xlsx).clicked() {
-                        self.export_xlsx();
+                    if icon_button(ui, UiIcon::ImportPdf, "Stückliste (PDF)")
+                        .on_hover_text(
+                            "EPLAN-Stückliste (.pdf) intelligent importieren (auch per Drag & Drop)",
+                        )
+                        .clicked()
+                    {
+                        self.import_pdf_dialog();
                     }
-                    if icon_button(ui, UiIcon::ExportCsv, s.menu_export_csv).clicked() {
-                        self.export_csv();
-                    }
-                    if self.active_tab == ActiveTab::Editor
-                        && self.canvas_state.e_planer_mode
-                        && primary_icon_button(ui, UiIcon::ExportDxf, s.menu_export_dxf)
-                            .on_hover_text(
-                                "Exportiert alle Klemmleisten maßstabsgetreu (1:1 mm) als eine DXF-Datei für EPLAN Electric P8.",
-                            )
+                    if has_active_project
+                        && subtle_success_icon_button(ui, UiIcon::Save, s.menu_save_project)
                             .clicked()
                     {
-                        self.export_dxf();
+                        self.save_project();
                     }
-                }
 
-                if avail_w >= 1120.0 {
-                    ui.separator();
-                    ui.label(
-                        egui::RichText::new(s.app_subtitle).color(secondary_text_color(ui)),
-                    );
-                }
+                    // Group 2: Undo / Redo (only in active CAD Editor with a project)
+                    if in_cad_editor {
+                        ui.separator();
+                        let undo_clicked = ui
+                            .add_enabled_ui(!self.undo_stack.is_empty(), |ui| {
+                                icon_only_button(
+                                    ui,
+                                    UiIcon::Undo,
+                                    false,
+                                    "Rückgängig / Undo (Strg+Z)",
+                                )
+                            })
+                            .inner
+                            .clicked();
+                        if undo_clicked {
+                            self.perform_undo();
+                        }
+                        let redo_clicked = ui
+                            .add_enabled_ui(!self.redo_stack.is_empty(), |ui| {
+                                icon_only_button(
+                                    ui,
+                                    UiIcon::Redo,
+                                    false,
+                                    "Wiederholen / Redo (Strg+Y)",
+                                )
+                            })
+                            .inner
+                            .clicked();
+                        if redo_clicked {
+                            self.perform_redo();
+                        }
+                    }
+
+                    // Group 3: Exports (calm, focused — CAD + Generieren remain the focal point)
+                    if has_active_project {
+                        ui.separator();
+                        if icon_button(ui, UiIcon::ExportXlsx, s.menu_export_xlsx).clicked() {
+                            self.export_xlsx();
+                        }
+                        if icon_button(ui, UiIcon::ExportCsv, s.menu_export_csv).clicked() {
+                            self.export_csv();
+                        }
+                        if self.active_tab == ActiveTab::Editor
+                            && self.canvas_state.e_planer_mode
+                            && icon_button(ui, UiIcon::ExportDxf, s.menu_export_dxf)
+                                .on_hover_text(
+                                    "Exportiert alle Klemmleisten maßstabsgetreu (1:1 mm) als eine DXF-Datei für EPLAN Electric P8.",
+                                )
+                                .clicked()
+                        {
+                            self.export_dxf();
+                        }
+                    }
+
+                    if avail_w >= 1180.0 {
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if let Some(strip) = self.project.strips.get(self.active_strip)
+                                && has_active_project
+                            {
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "{} · {} {} · {:.1} mm",
+                                        strip.name,
+                                        strip.blocks.len(),
+                                        s.blocks_unit,
+                                        strip.total_width_mm()
+                                    ))
+                                    .monospace()
+                                    .size(12.5)
+                                    .color(t.text_secondary),
+                                );
+                            } else {
+                                ui.label(
+                                    egui::RichText::new(s.app_subtitle)
+                                        .size(12.5)
+                                        .color(t.text_muted),
+                                );
+                            }
+                        });
+                    }
+                });
             });
-            ui.add_space(4.0);
-        });
 
-        // Bottom Status Bar (never overlapping on narrow screens)
-        egui::Panel::bottom("status_bar").show(ui, |ui| {
-            let avail_w = ui.available_width();
-            if self.active_tab == ActiveTab::Editor && !self.show_welcome && avail_w >= 1020.0 {
-                ui.horizontal(|ui| {
-                    let left_max = (avail_w - 580.0).max(160.0);
-                    ui.allocate_ui_with_layout(
-                        egui::Vec2::new(left_max, 18.0),
-                        egui::Layout::left_to_right(egui::Align::Center),
-                        |ui| {
-                            ui.add(egui::Label::new(&self.status_message).truncate());
-                        },
-                    );
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        // Bottom Status Bar (calm tabular metrics + clean shortcuts)
+        egui::Panel::bottom("status_bar")
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.bg_panel)
+                    .stroke(egui::Stroke::new(1.0, t.border_hairline))
+                    .inner_margin(egui::Margin::symmetric(10, 4)),
+            )
+            .show(ui, |ui| {
+                let avail_w = ui.available_width();
+                if self.active_tab == ActiveTab::Editor && !self.show_welcome && avail_w >= 960.0 {
+                    ui.horizontal(|ui| {
+                        let left_max = (avail_w - 580.0).max(180.0);
+                        ui.allocate_ui_with_layout(
+                            egui::Vec2::new(left_max, 18.0),
+                            egui::Layout::left_to_right(egui::Align::Center),
+                            |ui| {
+                                ui.add(
+                                    egui::Label::new(
+                                        egui::RichText::new(&self.status_message)
+                                            .size(12.0)
+                                            .color(t.text_secondary),
+                                    )
+                                    .truncate(),
+                                );
+                            },
+                        );
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            kbd_chip(ui, "Entf");
+                            ui.label(
+                                egui::RichText::new("Löschen")
+                                    .size(11.5)
+                                    .color(t.text_muted),
+                            );
+                            ui.add_space(4.0);
+                            kbd_chip(ui, "Strg+K");
+                            ui.label(
+                                egui::RichText::new("Befehle")
+                                    .size(11.5)
+                                    .color(t.text_muted),
+                            );
+                            ui.add_space(4.0);
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(s.cad_footer_hint)
+                                        .size(11.5)
+                                        .color(t.text_muted),
+                                )
+                                .truncate(),
+                            );
+                        });
+                    });
+                } else {
+                    ui.horizontal(|ui| {
                         ui.add(
                             egui::Label::new(
-                                egui::RichText::new(s.cad_footer_hint)
-                                    .color(secondary_text_color(ui)),
+                                egui::RichText::new(&self.status_message)
+                                    .size(12.0)
+                                    .color(t.text_secondary),
                             )
                             .truncate(),
                         );
                     });
-                });
-            } else {
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new(&self.status_message).truncate());
-                });
-            }
-        });
+                }
+            });
 
         match self.active_tab {
             ActiveTab::Guide => {
@@ -1030,13 +1189,16 @@ impl eframe::App for TermiGridApp {
             );
             match self.strip_library.save_default() {
                 Ok(_) => {
-                    self.status_message = format!(
-                        "Vorlage „{}“ in persönlicher Bibliothek gespeichert.",
-                        confirm.template_name
+                    self.notify(
+                        ToastTone::Success,
+                        format!(
+                            "Vorlage „{}“ in persönlicher Bibliothek gespeichert.",
+                            confirm.template_name
+                        ),
                     );
                 }
                 Err(e) => {
-                    self.status_message = format!("{}: {e}", s.status_error);
+                    self.notify(ToastTone::Error, format!("{}: {e}", s.status_error));
                 }
             }
         }
@@ -1091,9 +1253,12 @@ impl eframe::App for TermiGridApp {
                         self.show_welcome = false;
                         self.active_tab = ActiveTab::Editor;
                         self.mobile_pane = MobilePane::Cad;
-                        self.status_message = format!(
-                            "Klemmleiste „{}“ aus Vorlage „{}“ eingefügt.",
-                            inserted_name, tpl.name
+                        self.notify(
+                            ToastTone::Success,
+                            format!(
+                                "Klemmleiste „{}“ aus Vorlage „{}“ eingefügt.",
+                                inserted_name, tpl.name
+                            ),
                         );
                     }
                 }
@@ -1106,6 +1271,25 @@ impl eframe::App for TermiGridApp {
                     }
                 }
             }
+        }
+
+        // Sonner-style floating toast notifications (with inline Undo when deleting blocks)
+        if let Some(ToastActionKind::Undo) =
+            self.toast_queue.show(ui.ctx(), self.safe_insets.bottom)
+        {
+            self.perform_undo();
+        }
+
+        // Strg+K Command Palette (instant keyboard workflow)
+        if let Some(cmd) = self.command_palette.show(
+            ui.ctx(),
+            &self.catalog,
+            &self.project.strips,
+            has_active_project,
+            !self.undo_stack.is_empty(),
+            !self.redo_stack.is_empty(),
+        ) {
+            self.execute_palette_command(ui.ctx(), cmd);
         }
 
         // Automatically record project state changes onto the Undo stack once pointer drag finishes
@@ -1121,6 +1305,117 @@ impl eframe::App for TermiGridApp {
 }
 
 impl TermiGridApp {
+    fn execute_palette_command(&mut self, ctx: &egui::Context, cmd: PaletteCommand) {
+        match cmd {
+            PaletteCommand::GenerateActiveStrip => self.generate_active_strip(),
+            PaletteCommand::NewStrip => {
+                self.new_strip_modal
+                    .open_for_next_strip(self.project.strips.len());
+            }
+            PaletteCommand::NewProject => {
+                self.project = Project::default();
+                self.reload_catalog_with_all_custom();
+                self.undo_stack.clear();
+                self.redo_stack.clear();
+                self.last_snapshot = self.project.clone();
+                self.current_file = None;
+                self.active_strip = 0;
+                self.selected_blocks.clear();
+                self.selected_end_bracket = None;
+                self.show_welcome = true;
+                self.active_tab = ActiveTab::Editor;
+                self.new_strip_modal.open_for_next_strip(0);
+            }
+            PaletteCommand::OpenProject => self.open_project(),
+            PaletteCommand::SaveProject => self.save_project(),
+            PaletteCommand::ImportPdf => self.import_pdf_dialog(),
+            PaletteCommand::OpenLibrary => {
+                self.strip_library.refresh_from_default();
+                self.strip_library_modal.open_browser();
+            }
+            PaletteCommand::ExportXlsx => self.export_xlsx(),
+            PaletteCommand::ExportCsv => self.export_csv(),
+            PaletteCommand::ExportDxf => self.export_dxf(),
+            PaletteCommand::ToggleBridgeMode => {
+                if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+                    self.canvas_state.interaction_mode = CanvasInteractionMode::default();
+                } else {
+                    self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
+                    self.canvas_state.e_planer_mode = false;
+                    self.selected_end_bracket = None;
+                    if let Some(strip) = self.project.strips.get_mut(self.active_strip) {
+                        if strip.potentials.is_empty() {
+                            let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
+                            self.active_potential_id = Some(id);
+                        } else if self.active_potential_id.is_none() {
+                            self.active_potential_id = strip.potentials.first().map(|p| p.id);
+                        }
+                    }
+                }
+            }
+            PaletteCommand::ToggleEplanMode => {
+                self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
+                if self.canvas_state.e_planer_mode
+                    && self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign
+                {
+                    self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
+                }
+            }
+            PaletteCommand::ConvertNToNt => {
+                if let Some(strip) = self.project.strips.get_mut(self.active_strip) {
+                    let converted = strip.convert_n_to_nt_blocks(&self.catalog);
+                    if converted > 0 {
+                        self.notify(
+                            ToastTone::Info,
+                            format!("{converted} N-Klemme(n) in NT-Trennklemmen umgewandelt."),
+                        );
+                    }
+                }
+            }
+            PaletteCommand::ConvertNtToN => {
+                if let Some(strip) = self.project.strips.get_mut(self.active_strip) {
+                    let converted = strip.convert_nt_to_n_blocks(&self.catalog);
+                    if converted > 0 {
+                        self.notify(
+                            ToastTone::Info,
+                            format!("{converted} NT-Trennklemme(n) in Standard-N-Klemmen zurückgewandelt."),
+                        );
+                    }
+                }
+            }
+            PaletteCommand::Undo => self.perform_undo(),
+            PaletteCommand::Redo => self.perform_redo(),
+            PaletteCommand::CycleTheme => {
+                self.theme_mode = self.theme_mode.next();
+                apply_theme_mode(ctx, self.theme_mode);
+            }
+            PaletteCommand::SwitchStrip(idx) => {
+                if idx < self.project.strips.len() {
+                    self.active_strip = idx;
+                    self.selected_blocks.clear();
+                    self.selected_end_bracket = None;
+                    self.show_welcome = false;
+                    self.active_tab = ActiveTab::Editor;
+                    self.mobile_pane = MobilePane::Cad;
+                }
+            }
+            PaletteCommand::InsertTerminal(spec_id) => {
+                if self.active_strip < self.project.strips.len() {
+                    let target_pos = self
+                        .selected_blocks
+                        .iter()
+                        .next_back()
+                        .copied()
+                        .map(|i| i + 1)
+                        .unwrap_or_else(|| self.project.strips[self.active_strip].blocks.len());
+                    self.insert_blocks_direct(self.active_strip, target_pos, 1, &spec_id, true);
+                    self.show_welcome = false;
+                    self.active_tab = ActiveTab::Editor;
+                }
+            }
+        }
+    }
+
     fn strip_has_n_supply(&self, strip_idx: usize) -> bool {
         self.project
             .strips
@@ -1219,7 +1514,7 @@ impl TermiGridApp {
             self.selected_blocks = inserted;
             self.selected_end_bracket = None;
         }
-        self.status_message = format!("Block eingefügt: {summary}");
+        self.notify(ToastTone::Success, format!("Block eingefügt: {summary}"));
     }
 
     /// Computes & reveals end/partition plates for the active strip and opens the NT configuration
@@ -1230,7 +1525,7 @@ impl TermiGridApp {
             return;
         }
         if self.project.strips[strip_idx].blocks.is_empty() {
-            self.status_message = "Klemmleiste enthält noch keine Klemmen.".to_string();
+            self.notify(ToastTone::Warning, "Klemmleiste enthält noch keine Klemmen.");
             return;
         }
 
@@ -1280,12 +1575,18 @@ impl TermiGridApp {
                 );
                 return;
             }
-            self.status_message = format!(
-                "Generiert für „{strip_name}“: {plates_count}× Abschluss-/Zwischenplatte (NT-Zubehör bereits vorhanden)."
+            self.notify(
+                ToastTone::Success,
+                format!(
+                    "Generiert für „{strip_name}“: {plates_count}× Abschluss-/Zwischenplatte (NT-Zubehör bereits vorhanden)."
+                ),
             );
         } else {
-            self.status_message = format!(
-                "Generiert für „{strip_name}“: {plates_count}× Abschluss-/Zwischenplatte."
+            self.notify(
+                ToastTone::Success,
+                format!(
+                    "Generiert für „{strip_name}“: {plates_count}× Abschluss-/Zwischenplatte."
+                ),
             );
         }
     }
@@ -1458,133 +1759,162 @@ impl TermiGridApp {
     /// Guided startup pipeline ("Projekt-Line"): Choose New Project -> Configure First Strip -> CAD.
     fn show_welcome_pipeline(&mut self, ui: &mut egui::Ui) {
         let s = strings(self.lang);
-        egui::CentralPanel::default().show(ui, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.add_space(24.0);
-                let card_w = (ui.available_width() - 32.0).clamp(280.0, 560.0);
-                ui.vertical_centered(|ui| {
-                    egui::Frame::group(ui.style())
-                        .inner_margin(egui::Margin::same(20))
-                        .show(ui, |ui| {
-                            ui.set_width(card_w);
-                            ui.heading(egui::RichText::new(s.welcome_heading).size(24.0).strong());
-                            ui.add_space(4.0);
-                            ui.label(
-                                egui::RichText::new(s.welcome_subtitle)
-                                    .color(secondary_text_color(ui)),
-                            );
-                            ui.add_space(12.0);
+        let t = tokens(ui);
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(t.bg_canvas))
+            .show(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.add_space(36.0);
+                    let card_w = (ui.available_width() - 32.0).clamp(280.0, 580.0);
+                    ui.vertical_centered(|ui| {
+                        egui::Frame::NONE
+                            .fill(t.bg_panel)
+                            .stroke(egui::Stroke::new(1.0, t.border_strong))
+                            .corner_radius(egui::CornerRadius::same(12))
+                            .inner_margin(egui::Margin::same(24))
+                            .show(ui, |ui| {
+                                ui.set_width(card_w);
+                                ui.label(
+                                    egui::RichText::new(s.welcome_heading)
+                                        .size(23.0)
+                                        .strong()
+                                        .color(t.text_primary),
+                                );
+                                ui.add_space(4.0);
+                                ui.label(
+                                    egui::RichText::new(s.welcome_subtitle)
+                                        .size(13.5)
+                                        .color(t.text_secondary),
+                                );
+                                ui.add_space(14.0);
 
-                            // Visual 3-step pipeline indicator
-                            let step2_active = self.new_strip_modal.open;
-                            ui.horizontal_wrapped(|ui| {
-                                let step_chip = |ui: &mut egui::Ui, label: &str, active: bool| {
-                                    let bg = if active {
-                                        egui::Color32::from_rgb(2, 132, 199)
-                                    } else {
-                                        ui.visuals().faint_bg_color
+                                // Visual 3-step pipeline indicator
+                                let step2_active = self.new_strip_modal.open;
+                                ui.horizontal_wrapped(|ui| {
+                                    let step_chip = |ui: &mut egui::Ui, label: &str, active: bool| {
+                                        let (bg, border, fg) = if active {
+                                            (t.accent_soft, t.accent, t.accent_text)
+                                        } else {
+                                            (t.bg_recessed, t.border_hairline, t.text_muted)
+                                        };
+                                        egui::Frame::NONE
+                                            .fill(bg)
+                                            .stroke(egui::Stroke::new(1.0, border))
+                                            .corner_radius(egui::CornerRadius::same(99))
+                                            .inner_margin(egui::Margin::symmetric(10, 4))
+                                            .show(ui, |ui| {
+                                                ui.label(
+                                                    egui::RichText::new(label)
+                                                        .size(12.0)
+                                                        .color(fg)
+                                                        .strong(),
+                                                );
+                                            });
                                     };
-                                    let fg = if active {
-                                        egui::Color32::WHITE
-                                    } else {
-                                        secondary_text_color(ui)
-                                    };
-                                    egui::Frame::NONE
-                                        .fill(bg)
-                                        .corner_radius(egui::CornerRadius::same(4))
-                                        .inner_margin(egui::Margin::symmetric(8, 4))
-                                        .show(ui, |ui| {
-                                            ui.label(egui::RichText::new(label).color(fg).strong());
-                                        });
-                                };
-                                step_chip(ui, s.welcome_step_1, !step2_active);
-                                ui.label("->");
-                                step_chip(ui, s.welcome_step_2, step2_active);
-                                ui.label("->");
-                                step_chip(ui, s.welcome_step_3, false);
-                            });
+                                    step_chip(ui, s.welcome_step_1, !step2_active);
+                                    ui.label(egui::RichText::new("→").color(t.text_muted));
+                                    step_chip(ui, s.welcome_step_2, step2_active);
+                                    ui.label(egui::RichText::new("→").color(t.text_muted));
+                                    step_chip(ui, s.welcome_step_3, false);
+                                });
 
-                            ui.separator();
-                            ui.add_space(8.0);
-                            ui.label(egui::RichText::new(s.project_name).strong());
-                            ui.add(
-                                egui::TextEdit::singleline(&mut self.project.project_name)
-                                    .desired_width(card_w - 16.0),
-                            );
-                            ui.add_space(14.0);
+                                ui.add_space(14.0);
+                                ui.separator();
+                                ui.add_space(10.0);
+                                ui.label(
+                                    egui::RichText::new(s.project_name)
+                                        .size(12.5)
+                                        .color(t.text_secondary)
+                                        .strong(),
+                                );
+                                ui.add_space(3.0);
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.project.project_name)
+                                        .desired_width(card_w - 8.0),
+                                );
+                                ui.add_space(16.0);
 
-                            // High-contrast primary actions
-                            ui.horizontal_wrapped(|ui| {
-                                if primary_icon_button(ui, UiIcon::Add, s.welcome_new_project)
-                                    .clicked()
-                                {
-                                    self.project.strips.clear();
-                                    self.project.custom_specs.clear();
-                                    self.reload_catalog_with_all_custom();
-                                    self.current_file = None;
-                                    self.active_strip = 0;
-                                    self.selected_blocks.clear();
-                                    self.selected_end_bracket = None;
-                                    self.new_strip_modal.open_for_next_strip(0);
-                                }
-                                if success_icon_button(
-                                    ui,
-                                    UiIcon::FolderOpen,
-                                    s.welcome_load_project,
-                                )
-                                .clicked()
-                                {
-                                    self.open_project();
-                                }
-                                let lib_btn_label = if self.strip_library.templates.is_empty() {
-                                    "Aus Bibliothek".to_string()
-                                } else {
-                                    format!(
-                                        "Aus Bibliothek ({})",
-                                        self.strip_library.templates.len()
+                                // One standout primary CTA + calm secondary actions
+                                ui.horizontal_wrapped(|ui| {
+                                    if primary_icon_button(ui, UiIcon::Add, s.welcome_new_project)
+                                        .clicked()
+                                    {
+                                        self.project.strips.clear();
+                                        self.project.custom_specs.clear();
+                                        self.reload_catalog_with_all_custom();
+                                        self.current_file = None;
+                                        self.active_strip = 0;
+                                        self.selected_blocks.clear();
+                                        self.selected_end_bracket = None;
+                                        self.new_strip_modal.open_for_next_strip(0);
+                                    }
+                                    if icon_button(
+                                        ui,
+                                        UiIcon::FolderOpen,
+                                        s.welcome_load_project,
                                     )
-                                };
-                                if icon_button(ui, UiIcon::Library, &lib_btn_label)
+                                    .clicked()
+                                    {
+                                        self.open_project();
+                                    }
+                                    if icon_button(
+                                        ui,
+                                        UiIcon::ImportPdf,
+                                        "PDF-Stückliste importieren",
+                                    )
                                     .on_hover_text(
-                                        "Persönliche Klemmleisten-Bibliothek durchsuchen & laden (projektübergreifend auf diesem PC)",
+                                        "EPLAN-Stückliste (.pdf) automatisch erkennen & übernehmen (auch per Drag & Drop)",
                                     )
                                     .clicked()
-                                {
-                                    self.strip_library.refresh_from_default();
-                                    self.strip_library_modal.open_browser();
-                                }
-                                if icon_button(
-                                    ui,
-                                    UiIcon::ImportPdf,
-                                    "PDF-Stückliste importieren",
-                                )
-                                .on_hover_text(
-                                    "EPLAN-Stückliste (.pdf) automatisch erkennen & übernehmen (auch per Drag & Drop)",
-                                )
-                                .clicked()
-                                {
-                                    self.import_pdf_dialog();
-                                }
-                            });
+                                    {
+                                        self.import_pdf_dialog();
+                                    }
+                                    let lib_btn_label = if self.strip_library.templates.is_empty() {
+                                        "Aus Bibliothek".to_string()
+                                    } else {
+                                        format!(
+                                            "Aus Bibliothek ({})",
+                                            self.strip_library.templates.len()
+                                        )
+                                    };
+                                    if icon_button(ui, UiIcon::Library, &lib_btn_label)
+                                        .on_hover_text(
+                                            "Persönliche Klemmleisten-Bibliothek durchsuchen & laden (projektübergreifend auf diesem PC)",
+                                        )
+                                        .clicked()
+                                    {
+                                        self.strip_library.refresh_from_default();
+                                        self.strip_library_modal.open_browser();
+                                    }
+                                });
 
-                            ui.add_space(12.0);
-                            ui.separator();
-                            ui.add_space(6.0);
-                            if icon_button(ui, UiIcon::CadEditor, s.welcome_demo_project).clicked() {
-                                self.project = create_demo_project(&self.catalog);
-                                self.active_strip = 0;
-                                self.selected_blocks.clear();
-                                self.selected_end_bracket = None;
-                                self.show_welcome = false;
-                            }
-                        });
+                                ui.add_space(14.0);
+                                ui.separator();
+                                ui.add_space(8.0);
+                                ui.horizontal(|ui| {
+                                    if ghost_icon_button(
+                                        ui,
+                                        UiIcon::CadEditor,
+                                        s.welcome_demo_project,
+                                    )
+                                    .clicked()
+                                    {
+                                        self.project = create_demo_project(&self.catalog);
+                                        self.active_strip = 0;
+                                        self.selected_blocks.clear();
+                                        self.selected_end_bracket = None;
+                                        self.show_welcome = false;
+                                    }
+                                });
+                            });
+                    });
                 });
             });
-        });
     }
 
     fn show_editor_panels(&mut self, ui: &mut egui::Ui) {
         let s = strings(self.lang);
+        let t = tokens(ui);
         let avail = ui.available_size();
         // Use tabbed mobile panes on phones (both Portrait and Landscape) and folded screens;
         // use 3-column workspace on Desktop, large Tablets, and unfolded Foldables.
@@ -1592,61 +1922,68 @@ impl TermiGridApp {
 
         if is_compact {
             // Smartphone / Folded Cover layout: touch-friendly sub-pane bar
-            egui::Panel::bottom("mobile_nav_bar").show(ui, |ui| {
-                ui.add_space(4.0);
-                ui.horizontal_wrapped(|ui| {
-                    if selectable_icon_button(
-                        ui,
-                        self.mobile_pane == MobilePane::Strips,
-                        UiIcon::SidebarLeft(true),
-                        s.strips_heading,
-                    )
-                    .clicked()
-                    {
-                        self.mobile_pane = MobilePane::Strips;
+            egui::Panel::bottom("mobile_nav_bar")
+                .frame(
+                    egui::Frame::NONE
+                        .fill(t.bg_panel)
+                        .stroke(egui::Stroke::new(1.0, t.border_hairline))
+                        .inner_margin(egui::Margin::symmetric(10, 6)),
+                )
+                .show(ui, |ui| {
+                    ui.horizontal_wrapped(|ui| {
+                        if selectable_icon_button(
+                            ui,
+                            self.mobile_pane == MobilePane::Strips,
+                            UiIcon::SidebarLeft(true),
+                            s.strips_heading,
+                        )
+                        .clicked()
+                        {
+                            self.mobile_pane = MobilePane::Strips;
+                        }
+                        if selectable_icon_button(
+                            ui,
+                            self.mobile_pane == MobilePane::Cad,
+                            UiIcon::CadEditor,
+                            s.tab_editor,
+                        )
+                        .clicked()
+                        {
+                            self.mobile_pane = MobilePane::Cad;
+                        }
+                        let insp_label = if self.selected_end_bracket.is_some() {
+                            format!("{} (EH)", s.inspector_title)
+                        } else if self.selected_blocks.is_empty() {
+                            s.inspector_title.to_string()
+                        } else {
+                            format!("{} ({})", s.inspector_title, self.selected_blocks.len())
+                        };
+                        if selectable_icon_button(
+                            ui,
+                            self.mobile_pane == MobilePane::Inspector,
+                            UiIcon::Edit,
+                            &insp_label,
+                        )
+                        .clicked()
+                        {
+                            self.mobile_pane = MobilePane::Inspector;
+                        }
+                    });
+                });
+
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE.fill(t.bg_canvas).inner_margin(egui::Margin::same(8)))
+                .show(ui, |ui| match self.mobile_pane {
+                    MobilePane::Strips => {
+                        self.show_strips_sidebar_contents(ui, true);
                     }
-                    if selectable_icon_button(
-                        ui,
-                        self.mobile_pane == MobilePane::Cad,
-                        UiIcon::CadEditor,
-                        s.tab_editor,
-                    )
-                    .clicked()
-                    {
-                        self.mobile_pane = MobilePane::Cad;
+                    MobilePane::Cad => {
+                        self.show_cad_workspace_contents(ui, true);
                     }
-                    let insp_label = if self.selected_end_bracket.is_some() {
-                        format!("{} (EH)", s.inspector_title)
-                    } else if self.selected_blocks.is_empty() {
-                        s.inspector_title.to_string()
-                    } else {
-                        format!("{} ({})", s.inspector_title, self.selected_blocks.len())
-                    };
-                    if selectable_icon_button(
-                        ui,
-                        self.mobile_pane == MobilePane::Inspector,
-                        UiIcon::Edit,
-                        &insp_label,
-                    )
-                    .clicked()
-                    {
-                        self.mobile_pane = MobilePane::Inspector;
+                    MobilePane::Inspector => {
+                        self.show_inspector_contents(ui, true);
                     }
                 });
-                ui.add_space(4.0);
-            });
-
-            egui::CentralPanel::default().show(ui, |ui| match self.mobile_pane {
-                MobilePane::Strips => {
-                    self.show_strips_sidebar_contents(ui, true);
-                }
-                MobilePane::Cad => {
-                    self.show_cad_workspace_contents(ui, true);
-                }
-                MobilePane::Inspector => {
-                    self.show_inspector_contents(ui, true);
-                }
-            });
             return;
         }
 
@@ -1654,9 +1991,15 @@ impl TermiGridApp {
         if self.show_left_sidebar {
             egui::Panel::left("left_sidebar")
                 .resizable(true)
-                .default_size(240.0)
-                .min_size(180.0)
+                .default_size(248.0)
+                .min_size(190.0)
                 .max_size(420.0)
+                .frame(
+                    egui::Frame::NONE
+                        .fill(t.bg_panel)
+                        .stroke(egui::Stroke::new(1.0, t.border_hairline))
+                        .inner_margin(egui::Margin::same(10)),
+                )
                 .show(ui, |ui| {
                     self.show_strips_sidebar_contents(ui, false);
                 });
@@ -1665,33 +2008,49 @@ impl TermiGridApp {
         if self.show_inspector {
             egui::Panel::right("right_inspector")
                 .resizable(true)
-                .default_size(350.0)
-                .min_size(240.0)
+                .default_size(356.0)
+                .min_size(250.0)
                 .max_size(640.0)
+                .frame(
+                    egui::Frame::NONE
+                        .fill(t.bg_panel)
+                        .stroke(egui::Stroke::new(1.0, t.border_hairline))
+                        .inner_margin(egui::Margin::same(10)),
+                )
                 .show(ui, |ui| {
                     self.show_inspector_contents(ui, false);
                 });
         }
 
-        egui::CentralPanel::default().show(ui, |ui| {
-            self.show_cad_workspace_contents(ui, false);
-        });
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(t.bg_canvas).inner_margin(egui::Margin::same(8)))
+            .show(ui, |ui| {
+                self.show_cad_workspace_contents(ui, false);
+            });
     }
 
     fn show_strips_sidebar_contents(&mut self, ui: &mut egui::Ui, _is_compact: bool) {
         let s = strings(self.lang);
+        let t = tokens(ui);
         let avail_w = ui.available_width();
-        ui.add_space(4.0);
-        ui.label(egui::RichText::new(s.project_name).strong());
+        ui.label(
+            egui::RichText::new(s.project_name)
+                .size(12.0)
+                .color(t.text_secondary)
+                .strong(),
+        );
+        ui.add_space(2.0);
         ui.add(
             egui::TextEdit::singleline(&mut self.project.project_name)
-                .desired_width((avail_w - 12.0).clamp(100.0, 260.0)),
+                .desired_width((avail_w - 4.0).clamp(100.0, 320.0)),
         );
+        ui.add_space(6.0);
         ui.separator();
+        ui.add_space(4.0);
 
         ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new(s.strips_heading).strong());
-            if success_icon_button(ui, UiIcon::Add, s.btn_new_strip).clicked() {
+            if subtle_success_icon_button(ui, UiIcon::Add, s.btn_new_strip).clicked() {
                 self.new_strip_modal
                     .open_for_next_strip(self.project.strips.len());
             }
@@ -1708,47 +2067,103 @@ impl TermiGridApp {
                 self.strip_library_modal.open_browser();
             }
         });
-        ui.add_space(4.0);
+        ui.add_space(6.0);
 
         let mut delete_idx: Option<usize> = None;
-        let left_max_w = (ui.available_width() - 12.0).max(120.0);
-        let list_max_h = (ui.available_height() - 52.0).max(90.0);
-        egui::ScrollArea::both()
+        let left_max_w = (ui.available_width() - 4.0).max(120.0);
+        let list_max_h = (ui.available_height() - 48.0).max(90.0);
+        egui::ScrollArea::vertical()
             .id_salt("strips_scroll")
             .max_height(list_max_h)
             .auto_shrink([false, true])
             .show(ui, |ui| {
                 ui.set_max_width(left_max_w);
+                ui.spacing_mut().item_spacing.y = 5.0;
                 for (idx, strip) in self.project.strips.iter().enumerate() {
                     let is_active = idx == self.active_strip;
-                    let resp = ui.add(
-                        egui::Button::selectable(
-                            is_active,
+                    let card_w = ui.available_width();
+                    let has_desc = is_active && !strip.description.is_empty();
+                    let card_h = if has_desc { 58.0 } else { 44.0 };
+                    let (rect, resp) =
+                        ui.allocate_exact_size(egui::Vec2::new(card_w, card_h), egui::Sense::click());
+                    if ui.is_rect_visible(rect) {
+                        let hovered = resp.hovered();
+                        let fill = if is_active {
+                            t.accent_soft
+                        } else if hovered {
+                            t.bg_surface_hover
+                        } else {
+                            t.bg_surface
+                        };
+                        let stroke = if is_active {
+                            egui::Stroke::new(1.0, t.accent)
+                        } else {
+                            egui::Stroke::new(1.0, t.border_hairline)
+                        };
+                        ui.painter()
+                            .rect_filled(rect, egui::CornerRadius::same(7), fill);
+                        ui.painter().rect_stroke(
+                            rect,
+                            egui::CornerRadius::same(7),
+                            stroke,
+                            egui::StrokeKind::Inside,
+                        );
+                        if is_active {
+                            let bar = egui::Rect::from_min_max(
+                                egui::Pos2::new(rect.min.x + 1.0, rect.min.y + 6.0),
+                                egui::Pos2::new(rect.min.x + 4.0, rect.max.y - 6.0),
+                            );
+                            ui.painter()
+                                .rect_filled(bar, egui::CornerRadius::same(2), t.accent);
+                        }
+
+                        let text_x = rect.min.x + 11.0;
+                        ui.painter().text(
+                            egui::Pos2::new(text_x, rect.min.y + 8.0),
+                            egui::Align2::LEFT_TOP,
+                            &strip.name,
+                            egui::FontId::proportional(14.0),
+                            t.text_primary,
+                        );
+                        ui.painter().text(
+                            egui::Pos2::new(rect.max.x - 9.0, rect.min.y + 9.0),
+                            egui::Align2::RIGHT_TOP,
+                            format!("{:.1} mm", strip.total_width_mm()),
+                            egui::FontId::monospace(11.5),
+                            if is_active { t.accent_text } else { t.text_muted },
+                        );
+                        ui.painter().text(
+                            egui::Pos2::new(text_x, rect.min.y + 25.5),
+                            egui::Align2::LEFT_TOP,
                             format!(
-                                "{}  ({} {} / {} {})",
-                                strip.name,
+                                "{} {} · {} {}",
                                 strip.blocks.len(),
                                 s.blocks_unit,
                                 strip.printable_label_count(),
                                 s.labels_unit
                             ),
-                        )
-                        .wrap(),
-                    );
+                            egui::FontId::proportional(11.5),
+                            t.text_secondary,
+                        );
+                        if has_desc {
+                            let desc_galley = ui.painter().layout(
+                                strip.description.clone(),
+                                egui::FontId::proportional(11.0),
+                                t.text_muted,
+                                (card_w - 20.0).max(80.0),
+                            );
+                            ui.painter().galley(
+                                egui::Pos2::new(text_x, rect.min.y + 41.0),
+                                desc_galley,
+                                t.text_muted,
+                            );
+                        }
+                    }
                     if resp.clicked() {
                         self.active_strip = idx;
                         self.selected_blocks.clear();
                         self.selected_end_bracket = None;
                         self.mobile_pane = MobilePane::Cad;
-                    }
-                    if is_active && !strip.description.is_empty() {
-                        ui.add(
-                            egui::Label::new(
-                                egui::RichText::new(&strip.description)
-                                    .color(secondary_text_color(ui)),
-                            )
-                            .wrap(),
-                        );
                     }
                 }
             });
@@ -1788,16 +2203,42 @@ impl TermiGridApp {
 
     fn show_inspector_contents(&mut self, ui: &mut egui::Ui, _is_compact: bool) {
         let s = strings(self.lang);
+        let t = tokens(ui);
         let sec = secondary_text_color(ui);
-        let panel_max_w = (ui.available_width() - 16.0).max(160.0);
-        egui::ScrollArea::both()
+        let panel_max_w = (ui.available_width() - 8.0).max(160.0);
+        egui::ScrollArea::vertical()
             .id_salt("inspector_scroll")
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 ui.set_max_width(panel_max_w);
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new(s.inspector_title)
+                            .size(15.5)
+                            .strong()
+                            .color(t.text_primary),
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if !self.selected_blocks.is_empty() {
+                            pill_badge(
+                                ui,
+                                &format!("{} markiert", self.selected_blocks.len()),
+                                t.accent_text,
+                                t.accent_soft,
+                            );
+                        } else if let Some(is_left) = self.selected_end_bracket {
+                            pill_badge(
+                                ui,
+                                if is_left { "EH Links" } else { "EH Rechts" },
+                                t.accent_text,
+                                t.accent_soft,
+                            );
+                        }
+                    });
+                });
                 ui.add_space(4.0);
-                ui.heading(s.inspector_title);
                 ui.separator();
+                ui.add_space(4.0);
 
                 let has_strip = self.active_strip < self.project.strips.len();
                 if !has_strip {
@@ -1815,7 +2256,7 @@ impl TermiGridApp {
                         )
                         .wrap(),
                     );
-                    ui.add_space(4.0);
+                    ui.add_space(6.0);
 
                     let bridge_plan = {
                         let strip = &mut self.project.strips[self.active_strip];
@@ -1825,7 +2266,7 @@ impl TermiGridApp {
                                     .hint_text(s.bridge_new_potential)
                                     .desired_width(110.0),
                             );
-                            if success_icon_button(ui, UiIcon::Potential, s.bridge_add_btn)
+                            if subtle_success_icon_button(ui, UiIcon::Potential, s.bridge_add_btn)
                                 .clicked()
                             {
                                 let name = if self.new_potential_name.trim().is_empty() {
@@ -1908,9 +2349,10 @@ impl TermiGridApp {
                     if !bridge_plan.comb_segments.is_empty()
                         || !bridge_plan.wire_bridges.is_empty()
                     {
-                        ui.add_space(4.0);
-                        ui.group(|ui| {
+                        ui.add_space(6.0);
+                        section_card(ui, |ui| {
                             ui.label(egui::RichText::new(s.bridge_bom_heading).strong());
+                            ui.add_space(4.0);
                             for seg in &bridge_plan.comb_segments {
                                 let col = egui::Color32::from_rgb(
                                     seg.color_rgb[0],
@@ -2031,11 +2473,11 @@ impl TermiGridApp {
                         )
                         .wrap(),
                     );
-                    ui.add_space(4.0);
+                    ui.add_space(6.0);
 
                     let (eb_id, keep_selected) = {
                         let strip = &mut self.project.strips[self.active_strip];
-                        ui.group(|ui| {
+                        section_card(ui, |ui| {
                             show_end_bracket_picker(
                                 ui,
                                 &self.logos,
@@ -2091,20 +2533,7 @@ impl TermiGridApp {
                         self.last_selection_sync = None;
                     }
 
-                    ui.add(
-                        egui::Label::new(
-                            egui::RichText::new(format!(
-                                "{}: {}",
-                                s.selected_count,
-                                self.selected_blocks.len()
-                            ))
-                            .strong(),
-                        )
-                        .wrap(),
-                    );
-                    ui.add_space(4.0);
-
-                    ui.group(|ui| {
+                    section_card(ui, |ui| {
                         let selected_ref_spec = self
                             .canvas_state
                             .selection_anchor
@@ -2116,6 +2545,7 @@ impl TermiGridApp {
                             .and_then(|b| self.catalog.find_by_id(&b.spec_id));
 
                         ui.label(egui::RichText::new(s.reassign_heading).strong());
+                        ui.add_space(4.0);
                         show_spec_picker(
                             ui,
                             &self.catalog,
@@ -2135,7 +2565,7 @@ impl TermiGridApp {
                         if let Some(candidate_spec) =
                             self.catalog.find_by_id(&self.inspector_spec_id)
                         {
-                            ui.add_space(4.0);
+                            ui.add_space(6.0);
                             ui.add(
                                 egui::Label::new(
                                     egui::RichText::new(s.preview_before_apply).color(sec).small(),
@@ -2153,10 +2583,11 @@ impl TermiGridApp {
                             );
                         }
 
-                        ui.add_space(4.0);
+                        ui.add_space(6.0);
 
                         let mut deferred_insert: Option<(usize, String)> = None;
                         let mut deferred_seq_insert: Option<(usize, Vec<String>, String)> = None;
+                        let mut applied_msg: Option<String> = None;
 
                         if primary_icon_button(ui, UiIcon::Apply, s.btn_apply_type).clicked()
                             && let Some(spec) = self.catalog.find_by_id(&self.inspector_spec_id)
@@ -2166,8 +2597,8 @@ impl TermiGridApp {
                             let count = indices.len();
                             self.project.strips[self.active_strip]
                                 .reassign_blocks(&indices, spec);
-                            self.status_message =
-                                format!("{count}× Klemme auf {} geändert.", spec.name);
+                            applied_msg =
+                                Some(format!("{count}× Klemme auf {} geändert.", spec.name));
                         }
 
                         // 1-Polig & 3-Polig feeder-block buttons right below "Typ auf Auswahl anwenden"
@@ -2244,7 +2675,9 @@ impl TermiGridApp {
                             }
                         });
 
-                        if let Some((pos, spec_id)) = deferred_insert {
+                        if let Some(msg) = applied_msg {
+                            self.notify(ToastTone::Info, msg);
+                        } else if let Some((pos, spec_id)) = deferred_insert {
                             self.insert_blocks_direct(
                                 self.active_strip,
                                 pos,
@@ -2297,8 +2730,14 @@ impl TermiGridApp {
                             {
                                 let indices: Vec<usize> =
                                     self.selected_blocks.iter().copied().collect();
+                                let del_count = indices.len();
                                 self.project.strips[self.active_strip].delete_blocks(&indices);
                                 self.selected_blocks.clear();
+                                self.canvas_state.selection_anchor = None;
+                                self.notify_undoable(
+                                    ToastTone::Info,
+                                    format!("{del_count} Klemme(n) gelöscht."),
+                                );
                             }
                         });
                     });
@@ -2316,7 +2755,7 @@ impl TermiGridApp {
                         if idx < strip.blocks.len() {
                             ui.add_space(6.0);
                             let mut needs_recalc = false;
-                            ui.group(|ui| {
+                            section_card(ui, |ui| {
                                 let block = &mut strip.blocks[idx];
                                 ui.label(
                                     egui::RichText::new(format!(
@@ -2534,7 +2973,7 @@ impl TermiGridApp {
                                 });
                             entry.2.push(p.after_block_idx + 1);
                         }
-                        ui.group(|ui| {
+                        section_card(ui, |ui| {
                             ui.label(
                                 egui::RichText::new(format!(
                                     "{} ({})",
@@ -2601,7 +3040,7 @@ impl TermiGridApp {
                 for (spec_id, count) in seen_specs {
                     if let Some(spec) = self.catalog.find_by_id(&spec_id) {
                         let acc = self.catalog.accessories_for(spec);
-                        ui.group(|ui| {
+                        section_card(ui, |ui| {
                             ui.horizontal_wrapped(|ui| {
                                 show_logo_badge(ui, &self.logos, &spec.manufacturer, 18.0);
                                 ui.add(
@@ -2662,7 +3101,7 @@ impl TermiGridApp {
 
                 let (eb_id, has_eb) = {
                     let strip = &mut self.project.strips[self.active_strip];
-                    ui.group(|ui| {
+                    section_card(ui, |ui| {
                         show_end_bracket_picker(
                             ui,
                             &self.logos,
@@ -2705,7 +3144,7 @@ impl TermiGridApp {
                                 });
                             entry.2.push(p.after_block_idx + 1);
                         }
-                        ui.group(|ui| {
+                        section_card(ui, |ui| {
                             ui.label(
                                 egui::RichText::new(format!(
                                     "{} ({})",
@@ -2819,6 +3258,7 @@ impl TermiGridApp {
 
     fn show_cad_workspace_contents(&mut self, ui: &mut egui::Ui, is_compact: bool) {
         let s = strings(self.lang);
+        let t = tokens(ui);
         if self.active_strip >= self.project.strips.len() {
             ui.centered_and_justified(|ui| {
                 ui.label(s.cad_empty_hint);
@@ -2832,347 +3272,381 @@ impl TermiGridApp {
         let mut deferred_convert: Option<bool> = None;
         let mut deferred_generate = false;
 
-        ui.horizontal_wrapped(|ui| {
-            // Group 1: CAD Interaction & Drafting Mode Switcher
-            #[cfg(any(target_os = "android", target_os = "ios"))]
-            if selectable_icon_button(
-                ui,
-                self.canvas_state.interaction_mode == CanvasInteractionMode::Pan,
-                UiIcon::ModePan,
-                s.mode_pan,
-            )
-            .on_hover_text(s.mode_pan_tip)
-            .clicked()
-            {
-                self.canvas_state.interaction_mode = CanvasInteractionMode::Pan;
-            }
-            if selectable_icon_button(
-                ui,
-                self.canvas_state.interaction_mode == CanvasInteractionMode::SelectBox,
-                UiIcon::ModeSelect,
-                s.mode_select,
-            )
-            .on_hover_text(s.mode_select_tip)
-            .clicked()
-            {
-                self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
-            }
-            if selectable_icon_button(
-                ui,
-                self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign,
-                UiIcon::ModeBridge,
-                s.mode_bridge,
-            )
-            .on_hover_text(s.mode_bridge_tip)
-            .clicked()
-            {
-                self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
-                self.canvas_state.e_planer_mode = false;
-                self.selected_end_bracket = None;
-                let strip = &mut self.project.strips[self.active_strip];
-                if strip.potentials.is_empty() {
-                    let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
-                    self.active_potential_id = Some(id);
-                } else if self.active_potential_id.is_none() {
-                    self.active_potential_id = strip.potentials.first().map(|p| p.id);
-                }
-            }
-            if selectable_icon_button(
-                ui,
-                self.canvas_state.e_planer_mode,
-                UiIcon::ModeEplan,
-                s.mode_eplaner,
-            )
-            .on_hover_text(s.mode_eplaner_tip)
-            .clicked()
-            {
-                self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
-                if self.canvas_state.e_planer_mode
-                    && self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign
-                {
-                    self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
-                }
-            }
-
-            // Group 2: Numbering controls (hidden in BridgeAssign mode where numbering isn't edited)
-            if self.canvas_state.interaction_mode != CanvasInteractionMode::BridgeAssign {
-                ui.separator();
-                let strip = &mut self.project.strips[self.active_strip];
-                ui.label(s.strip_start_number);
-                if ui
-                    .add(egui::DragValue::new(&mut strip.start_number).range(1..=99999))
-                    .changed()
-                {
-                    recalc_needed = true;
-                }
-
-                ui.label(s.n_mode_label);
-                let n_text = match strip.neutral_mode {
-                    NeutralLabelMode::Fixed => s.n_mode_fixed,
-                    NeutralLabelMode::SharedSequenceNumber => s.n_mode_shared_num,
-                    NeutralLabelMode::SharedSequenceSuffixN => s.n_mode_shared_n,
-                    NeutralLabelMode::SeparateCounterSuffixN => s.n_mode_own_n,
-                };
-                egui::ComboBox::from_id_salt("n_mode_combo")
-                    .truncate()
-                    .selected_text(n_text)
-                    .show_ui(ui, |ui| {
-                        for (mode, lbl) in [
-                            (NeutralLabelMode::Fixed, s.n_mode_fixed),
-                            (NeutralLabelMode::SharedSequenceNumber, s.n_mode_shared_num),
-                            (NeutralLabelMode::SharedSequenceSuffixN, s.n_mode_shared_n),
-                            (NeutralLabelMode::SeparateCounterSuffixN, s.n_mode_own_n),
-                        ] {
-                            if ui.selectable_value(&mut strip.neutral_mode, mode, lbl).changed() {
-                                recalc_needed = true;
-                            }
+        egui::Frame::NONE
+            .fill(t.bg_panel)
+            .stroke(egui::Stroke::new(1.0, t.border_hairline))
+            .corner_radius(egui::CornerRadius::same(8))
+            .inner_margin(egui::Margin::symmetric(10, 7))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.horizontal_wrapped(|ui| {
+                    // Group 1: CAD Interaction & Drafting Mode Switcher (Segmented Control)
+                    let prev_mode = self.canvas_state.interaction_mode;
+                    #[cfg(any(target_os = "android", target_os = "ios"))]
+                    let mode_items = [
+                        (CanvasInteractionMode::Pan, UiIcon::ModePan, s.mode_pan, s.mode_pan_tip),
+                        (
+                            CanvasInteractionMode::SelectBox,
+                            UiIcon::ModeSelect,
+                            s.mode_select,
+                            s.mode_select_tip,
+                        ),
+                        (
+                            CanvasInteractionMode::BridgeAssign,
+                            UiIcon::ModeBridge,
+                            s.mode_bridge,
+                            s.mode_bridge_tip,
+                        ),
+                    ];
+                    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+                    let mode_items = [
+                        (
+                            CanvasInteractionMode::SelectBox,
+                            UiIcon::ModeSelect,
+                            s.mode_select,
+                            s.mode_select_tip,
+                        ),
+                        (
+                            CanvasInteractionMode::BridgeAssign,
+                            UiIcon::ModeBridge,
+                            s.mode_bridge,
+                            s.mode_bridge_tip,
+                        ),
+                    ];
+                    if segmented_control(ui, &mut self.canvas_state.interaction_mode, &mode_items)
+                        && self.canvas_state.interaction_mode
+                            == CanvasInteractionMode::BridgeAssign
+                        && prev_mode != CanvasInteractionMode::BridgeAssign
+                    {
+                        self.canvas_state.e_planer_mode = false;
+                        self.selected_end_bracket = None;
+                        let strip = &mut self.project.strips[self.active_strip];
+                        if strip.potentials.is_empty() {
+                            let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
+                            self.active_potential_id = Some(id);
+                        } else if self.active_potential_id.is_none() {
+                            self.active_potential_id = strip.potentials.first().map(|p| p.id);
                         }
-                    });
+                    }
 
-                ui.label(s.pe_mode_label);
-                let pe_text = match strip.pe_mode {
-                    PeLabelMode::Fixed => s.pe_mode_fixed,
-                    PeLabelMode::SharedSequenceNumber => s.pe_mode_shared_num,
-                    PeLabelMode::SharedSequenceSuffixPe => s.pe_mode_shared_pe,
-                    PeLabelMode::SeparateCounterSuffixPe => s.pe_mode_own_pe,
-                };
-                egui::ComboBox::from_id_salt("pe_mode_combo")
-                    .truncate()
-                    .selected_text(pe_text)
-                    .show_ui(ui, |ui| {
-                        for (mode, lbl) in [
-                            (PeLabelMode::Fixed, s.pe_mode_fixed),
-                            (PeLabelMode::SharedSequenceNumber, s.pe_mode_shared_num),
-                            (PeLabelMode::SharedSequenceSuffixPe, s.pe_mode_shared_pe),
-                            (PeLabelMode::SeparateCounterSuffixPe, s.pe_mode_own_pe),
-                        ] {
-                            if ui.selectable_value(&mut strip.pe_mode, mode, lbl).changed() {
-                                recalc_needed = true;
-                            }
-                        }
-                    });
-            }
-
-            // Group 3: View, Zoom & Type display
-            ui.separator();
-            ui.label(s.zoom_label);
-            if icon_only_button(ui, UiIcon::ZoomOut, false, "Verkleinern").clicked() {
-                self.canvas_state.zoom = (self.canvas_state.zoom / 1.15).clamp(0.4, 2.5);
-            }
-            ui.scope(|ui| {
-                ui.spacing_mut().slider_width = if is_compact { 76.0 } else { 96.0 };
-                ui.visuals_mut().widgets.inactive.bg_fill = if ui.visuals().dark_mode {
-                    egui::Color32::from_rgb(51, 65, 85)
-                } else {
-                    egui::Color32::from_rgb(203, 213, 225)
-                };
-                ui.add(
-                    egui::Slider::new(&mut self.canvas_state.zoom, 0.4..=2.5).show_value(false),
-                );
-            });
-            if icon_only_button(ui, UiIcon::ZoomIn, false, "Vergrößern").clicked() {
-                self.canvas_state.zoom = (self.canvas_state.zoom * 1.15).clamp(0.4, 2.5);
-            }
-            ui.label(
-                egui::RichText::new(format!("{:>3.0}%", self.canvas_state.zoom * 100.0))
-                    .monospace()
-                    .strong(),
-            );
-            if icon_button(ui, UiIcon::ZoomReset, s.btn_fit_zoom).clicked() {
-                self.canvas_state.zoom = 1.0;
-            }
-
-            ui.label(s.type_display_label);
-            let td_text = match self.canvas_state.type_display {
-                TypeDisplayMode::HorizontalGroups => s.type_display_groups,
-                TypeDisplayMode::VerticalPerBlock => s.type_display_vertical,
-                TypeDisplayMode::Off => s.type_display_off,
-            };
-            egui::ComboBox::from_id_salt("type_display_combo")
-                .truncate()
-                .selected_text(td_text)
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(
-                        &mut self.canvas_state.type_display,
-                        TypeDisplayMode::HorizontalGroups,
-                        s.type_display_groups,
-                    );
-                    ui.selectable_value(
-                        &mut self.canvas_state.type_display,
-                        TypeDisplayMode::VerticalPerBlock,
-                        s.type_display_vertical,
-                    );
-                    ui.selectable_value(
-                        &mut self.canvas_state.type_display,
-                        TypeDisplayMode::Off,
-                        s.type_display_off,
-                    );
-                });
-
-            // Group 4: Strip block selection, smart append & N <-> NT batch convert
-            let strip = &self.project.strips[self.active_strip];
-            let has_selection =
-                !self.selected_blocks.is_empty() || self.selected_end_bracket.is_some();
-            ui.separator();
-            if !strip.blocks.is_empty()
-                && icon_button(ui, UiIcon::SelectAll, s.btn_select_all).clicked()
-            {
-                self.selected_blocks = (0..strip.blocks.len()).collect();
-                self.selected_end_bracket = None;
-            }
-            if has_selection
-                && icon_button(ui, UiIcon::SelectNone, s.btn_clear_selection).clicked()
-            {
-                self.selected_blocks.clear();
-                self.selected_end_bracket = None;
-            }
-
-            if self.canvas_state.interaction_mode != CanvasInteractionMode::BridgeAssign {
-                let anchor_idx = self
-                    .canvas_state
-                    .selection_anchor
-                    .filter(|i| self.selected_blocks.contains(i))
-                    .or_else(|| self.selected_blocks.iter().next_back().copied());
-                let last_selected_idx = self.selected_blocks.iter().next_back().copied();
-                let target_insert_pos = last_selected_idx
-                    .map(|i| i + 1)
-                    .unwrap_or(strip.blocks.len());
-
-                let marked_spec = anchor_idx
-                    .and_then(|idx| strip.blocks.get(idx))
-                    .and_then(|b| self.catalog.find_by_id(&b.spec_id));
-                let append_target_spec = marked_spec
-                    .or_else(|| self.catalog.find_by_id(&strip.default_spec_id));
-                let append_tip = if let (Some(idx), Some(sp)) = (anchor_idx, marked_spec) {
-                    format!(
-                        "Gleiche Klemme wie #{} ({}) direkt danach hinzufügen",
-                        idx + 1,
-                        sp.name
+                    if selectable_icon_button(
+                        ui,
+                        self.canvas_state.e_planer_mode,
+                        UiIcon::ModeEplan,
+                        s.mode_eplaner,
                     )
-                } else if let Some(sp) = append_target_spec {
-                    format!("Standardklemme ({}) am Leistenende hinzufügen", sp.name)
-                } else {
-                    s.btn_append_block.to_string()
-                };
-
-                if success_icon_button(ui, UiIcon::Add, s.btn_append_block)
-                    .on_hover_text(append_tip)
+                    .on_hover_text(s.mode_eplaner_tip)
                     .clicked()
-                    && let Some(sp) = append_target_spec
-                {
-                    deferred_single_insert = Some((
-                        target_insert_pos,
-                        sp.id.clone(),
-                        marked_spec.is_some(),
-                    ));
-                }
-
-                // Batch N <-> NT converter buttons
-                let to_nt_count = strip
-                    .blocks
-                    .iter()
-                    .filter(|b| {
-                        self.catalog
-                            .find_by_id(&b.spec_id)
-                            .and_then(|sp| sp.matching_nt_equivalent_id())
-                            .is_some()
-                    })
-                    .count();
-                let to_n_count = strip
-                    .blocks
-                    .iter()
-                    .filter(|b| {
-                        self.catalog
-                            .find_by_id(&b.spec_id)
-                            .and_then(|sp| sp.matching_n_from_nt_id())
-                            .is_some()
-                    })
-                    .count();
-
-                ui.separator();
-                let lbl_to_nt = if to_nt_count > 0 {
-                    format!("N → NT ({to_nt_count})")
-                } else {
-                    "N → NT".to_string()
-                };
-                let tip_to_nt = if to_nt_count > 0 {
-                    format!(
-                        "Wandelt alle {to_nt_count} N-Klemmen dieser Leiste in passende NT-Trennklemmen (mit N-Trennschlitten) um"
-                    )
-                } else {
-                    "Keine umwandelbaren Standard-N-Klemmen auf dieser Leiste vorhanden".to_string()
-                };
-                let btn_to_nt = ui
-                    .add_enabled_ui(to_nt_count > 0, |ui| {
-                        icon_button(ui, UiIcon::ConvertNt, &lbl_to_nt)
-                    })
-                    .inner
-                    .on_hover_text(&tip_to_nt)
-                    .on_disabled_hover_text(&tip_to_nt);
-                if btn_to_nt.clicked() {
-                    deferred_convert = Some(true);
-                }
-
-                let lbl_to_n = if to_n_count > 0 {
-                    format!("NT → N ({to_n_count})")
-                } else {
-                    "NT → N".to_string()
-                };
-                let tip_to_n = if to_n_count > 0 {
-                    format!(
-                        "Wandelt alle {to_n_count} NT-Trennklemmen dieser Leiste wieder in passende Standard-N-Klemmen um"
-                    )
-                } else {
-                    "Keine umwandelbaren NT-Trennklemmen auf dieser Leiste vorhanden".to_string()
-                };
-                let btn_to_n = ui
-                    .add_enabled_ui(to_n_count > 0, |ui| {
-                        icon_button(ui, UiIcon::ConvertNt, &lbl_to_n)
-                    })
-                    .inner
-                    .on_hover_text(&tip_to_n)
-                    .on_disabled_hover_text(&tip_to_n);
-                if btn_to_n.clicked() {
-                    deferred_convert = Some(false);
-                }
-            }
-
-            // Group 5: Explicit post-placement generation (End plates + NT configuration check)
-            {
-                let strip_ref = &self.project.strips[self.active_strip];
-                let is_generated = strip_ref.end_plates_generated;
-                let has_blocks = !strip_ref.blocks.is_empty();
-                ui.separator();
-                let gen_tip = if !has_blocks {
-                    "Zuerst Klemmen auf der Klemmleiste platzieren"
-                } else if is_generated {
-                    "Endplatten & NT-Konfiguration erneut prüfen / aktualisieren"
-                } else {
-                    "Abschluss-/Zwischenplatten berechnen und auf NT-Trennklemmen prüfen"
-                };
-                let gen_btn = ui
-                    .add_enabled_ui(has_blocks, |ui| {
-                        if is_generated {
-                            icon_button(ui, UiIcon::Check, "Generiert")
-                        } else {
-                            primary_icon_button(ui, UiIcon::Bolt, "Generieren")
+                    {
+                        self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
+                        if self.canvas_state.e_planer_mode
+                            && self.canvas_state.interaction_mode
+                                == CanvasInteractionMode::BridgeAssign
+                        {
+                            self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
                         }
-                    })
-                    .inner
-                    .on_hover_text(gen_tip)
-                    .on_disabled_hover_text(gen_tip);
-                if gen_btn.clicked() {
-                    deferred_generate = true;
-                }
-            }
+                    }
 
-            if is_compact
-                && has_selection
-                && primary_icon_button(ui, UiIcon::Edit, "Bearbeiten").clicked()
-            {
-                self.mobile_pane = MobilePane::Inspector;
-            }
-        });
+                    // Group 2: Numbering controls (hidden in BridgeAssign mode)
+                    if self.canvas_state.interaction_mode != CanvasInteractionMode::BridgeAssign {
+                        ui.separator();
+                        let strip = &mut self.project.strips[self.active_strip];
+                        ui.label(
+                            egui::RichText::new(s.strip_start_number)
+                                .size(12.5)
+                                .color(t.text_secondary),
+                        );
+                        if ui
+                            .add(egui::DragValue::new(&mut strip.start_number).range(1..=99999))
+                            .changed()
+                        {
+                            recalc_needed = true;
+                        }
+
+                        ui.label(
+                            egui::RichText::new(s.n_mode_label)
+                                .size(12.5)
+                                .color(t.text_secondary),
+                        );
+                        let n_text = match strip.neutral_mode {
+                            NeutralLabelMode::Fixed => s.n_mode_fixed,
+                            NeutralLabelMode::SharedSequenceNumber => s.n_mode_shared_num,
+                            NeutralLabelMode::SharedSequenceSuffixN => s.n_mode_shared_n,
+                            NeutralLabelMode::SeparateCounterSuffixN => s.n_mode_own_n,
+                        };
+                        egui::ComboBox::from_id_salt("n_mode_combo")
+                            .truncate()
+                            .selected_text(n_text)
+                            .show_ui(ui, |ui| {
+                                for (mode, lbl) in [
+                                    (NeutralLabelMode::Fixed, s.n_mode_fixed),
+                                    (NeutralLabelMode::SharedSequenceNumber, s.n_mode_shared_num),
+                                    (NeutralLabelMode::SharedSequenceSuffixN, s.n_mode_shared_n),
+                                    (NeutralLabelMode::SeparateCounterSuffixN, s.n_mode_own_n),
+                                ] {
+                                    if ui
+                                        .selectable_value(&mut strip.neutral_mode, mode, lbl)
+                                        .changed()
+                                    {
+                                        recalc_needed = true;
+                                    }
+                                }
+                            });
+
+                        ui.label(
+                            egui::RichText::new(s.pe_mode_label)
+                                .size(12.5)
+                                .color(t.text_secondary),
+                        );
+                        let pe_text = match strip.pe_mode {
+                            PeLabelMode::Fixed => s.pe_mode_fixed,
+                            PeLabelMode::SharedSequenceNumber => s.pe_mode_shared_num,
+                            PeLabelMode::SharedSequenceSuffixPe => s.pe_mode_shared_pe,
+                            PeLabelMode::SeparateCounterSuffixPe => s.pe_mode_own_pe,
+                        };
+                        egui::ComboBox::from_id_salt("pe_mode_combo")
+                            .truncate()
+                            .selected_text(pe_text)
+                            .show_ui(ui, |ui| {
+                                for (mode, lbl) in [
+                                    (PeLabelMode::Fixed, s.pe_mode_fixed),
+                                    (PeLabelMode::SharedSequenceNumber, s.pe_mode_shared_num),
+                                    (PeLabelMode::SharedSequenceSuffixPe, s.pe_mode_shared_pe),
+                                    (PeLabelMode::SeparateCounterSuffixPe, s.pe_mode_own_pe),
+                                ] {
+                                    if ui.selectable_value(&mut strip.pe_mode, mode, lbl).changed()
+                                    {
+                                        recalc_needed = true;
+                                    }
+                                }
+                            });
+                    }
+
+                    // Group 3: View, Zoom & Type display
+                    ui.separator();
+                    if icon_only_button(ui, UiIcon::ZoomOut, false, "Verkleinern").clicked() {
+                        self.canvas_state.zoom = (self.canvas_state.zoom / 1.15).clamp(0.4, 2.5);
+                    }
+                    ui.scope(|ui| {
+                        ui.spacing_mut().slider_width = if is_compact { 70.0 } else { 88.0 };
+                        ui.visuals_mut().widgets.inactive.bg_fill = t.bg_recessed;
+                        ui.add(
+                            egui::Slider::new(&mut self.canvas_state.zoom, 0.4..=2.5)
+                                .show_value(false),
+                        );
+                    });
+                    if icon_only_button(ui, UiIcon::ZoomIn, false, "Vergrößern").clicked() {
+                        self.canvas_state.zoom = (self.canvas_state.zoom * 1.15).clamp(0.4, 2.5);
+                    }
+                    ui.label(
+                        egui::RichText::new(format!("{:>3.0}%", self.canvas_state.zoom * 100.0))
+                            .monospace()
+                            .size(12.5)
+                            .color(t.text_secondary),
+                    );
+                    if icon_button(ui, UiIcon::ZoomReset, s.btn_fit_zoom).clicked() {
+                        self.canvas_state.zoom = 1.0;
+                    }
+
+                    ui.label(
+                        egui::RichText::new(s.type_display_label)
+                            .size(12.5)
+                            .color(t.text_secondary),
+                    );
+                    let td_text = match self.canvas_state.type_display {
+                        TypeDisplayMode::HorizontalGroups => s.type_display_groups,
+                        TypeDisplayMode::VerticalPerBlock => s.type_display_vertical,
+                        TypeDisplayMode::Off => s.type_display_off,
+                    };
+                    egui::ComboBox::from_id_salt("type_display_combo")
+                        .truncate()
+                        .selected_text(td_text)
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.canvas_state.type_display,
+                                TypeDisplayMode::HorizontalGroups,
+                                s.type_display_groups,
+                            );
+                            ui.selectable_value(
+                                &mut self.canvas_state.type_display,
+                                TypeDisplayMode::VerticalPerBlock,
+                                s.type_display_vertical,
+                            );
+                            ui.selectable_value(
+                                &mut self.canvas_state.type_display,
+                                TypeDisplayMode::Off,
+                                s.type_display_off,
+                            );
+                        });
+
+                    // Group 4: Strip block selection, smart append & N <-> NT batch convert
+                    let strip = &self.project.strips[self.active_strip];
+                    let has_selection =
+                        !self.selected_blocks.is_empty() || self.selected_end_bracket.is_some();
+                    ui.separator();
+                    if !strip.blocks.is_empty()
+                        && icon_button(ui, UiIcon::SelectAll, s.btn_select_all).clicked()
+                    {
+                        self.selected_blocks = (0..strip.blocks.len()).collect();
+                        self.selected_end_bracket = None;
+                    }
+                    if has_selection
+                        && icon_button(ui, UiIcon::SelectNone, s.btn_clear_selection).clicked()
+                    {
+                        self.selected_blocks.clear();
+                        self.selected_end_bracket = None;
+                    }
+
+                    if self.canvas_state.interaction_mode != CanvasInteractionMode::BridgeAssign {
+                        let anchor_idx = self
+                            .canvas_state
+                            .selection_anchor
+                            .filter(|i| self.selected_blocks.contains(i))
+                            .or_else(|| self.selected_blocks.iter().next_back().copied());
+                        let last_selected_idx = self.selected_blocks.iter().next_back().copied();
+                        let target_insert_pos =
+                            last_selected_idx.map(|i| i + 1).unwrap_or(strip.blocks.len());
+
+                        let marked_spec = anchor_idx
+                            .and_then(|idx| strip.blocks.get(idx))
+                            .and_then(|b| self.catalog.find_by_id(&b.spec_id));
+                        let append_target_spec = marked_spec
+                            .or_else(|| self.catalog.find_by_id(&strip.default_spec_id));
+                        let append_tip = if let (Some(idx), Some(sp)) = (anchor_idx, marked_spec) {
+                            format!(
+                                "Gleiche Klemme wie #{} ({}) direkt danach hinzufügen",
+                                idx + 1,
+                                sp.name
+                            )
+                        } else if let Some(sp) = append_target_spec {
+                            format!("Standardklemme ({}) am Leistenende hinzufügen", sp.name)
+                        } else {
+                            s.btn_append_block.to_string()
+                        };
+
+                        if subtle_success_icon_button(ui, UiIcon::Add, s.btn_append_block)
+                            .on_hover_text(append_tip)
+                            .clicked()
+                            && let Some(sp) = append_target_spec
+                        {
+                            deferred_single_insert = Some((
+                                target_insert_pos,
+                                sp.id.clone(),
+                                marked_spec.is_some(),
+                            ));
+                        }
+
+                        // Batch N <-> NT converter buttons
+                        let to_nt_count = strip
+                            .blocks
+                            .iter()
+                            .filter(|b| {
+                                self.catalog
+                                    .find_by_id(&b.spec_id)
+                                    .and_then(|sp| sp.matching_nt_equivalent_id())
+                                    .is_some()
+                            })
+                            .count();
+                        let to_n_count = strip
+                            .blocks
+                            .iter()
+                            .filter(|b| {
+                                self.catalog
+                                    .find_by_id(&b.spec_id)
+                                    .and_then(|sp| sp.matching_n_from_nt_id())
+                                    .is_some()
+                            })
+                            .count();
+
+                        if to_nt_count > 0 || to_n_count > 0 {
+                            ui.separator();
+                            let lbl_to_nt = if to_nt_count > 0 {
+                                format!("N → NT ({to_nt_count})")
+                            } else {
+                                "N → NT".to_string()
+                            };
+                            let tip_to_nt = if to_nt_count > 0 {
+                                format!(
+                                    "Wandelt alle {to_nt_count} N-Klemmen dieser Leiste in passende NT-Trennklemmen (mit N-Trennschlitten) um"
+                                )
+                            } else {
+                                "Keine umwandelbaren Standard-N-Klemmen auf dieser Leiste vorhanden"
+                                    .to_string()
+                            };
+                            let btn_to_nt = ui
+                                .add_enabled_ui(to_nt_count > 0, |ui| {
+                                    icon_button(ui, UiIcon::ConvertNt, &lbl_to_nt)
+                                })
+                                .inner
+                                .on_hover_text(&tip_to_nt)
+                                .on_disabled_hover_text(&tip_to_nt);
+                            if btn_to_nt.clicked() {
+                                deferred_convert = Some(true);
+                            }
+
+                            let lbl_to_n = if to_n_count > 0 {
+                                format!("NT → N ({to_n_count})")
+                            } else {
+                                "NT → N".to_string()
+                            };
+                            let tip_to_n = if to_n_count > 0 {
+                                format!(
+                                    "Wandelt alle {to_n_count} NT-Trennklemmen dieser Leiste wieder in passende Standard-N-Klemmen um"
+                                )
+                            } else {
+                                "Keine umwandelbaren NT-Trennklemmen auf dieser Leiste vorhanden"
+                                    .to_string()
+                            };
+                            let btn_to_n = ui
+                                .add_enabled_ui(to_n_count > 0, |ui| {
+                                    icon_button(ui, UiIcon::ConvertNt, &lbl_to_n)
+                                })
+                                .inner
+                                .on_hover_text(&tip_to_n)
+                                .on_disabled_hover_text(&tip_to_n);
+                            if btn_to_n.clicked() {
+                                deferred_convert = Some(false);
+                            }
+                        }
+                    }
+
+                    // Group 5: Explicit post-placement generation (THE hero CTA of the CAD bar)
+                    {
+                        let strip_ref = &self.project.strips[self.active_strip];
+                        let is_generated = strip_ref.end_plates_generated;
+                        let has_blocks = !strip_ref.blocks.is_empty();
+                        ui.separator();
+                        let gen_tip = if !has_blocks {
+                            "Zuerst Klemmen auf der Klemmleiste platzieren"
+                        } else if is_generated {
+                            "Endplatten & NT-Konfiguration erneut prüfen / aktualisieren"
+                        } else {
+                            "Abschluss-/Zwischenplatten berechnen und auf NT-Trennklemmen prüfen"
+                        };
+                        let gen_btn = ui
+                            .add_enabled_ui(has_blocks, |ui| {
+                                if is_generated {
+                                    subtle_success_icon_button(ui, UiIcon::Check, "Generiert")
+                                } else {
+                                    primary_icon_button(ui, UiIcon::Bolt, "Generieren")
+                                }
+                            })
+                            .inner
+                            .on_hover_text(gen_tip)
+                            .on_disabled_hover_text(gen_tip);
+                        if gen_btn.clicked() {
+                            deferred_generate = true;
+                        }
+                    }
+
+                    if is_compact
+                        && has_selection
+                        && primary_icon_button(ui, UiIcon::Edit, "Bearbeiten").clicked()
+                    {
+                        self.mobile_pane = MobilePane::Inspector;
+                    }
+                });
+            });
 
         if recalc_needed {
             self.project.strips[self.active_strip].recalculate_labels();
@@ -3192,16 +3666,22 @@ impl TermiGridApp {
                 let converted =
                     self.project.strips[self.active_strip].convert_n_to_nt_blocks(&self.catalog);
                 if converted > 0 {
-                    self.status_message = format!(
-                        "{converted} N-Klemme(n) in NT-Trennklemmen umgewandelt — anschließend auf „Generieren“ klicken."
+                    self.notify(
+                        ToastTone::Info,
+                        format!(
+                            "{converted} N-Klemme(n) in NT-Trennklemmen umgewandelt — anschließend auf „Generieren“ klicken."
+                        ),
                     );
                 }
             } else {
                 let converted =
                     self.project.strips[self.active_strip].convert_nt_to_n_blocks(&self.catalog);
                 if converted > 0 {
-                    self.status_message = format!(
-                        "{converted} NT-Trennklemme(n) in Standard-N-Klemmen zurückgewandelt — anschließend auf „Generieren“ klicken."
+                    self.notify(
+                        ToastTone::Info,
+                        format!(
+                            "{converted} NT-Trennklemme(n) in Standard-N-Klemmen zurückgewandelt — anschließend auf „Generieren“ klicken."
+                        ),
                     );
                 }
             }
@@ -3220,71 +3700,78 @@ impl TermiGridApp {
                 self.active_potential_id = strip.potentials.first().map(|p| p.id);
             }
 
-            ui.separator();
-            ui.horizontal_wrapped(|ui| {
-                ui.label(
-                    egui::RichText::new(s.bridge_heading)
-                        .strong()
-                        .small(),
-                );
-                let mut remove_id: Option<u64> = None;
-                for pot in &strip.potentials {
-                    let is_active = self.active_potential_id == Some(pot.id);
-                    let rgb = pot.color_rgb;
-                    let col = egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
-                    let lbl = egui::RichText::new(format!("{} ({})", pot.name, pot.members.len()))
-                        .small();
-                    let btn = egui::Button::new(lbl)
-                        .selected(is_active)
-                        .stroke(egui::Stroke::new(
-                            if is_active { 2.0 } else { 1.0 },
-                            col,
-                        ));
-                    if ui.add(btn).clicked() {
-                        self.active_potential_id = Some(pot.id);
+            ui.add_space(6.0);
+            recessed_card(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(
+                        egui::RichText::new(s.bridge_heading)
+                            .strong()
+                            .small(),
+                    );
+                    let mut remove_id: Option<u64> = None;
+                    for pot in &strip.potentials {
+                        let is_active = self.active_potential_id == Some(pot.id);
+                        let rgb = pot.color_rgb;
+                        let col = egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
+                        let lbl =
+                            egui::RichText::new(format!("{} ({})", pot.name, pot.members.len()))
+                                .small();
+                        let btn = egui::Button::new(lbl)
+                            .selected(is_active)
+                            .stroke(egui::Stroke::new(
+                                if is_active { 2.0 } else { 1.0 },
+                                col,
+                            ));
+                        if ui.add(btn).clicked() {
+                            self.active_potential_id = Some(pot.id);
+                        }
+                        if is_active
+                            && strip.potentials.len() > 1
+                            && icon_only_button(ui, UiIcon::Close, false, "Potential entfernen")
+                                .clicked()
+                        {
+                            remove_id = Some(pot.id);
+                        }
                     }
-                    if is_active
-                        && strip.potentials.len() > 1
-                        && icon_only_button(ui, UiIcon::Close, false, "Potential entfernen")
-                            .clicked()
+                    if let Some(id) = remove_id {
+                        strip.remove_potential(id);
+                        if self.active_potential_id == Some(id) {
+                            self.active_potential_id = strip.potentials.first().map(|p| p.id);
+                        }
+                    }
+
+                    ui.separator();
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.new_potential_name)
+                            .hint_text(s.bridge_new_potential)
+                            .desired_width(110.0),
+                    );
+                    if subtle_success_icon_button(ui, UiIcon::Potential, s.bridge_add_btn)
+                        .clicked()
                     {
-                        remove_id = Some(pot.id);
+                        let name = if self.new_potential_name.trim().is_empty() {
+                            format!("P{}", strip.potentials.len() + 1)
+                        } else {
+                            self.new_potential_name.trim().to_string()
+                        };
+                        let color =
+                            POTENTIAL_PALETTE[strip.potentials.len() % POTENTIAL_PALETTE.len()];
+                        let id = strip.add_potential(&name, color);
+                        self.active_potential_id = Some(id);
+                        self.new_potential_name.clear();
                     }
-                }
-                if let Some(id) = remove_id {
-                    strip.remove_potential(id);
-                    if self.active_potential_id == Some(id) {
-                        self.active_potential_id = strip.potentials.first().map(|p| p.id);
-                    }
-                }
 
-                ui.separator();
-                ui.add(
-                    egui::TextEdit::singleline(&mut self.new_potential_name)
-                        .hint_text(s.bridge_new_potential)
-                        .desired_width(110.0),
-                );
-                if success_icon_button(ui, UiIcon::Potential, s.bridge_add_btn).clicked() {
-                    let name = if self.new_potential_name.trim().is_empty() {
-                        format!("P{}", strip.potentials.len() + 1)
-                    } else {
-                        self.new_potential_name.trim().to_string()
-                    };
-                    let color = POTENTIAL_PALETTE[strip.potentials.len() % POTENTIAL_PALETTE.len()];
-                    let id = strip.add_potential(&name, color);
-                    self.active_potential_id = Some(id);
-                    self.new_potential_name.clear();
-                }
-
-                ui.label(
-                    egui::RichText::new(s.bridge_assign_hint)
-                        .color(secondary_text_color(ui))
-                        .small(),
-                );
+                    ui.label(
+                        egui::RichText::new(s.bridge_assign_hint)
+                            .color(secondary_text_color(ui))
+                            .small(),
+                    );
+                });
             });
         }
 
-        ui.separator();
+        ui.add_space(6.0);
 
         let strip = &mut self.project.strips[self.active_strip];
         let bridge_plan = if strip.potentials.is_empty() {
@@ -3297,18 +3784,26 @@ impl TermiGridApp {
         } else {
             Vec::new()
         };
-        let cad_res = show_cad_canvas(
-            ui,
-            strip,
-            &self.catalog,
-            &mut self.selected_blocks,
-            &mut self.selected_end_bracket,
-            &mut self.canvas_state,
-            s,
-            bridge_plan.as_ref(),
-            self.active_potential_id,
-            &end_plates,
-        );
+        let cad_res = egui::Frame::NONE
+            .fill(t.bg_canvas)
+            .stroke(egui::Stroke::new(1.0, t.border_hairline))
+            .corner_radius(egui::CornerRadius::same(8))
+            .inner_margin(egui::Margin::same(1))
+            .show(ui, |ui| {
+                show_cad_canvas(
+                    ui,
+                    strip,
+                    &self.catalog,
+                    &mut self.selected_blocks,
+                    &mut self.selected_end_bracket,
+                    &mut self.canvas_state,
+                    s,
+                    bridge_plan.as_ref(),
+                    self.active_potential_id,
+                    &end_plates,
+                )
+            })
+            .inner;
         if let Some(after_idx) = cad_res.quick_add_after_block
             && let Some(spec_id) = self.project.strips[self.active_strip]
                 .blocks

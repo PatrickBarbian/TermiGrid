@@ -9,7 +9,7 @@ use crate::ui::icons::{
     success_icon_button, UiIcon,
 };
 use crate::ui::logos::{logo_filter_button, show_logo_badge, BrandLogos};
-use crate::ui::theme::secondary_text_color;
+use crate::ui::theme::{secondary_text_color, section_card};
 use crate::ui::updater::{
     open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, CURRENT_VERSION,
     GITHUB_REPO_URL,
@@ -67,24 +67,20 @@ pub fn show_guide_tab(ui: &mut Ui, updater: &UpdateChecker, strings: &Strings) {
         ui.add_space(8.0);
 
         for (title, body) in strings.guide_sections {
-            egui::Frame::group(ui.style())
-                .inner_margin(egui::Margin::same(12))
-                .show(ui, |ui| {
-                    ui.set_min_width(ui.available_width().min(860.0));
-                    ui.label(egui::RichText::new(*title).strong().size(16.0));
-                    ui.add_space(4.0);
-                    ui.add(egui::Label::new(*body).wrap());
-                });
+            section_card(ui, |ui| {
+                ui.set_min_width(ui.available_width().min(860.0));
+                ui.label(egui::RichText::new(*title).strong().size(15.5));
+                ui.add_space(4.0);
+                ui.add(egui::Label::new(*body).wrap());
+            });
             ui.add_space(8.0);
         }
 
         // About, Authors, Open-Source Licenses, Update Checker, GitHub & BuyMeACoffee card
-        egui::Frame::group(ui.style())
-            .inner_margin(egui::Margin::same(12))
-            .show(ui, |ui| {
-                ui.set_min_width(ui.available_width().min(860.0));
-                show_about_license_contents(ui, updater, strings, false);
-            });
+        section_card(ui, |ui| {
+            ui.set_min_width(ui.available_width().min(860.0));
+            show_about_license_contents(ui, updater, strings, false);
+        });
     });
 }
 
@@ -134,7 +130,7 @@ fn show_about_license_contents(
     );
     ui.add_space(6.0);
 
-    ui.group(|ui| {
+    section_card(ui, |ui| {
         ui.label(egui::RichText::new("Entwicklung & Autoren").strong());
         ui.add_space(2.0);
         ui.add(
@@ -206,7 +202,7 @@ fn show_about_license_contents(
     });
 
     ui.add_space(8.0);
-    ui.group(|ui| {
+    section_card(ui, |ui| {
         ui.label(
             egui::RichText::new("Verwendete Open-Source-Komponenten & Lizenzen").strong(),
         );

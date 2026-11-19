@@ -8,7 +8,7 @@ use crate::ui::icons::{
     compact_mfg_badge, danger_icon_button, draw_icon, icon_button, icon_only_button,
     primary_icon_button, show_responsive_modal, success_icon_button, UiIcon,
 };
-use crate::ui::theme::secondary_text_color;
+use crate::ui::theme::{recessed_card, secondary_text_color, section_card};
 
 /// Dialog state for saving an existing terminal strip into the personal library.
 #[derive(Debug, Clone, Default)]
@@ -101,26 +101,24 @@ pub fn show_save_strip_to_library_modal(
             ui.add_space(6.0);
 
             // Compact strip preview summary
-            egui::Frame::group(ui.style())
-                .inner_margin(egui::Margin::same(8))
-                .show(ui, |ui| {
-                    ui.horizontal_wrapped(|ui| {
-                        ui.label(
-                            egui::RichText::new(format!("Aktive Leiste: {}", data.strip.name))
-                                .strong(),
-                        );
-                        ui.label(
-                            egui::RichText::new(format!(
-                                "· {} {} · {:.1} mm · {} Potential(e)",
-                                data.strip.blocks.len(),
-                                strings.blocks_unit,
-                                data.strip.total_width_mm(),
-                                data.strip.potentials.len(),
-                            ))
-                            .color(sec),
-                        );
-                    });
+            recessed_card(ui, |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(
+                        egui::RichText::new(format!("Aktive Leiste: {}", data.strip.name))
+                            .strong(),
+                    );
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "· {} {} · {:.1} mm · {} Potential(e)",
+                            data.strip.blocks.len(),
+                            strings.blocks_unit,
+                            data.strip.total_width_mm(),
+                            data.strip.potentials.len(),
+                        ))
+                        .color(sec),
+                    );
                 });
+            });
 
             ui.add_space(8.0);
             let input_w = (ui.available_width() - 16.0).clamp(160.0, 460.0);
@@ -333,24 +331,22 @@ pub fn show_strip_library_modal(
             ui.add_space(4.0);
 
             if total_count == 0 {
-                egui::Frame::group(ui.style())
-                    .inner_margin(egui::Margin::same(14))
-                    .show(ui, |ui| {
-                        ui.label(
-                            egui::RichText::new("Noch keine eigenen Klemmleisten gespeichert.")
-                                .strong(),
-                        );
-                        ui.add_space(4.0);
-                        ui.add(
-                            egui::Label::new(
-                                egui::RichText::new(
-                                    "Konfiguriere eine Klemmleiste im Editor und klicke links unter „Klemmleisten“ auf „In Bibliothek“, um sie hier dauerhaft mit eigenem Namen abzulegen.",
-                                )
-                                .color(sec),
+                section_card(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new("Noch keine eigenen Klemmleisten gespeichert.")
+                            .strong(),
+                    );
+                    ui.add_space(4.0);
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new(
+                                "Konfiguriere eine Klemmleiste im Editor und klicke links unter „Klemmleisten“ auf „In Bibliothek“, um sie hier dauerhaft mit eigenem Namen abzulegen.",
                             )
-                            .wrap(),
-                        );
-                    });
+                            .color(sec),
+                        )
+                        .wrap(),
+                    );
+                });
                 return;
             }
 
@@ -384,9 +380,7 @@ pub fn show_strip_library_modal(
                 let is_editing = data.state.editing_id.as_deref() == Some(&tpl.id);
                 let is_confirm_delete = data.state.confirm_delete_id.as_deref() == Some(&tpl.id);
 
-                egui::Frame::group(ui.style())
-                    .inner_margin(egui::Margin::same(10))
-                    .show(ui, |ui| {
+                section_card(ui, |ui| {
                         ui.set_width((ui.available_width() - 4.0).max(160.0));
 
                         // Header row: manufacturer badges + template name + dimensions summary

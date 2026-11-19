@@ -3,7 +3,7 @@ use egui::{
     Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
 };
 
-use crate::ui::theme::secondary_text_color;
+use crate::ui::theme::tokens;
 
 /// Consistent vector icon stroke width across all UI pictograms.
 const ICON_STROKE_W: f32 = 1.5;
@@ -79,8 +79,10 @@ pub enum UiIcon {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ButtonTone {
     Default,
+    Ghost,
     Primary,
     Success,
+    SubtleSuccess,
     Danger,
     Selected,
 }
@@ -667,19 +669,19 @@ pub fn draw_icon(painter: &Painter, rect: Rect, icon: UiIcon, color: Color32) {
     }
 }
 
-/// Renders a unified button with a crisp `16x16` vector icon on the left, clean spacing, and centered label.
+/// Renders a unified button with a crisp `16x16` vector icon on the left, clean spacing, and tactile press feedback.
 pub fn icon_button_tone(ui: &mut Ui, icon: UiIcon, label: &str, tone: ButtonTone) -> Response {
-    let dark = ui.visuals().dark_mode;
+    let t = tokens(ui);
     let strong = matches!(
         tone,
-        ButtonTone::Primary | ButtonTone::Success | ButtonTone::Danger
+        ButtonTone::Primary | ButtonTone::Success | ButtonTone::Selected
     );
     let font_id = ui
         .style()
         .text_styles
         .get(&egui::TextStyle::Button)
         .cloned()
-        .unwrap_or_else(|| FontId::proportional(14.5));
+        .unwrap_or_else(|| FontId::proportional(13.5));
 
     let temp_galley =
         ui.painter()
@@ -711,70 +713,112 @@ pub fn icon_button_tone(ui: &mut Ui, icon: UiIcon, label: &str, tone: ButtonTone
 
         let (fill, stroke, fg) = match tone {
             ButtonTone::Primary => {
-                let base = if dark {
-                    Color32::from_rgb(2, 132, 199)
-                } else {
-                    Color32::from_rgb(3, 105, 161)
-                };
                 let fill = if active {
-                    Color32::from_rgb(12, 74, 110)
+                    t.accent_active
                 } else if hovered {
-                    Color32::from_rgb(14, 165, 233)
+                    t.accent_hover
                 } else {
-                    base
+                    t.accent
                 };
                 (
                     fill,
-                    Stroke::new(1.0, Color32::from_rgb(56, 189, 248)),
+                    Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 36)),
                     Color32::WHITE,
                 )
             }
             ButtonTone::Success => {
-                let base = if dark {
-                    Color32::from_rgb(21, 128, 61)
-                } else {
-                    Color32::from_rgb(22, 163, 74)
-                };
                 let fill = if active {
                     Color32::from_rgb(20, 83, 45)
                 } else if hovered {
-                    Color32::from_rgb(34, 197, 94)
+                    t.success_hover
                 } else {
-                    base
+                    t.success
                 };
                 (
                     fill,
-                    Stroke::new(1.0, Color32::from_rgb(74, 222, 128)),
+                    Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 34)),
                     Color32::WHITE,
                 )
+            }
+            ButtonTone::SubtleSuccess => {
+                if active {
+                    (t.success, Stroke::new(1.0, t.success_hover), Color32::WHITE)
+                } else if hovered {
+                    (
+                        t.success_soft,
+                        Stroke::new(1.0, t.success_hover),
+                        if t.dark {
+                            Color32::from_rgb(134, 239, 172)
+                        } else {
+                            Color32::from_rgb(21, 128, 61)
+                        },
+                    )
+                } else {
+                    (
+                        t.bg_surface,
+                        Stroke::new(1.0, t.border_hairline),
+                        if t.dark {
+                            Color32::from_rgb(134, 239, 172)
+                        } else {
+                            Color32::from_rgb(21, 128, 61)
+                        },
+                    )
+                }
             }
             ButtonTone::Danger => {
-                let base = if dark {
-                    Color32::from_rgb(185, 28, 28)
-                } else {
-                    Color32::from_rgb(220, 38, 38)
-                };
-                let fill = if active {
-                    Color32::from_rgb(127, 29, 29)
+                if active {
+                    (
+                        Color32::from_rgb(153, 27, 27),
+                        Stroke::new(1.0, t.danger_hover),
+                        Color32::WHITE,
+                    )
                 } else if hovered {
-                    Color32::from_rgb(239, 68, 68)
+                    (t.danger_hover, Stroke::new(1.0, t.danger_hover), Color32::WHITE)
                 } else {
-                    base
-                };
-                (
-                    fill,
-                    Stroke::new(1.0, Color32::from_rgb(248, 113, 113)),
-                    Color32::WHITE,
-                )
+                    (
+                        t.danger_soft,
+                        Stroke::new(
+                            1.0,
+                            Color32::from_rgba_unmultiplied(239, 68, 68, if t.dark { 75 } else { 65 }),
+                        ),
+                        if t.dark {
+                            Color32::from_rgb(252, 165, 165)
+                        } else {
+                            Color32::from_rgb(185, 28, 28)
+                        },
+                    )
+                }
             }
             ButtonTone::Selected => (
-                ui.visuals().selection.bg_fill,
-                ui.visuals().selection.stroke,
+                t.accent,
+                Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 42)),
                 Color32::WHITE,
             ),
+            ButtonTone::Ghost => {
+                if active {
+                    (t.accent_soft, Stroke::new(1.0, t.accent), t.text_primary)
+                } else if hovered {
+                    (t.bg_surface_hover, Stroke::new(1.0, t.border_hairline), t.text_primary)
+                } else {
+                    (Color32::TRANSPARENT, Stroke::NONE, t.text_secondary)
+                }
+            }
             ButtonTone::Default => {
-                let visuals = ui.style().interact(&response);
-                (visuals.bg_fill, visuals.bg_stroke, visuals.fg_stroke.color)
+                let fill = if active {
+                    t.bg_recessed
+                } else if hovered {
+                    t.bg_surface_hover
+                } else {
+                    t.bg_surface
+                };
+                let stroke = if active {
+                    Stroke::new(1.0, t.accent)
+                } else if hovered {
+                    Stroke::new(1.0, t.border_strong)
+                } else {
+                    Stroke::new(1.0, t.border_hairline)
+                };
+                (fill, stroke, t.text_primary)
             }
         };
 
@@ -782,18 +826,29 @@ pub fn icon_button_tone(ui: &mut Ui, icon: UiIcon, label: &str, tone: ButtonTone
             (fill, stroke, fg)
         } else {
             (
-                ui.visuals().widgets.noninteractive.bg_fill,
-                ui.visuals().widgets.noninteractive.bg_stroke,
-                secondary_text_color(ui).gamma_multiply(0.55),
+                t.bg_panel,
+                Stroke::new(1.0, t.border_hairline),
+                t.text_muted.gamma_multiply(0.7),
             )
         };
 
+        // Tactile `:active` micro-press feedback (Emil Kowalski design-eng rule)
+        let draw_rect = if enabled && active {
+            rect.shrink(0.6)
+        } else {
+            rect
+        };
+        let radius = CornerRadius::same(6);
         let painter = ui.painter();
-        painter.rect_filled(rect, CornerRadius::same(4), final_fill);
-        painter.rect_stroke(rect, CornerRadius::same(4), final_stroke, StrokeKind::Inside);
+        if final_fill != Color32::TRANSPARENT {
+            painter.rect_filled(draw_rect, radius, final_fill);
+        }
+        if final_stroke != Stroke::NONE {
+            painter.rect_stroke(draw_rect, radius, final_stroke, StrokeKind::Inside);
+        }
 
         let icon_rect = Rect::from_center_size(
-            Pos2::new(rect.min.x + pad.x + ICON_SIZE_SM * 0.5, rect.center().y),
+            Pos2::new(draw_rect.min.x + pad.x + ICON_SIZE_SM * 0.5, draw_rect.center().y),
             Vec2::splat(ICON_SIZE_SM),
         );
         draw_icon(painter, icon_rect, icon, final_fg);
@@ -811,8 +866,8 @@ pub fn icon_button_tone(ui: &mut Ui, icon: UiIcon, label: &str, tone: ButtonTone
                 egui::TextStyle::Button,
             );
             let text_pos = Pos2::new(
-                rect.min.x + pad.x + ICON_SIZE_SM + ICON_TEXT_GAP,
-                rect.center().y - galley.size().y * 0.5,
+                draw_rect.min.x + pad.x + ICON_SIZE_SM + ICON_TEXT_GAP,
+                draw_rect.center().y - galley.size().y * 0.5,
             );
             painter.galley(text_pos, galley, final_fg);
         }
@@ -825,12 +880,20 @@ pub fn icon_button(ui: &mut Ui, icon: UiIcon, label: &str) -> Response {
     icon_button_tone(ui, icon, label, ButtonTone::Default)
 }
 
+pub fn ghost_icon_button(ui: &mut Ui, icon: UiIcon, label: &str) -> Response {
+    icon_button_tone(ui, icon, label, ButtonTone::Ghost)
+}
+
 pub fn primary_icon_button(ui: &mut Ui, icon: UiIcon, label: &str) -> Response {
     icon_button_tone(ui, icon, label, ButtonTone::Primary)
 }
 
 pub fn success_icon_button(ui: &mut Ui, icon: UiIcon, label: &str) -> Response {
     icon_button_tone(ui, icon, label, ButtonTone::Success)
+}
+
+pub fn subtle_success_icon_button(ui: &mut Ui, icon: UiIcon, label: &str) -> Response {
+    icon_button_tone(ui, icon, label, ButtonTone::SubtleSuccess)
 }
 
 pub fn danger_icon_button(ui: &mut Ui, icon: UiIcon, label: &str) -> Response {
@@ -846,8 +909,110 @@ pub fn selectable_icon_button(ui: &mut Ui, selected: bool, icon: UiIcon, label: 
     icon_button_tone(ui, icon, label, tone)
 }
 
+/// Recessed Base-UI / Linear style segmented control for primary views and canvas modes.
+pub fn segmented_control<T: Copy + PartialEq>(
+    ui: &mut Ui,
+    current: &mut T,
+    items: &[(T, UiIcon, &str, &str)],
+) -> bool {
+    let t = tokens(ui);
+    let mut changed = false;
+    Frame::NONE
+        .fill(t.bg_recessed)
+        .stroke(Stroke::new(1.0, t.border_hairline))
+        .corner_radius(CornerRadius::same(7))
+        .inner_margin(Margin::same(2))
+        .show(ui, |ui| {
+            ui.spacing_mut().item_spacing.x = 2.0;
+            ui.horizontal(|ui| {
+                for &(value, icon, label, tip) in items {
+                    let is_active = *current == value;
+                    let font_id = ui
+                        .style()
+                        .text_styles
+                        .get(&egui::TextStyle::Button)
+                        .cloned()
+                        .unwrap_or_else(|| FontId::proportional(13.0));
+                    let text_w = ui
+                        .painter()
+                        .layout_no_wrap(label.to_string(), font_id, Color32::WHITE)
+                        .size()
+                        .x;
+                    let h = if cfg!(target_os = "android") { 30.0 } else { 24.0 };
+                    let w = 8.0 + ICON_SIZE_SM + 5.0 + text_w + 10.0;
+                    let (rect, resp) = ui.allocate_exact_size(Vec2::new(w, h), Sense::click());
+                    if ui.is_rect_visible(rect) {
+                        let hovered = resp.hovered();
+                        let pressed = resp.is_pointer_button_down_on();
+                        let draw_rect = if pressed { rect.shrink(0.5) } else { rect };
+                        if is_active {
+                            ui.painter().rect_filled(
+                                draw_rect,
+                                CornerRadius::same(5),
+                                t.bg_surface_elevated,
+                            );
+                            ui.painter().rect_stroke(
+                                draw_rect,
+                                CornerRadius::same(5),
+                                Stroke::new(1.0, t.border_strong),
+                                StrokeKind::Inside,
+                            );
+                        } else if hovered {
+                            ui.painter().rect_filled(
+                                draw_rect,
+                                CornerRadius::same(5),
+                                t.bg_surface_hover.gamma_multiply(0.7),
+                            );
+                        }
+                        let fg = if is_active || hovered {
+                            t.text_primary
+                        } else {
+                            t.text_secondary
+                        };
+                        let icon_col = if is_active { t.accent } else { fg };
+                        let icon_rect = Rect::from_center_size(
+                            Pos2::new(draw_rect.min.x + 8.0 + ICON_SIZE_SM * 0.5, draw_rect.center().y),
+                            Vec2::splat(ICON_SIZE_SM),
+                        );
+                        draw_icon(ui.painter(), icon_rect, icon, icon_col);
+                        let rich = if is_active {
+                            egui::RichText::new(label).strong().color(fg)
+                        } else {
+                            egui::RichText::new(label).color(fg)
+                        };
+                        let galley = egui::WidgetText::from(rich).into_galley(
+                            ui,
+                            Some(egui::TextWrapMode::Extend),
+                            f32::INFINITY,
+                            egui::TextStyle::Button,
+                        );
+                        ui.painter().galley(
+                            Pos2::new(
+                                draw_rect.min.x + 8.0 + ICON_SIZE_SM + 5.0,
+                                draw_rect.center().y - galley.size().y * 0.5,
+                            ),
+                            galley,
+                            fg,
+                        );
+                    }
+                    let resp = if tip.is_empty() {
+                        resp
+                    } else {
+                        resp.on_hover_text(tip)
+                    };
+                    if resp.clicked() && *current != value {
+                        *current = value;
+                        changed = true;
+                    }
+                }
+            });
+        });
+    changed
+}
+
 /// Compact square icon-only button for toolbars and window headers.
 pub fn icon_only_button(ui: &mut Ui, icon: UiIcon, active: bool, tooltip: &str) -> Response {
+    let t = tokens(ui);
     let side = if cfg!(target_os = "android") {
         34.0
     } else {
@@ -856,33 +1021,53 @@ pub fn icon_only_button(ui: &mut Ui, icon: UiIcon, active: bool, tooltip: &str) 
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::click());
     if ui.is_rect_visible(rect) {
         let hovered = response.hovered();
+        let pressed = response.is_pointer_button_down_on();
         let enabled = ui.is_enabled();
-        let visuals = ui.style().interact(&response);
-        if active {
-            ui.painter().rect_filled(
-                rect,
-                CornerRadius::same(4),
-                ui.visuals().selection.bg_fill,
-            );
-        } else if hovered || !enabled {
-            ui.painter()
-                .rect_filled(rect, CornerRadius::same(4), visuals.bg_fill);
+        let draw_rect = if enabled && pressed {
+            rect.shrink(0.5)
         } else {
+            rect
+        };
+        let radius = CornerRadius::same(6);
+        if active {
+            ui.painter().rect_filled(draw_rect, radius, t.accent_soft);
             ui.painter().rect_stroke(
-                rect,
-                CornerRadius::same(4),
-                ui.visuals().widgets.inactive.bg_stroke,
+                draw_rect,
+                radius,
+                Stroke::new(1.0, t.accent),
+                StrokeKind::Inside,
+            );
+        } else if !enabled {
+            ui.painter().rect_filled(draw_rect, radius, t.bg_panel);
+        } else if hovered {
+            ui.painter()
+                .rect_filled(draw_rect, radius, t.bg_surface_hover);
+            ui.painter().rect_stroke(
+                draw_rect,
+                radius,
+                Stroke::new(1.0, t.border_strong),
+                StrokeKind::Inside,
+            );
+        } else {
+            ui.painter()
+                .rect_filled(draw_rect, radius, t.bg_surface);
+            ui.painter().rect_stroke(
+                draw_rect,
+                radius,
+                Stroke::new(1.0, t.border_hairline),
                 StrokeKind::Inside,
             );
         }
         let fg = if !enabled {
-            secondary_text_color(ui).gamma_multiply(0.5)
+            t.text_muted.gamma_multiply(0.5)
         } else if active {
-            Color32::WHITE
+            t.accent_text
+        } else if hovered {
+            t.text_primary
         } else {
-            visuals.fg_stroke.color
+            t.text_secondary
         };
-        let icon_rect = Rect::from_center_size(rect.center(), Vec2::splat(ICON_SIZE_SM));
+        let icon_rect = Rect::from_center_size(draw_rect.center(), Vec2::splat(ICON_SIZE_SM));
         draw_icon(ui.painter(), icon_rect, icon, fg);
     }
     response.on_hover_text(tooltip)
@@ -898,21 +1083,20 @@ pub fn compact_mfg_badge(ui: &mut Ui, manufacturer: &str) {
     };
     Frame::NONE
         .fill(bg)
-        .corner_radius(CornerRadius::same(3))
-        .inner_margin(Margin::symmetric(5, 1))
+        .corner_radius(CornerRadius::same(4))
+        .inner_margin(Margin::symmetric(6, 1))
         .show(ui, |ui| {
             ui.label(
                 egui::RichText::new(tag)
                     .color(Color32::WHITE)
                     .strong()
-                    .size(11.0),
+                    .size(10.5),
             );
         });
 }
 
 /// Renders a responsive modal window sized to `min(92vw, desired_w)` × `max 88vh`,
-/// with a fixed header (icon + title + close button), vertically scrollable body,
-/// and a fixed bottom footer for action buttons.
+/// with a subtle backdrop scrim, fixed header, scrollable body, and fixed footer.
 #[allow(clippy::too_many_arguments)]
 pub fn show_responsive_modal<T>(
     ctx: &Context,
@@ -929,12 +1113,27 @@ pub fn show_responsive_modal<T>(
         return;
     }
 
-    let viewport = ctx.content_rect().size();
+    let dark = ctx.theme() == egui::Theme::Dark;
+    let t = crate::ui::theme::ThemeTokens::for_mode(dark);
+    let screen_rect = ctx.content_rect();
+    egui::Area::new(egui::Id::unique(format!("{id}_backdrop")))
+        .order(egui::Order::Middle)
+        .fixed_pos(screen_rect.min)
+        .interactable(false)
+        .show(ctx, |ui| {
+            ui.painter().rect_filled(
+                screen_rect,
+                CornerRadius::ZERO,
+                Color32::from_black_alpha(if dark { 125 } else { 70 }),
+            );
+        });
+
+    let viewport = screen_rect.size();
     let max_w = (viewport.x * 0.92)
         .min(desired_max_w)
         .max(260.0_f32.min((viewport.x - 12.0).max(200.0)));
     let max_h = (viewport.y * 0.88).max(200.0_f32.min((viewport.y - 12.0).max(180.0)));
-    let header_and_footer_reserve = 112.0;
+    let header_and_footer_reserve = 116.0;
     let body_max_h = (max_h - header_and_footer_reserve).max(90.0);
 
     let mut close_requested = false;
@@ -944,6 +1143,19 @@ pub fn show_responsive_modal<T>(
         .title_bar(false)
         .collapsible(false)
         .resizable(false)
+        .frame(
+            Frame::NONE
+                .fill(t.bg_surface_elevated)
+                .stroke(Stroke::new(1.0, t.border_strong))
+                .corner_radius(CornerRadius::same(10))
+                .inner_margin(Margin::same(16))
+                .shadow(egui::Shadow {
+                    offset: [0, 10],
+                    blur: 28,
+                    spread: 0,
+                    color: Color32::from_black_alpha(if dark { 115 } else { 38 }),
+                }),
+        )
         .anchor(Align2::CENTER_CENTER, [0.0, 0.0])
         .default_width(max_w)
         .min_width(max_w)
@@ -954,10 +1166,16 @@ pub fn show_responsive_modal<T>(
 
             // Fixed Header
             ui.horizontal(|ui| {
-                let (icon_r, _) =
-                    ui.allocate_exact_size(Vec2::splat(18.0), egui::Sense::hover());
-                draw_icon(ui.painter(), icon_r, icon, ui.visuals().strong_text_color());
-                ui.add_space(4.0);
+                Frame::NONE
+                    .fill(t.accent_soft)
+                    .corner_radius(CornerRadius::same(6))
+                    .inner_margin(Margin::same(5))
+                    .show(ui, |ui| {
+                        let (icon_r, _) =
+                            ui.allocate_exact_size(Vec2::splat(16.0), egui::Sense::hover());
+                        draw_icon(ui.painter(), icon_r, icon, t.accent_text);
+                    });
+                ui.add_space(6.0);
                 ui.add(
                     egui::Label::new(egui::RichText::new(title).strong().size(16.5)).wrap(),
                 );
@@ -967,8 +1185,9 @@ pub fn show_responsive_modal<T>(
                     }
                 });
             });
-            ui.add_space(2.0);
+            ui.add_space(6.0);
             ui.separator();
+            ui.add_space(4.0);
 
             // Scrollable Middle Content
             egui::ScrollArea::vertical()
@@ -981,8 +1200,9 @@ pub fn show_responsive_modal<T>(
                 });
 
             // Fixed Footer
+            ui.add_space(4.0);
             ui.separator();
-            ui.add_space(2.0);
+            ui.add_space(4.0);
             ui.horizontal_wrapped(|ui| {
                 render_footer(ui, state, &mut close_requested);
             });
