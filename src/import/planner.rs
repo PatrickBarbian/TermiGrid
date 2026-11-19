@@ -38,6 +38,7 @@ pub struct ImportedTerminalEntry {
     pub height_tenths_mm: u16,
     pub width_tenths_mm: u16,
     pub is_nt_or_install: bool,
+    pub is_nt_disconnect: bool,
     pub is_pure_neutral: bool,
     pub is_pure_pe: bool,
 }
@@ -211,6 +212,7 @@ pub fn build_import_plan(
                                     height_tenths_mm: spec.effective_height_tenths_mm(),
                                     width_tenths_mm: spec.width_tenths_mm,
                                     is_nt_or_install: spec.is_installation_or_nt_terminal(),
+                                    is_nt_disconnect: spec.is_nt_disconnect_terminal(),
                                     is_pure_neutral: !spec.tiers.is_empty()
                                         && spec.tiers.iter().all(|t| t.behavior.is_neutral()),
                                     is_pure_pe: !spec.tiers.is_empty()
@@ -334,7 +336,7 @@ pub fn build_import_plan(
 
         let nt_anchor_spec_id = terminals
             .iter()
-            .find(|t| t.is_nt_or_install)
+            .find(|t| t.is_nt_disconnect)
             .map(|t| t.spec_id.clone());
         let has_nt_or_install = nt_anchor_spec_id.is_some();
 

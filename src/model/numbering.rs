@@ -201,12 +201,17 @@ impl TerminalStrip {
     /// Reassigns all blocks at the given `indices` to `new_spec` and recalculates labels.
     pub fn reassign_blocks(&mut self, indices: &[usize], new_spec: &TerminalSpec) {
         let len = self.blocks.len();
+        let mut changed = false;
         for &idx in indices {
             if idx < len {
                 TerminalCatalog::apply_spec_to_block(&mut self.blocks[idx], new_spec);
+                changed = true;
             }
         }
-        self.recalculate_labels();
+        if changed {
+            self.end_plates_generated = false;
+            self.recalculate_labels();
+        }
     }
 
     /// Appends `count` new blocks of `spec` at the end of the strip and recalculates labels.
@@ -217,6 +222,9 @@ impl TerminalStrip {
 
     /// Inserts `count` new blocks of `spec` at `at_index` and recalculates labels.
     pub fn insert_blocks(&mut self, at_index: usize, count: usize, spec: &TerminalSpec) {
+        if count == 0 {
+            return;
+        }
         let clamped = at_index.min(self.blocks.len());
         let mut new_blocks = Vec::with_capacity(count);
         for _ in 0..count {
@@ -224,6 +232,7 @@ impl TerminalStrip {
             new_blocks.push(spec.instantiate_block(id));
         }
         self.blocks.splice(clamped..clamped, new_blocks);
+        self.end_plates_generated = false;
         self.recalculate_labels();
     }
 
@@ -236,9 +245,13 @@ impl TerminalStrip {
             .collect();
         sorted.sort_unstable();
         sorted.dedup();
+        if sorted.is_empty() {
+            return;
+        }
         for idx in sorted.into_iter().rev() {
             self.blocks.remove(idx);
         }
+        self.end_plates_generated = false;
         self.recalculate_labels();
     }
 
@@ -259,6 +272,7 @@ impl TerminalStrip {
             return selected.clone();
         }
 
+        let mut moved = false;
         let mut next_set: std::collections::BTreeSet<usize> = sel.iter().copied().collect();
         if delta < 0 {
             for idx in sel {
@@ -266,6 +280,7 @@ impl TerminalStrip {
                     self.blocks.swap(idx, idx - 1);
                     next_set.remove(&idx);
                     next_set.insert(idx - 1);
+                    moved = true;
                 }
             }
         } else {
@@ -274,10 +289,14 @@ impl TerminalStrip {
                     self.blocks.swap(idx, idx + 1);
                     next_set.remove(&idx);
                     next_set.insert(idx + 1);
+                    moved = true;
                 }
             }
         }
-        self.recalculate_labels();
+        if moved {
+            self.end_plates_generated = false;
+            self.recalculate_labels();
+        }
         next_set
     }
 
@@ -302,6 +321,7 @@ impl TerminalStrip {
         }
         let count = clones.len();
         self.blocks.splice(insert_at..insert_at, clones);
+        self.end_plates_generated = false;
         self.recalculate_labels();
         (insert_at..insert_at + count).collect()
     }
@@ -324,6 +344,7 @@ impl TerminalStrip {
         }
         let count = new_blocks.len();
         self.blocks.splice(clamped..clamped, new_blocks);
+        self.end_plates_generated = false;
         self.recalculate_labels();
         (clamped..clamped + count).collect()
     }
@@ -391,6 +412,7 @@ impl TerminalStrip {
             converted += 1;
         }
         if converted > 0 {
+            self.end_plates_generated = false;
             self.recalculate_labels();
         }
         converted

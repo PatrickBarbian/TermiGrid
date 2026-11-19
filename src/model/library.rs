@@ -394,6 +394,7 @@ pub fn instantiate_strip_from_template(
 
     strip.sync_next_block_id();
     strip.recalculate_labels();
+    strip.end_plates_generated = true;
     strip
 }
 

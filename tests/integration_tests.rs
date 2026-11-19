@@ -904,4 +904,117 @@ fn one_pole_and_three_pole_feeder_plans_insert_cleanly_across_families() {
     );
 }
 
+#[test]
+fn pti_25_multilevel_shares_d_pti_3_without_intermediate_end_plates_and_nt_only_predicate() {
+    use termigrid_core::catalog::accessories::calculate_end_plates;
+    let catalog = TerminalCatalog::load_embedded();
 
+    // Non-NT installation terminals must NOT trigger the NT disconnect popup
+    for non_nt_id in [
+        "phoenix-pti-25-ll",
+        "phoenix-pti-25-ln",
+        "phoenix-pti-25-peln",
+        "phoenix-pti-25-pell",
+        "wago-2003-7646",
+        "wago-2203-7646",
+        "weidmuller-aitb-25-nlp",
+    ] {
+        let sp = catalog.find_by_id(non_nt_id).expect(non_nt_id);
+        assert!(
+            !sp.is_nt_disconnect_terminal(),
+            "{non_nt_id} is not an NT terminal and must not trigger NT popup"
+        );
+    }
+
+    // Genuine NT disconnect terminals MUST trigger the NT popup
+    for nt_id in [
+        "phoenix-pti-25-lnt",
+        "phoenix-pti-25-pelnt",
+        "phoenix-pti-4-pelnt",
+        "wago-2003-7641",
+        "wago-2203-7641",
+        "weidmuller-aitb-25-ntlp",
+    ] {
+        let sp = catalog.find_by_id(nt_id).expect(nt_id);
+        assert!(
+            sp.is_nt_disconnect_terminal(),
+            "{nt_id} is a genuine NT terminal and must trigger NT popup"
+        );
+    }
+
+    // Mixing PTI 2,5-L/L, PTI 2,5-L/N, PTI 2,5-PE/L/N and PTI 2,5-PE/L/NT on one strip
+    // shares the single 101 mm contour cover D-PTI/3 (3213975) -> only 1 end plate at the end!
+    let pti_peln = catalog.find_by_id("phoenix-pti-25-peln").unwrap();
+    let pti_ll = catalog.find_by_id("phoenix-pti-25-ll").unwrap();
+    let pti_ln = catalog.find_by_id("phoenix-pti-25-ln").unwrap();
+    let pti_pelnt = catalog.find_by_id("phoenix-pti-25-pelnt").unwrap();
+
+    let mut strip = TerminalStrip::generate_with_block_count("-XPTI", 1, 1, 0, pti_peln);
+    strip.insert_spec_sequence(0, &[pti_peln, pti_ll, pti_peln, pti_ln, pti_pelnt]);
+    let plates = calculate_end_plates(&strip, &catalog);
+    assert_eq!(plates.len(), 1, "Expected no intermediate plates between PTI 2,5 multi-level blocks: {plates:?}");
+    assert_eq!(plates[0].after_block_idx, 4);
+    assert!(plates[0].end_plate.contains("3213975"));
+}
+
+#[test]
+fn end_plates_generated_lifecycle_and_legacy_deserialization() {
+    use std::collections::BTreeSet;
+    let catalog = TerminalCatalog::load_embedded();
+    let l_spec = catalog.find_by_id("wago-2002-1201").unwrap();
+    let n_spec = catalog.find_by_id("wago-2002-1204").unwrap();
+    let pe_spec = catalog.find_by_id("wago-2002-1207").unwrap();
+
+    // Fresh strip starts ungenerated (`false`) until user clicks "Generieren"
+    let mut strip = TerminalStrip::generate_with_block_count("-XGEN", 1, 5, 2, l_spec);
+    assert!(!strip.end_plates_generated);
+
+    // Simulating "Generieren": mark generated & verify JSON roundtrip preserves `true`
+    strip.end_plates_generated = true;
+    let json = serde_json::to_string(&strip).unwrap();
+    let reloaded: TerminalStrip = serde_json::from_str(&json).unwrap();
+    assert!(reloaded.end_plates_generated);
+
+    // Legacy project JSON without `end_plates_generated` defaults to `true`
+    let mut value: serde_json::Value = serde_json::from_str(&json).unwrap();
+    value.as_object_mut().unwrap().remove("end_plates_generated");
+    let legacy: TerminalStrip = serde_json::from_value(value).unwrap();
+    assert!(legacy.end_plates_generated);
+
+    // Every physical block mutation resets `end_plates_generated` back to `false`
+    strip.end_plates_generated = true;
+    strip.insert_blocks(2, 1, n_spec);
+    assert!(!strip.end_plates_generated);
+
+    strip.end_plates_generated = true;
+    strip.reassign_blocks(&[0], pe_spec);
+    assert!(!strip.end_plates_generated);
+
+    strip.end_plates_generated = true;
+    let sel: BTreeSet<usize> = [0].into_iter().collect();
+    strip.move_selected_blocks(&sel, 1);
+    assert!(!strip.end_plates_generated);
+
+    strip.end_plates_generated = true;
+    let dup_sel: BTreeSet<usize> = [1].into_iter().collect();
+    strip.duplicate_selected_blocks(&dup_sel);
+    assert!(!strip.end_plates_generated);
+
+    strip.end_plates_generated = true;
+    strip.insert_spec_sequence(strip.blocks.len(), &[l_spec, n_spec, pe_spec]);
+    assert!(!strip.end_plates_generated);
+
+    strip.end_plates_generated = true;
+    let converted_to_nt = strip.convert_n_to_nt_blocks(&catalog);
+    assert!(converted_to_nt > 0);
+    assert!(!strip.end_plates_generated);
+
+    strip.end_plates_generated = true;
+    let converted_to_n = strip.convert_nt_to_n_blocks(&catalog);
+    assert!(converted_to_n > 0);
+    assert!(!strip.end_plates_generated);
+
+    strip.end_plates_generated = true;
+    strip.delete_blocks(&[0]);
+    assert!(!strip.end_plates_generated);
+}

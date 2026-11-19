@@ -445,10 +445,8 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
             "D-STI/3 (3038626)"
         } else if spec.levels == 1 {
             "D-PTI 2,5 (3213974)"
-        } else if spec.levels >= 3 || id.ends_with("-lnt") {
-            "D-PTI/3 (3213975)"
         } else {
-            "D-PTI/2B (3213976)"
+            "D-PTI/3 (3213975)"
         };
         return TerminalAccessories {
             end_plate: end_plate.to_string(),

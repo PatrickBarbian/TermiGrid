@@ -566,29 +566,11 @@ pub enum InstallSupplyPlacement {
     None,
 }
 
-/// Action deferred while the user answers the NT / N-Einspeiseklemme prompt.
+/// Action deferred while the user answers the NT / N-Einspeiseklemme prompt
+/// (triggered either after PDF import or via the "Generieren" button).
 #[derive(Debug, Clone)]
 pub enum PendingInstallAction {
-    CreateStrip(TerminalStrip),
-    ReassignSelection {
-        strip_idx: usize,
-        indices: Vec<usize>,
-        spec_id: String,
-    },
-    InsertBlocks {
-        strip_idx: usize,
-        at_index: usize,
-        count: usize,
-        spec_id: String,
-        select_inserted: bool,
-    },
-    InsertSequence {
-        strip_idx: usize,
-        at_index: usize,
-        spec_ids: Vec<String>,
-        select_inserted: bool,
-    },
-    ConfigureImportedStrip {
+    ConfigureStripNt {
         strip_idx: usize,
         anchor_start: usize,
         anchor_end: usize,
@@ -701,6 +683,7 @@ impl InstallPromptDialogState {
 pub struct InstallPromptResolution {
     pub action: PendingInstallAction,
     pub effective_spec_id: String,
+    pub spec_changed: bool,
     pub supply_placement: InstallSupplyPlacement,
     pub supply_spec_id: String,
     pub outer_carrier_spec_id: Option<String>,
@@ -754,7 +737,7 @@ pub fn show_install_supply_prompt_modal(
             ui.add(
                 egui::Label::new(
                     egui::RichText::new(
-                        "Für Installationsklemmen (Serie 2003 / 2203 / 2005 / 2205 / PTI / UTI / STI / AITB) und NT-Klemmen bitte Ausführung, N-Einspeiseklemme und Sammelschienenträger (Auflagebock) wählen:",
+                        "Für NT-Trennklemmen (mit N-Trennschlitten) bitte Ausführung, N-Einspeiseklemme und Sammelschienenträger (Auflagebock) wählen:",
                     )
                     .color(secondary_text_color(ui)),
                 )
@@ -1162,6 +1145,7 @@ pub fn show_install_supply_prompt_modal(
                 resolution = Some(InstallPromptResolution {
                     action,
                     effective_spec_id: final_spec.id.clone(),
+                    spec_changed: final_spec.id != base_spec.id,
                     supply_placement: state.supply_placement,
                     supply_spec_id: state.supply_spec_id.clone(),
                     outer_carrier_spec_id: state

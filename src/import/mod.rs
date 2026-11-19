@@ -127,18 +127,18 @@ mod tests {
         assert_eq!(x1.terminals[0].spec_id, "wago-285-135");
         assert_eq!(x1.ignored_jumpers.len(), 1);
 
-        // -X2: 24x 2203-7646, homogeneous, triggers NT popup
+        // -X2: 24x 2203-7646 (PE/L/N, not NT), homogeneous, does NOT trigger NT popup
         let x2 = &plan.strips[3];
         assert_eq!(x2.total_terminal_count, 24);
         assert_eq!(x2.variants.len(), 1);
-        assert!(x2.has_nt_or_install);
-        assert_eq!(x2.nt_anchor_spec_id.as_deref(), Some("wago-2203-7646"));
+        assert!(!x2.has_nt_or_install);
+        assert_eq!(x2.nt_anchor_spec_id, None);
 
-        // -X3: merged across Page 1 & 2, exact 44 terminals, <=3 unique variants, closed NT block 0..4
+        // -X3: merged across Page 1 & 2, exact 44 terminals, <=3 unique variants, closed install block 0..4 (no NT popup for 2203-7646)
         let x3 = &plan.strips[4];
         assert_eq!(x3.pages, vec![1, 2]);
         assert_eq!(x3.total_terminal_count, 44);
-        assert!(x3.has_nt_or_install);
+        assert!(!x3.has_nt_or_install);
         assert!(x3.variants.len() >= 2 && x3.variants.len() <= 3);
 
         // Verify quantity invariant & closed NT block across ALL variants
@@ -367,20 +367,21 @@ mod tests {
     }
 
     #[test]
-    fn sequential_nt_queue_identifies_only_x2_and_x3_in_order() {
+    fn sequential_nt_queue_triggers_only_on_genuine_nt_terminals() {
         let catalog = TerminalCatalog::load_embedded();
         let rows = hb_hixberg_sample_rows();
         let plan = plan_from_bom_rows(&rows, &catalog);
 
+        // Non-NT 2203-7646 on -X2 and -X3 must NOT trigger the NT popup,
+        // while -X2/-X3 still preserve their contiguous installation zone.
         let nt_strips: Vec<&str> = plan
             .strips
             .iter()
             .filter(|s| s.has_nt_or_install && s.total_terminal_count > 0)
             .map(|s| s.bmk.as_str())
             .collect();
-        assert_eq!(nt_strips, vec!["-X2", "-X3"]);
+        assert!(nt_strips.is_empty());
 
-        // Ensure -X2 has nt_zone (0..24) and -X3 has nt_zone (0..4) across all variants
         let x2 = plan.strips.iter().find(|s| s.bmk == "-X2").unwrap();
         let (_, z2) = instantiate_imported_strip(x2, 0, true, &catalog).unwrap();
         assert_eq!(z2, Some((0, 24)));
@@ -388,5 +389,30 @@ mod tests {
         let x3 = plan.strips.iter().find(|s| s.bmk == "-X3").unwrap();
         let (_, z3) = instantiate_imported_strip(x3, 0, true, &catalog).unwrap();
         assert_eq!(z3, Some((0, 4)));
+
+        // Genuine NT terminals (e.g. WAGO 2203-7641 & Phoenix PTI 2,5-PE/L/NT) MUST queue in order,
+        // whereas Phoenix PTI 2,5-L/L (3213953) must NOT trigger the NT popup.
+        let r = |bmk: &str, qty, desc: &str, typ: &str, art: &str| RawBomRow {
+            page: 1,
+            bmk: bmk.to_string(),
+            quantity: qty,
+            description: desc.to_string(),
+            type_number: typ.to_string(),
+            supplier: String::new(),
+            article_number: art.to_string(),
+        };
+        let genuine_rows = vec![
+            r("-X10", 4, "Installationsklemme L/L", "PTI 2,5-L/L", "3213953"),
+            r("-X11", 6, "Dreistock-NT-Klemme", "2203-7641", "WAGO.2203-7641"),
+            r("-X12", 4, "Installations-NT-Klemme", "PTI 2,5-PE/L/NT", "3213955"),
+        ];
+        let nt_plan = plan_from_bom_rows(&genuine_rows, &catalog);
+        let queued: Vec<&str> = nt_plan
+            .strips
+            .iter()
+            .filter(|s| s.has_nt_or_install && s.total_terminal_count > 0)
+            .map(|s| s.bmk.as_str())
+            .collect();
+        assert_eq!(queued, vec!["-X11", "-X12"]);
     }
 }

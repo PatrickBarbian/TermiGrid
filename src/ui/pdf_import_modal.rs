@@ -96,7 +96,7 @@ fn draw_strip_sequence_preview(
             break;
         }
         let color = if let Some(spec) = catalog.find_by_id(id) {
-            if spec.is_installation_or_nt_terminal() {
+            if spec.is_nt_disconnect_terminal() {
                 Color32::from_rgb(14, 116, 144)
             } else if !spec.tiers.is_empty() && spec.tiers.iter().all(|t| t.behavior.is_pe()) {
                 Color32::from_rgb(34, 197, 94)

@@ -250,6 +250,9 @@ pub struct TerminalStrip {
     /// Whether to mount an end bracket after the last terminal block (`nach #N`).
     #[serde(default = "default_true")]
     pub end_bracket_right: bool,
+    /// Whether end/partition plates & NT check have been generated for the current block layout.
+    #[serde(default = "default_true")]
+    pub end_plates_generated: bool,
 }
 
 impl TerminalStrip {
@@ -275,6 +278,7 @@ impl TerminalStrip {
             end_bracket_id: default_end_bracket_id(),
             end_bracket_left: true,
             end_bracket_right: true,
+            end_plates_generated: false,
         }
     }
 
