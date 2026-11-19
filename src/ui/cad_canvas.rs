@@ -2431,5 +2431,227 @@ fn draw_e_planer_dimensions_and_title(
     );
 }
 
+/// Renders a crisp miniature 1:1-proportioned ePlan Aufbaubild silhouette of `strip`
+/// (TS 35 DIN rail, end brackets, scaled terminal blocks with tier colors, and end plates).
+pub fn draw_mini_eplan_preview(
+    ui: &mut Ui,
+    strip: &TerminalStrip,
+    catalog: &TerminalCatalog,
+    height: f32,
+) {
+    let dark = ui.visuals().dark_mode;
+    let t = crate::ui::theme::ThemeTokens::for_mode(dark);
+    let avail_w = ui.available_width().max(110.0);
+    let (rect, _) = ui.allocate_exact_size(Vec2::new(avail_w, height), Sense::hover());
+    if !ui.is_rect_visible(rect) {
+        return;
+    }
+
+    let painter = ui.painter_at(rect);
+    let bg = if dark {
+        Color32::from_rgb(13, 18, 29)
+    } else {
+        Color32::from_rgb(243, 246, 252)
+    };
+    painter.rect_filled(rect, CornerRadius::same(6), bg);
+
+    // Subtle blueprint grid lines
+    let grid_col = if dark {
+        Color32::from_rgba_unmultiplied(255, 255, 255, 10)
+    } else {
+        Color32::from_rgba_unmultiplied(15, 23, 42, 12)
+    };
+    let mut gx = rect.min.x + 12.0;
+    while gx < rect.max.x {
+        painter.line_segment(
+            [Pos2::new(gx, rect.min.y), Pos2::new(gx, rect.max.y)],
+            Stroke::new(1.0, grid_col),
+        );
+        gx += 12.0;
+    }
+    let mid_y = rect.center().y;
+    painter.line_segment(
+        [Pos2::new(rect.min.x, mid_y), Pos2::new(rect.max.x, mid_y)],
+        Stroke::new(1.0, grid_col),
+    );
+
+    if strip.blocks.is_empty() {
+        painter.text(
+            rect.center(),
+            Align2::CENTER_CENTER,
+            "Leere Klemmleiste",
+            FontId::proportional(10.5),
+            t.text_muted,
+        );
+        painter.rect_stroke(
+            rect,
+            CornerRadius::same(6),
+            Stroke::new(1.0, t.border_hairline),
+            StrokeKind::Inside,
+        );
+        return;
+    }
+
+    let end_plates = if strip.end_plates_generated {
+        crate::catalog::accessories::calculate_end_plates(strip, catalog)
+    } else {
+        Vec::new()
+    };
+    let end_bracket = find_end_bracket(&strip.end_bracket_id);
+    let bracket_count = strip.end_bracket_count();
+    let brackets_mm = strip.end_brackets_width_mm();
+    let plates_mm: f32 = end_plates
+        .iter()
+        .map(|p| f32::from(p.width_tenths_mm) / 10.0)
+        .sum();
+    let total_w_mm = (strip.total_width_mm() + plates_mm + brackets_mm).max(8.0);
+
+    let block_bounds: Vec<(f32, f32, f32)> = strip
+        .blocks
+        .iter()
+        .map(|b| block_front_bounds_mm(b, catalog))
+        .collect();
+    let eb_half_mm = (f32::from(end_bracket.height_tenths_mm) / 10.0) * 0.5;
+    let mut max_above_mm = block_bounds
+        .iter()
+        .map(|&(_, a, _)| a)
+        .fold(17.5_f32, f32::max);
+    let mut max_below_mm = block_bounds
+        .iter()
+        .map(|&(_, _, b)| b)
+        .fold(17.5_f32, f32::max);
+    if bracket_count > 0 {
+        max_above_mm = max_above_mm.max(eb_half_mm);
+        max_below_mm = max_below_mm.max(eb_half_mm);
+    }
+    let total_h_mm = (max_above_mm + max_below_mm).max(35.0);
+
+    let inner = rect.shrink2(Vec2::new(10.0, 5.0));
+    let scale = (inner.width() / total_w_mm).min(inner.height() / total_h_mm).max(0.15);
+    let assembly_w_px = total_w_mm * scale;
+    let rail_center_y = inner.center().y + ((max_above_mm - max_below_mm) * 0.5) * scale;
+    let start_x = inner.center().x - assembly_w_px * 0.5;
+
+    // Miniature TS 35 DIN rail across assembly + small overhang
+    let overhang_px = 6.0;
+    let rail_half_h = (17.5 * scale).max(3.5);
+    let rail_rect = Rect::from_min_max(
+        Pos2::new(start_x - overhang_px, rail_center_y - rail_half_h),
+        Pos2::new(start_x + assembly_w_px + overhang_px, rail_center_y + rail_half_h),
+    );
+    let (rail_fill, rail_stroke) = if dark {
+        (
+            Color32::from_rgba_unmultiplied(148, 163, 184, 48),
+            Color32::from_rgb(100, 116, 139),
+        )
+    } else {
+        (Color32::from_rgb(226, 232, 240), Color32::from_rgb(148, 163, 184))
+    };
+    painter.rect_filled(rail_rect, CornerRadius::ZERO, rail_fill);
+    painter.rect_stroke(
+        rail_rect,
+        CornerRadius::ZERO,
+        Stroke::new(0.8, rail_stroke),
+        StrokeKind::Inside,
+    );
+
+    let eb_w_px = ((f32::from(end_bracket.width_tenths_mm) / 10.0) * scale).max(2.0);
+    let eb_half_h_px = (eb_half_mm * scale).max(4.0);
+    let eb_col = if dark {
+        Color32::from_rgb(71, 85, 105)
+    } else {
+        Color32::from_rgb(100, 116, 139)
+    };
+    let outline_col = if dark {
+        Color32::from_rgba_unmultiplied(203, 213, 225, 130)
+    } else {
+        Color32::from_rgba_unmultiplied(30, 41, 59, 145)
+    };
+
+    let mut cx = start_x;
+    if strip.end_bracket_left {
+        let r = Rect::from_min_max(
+            Pos2::new(cx, rail_center_y - eb_half_h_px),
+            Pos2::new(cx + eb_w_px, rail_center_y + eb_half_h_px),
+        );
+        painter.rect_filled(r, CornerRadius::ZERO, eb_col);
+        painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(0.6, outline_col), StrokeKind::Inside);
+        cx += eb_w_px;
+    }
+
+    for (idx, block) in strip.blocks.iter().enumerate() {
+        let bw = ((f32::from(block.width_tenths_mm) / 10.0) * scale).max(1.2);
+        let (_, above_mm, below_mm) = block_bounds[idx];
+        let b_rect = Rect::from_min_max(
+            Pos2::new(cx, rail_center_y - above_mm * scale),
+            Pos2::new(cx + bw, rail_center_y + below_mm * scale),
+        );
+
+        let mut ordered_tiers: Vec<(usize, isize)> = (0..block.tiers.len())
+            .map(|ti| (ti, block.tier_visual_row(ti)))
+            .collect();
+        ordered_tiers.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| b.0.cmp(&a.0)));
+        let n = ordered_tiers.len().max(1);
+        let band_h = b_rect.height() / (n as f32);
+
+        for (pos, &(t_idx, _)) in ordered_tiers.iter().enumerate() {
+            let tier = &block.tiers[t_idx];
+            let (fill, _, _) = tier_palette(tier.color, dark);
+            let band_rect = Rect::from_min_max(
+                Pos2::new(b_rect.min.x, b_rect.min.y + pos as f32 * band_h),
+                Pos2::new(b_rect.max.x, b_rect.min.y + (pos + 1) as f32 * band_h),
+            );
+            painter.rect_filled(
+                band_rect,
+                CornerRadius::ZERO,
+                fill.gamma_multiply(if dark { 0.85 } else { 0.92 }),
+            );
+        }
+        painter.rect_stroke(
+            b_rect,
+            CornerRadius::ZERO,
+            Stroke::new(0.5, outline_col),
+            StrokeKind::Inside,
+        );
+        cx += bw;
+
+        if let Some(plate) = end_plates.iter().find(|p| p.after_block_idx == idx) {
+            let pw = ((f32::from(plate.width_tenths_mm) / 10.0) * scale).max(1.0);
+            let p_rect = Rect::from_min_max(
+                Pos2::new(cx, b_rect.min.y),
+                Pos2::new(cx + pw, b_rect.max.y),
+            );
+            painter.rect_filled(p_rect, CornerRadius::ZERO, Color32::from_rgb(245, 158, 11));
+            cx += pw;
+        }
+    }
+
+    if strip.end_bracket_right {
+        let r = Rect::from_min_max(
+            Pos2::new(cx, rail_center_y - eb_half_h_px),
+            Pos2::new(cx + eb_w_px, rail_center_y + eb_half_h_px),
+        );
+        painter.rect_filled(r, CornerRadius::ZERO, eb_col);
+        painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(0.6, outline_col), StrokeKind::Inside);
+    }
+
+    // Subtle 1:1 ePlan tag in corner
+    painter.text(
+        Pos2::new(rect.max.x - 5.0, rect.min.y + 3.0),
+        Align2::RIGHT_TOP,
+        "1:1 ePlan",
+        FontId::monospace(8.5),
+        t.text_muted,
+    );
+
+    painter.rect_stroke(
+        rect,
+        CornerRadius::same(6),
+        Stroke::new(1.0, t.border_hairline),
+        StrokeKind::Inside,
+    );
+}
+
+
 
 
