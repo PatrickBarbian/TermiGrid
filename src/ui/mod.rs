@@ -20,7 +20,7 @@ use eframe::egui;
 use crate::catalog::accessories::{
     calculate_end_plates, end_plate_width_tenths_mm, find_end_bracket,
 };
-use crate::catalog::TerminalCatalog;
+use crate::catalog::{TerminalCatalog, TerminalSpec};
 use crate::export::{
     csv::export_to_csv, dxf::export_to_dxf, xlsx::export_to_xlsx, ExportOptions, PrintOrder,
 };
@@ -30,7 +30,8 @@ use crate::model::bridging::{
     calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
 };
 use crate::model::library::{
-    instantiate_strip_from_template, merge_template_custom_specs, StripLibrary,
+    instantiate_strip_from_template, load_global_custom_specs, merge_custom_specs_into,
+    merge_template_custom_specs, save_global_custom_specs, StripLibrary,
 };
 use crate::model::{
     NeutralLabelMode, NumberingOrder, PeLabelMode, Project, TerminalStrip,
@@ -155,8 +156,9 @@ pub struct TermiGridApp {
     redo_stack: Vec<Project>,
     last_snapshot: Project,
 
-    // Personal Terminal Strip Library (persisted across sessions)
+    // Personal Terminal Strip Library & global custom specs (persisted across all projects on this PC)
     strip_library: StripLibrary,
+    global_custom_specs: Vec<TerminalSpec>,
     save_strip_library_modal: SaveStripLibraryDialogState,
     strip_library_modal: StripLibraryDialogState,
 
@@ -167,11 +169,15 @@ pub struct TermiGridApp {
 
 impl TermiGridApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let catalog = TerminalCatalog::load_embedded();
+        let mut catalog = TerminalCatalog::load_embedded();
         let logos = BrandLogos::load(&cc.egui_ctx);
         let project = Project::default();
         let last_snapshot = project.clone();
         let strip_library = StripLibrary::load_default();
+        let global_custom_specs = load_global_custom_specs();
+        if !global_custom_specs.is_empty() {
+            catalog.reload_with_custom(&global_custom_specs);
+        }
 
         // Load native system fonts & apply high-contrast Light+Dark themes with System default
         install_system_fonts(&cc.egui_ctx);
@@ -222,6 +228,7 @@ impl TermiGridApp {
             redo_stack: Vec::new(),
             last_snapshot,
             strip_library,
+            global_custom_specs,
             save_strip_library_modal: SaveStripLibraryDialogState::default(),
             strip_library_modal: StripLibraryDialogState::default(),
             pdf_import_modal: PdfImportDialogState::default(),
@@ -229,11 +236,17 @@ impl TermiGridApp {
         }
     }
 
+    fn reload_catalog_with_all_custom(&mut self) {
+        let mut combined = self.global_custom_specs.clone();
+        merge_custom_specs_into(&self.project.custom_specs, &mut combined);
+        self.catalog.reload_with_custom(&combined);
+    }
+
     fn perform_undo(&mut self) {
         if let Some(prev) = self.undo_stack.pop() {
             self.redo_stack.push(self.project.clone());
             self.project = prev;
-            self.catalog.reload_with_custom(&self.project.custom_specs);
+            self.reload_catalog_with_all_custom();
             self.last_snapshot = self.project.clone();
             self.active_strip = self
                 .active_strip
@@ -247,7 +260,7 @@ impl TermiGridApp {
         if let Some(next) = self.redo_stack.pop() {
             self.undo_stack.push(self.project.clone());
             self.project = next;
-            self.catalog.reload_with_custom(&self.project.custom_specs);
+            self.reload_catalog_with_all_custom();
             self.last_snapshot = self.project.clone();
             self.active_strip = self
                 .active_strip
@@ -291,8 +304,8 @@ impl TermiGridApp {
                 Ok(raw) => match serde_json::from_str::<Project>(&raw) {
                     Ok(mut proj) => {
                         proj.normalize();
-                        self.catalog.reload_with_custom(&proj.custom_specs);
                         self.project = proj;
+                        self.reload_catalog_with_all_custom();
                         self.undo_stack.clear();
                         self.redo_stack.clear();
                         self.last_snapshot = self.project.clone();
@@ -676,7 +689,7 @@ impl eframe::App for TermiGridApp {
                 // Group 1: Project file actions
                 if primary_icon_button(ui, UiIcon::NewFile, s.menu_new_project).clicked() {
                     self.project = Project::default();
-                    self.catalog = TerminalCatalog::load_embedded();
+                    self.reload_catalog_with_all_custom();
                     self.undo_stack.clear();
                     self.redo_stack.clear();
                     self.last_snapshot = self.project.clone();
@@ -808,6 +821,7 @@ impl eframe::App for TermiGridApp {
             }
             ActiveTab::Database => {
                 egui::CentralPanel::default().show(ui, |ui| {
+                    let prev_len = self.project.custom_specs.len();
                     show_database_tab(
                         ui,
                         &mut self.catalog,
@@ -819,6 +833,14 @@ impl eframe::App for TermiGridApp {
                         s,
                         self.lang,
                     );
+                    if self.project.custom_specs.len() > prev_len
+                        && merge_custom_specs_into(
+                            &self.project.custom_specs[prev_len..],
+                            &mut self.global_custom_specs,
+                        )
+                    {
+                        let _ = save_global_custom_specs(&self.global_custom_specs);
+                    }
                 });
             }
             ActiveTab::Editor => {
@@ -1041,13 +1063,20 @@ impl eframe::App for TermiGridApp {
                     if let Some(tpl) = self.strip_library.find_by_id(&template_id).cloned() {
                         if self.show_welcome {
                             self.project.strips.clear();
-                            self.catalog = TerminalCatalog::load_embedded();
+                            self.project.custom_specs.clear();
+                            self.reload_catalog_with_all_custom();
                             self.undo_stack.clear();
                             self.redo_stack.clear();
                             self.current_file = None;
                         }
                         if merge_template_custom_specs(&tpl, &mut self.project.custom_specs) {
-                            self.catalog.reload_with_custom(&self.project.custom_specs);
+                            if merge_custom_specs_into(
+                                &tpl.custom_specs,
+                                &mut self.global_custom_specs,
+                            ) {
+                                let _ = save_global_custom_specs(&self.global_custom_specs);
+                            }
+                            self.reload_catalog_with_all_custom();
                         }
                         let new_strip = instantiate_strip_from_template(
                             &tpl,
@@ -1069,7 +1098,9 @@ impl eframe::App for TermiGridApp {
                     }
                 }
                 StripLibraryAction::SaveActiveStrip => {
-                    if let Some(strip) = self.project.strips.get(self.active_strip) {
+                    if self.active_strip < self.project.strips.len() {
+                        self.strip_library.refresh_from_default();
+                        let strip = &self.project.strips[self.active_strip];
                         self.save_strip_library_modal
                             .open_for_strip(self.active_strip, strip);
                     }
@@ -1488,7 +1519,8 @@ impl TermiGridApp {
                                     .clicked()
                                 {
                                     self.project.strips.clear();
-                                    self.catalog = TerminalCatalog::load_embedded();
+                                    self.project.custom_specs.clear();
+                                    self.reload_catalog_with_all_custom();
                                     self.current_file = None;
                                     self.active_strip = 0;
                                     self.selected_blocks.clear();
@@ -1514,10 +1546,11 @@ impl TermiGridApp {
                                 };
                                 if icon_button(ui, UiIcon::Library, &lib_btn_label)
                                     .on_hover_text(
-                                        "Persönliche Klemmleisten-Bibliothek durchsuchen & laden",
+                                        "Persönliche Klemmleisten-Bibliothek durchsuchen & laden (projektübergreifend auf diesem PC)",
                                     )
                                     .clicked()
                                 {
+                                    self.strip_library.refresh_from_default();
                                     self.strip_library_modal.open_browser();
                                 }
                                 if icon_button(
@@ -1668,9 +1701,10 @@ impl TermiGridApp {
                 format!("Bibliothek ({})", self.strip_library.templates.len())
             };
             if icon_button(ui, UiIcon::Library, &lib_label)
-                .on_hover_text("Vorgefertigte Klemmleiste aus persönlicher Bibliothek einfügen")
+                .on_hover_text("Vorgefertigte Klemmleiste aus persönlicher Bibliothek einfügen (projektübergreifend auf diesem PC)")
                 .clicked()
             {
+                self.strip_library.refresh_from_default();
                 self.strip_library_modal.open_browser();
             }
         });
@@ -1724,11 +1758,13 @@ impl TermiGridApp {
             ui.horizontal_wrapped(|ui| {
                 if icon_button(ui, UiIcon::Bookmark, "In Bibliothek")
                     .on_hover_text(
-                        "Aktive Klemmleiste unter eigenem Namen in der persönlichen Bibliothek speichern",
+                        "Aktive Klemmleiste unter eigenem Namen in der persönlichen Bibliothek speichern (gilt für alle Projekte auf diesem PC)",
                     )
                     .clicked()
-                    && let Some(strip) = self.project.strips.get(self.active_strip)
+                    && self.active_strip < self.project.strips.len()
                 {
+                    self.strip_library.refresh_from_default();
+                    let strip = &self.project.strips[self.active_strip];
                     self.save_strip_library_modal
                         .open_for_strip(self.active_strip, strip);
                 }

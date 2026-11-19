@@ -170,6 +170,17 @@ impl StripLibrary {
         Self::load_from_path(&path).unwrap_or_default()
     }
 
+    /// Reloads the personal strip library from the default OS data path if the file exists,
+    /// keeping all open projects/windows on the same PC synchronized.
+    pub fn refresh_from_default(&mut self) {
+        let path = default_library_path();
+        if path.exists()
+            && let Ok(disk_lib) = Self::load_from_path(&path)
+        {
+            *self = disk_lib;
+        }
+    }
+
     /// Saves the personal strip library to the default OS data path.
     pub fn save_default(&self) -> Result<PathBuf, String> {
         let path = default_library_path();
@@ -404,14 +415,54 @@ pub fn merge_template_custom_specs(
     template: &StripTemplate,
     project_custom_specs: &mut Vec<TerminalSpec>,
 ) -> bool {
+    merge_custom_specs_into(&template.custom_specs, project_custom_specs)
+}
+
+/// Merges `source` custom specs into `target` without duplicating IDs.
+/// Returns `true` if at least one new custom spec was added.
+pub fn merge_custom_specs_into(source: &[TerminalSpec], target: &mut Vec<TerminalSpec>) -> bool {
     let mut added = false;
-    for sp in &template.custom_specs {
-        if !project_custom_specs.iter().any(|existing| existing.id == sp.id) {
-            project_custom_specs.push(sp.clone());
+    for sp in source {
+        if !target.iter().any(|existing| existing.id == sp.id) {
+            target.push(sp.clone());
             added = true;
         }
     }
     added
+}
+
+/// Resolves the cross-platform persistent storage path for PC-wide custom terminal specs (`custom_specs.json`).
+pub fn default_custom_specs_path() -> PathBuf {
+    default_library_path().with_file_name("custom_specs.json")
+}
+
+/// Loads PC-wide custom terminal specs from `path` (returns empty Vec if missing/invalid).
+pub fn load_global_custom_specs_from(path: &Path) -> Vec<TerminalSpec> {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|raw| serde_json::from_str::<Vec<TerminalSpec>>(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Loads PC-wide custom terminal specs from the default OS data folder.
+pub fn load_global_custom_specs() -> Vec<TerminalSpec> {
+    load_global_custom_specs_from(&default_custom_specs_path())
+}
+
+/// Saves PC-wide custom terminal specs to `path`, creating parent folders as needed.
+pub fn save_global_custom_specs_to(path: &Path, specs: &[TerminalSpec]) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let json = serde_json::to_string_pretty(specs).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
+/// Saves PC-wide custom terminal specs to the default OS data folder.
+pub fn save_global_custom_specs(specs: &[TerminalSpec]) -> Result<PathBuf, String> {
+    let path = default_custom_specs_path();
+    save_global_custom_specs_to(&path, specs)?;
+    Ok(path)
 }
 
 fn next_available_strip_name(base_name: &str, existing_strips: &[TerminalStrip]) -> String {

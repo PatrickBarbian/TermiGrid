@@ -272,7 +272,9 @@ pub fn export_to_xlsx(
     ws4.set_name(sheet4_name)?;
 
     let mut catalog = TerminalCatalog::load_embedded();
-    catalog.reload_with_custom(&project.custom_specs);
+    let mut combined_custom = crate::model::library::load_global_custom_specs();
+    crate::model::library::merge_custom_specs_into(&project.custom_specs, &mut combined_custom);
+    catalog.reload_with_custom(&combined_custom);
 
     let bom_headers = if german_headers {
         [

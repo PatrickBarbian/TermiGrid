@@ -2,7 +2,7 @@ use egui::Context;
 
 use crate::catalog::TerminalCatalog;
 use crate::i18n::Strings;
-use crate::model::library::{StripLibrary, StripTemplate};
+use crate::model::library::{default_library_path, StripLibrary, StripTemplate};
 use crate::model::TerminalStrip;
 use crate::ui::icons::{
     compact_mfg_badge, danger_icon_button, draw_icon, icon_button, icon_only_button,
@@ -266,6 +266,19 @@ pub fn show_strip_library_modal(
         |ui, data| {
             let sec = secondary_text_color(ui);
             let total_count = data.library.templates.len();
+            let lib_path_str = default_library_path().display().to_string();
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(
+                        "Projektübergreifend auf diesem PC gespeichert (für alle Projekte verfügbar).",
+                    )
+                    .color(sec)
+                    .small(),
+                )
+                .wrap(),
+            )
+            .on_hover_text(format!("Speicherort: {lib_path_str}"));
+            ui.add_space(4.0);
 
             // Search bar + hit counter
             ui.horizontal(|ui| {

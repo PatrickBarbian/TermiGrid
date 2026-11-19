@@ -393,7 +393,14 @@ pub fn show_database_tab(
                     .chars()
                     .map(|c| if c.is_alphanumeric() { c } else { '-' })
                     .collect();
-                let id = format!("custom-{slug}-{}", custom_specs.len() + 1);
+                let mut seq = custom_specs.len() + 1;
+                let mut id = format!("custom-{slug}-{seq}");
+                while catalog.find_by_id(&id).is_some()
+                    || custom_specs.iter().any(|s| s.id == id)
+                {
+                    seq += 1;
+                    id = format!("custom-{slug}-{seq}");
+                }
                 let mfg = if draft.manufacturer.trim().is_empty() {
                     "Custom".to_string()
                 } else {

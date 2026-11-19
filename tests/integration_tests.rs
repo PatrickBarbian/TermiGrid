@@ -1018,3 +1018,103 @@ fn end_plates_generated_lifecycle_and_legacy_deserialization() {
     strip.delete_blocks(&[0]);
     assert!(!strip.end_plates_generated);
 }
+
+#[test]
+fn xlsx_export_includes_all_strips_by_default() {
+    let catalog = TerminalCatalog::load_embedded();
+    let single = catalog.find_by_id("wago-2002-1201").unwrap();
+    let double = catalog.find_by_id("wago-2002-2201").unwrap();
+
+    let x1 = TerminalStrip::generate_with_block_count("-X1", 1, 10, 2, single); // 2 labels
+    let x2 = TerminalStrip::generate_with_block_count("-X2", 10, 20, 3, double); // 6 labels
+
+    let project = Project {
+        format_version: 1,
+        project_name: "MultiStripExcel".to_string(),
+        strips: vec![x1, x2],
+        ..Default::default()
+    };
+
+    let defaults = ExportOptions::default();
+    assert!(defaults.all_strips, "Excel/CSV export must include all strips by default");
+
+    let rows = build_print_rows(&project, 0, &defaults);
+    assert_eq!(rows.len(), 8);
+    assert!(rows.iter().any(|r| r.strip_name == "-X1"));
+    assert!(rows.iter().any(|r| r.strip_name == "-X2"));
+
+    let out_path = std::env::temp_dir().join("termigrid_all_strips_default_test.xlsx");
+    let _ = std::fs::remove_file(&out_path);
+    let count = export_to_xlsx(&out_path, &project, 0, &defaults, true).unwrap();
+    assert_eq!(count, 8);
+    assert!(out_path.exists());
+    let _ = std::fs::remove_file(&out_path);
+}
+
+#[test]
+fn global_custom_specs_and_strip_library_persist_across_projects() {
+    use termigrid_core::catalog::{TerminalSpec, TierSpec};
+    use termigrid_core::model::library::{
+        load_global_custom_specs_from, merge_custom_specs_into, save_global_custom_specs_to,
+        StripLibrary,
+    };
+    use termigrid_core::model::{NumberingOrder, TierBehavior, TierColor};
+
+    let tmp_dir = std::env::temp_dir().join("termigrid_global_lib_test");
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+    std::fs::create_dir_all(&tmp_dir).unwrap();
+
+    let custom_spec = TerminalSpec {
+        id: "custom-test-pcwide-1".to_string(),
+        name: "TEST-CUSTOM-2.5".to_string(),
+        manufacturer: "CustomMfg".to_string(),
+        series: "Custom".to_string(),
+        levels: 1,
+        width_tenths_mm: 52,
+        numbering_order: NumberingOrder::BottomToTop,
+        description_de: "PC-weite Klemme".to_string(),
+        description_en: "PC-wide terminal".to_string(),
+        tiers: vec![TierSpec {
+            behavior: TierBehavior::Sequential,
+            color: TierColor::StandardGray,
+        }],
+        accessories: None,
+        jumper_slots_per_tier: Some(2),
+        max_jumper_poles: Some(10),
+        article_number: None,
+        product_url: None,
+        image_url: None,
+        height_tenths_mm: None,
+        rail_offset_tenths_mm: None,
+    };
+
+    let custom_path = tmp_dir.join("custom_specs.json");
+    save_global_custom_specs_to(&custom_path, std::slice::from_ref(&custom_spec)).unwrap();
+    let loaded_custom = load_global_custom_specs_from(&custom_path);
+    assert_eq!(loaded_custom.len(), 1);
+    assert_eq!(loaded_custom[0].id, "custom-test-pcwide-1");
+
+    // Merging into a fresh catalog/project makes the PC-wide custom spec immediately available
+    let mut project_b_custom = Vec::new();
+    assert!(merge_custom_specs_into(&loaded_custom, &mut project_b_custom));
+    assert!(!merge_custom_specs_into(&loaded_custom, &mut project_b_custom));
+
+    let mut catalog = TerminalCatalog::load_embedded();
+    catalog.reload_with_custom(&project_b_custom);
+    assert!(catalog.find_by_id("custom-test-pcwide-1").is_some());
+
+    // StripLibrary saved in Project A is identical when loaded in Project B
+    let strip = TerminalStrip::generate_with_block_count("-X1", 1, 2, 2, &custom_spec);
+    let lib_path = tmp_dir.join("strip_library.json");
+    let mut lib_a = StripLibrary::default();
+    lib_a.save_template("Standard Custom", "", &strip, &[custom_spec], None);
+    lib_a.save_to_path(&lib_path).unwrap();
+
+    let lib_b = StripLibrary::load_from_path(&lib_path).unwrap();
+    assert_eq!(lib_b.templates.len(), 1);
+    assert_eq!(lib_b.templates[0].name, "Standard Custom");
+    assert_eq!(lib_b.templates[0].custom_specs.len(), 1);
+
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+}
+

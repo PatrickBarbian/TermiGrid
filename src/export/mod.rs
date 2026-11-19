@@ -22,7 +22,7 @@ pub struct ExportOptions {
     pub print_order: PrintOrder,
     /// Whether PE tiers should be emitted as `"PE"` (default `false` because PE is usually unlabeled).
     pub include_pe_labels: bool,
-    /// Export all strips in the project or only the currently active strip.
+    /// Export all strips in the project (`true` by default) or only the currently active strip.
     pub all_strips: bool,
     /// Delimiter used for CSV export (e.g., `';'` for German Excel, `','` for international).
     pub csv_delimiter: char,
@@ -33,7 +33,7 @@ impl Default for ExportOptions {
         Self {
             print_order: PrintOrder::ByTierStrip,
             include_pe_labels: false,
-            all_strips: false,
+            all_strips: true,
             csv_delimiter: ';',
         }
     }
