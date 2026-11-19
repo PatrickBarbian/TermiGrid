@@ -2246,6 +2246,101 @@ impl TerminalCatalog {
         self.specs.iter().find(|s| s.id == id)
     }
 
+    /// Finds a specification matching a normalized manufacturer hint, article number, or type designation.
+    pub fn find_by_article_or_type(
+        &self,
+        manufacturer_hint: Option<&str>,
+        article: &str,
+        type_number: &str,
+    ) -> Option<&TerminalSpec> {
+        fn norm(s: &str) -> String {
+            s.chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .flat_map(|c| c.to_lowercase())
+                .collect()
+        }
+        fn strip_prefix(s: &str) -> &str {
+            let trimmed = s.trim();
+            for sep in ['.', ':', '/'] {
+                if let Some((head, tail)) = trimmed.split_once(sep) {
+                    let h = head.trim().to_ascii_uppercase();
+                    if matches!(
+                        h.as_str(),
+                        "WAGO" | "PXC" | "PHOENIX" | "PHOENIXCONTACT" | "WEI" | "WMI" | "WEID"
+                            | "WEIDMULLER" | "WEIDMÜLLER" | "WEIDMUELLER"
+                    ) {
+                        return tail.trim();
+                    }
+                }
+            }
+            trimmed
+        }
+
+        let clean_art = strip_prefix(article);
+        let clean_type = strip_prefix(type_number);
+        let art_norm = norm(clean_art);
+        let type_norm = norm(clean_type);
+        let alt_type_norm = norm(&clean_type.replace(',', "."));
+
+        let mfg_matches = |spec: &TerminalSpec| -> bool {
+            manufacturer_hint
+                .is_none_or(|m| spec.manufacturer.eq_ignore_ascii_case(m))
+        };
+
+        // Pass 1: exact article number match
+        if !art_norm.is_empty()
+            && let Some(spec) = self.specs.iter().find(|spec| {
+                mfg_matches(spec)
+                    && spec
+                        .effective_article_number()
+                        .is_some_and(|a| norm(a) == art_norm)
+            })
+        {
+            return Some(spec);
+        }
+
+        // Pass 2: match type number against effective article number (for WAGO e.g. 2204-1201)
+        if !type_norm.is_empty()
+            && let Some(spec) = self.specs.iter().find(|spec| {
+                mfg_matches(spec)
+                    && spec
+                        .effective_article_number()
+                        .is_some_and(|a| norm(a) == type_norm)
+            })
+        {
+            return Some(spec);
+        }
+
+        // Pass 3: match type number against short spec name (prefix before " (")
+        if !type_norm.is_empty()
+            && let Some(spec) = self.specs.iter().find(|spec| {
+                if !mfg_matches(spec) {
+                    return false;
+                }
+                let short = spec.name.split(" (").next().unwrap_or(&spec.name).trim();
+                let sn = norm(short);
+                sn == type_norm || sn == alt_type_norm
+            })
+        {
+            return Some(spec);
+        }
+
+        // Pass 4: article equals short spec name (e.g. "PTI 2,5-PE/L/NT")
+        if !art_norm.is_empty()
+            && let Some(spec) = self.specs.iter().find(|spec| {
+                if !mfg_matches(spec) {
+                    return false;
+                }
+                let short = spec.name.split(" (").next().unwrap_or(&spec.name).trim();
+                norm(short) == art_norm
+            })
+        {
+            return Some(spec);
+        }
+
+        None
+    }
+
     /// Returns the distinct manufacturer names in catalog order.
     pub fn manufacturers(&self) -> Vec<&str> {
         let mut out = Vec::new();
@@ -3457,14 +3552,21 @@ mod tests {
         let pt15tg = catalog.find_by_id("phoenix-pt-15s-tg").unwrap();
         assert_eq!(end_plate_width_tenths_mm(pt15tg), 8);
 
-        // WAGO 260-spec terminal block catalog verifications
+        // WAGO 261-spec terminal block catalog verifications (incl. 2202-2701)
         assert_eq!(
             catalog
                 .all()
                 .iter()
                 .filter(|s| s.manufacturer == "WAGO" && !s.is_busbar_carrier())
                 .count(),
-            260
+            261
+        );
+        let wago_2202_2701 = catalog.find_by_id("wago-2202-2701").unwrap();
+        assert_eq!(wago_2202_2701.levels, 2);
+        assert_eq!(wago_2202_2701.pattern_summary(), "L / L");
+        assert_eq!(
+            resolve_accessories(wago_2202_2701).end_plate,
+            "2002-2791 (grau) / 2002-2792 (orange)"
         );
         let wago_2202_3227 = catalog.find_by_id("wago-2202-3227").unwrap();
         assert_eq!(wago_2202_3227.levels, 3);
@@ -3711,7 +3813,7 @@ mod tests {
     #[test]
     fn all_catalog_specs_and_end_brackets_have_valid_image_urls_and_unique_skus() {
         let catalog = TerminalCatalog::load_embedded();
-        assert_eq!(catalog.all().len(), 723);
+        assert_eq!(catalog.all().len(), 724);
 
         let mut seen_skus = std::collections::HashSet::new();
         for spec in catalog.all() {

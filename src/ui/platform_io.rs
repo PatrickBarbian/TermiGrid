@@ -91,6 +91,29 @@ pub fn pick_export_dxf_path(default_filename: &str) -> Option<PathBuf> {
     }
 }
 
+/// Prompts for an EPLAN PDF parts list to import on desktop, or picks the newest `.pdf` in Android Downloads.
+pub fn pick_import_pdf_path() -> Option<PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        rfd::FileDialog::new()
+            .add_filter("PDF-Stückliste", &["pdf"])
+            .pick_file()
+    }
+    #[cfg(target_os = "android")]
+    {
+        let dir = android_export_dir();
+        let entries = std::fs::read_dir(&dir).ok()?;
+        entries
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .find(|p| {
+                p.extension()
+                    .and_then(|s| s.to_str())
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("pdf"))
+            })
+    }
+}
+
 #[cfg(target_os = "android")]
 fn android_export_dir() -> PathBuf {
     PathBuf::from("/sdcard/Download/TermiGrid")

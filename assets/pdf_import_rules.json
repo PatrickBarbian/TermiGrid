@@ -1,0 +1,234 @@
+{
+  "bmk_regex": "(?i)^(?:[=+\\w.-]*)-X[A-Za-z0-9._-]*$",
+  "header_aliases": {
+    "bmk": [
+      "betriebsmittelkennzeichen",
+      "bmk",
+      "funktionskennzeichen",
+      "device tag",
+      "dt"
+    ],
+    "quantity": [
+      "menge",
+      "anzahl",
+      "stueckzahl",
+      "stückzahl",
+      "qty",
+      "quantity"
+    ],
+    "description": [
+      "bezeichnung",
+      "benennung",
+      "artikelbezeichnung",
+      "description"
+    ],
+    "type_number": [
+      "typnummer",
+      "typ",
+      "typbezeichnung",
+      "type number",
+      "type"
+    ],
+    "supplier": [
+      "lieferant",
+      "hersteller",
+      "manufacturer",
+      "supplier"
+    ],
+    "article_number": [
+      "artikelnummer",
+      "artikelnr",
+      "art.-nr.",
+      "bestellnummer",
+      "part number"
+    ]
+  },
+  "footer_ignore_patterns": [
+    "(?i)^artikelst[üu]ckliste\\s*:",
+    "(?i)^datum\\b",
+    "(?i)\\bblatt\\s+\\d+",
+    "(?i)\\bseite\\s+\\d+\\s*(?:von|/)",
+    "(?i)^erstellt\\s+(?:am|durch)\\b",
+    "(?i)^gepr[üu]ft\\b",
+    "(?i)^freigegeben\\b",
+    "(?i)^[äa]nderung\\b",
+    "(?i)^kommission\\b"
+  ],
+  "manufacturers": [
+    {
+      "canonical_name": "WAGO",
+      "supplier_aliases": [
+        "WAGO",
+        "WAGO KONTAKTTECHNIK",
+        "WAGO GMBH"
+      ],
+      "article_prefixes": [
+        "WAGO"
+      ],
+      "article_patterns": [
+        "^\\d{3,4}-\\d{3,4}(?:/\\d{3}-\\d{3})?$"
+      ],
+      "type_patterns": [
+        "^(?:200[0-9]|201[06]|2022|2035|210[246]|211[06]|220[0-9]|221[06]|249|28[015]|209|210)-"
+      ],
+      "default_end_bracket_id": "wago-249-117"
+    },
+    {
+      "canonical_name": "Phoenix Contact",
+      "supplier_aliases": [
+        "PXC",
+        "PHOENIX",
+        "PHOENIX CONTACT",
+        "PHOENIXCONTACT"
+      ],
+      "article_prefixes": [
+        "PXC",
+        "PHOENIX",
+        "PHOENIXCONTACT"
+      ],
+      "article_patterns": [
+        "^\\d{7}$"
+      ],
+      "type_patterns": [
+        "^(?:PT|PTI|PTV|PTTB|PTTBS|PTME|PTIO|PTFIX|PTPOWER|PTRV|ST|STI|STTB|UT|UTI|UTTB|UK|UKK|UDMTK|USLKG|CLIPFIX|E/NS|E/UK|D-|FBS|AB-)\\b"
+      ],
+      "default_end_bracket_id": "phoenix-clipfix-35-5"
+    },
+    {
+      "canonical_name": "Weidmüller",
+      "supplier_aliases": [
+        "WEI",
+        "WMI",
+        "WEID",
+        "WEIDMÜLLER",
+        "WEIDMUELLER",
+        "WEIDMULLER"
+      ],
+      "article_prefixes": [
+        "WEI",
+        "WMI",
+        "WEID",
+        "WEIDMÜLLER",
+        "WEIDMUELLER",
+        "WEIDMULLER"
+      ],
+      "article_patterns": [
+        "^\\d{10}$"
+      ],
+      "type_patterns": [
+        "^(?:A[234][CT]|ADT|AFS|AIO|AITB|AMC|AEB|ZDU|ZPE|ZDK|ZDL|ZTR|ZQV|WDU|WPE|WDK|WTR|WSI|WNT|WQV|WEW|EW\\s*35|MEW|WAP|ZAP|AEP)\\b"
+      ],
+      "default_end_bracket_id": "weidmuller-wew-35-2"
+    }
+  ],
+  "accessories": {
+    "jumper": {
+      "description_keywords": [
+        "querverbinder",
+        "brücker",
+        "bruecker",
+        "kammbrücke",
+        "kammbruecke",
+        "steckbrücke",
+        "steckbruecke",
+        "querbrücke",
+        "querbruecke",
+        "stufenbrücker",
+        "vertikalbrücker",
+        "cross-connector",
+        "jumper"
+      ],
+      "article_regexes": [
+        "(?i)^285-4[0-9]{2}$",
+        "(?i)^(?:200[0-6]|201[06]|220[0-6])-4[0-9]{2}$",
+        "(?i)^2035-4[0-9]{2}$",
+        "(?i)^FBS\\s*\\d+",
+        "(?i)^ZQV\\s*\\d+",
+        "(?i)^WQV\\s*\\d+"
+      ]
+    },
+    "end_clamp": {
+      "description_keywords": [
+        "endklammer",
+        "endhalter",
+        "schraubenlose endklammer",
+        "end clamp",
+        "end bracket"
+      ],
+      "article_regexes": [
+        "(?i)^249-1(?:01|16|17|97|98)$",
+        "(?i)^209-101$",
+        "(?i)^CLIPFIX",
+        "(?i)^E/(?:NS|UK)",
+        "(?i)^WEW\\b",
+        "(?i)^EW\\s*35",
+        "(?i)^MEW\\b"
+      ]
+    },
+    "end_plate": {
+      "description_keywords": [
+        "abschlussplatte",
+        "zwischenplatte",
+        "trennplatte",
+        "enddeckel",
+        "abschlussteil",
+        "abschluss- und zwischenplatte",
+        "end plate",
+        "intermediate plate",
+        "partition plate"
+      ],
+      "article_regexes": [
+        "(?i)^(?:200[0-9]|201[06]|2022|2035|210[246]|211[06]|220[0-9]|221[06])-(?:1[2346789]|2[24679]|32|66|76)9[1234]$",
+        "(?i)^285-(?:199|499)$",
+        "(?i)^D-(?:PT|PTI|PTV|ST|UT|PTTB|UK)",
+        "(?i)^ATP\\b",
+        "(?i)^(?:ZAP|WAP|AEP)\\b"
+      ]
+    },
+    "nt_accessory": {
+      "description_keywords": [
+        "sammelschienenträger",
+        "sammelschienentraeger",
+        "auflagebock",
+        "sammelschiene",
+        "nullleiterschiene",
+        "n-sammelschiene",
+        "einspeiseklemme für n-sammelschiene",
+        "busbar carrier",
+        "support bracket"
+      ],
+      "article_regexes": [
+        "(?i)^2009-30[45]$",
+        "(?i)^210-13[34]$",
+        "(?i)^AB-(?:PTI|STI|UTI|SS)",
+        "(?i)^AEB\\b",
+        "(?i)^AKG\\b",
+        "(?i)^NLS-CU",
+        "(?i)^SH\\s+",
+        "(?i)^SSCH\\b"
+      ]
+    },
+    "misc_accessory": {
+      "description_keywords": [
+        "markierer",
+        "bezeichnungsschild",
+        "beschriftungsstreifen",
+        "wmb",
+        "zb ",
+        "dekafix",
+        "prüfstecker",
+        "pruefstecker",
+        "prüfbuchse",
+        "pruefbuchse",
+        "gruppenschild",
+        "abdeckung",
+        "warnschild",
+        "schutzkappe",
+        "test plug"
+      ],
+      "article_regexes": [
+        "(?i)^(?:793|2009-11|2009-14|2002-5|2004-5|2006-5)"
+      ]
+    }
+  }
+}

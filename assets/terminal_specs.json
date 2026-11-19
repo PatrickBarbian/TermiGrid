@@ -14656,6 +14656,33 @@
     "image_url": "https://www.wago.com/medias/1024-8271579-DE.jpg?context=bWFzdGVyfGltYWdlc3wxMDc3MTF8aW1hZ2UvanBlZ3xhRGhsTDJoaU55OHhOalUyT0RNNE5EWXhPRFV5Tmk4eE1ESTBYemd5TnpFMU56bGZSRVV1YW5Cbnw2ZmUyYjlmNWI0N2NiODUyZDk2MGQzNzhiNzI1YzAwMmEzMGM1Mzk3ZjYzM2Y1ZDY2YjQ5NTRjOTc2MTliY2Ji"
   },
   {
+    "id": "wago-2202-2701",
+    "name": "2202-2701 (Drücker 2-Etagen L/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2202 Push-in",
+    "levels": 2,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Doppelstockklemme mit Drücker 2,5 mm², L/L, ohne Beschriftungsträger (92,5 mm)",
+    "description_en": "Double-deck terminal block with push-button 2.5 mm², L/L, without marker carrier (92.5 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10,
+    "height_tenths_mm": 925,
+    "article_number": "2202-2701",
+    "product_url": "https://www.wago.com/de/reihenklemmen/doppelstockklemme/p/2202-2701",
+    "image_url": "https://www.wago.com/medias/1024-10728395-DE.jpg?context=bWFzdGVyfGltYWdlc3w3Nzc1N3xpbWFnZS9qcGVnfGFETXdMMmhtWVM4eE5qVTJPVEUyTURVNU56VXpOQzh4TURJMFh6RXdOekk0TXprMVgwUkZMbXB3Wnd8Mzg3OWQ3Y2FiN2IwYTRlM2U0MTc3MmRmNGZkOWMxYzkzODkxZWFlYjRlZjg1MjI3NDdhYzQyNDJmNTZjNTU5OA"
+  },
+  {
     "id": "weidmuller-a3c-15-bl",
     "name": "A3C 1.5 BL (3-Leiter 1,5mm² N Blau)",
     "manufacturer": "Weidmüller",

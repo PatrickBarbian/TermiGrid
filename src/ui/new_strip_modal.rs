@@ -588,6 +588,11 @@ pub enum PendingInstallAction {
         spec_ids: Vec<String>,
         select_inserted: bool,
     },
+    ConfigureImportedStrip {
+        strip_idx: usize,
+        anchor_start: usize,
+        anchor_end: usize,
+    },
 }
 
 /// State of the interactive prompt for NT / 2003 / 2203 / 2005 / 2205 / PTI / AITB installation terminals.
@@ -605,6 +610,10 @@ pub struct InstallPromptDialogState {
     pub add_intermediate_busbar_supports: bool,
     pub intermediate_support_spec_id: String,
     pub strip_already_has_carriers: bool,
+    /// Optional context title override (e.g. `"NT-Konfiguration für -X2 (1/2)"` during sequential PDF import).
+    pub title_context: Option<String>,
+    /// Optional NT accessory hints extracted from the imported PDF BOM for the user's reference.
+    pub pdf_nt_hints: Vec<String>,
 }
 
 impl Default for InstallPromptDialogState {
@@ -622,6 +631,8 @@ impl Default for InstallPromptDialogState {
             add_intermediate_busbar_supports: true,
             intermediate_support_spec_id: "wago-2009-304".to_string(),
             strip_already_has_carriers: false,
+            title_context: None,
+            pdf_nt_hints: Vec::new(),
         }
     }
 }
@@ -646,6 +657,8 @@ impl InstallPromptDialogState {
         self.supply_spec_id = spec.recommended_n_supply_spec_id().to_string();
         self.strip_already_has_supply = strip_already_has_supply;
         self.strip_already_has_carriers = strip_already_has_carriers;
+        self.title_context = None;
+        self.pdf_nt_hints.clear();
 
         if let Some(outer_id) = spec.recommended_outer_busbar_carrier_spec_id() {
             self.outer_carrier_spec_id = outer_id.to_string();
@@ -661,6 +674,25 @@ impl InstallPromptDialogState {
             self.intermediate_support_spec_id.clear();
             self.add_intermediate_busbar_supports = false;
         }
+    }
+
+    pub fn open_for_imported_strip(
+        &mut self,
+        action: PendingInstallAction,
+        spec: &crate::catalog::TerminalSpec,
+        title_context: String,
+        pdf_nt_hints: Vec<String>,
+        strip_already_has_supply: bool,
+        strip_already_has_carriers: bool,
+    ) {
+        self.open_for_action(
+            action,
+            spec,
+            strip_already_has_supply,
+            strip_already_has_carriers,
+        );
+        self.title_context = Some(title_context);
+        self.pdf_nt_hints = pdf_nt_hints;
     }
 }
 
@@ -704,12 +736,17 @@ pub fn show_install_supply_prompt_modal(
 
     let mut resolution: Option<InstallPromptResolution> = None;
     let mut open = state.open;
+    let modal_title = state
+        .title_context
+        .as_deref()
+        .unwrap_or("Installations- / NT-Klemme, N-Einspeisung & Sammelschienenträger")
+        .to_string();
 
     show_responsive_modal(
         ctx,
         "install_supply_prompt_modal",
         UiIcon::Bolt,
-        "Installations- / NT-Klemme, N-Einspeisung & Sammelschienenträger",
+        &modal_title,
         600.0,
         &mut open,
         state,
@@ -723,6 +760,29 @@ pub fn show_install_supply_prompt_modal(
                 )
                 .wrap(),
             );
+            if !state.pdf_nt_hints.is_empty() {
+                ui.add_space(4.0);
+                egui::Frame::group(ui.style()).show(ui, |ui| {
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new("Hinweise aus PDF-Stückliste:")
+                                .small()
+                                .strong(),
+                        )
+                        .wrap(),
+                    );
+                    for h in &state.pdf_nt_hints {
+                        ui.add(
+                            egui::Label::new(
+                                egui::RichText::new(format!("• {h}"))
+                                    .small()
+                                    .color(secondary_text_color(ui)),
+                            )
+                            .wrap(),
+                        );
+                    }
+                });
+            }
             ui.add_space(6.0);
 
             // 1. NT-Klemmen-Auswahl (N-Trennschlitten vs. Standard)

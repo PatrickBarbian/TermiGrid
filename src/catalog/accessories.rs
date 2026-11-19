@@ -154,6 +154,8 @@ fn resolve_wago(spec: &TerminalSpec) -> TerminalAccessories {
             "2002-2991 (grau) / 2002-2992 (orange)"
         } else if id.contains("-240") || id.contains("-243") {
             "2002-2491 (grau) / 2002-2492 (orange)"
+        } else if id.contains("-270") {
+            "2002-2791 (grau) / 2002-2792 (orange)"
         } else if spec.levels == 3 {
             "2002-3291 (3-Etagen)"
         } else if spec.levels == 2 {

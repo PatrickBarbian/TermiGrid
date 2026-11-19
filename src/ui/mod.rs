@@ -6,12 +6,13 @@ pub mod library_modal;
 pub mod logos;
 pub mod net;
 pub mod new_strip_modal;
+pub mod pdf_import_modal;
 pub mod platform_io;
 pub mod product_media;
 pub mod theme;
 pub mod updater;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::PathBuf;
 
 use eframe::egui;
@@ -24,6 +25,7 @@ use crate::export::{
     csv::export_to_csv, dxf::export_to_dxf, xlsx::export_to_xlsx, ExportOptions, PrintOrder,
 };
 use crate::i18n::{strings, Language};
+use crate::import::{import_pdf_bytes, import_pdf_path, planner::instantiate_imported_strip};
 use crate::model::bridging::{
     calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
 };
@@ -54,9 +56,10 @@ use crate::ui::new_strip_modal::{
     show_spec_picker, InstallPromptDialogState, InstallPromptResolution, InstallSupplyPlacement,
     NewStripDialogState, PendingInstallAction,
 };
+use crate::ui::pdf_import_modal::{show_pdf_import_modal, PdfImportDialogState};
 use crate::ui::platform_io::{
-    pick_export_csv_path, pick_export_dxf_path, pick_export_xlsx_path, pick_open_project_path,
-    pick_save_project_path,
+    pick_export_csv_path, pick_export_dxf_path, pick_export_xlsx_path, pick_import_pdf_path,
+    pick_open_project_path, pick_save_project_path,
 };
 use crate::ui::product_media::{
     show_end_bracket_preview_card, show_product_preview_card, ProductMediaCache,
@@ -80,6 +83,18 @@ enum MobilePane {
     Strips,
     Cad,
     Inspector,
+}
+
+#[derive(Debug, Clone)]
+struct NtQueueEntry {
+    strip_idx: usize,
+    strip_bmk: String,
+    anchor_start: usize,
+    anchor_end: usize,
+    base_spec_id: String,
+    nt_hints: Vec<String>,
+    ordinal: usize,
+    total: usize,
 }
 
 pub struct TermiGridApp {
@@ -144,6 +159,10 @@ pub struct TermiGridApp {
     strip_library: StripLibrary,
     save_strip_library_modal: SaveStripLibraryDialogState,
     strip_library_modal: StripLibraryDialogState,
+
+    // Intelligent PDF BOM Importer & sequential NT configuration queue
+    pdf_import_modal: PdfImportDialogState,
+    nt_popup_queue: VecDeque<NtQueueEntry>,
 }
 
 impl TermiGridApp {
@@ -205,6 +224,8 @@ impl TermiGridApp {
             strip_library,
             save_strip_library_modal: SaveStripLibraryDialogState::default(),
             strip_library_modal: StripLibraryDialogState::default(),
+            pdf_import_modal: PdfImportDialogState::default(),
+            nt_popup_queue: VecDeque::new(),
         }
     }
 
@@ -294,6 +315,38 @@ impl TermiGridApp {
         }
     }
 
+    fn import_pdf_dialog(&mut self) {
+        if let Some(path) = pick_import_pdf_path() {
+            let label = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("Stückliste.pdf")
+                .to_string();
+            match import_pdf_path(&path, &self.catalog) {
+                Ok(plan) => {
+                    self.pdf_import_modal.open_with_plan(label, plan);
+                }
+                Err(err) => {
+                    self.pdf_import_modal.open_with_error(label, err.clone());
+                    self.status_message = format!("PDF-Import fehlgeschlagen: {err}");
+                }
+            }
+        }
+    }
+
+    fn import_pdf_bytes_with_label(&mut self, source_label: String, bytes: &[u8]) {
+        match import_pdf_bytes(bytes, &self.catalog) {
+            Ok(plan) => {
+                self.pdf_import_modal.open_with_plan(source_label, plan);
+            }
+            Err(err) => {
+                self.pdf_import_modal
+                    .open_with_error(source_label, err.clone());
+                self.status_message = format!("PDF-Import fehlgeschlagen: {err}");
+            }
+        }
+    }
+
     fn export_xlsx(&mut self) {
         let s = strings(self.lang);
         let default_name = format!("{}_labels.xlsx", sanitize_filename(&self.project.project_name));
@@ -368,6 +421,31 @@ impl TermiGridApp {
 impl eframe::App for TermiGridApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let s = strings(self.lang);
+
+        // Drag & Drop support for EPLAN PDF parts lists
+        let dropped_files = ui.ctx().input(|i| i.raw.dropped_files.clone());
+        for file in dropped_files {
+            let path = file.path();
+            let is_pdf = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("pdf"));
+            if is_pdf {
+                let label = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("Stückliste.pdf")
+                    .to_string();
+                match file.bytes() {
+                    Ok(bytes) => self.import_pdf_bytes_with_label(label, &bytes),
+                    Err(e) => self.pdf_import_modal.open_with_error(
+                        label,
+                        format!("PDF-Datei konnte nicht gelesen werden: {e}"),
+                    ),
+                }
+                break;
+            }
+        }
 
         // Global keyboard shortcuts when no text field is active
         if !ui.ctx().egui_wants_keyboard_input() && self.canvas_state.editing_tier.is_none() {
@@ -593,6 +671,14 @@ impl eframe::App for TermiGridApp {
                 if icon_button(ui, UiIcon::FolderOpen, s.menu_open_project).clicked() {
                     self.open_project();
                 }
+                if icon_button(ui, UiIcon::ImportPdf, "Stückliste (PDF)")
+                    .on_hover_text(
+                        "EPLAN-Stückliste (.pdf) intelligent importieren (auch per Drag & Drop)",
+                    )
+                    .clicked()
+                {
+                    self.import_pdf_dialog();
+                }
                 if has_active_project
                     && success_icon_button(ui, UiIcon::Save, s.menu_save_project).clicked()
                 {
@@ -763,6 +849,124 @@ impl eframe::App for TermiGridApp {
             s,
         ) {
             self.apply_install_prompt_resolution(res);
+        }
+
+        // Intelligent EPLAN PDF BOM import modal
+        if let Some(selected_imports) = show_pdf_import_modal(
+            ui.ctx(),
+            &mut self.pdf_import_modal,
+            &self.catalog,
+            s,
+        ) {
+            if self.show_welcome {
+                self.project.strips.clear();
+                self.undo_stack.clear();
+                self.redo_stack.clear();
+                self.current_file = None;
+                if self.project.project_name.trim().is_empty()
+                    || self.project.project_name == "Neues Projekt"
+                {
+                    let stem = self
+                        .pdf_import_modal
+                        .source_label
+                        .strip_suffix(".pdf")
+                        .or_else(|| self.pdf_import_modal.source_label.strip_suffix(".PDF"))
+                        .unwrap_or(&self.pdf_import_modal.source_label)
+                        .trim();
+                    if !stem.is_empty() {
+                        self.project.project_name = stem.to_string();
+                    }
+                }
+            }
+
+            let first_new_idx = self.project.strips.len();
+            let mut nt_pending = Vec::new();
+            let mut imported_count = 0usize;
+
+            for item in selected_imports {
+                if let Some((strip, nt_zone)) = instantiate_imported_strip(
+                    &item.plan,
+                    item.variant_index,
+                    item.include_end_clamps,
+                    &self.catalog,
+                ) {
+                    let strip_idx = self.project.strips.len();
+                    let bmk = strip.name.clone();
+                    let block_count = strip.blocks.len();
+                    self.project.strips.push(strip);
+                    imported_count += 1;
+
+                    if item.plan.has_nt_or_install
+                        && let Some(base_spec_id) = item.plan.nt_anchor_spec_id
+                    {
+                        let (a0, a1) = nt_zone.unwrap_or((0, block_count));
+                        nt_pending.push((strip_idx, bmk, a0, a1, base_spec_id, item.plan.nt_hints));
+                    }
+                }
+            }
+
+            self.nt_popup_queue.clear();
+            let total_nt = nt_pending.len();
+            for (i, (strip_idx, strip_bmk, a0, a1, base_spec_id, nt_hints)) in
+                nt_pending.into_iter().enumerate()
+            {
+                self.nt_popup_queue.push_back(NtQueueEntry {
+                    strip_idx,
+                    strip_bmk,
+                    anchor_start: a0,
+                    anchor_end: a1,
+                    base_spec_id,
+                    nt_hints,
+                    ordinal: i + 1,
+                    total: total_nt,
+                });
+            }
+
+            if imported_count > 0 {
+                self.active_strip = first_new_idx.min(self.project.strips.len().saturating_sub(1));
+                self.selected_blocks.clear();
+                self.selected_end_bracket = None;
+                self.show_welcome = false;
+                self.active_tab = ActiveTab::Editor;
+                self.mobile_pane = MobilePane::Cad;
+                self.status_message = if total_nt > 0 {
+                    format!(
+                        "{imported_count} Klemmleisten aus PDF importiert ({total_nt}× NT-Konfiguration ausstehend)."
+                    )
+                } else {
+                    format!("{imported_count} Klemmleisten aus PDF importiert.")
+                };
+            }
+        }
+
+        // Sequential NT configuration queue (shows one imported NT strip at a time, never overlapping)
+        if !self.install_prompt_modal.open
+            && self.install_prompt_modal.action.is_none()
+            && !self.pdf_import_modal.open
+            && let Some(next_nt) = self.nt_popup_queue.pop_front()
+            && let Some(spec) = self.catalog.find_by_id(&next_nt.base_spec_id)
+        {
+            let has_supply = self.strip_has_n_supply(next_nt.strip_idx);
+            let has_carriers = self.strip_has_busbar_carriers(next_nt.strip_idx);
+            let title_ctx = format!(
+                "NT-Konfiguration für {} ({}/{})",
+                next_nt.strip_bmk, next_nt.ordinal, next_nt.total
+            );
+            self.active_strip = next_nt
+                .strip_idx
+                .min(self.project.strips.len().saturating_sub(1));
+            self.install_prompt_modal.open_for_imported_strip(
+                PendingInstallAction::ConfigureImportedStrip {
+                    strip_idx: next_nt.strip_idx,
+                    anchor_start: next_nt.anchor_start,
+                    anchor_end: next_nt.anchor_end,
+                },
+                spec,
+                title_ctx,
+                next_nt.nt_hints,
+                has_supply,
+                has_carriers,
+            );
         }
 
         // Cross-platform Info & Open-Source Licenses modal dialog
@@ -1332,6 +1536,73 @@ impl TermiGridApp {
                 }
                 self.inspector_spec_id = effective_spec.id.clone();
             }
+            PendingInstallAction::ConfigureImportedStrip {
+                strip_idx,
+                anchor_start,
+                anchor_end,
+            } => {
+                if let Some(strip) = self.project.strips.get_mut(strip_idx) {
+                    let start = anchor_start.min(strip.blocks.len());
+                    let end = anchor_end.min(strip.blocks.len());
+                    let mut z0 = start;
+                    let mut z1 = end;
+
+                    if z1 > z0 {
+                        let convert_indices: Vec<usize> = (z0..z1)
+                            .filter(|&i| {
+                                self.catalog
+                                    .find_by_id(&strip.blocks[i].spec_id)
+                                    .is_some_and(|sp| sp.is_installation_or_nt_terminal())
+                            })
+                            .collect();
+                        if !convert_indices.is_empty() {
+                            strip.reassign_blocks(&convert_indices, effective_spec);
+                        }
+                    }
+
+                    if let Some(sup) = supply_spec {
+                        match res.supply_placement {
+                            InstallSupplyPlacement::BeforeGroup => {
+                                (z0, z1) = place_n_supply_in_zone(
+                                    strip,
+                                    z0,
+                                    z1,
+                                    sup,
+                                    true,
+                                    &self.catalog,
+                                );
+                            }
+                            InstallSupplyPlacement::AfterGroup => {
+                                (z0, z1) = place_n_supply_in_zone(
+                                    strip,
+                                    z0,
+                                    z1,
+                                    sup,
+                                    false,
+                                    &self.catalog,
+                                );
+                            }
+                            InstallSupplyPlacement::None => {}
+                        }
+                    }
+
+                    if z1 > z0
+                        && z1 <= strip.blocks.len()
+                        && (outer_carrier.is_some() || intermediate_support.is_some())
+                    {
+                        apply_n_busbar_carriers_around(
+                            strip,
+                            z0,
+                            z1,
+                            &self.catalog,
+                            &carrier_plan,
+                        );
+                    }
+                    self.active_strip = strip_idx;
+                    self.selected_blocks.clear();
+                    self.selected_end_bracket = None;
+                }
+            }
         }
     }
 
@@ -1490,6 +1761,18 @@ impl TermiGridApp {
                                     .clicked()
                                 {
                                     self.strip_library_modal.open_browser();
+                                }
+                                if icon_button(
+                                    ui,
+                                    UiIcon::ImportPdf,
+                                    "PDF-Stückliste importieren",
+                                )
+                                .on_hover_text(
+                                    "EPLAN-Stückliste (.pdf) automatisch erkennen & übernehmen (auch per Drag & Drop)",
+                                )
+                                .clicked()
+                                {
+                                    self.import_pdf_dialog();
                                 }
                             });
 

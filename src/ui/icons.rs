@@ -73,6 +73,7 @@ pub enum UiIcon {
     ConvertNt,
     PoleBlock1,
     PoleBlock3,
+    ImportPdf,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -641,6 +642,27 @@ pub fn draw_icon(painter: &Painter, rect: Rect, icon: UiIcon, color: Color32) {
             let r_pe = Rect::from_min_max(p(0.58, -0.58), p(0.80, 0.58));
             painter.rect_stroke(r_n, CornerRadius::same(1), thin, StrokeKind::Inside);
             painter.rect_stroke(r_pe, CornerRadius::same(1), thin, StrokeKind::Inside);
+        }
+        UiIcon::ImportPdf => {
+            // Document outline with folded corner + incoming arrow from left/top
+            let doc = vec![
+                p(-0.35, -0.75),
+                p(0.26, -0.75),
+                p(0.62, -0.38),
+                p(0.62, 0.75),
+                p(-0.55, 0.75),
+                p(-0.55, 0.25),
+            ];
+            painter.add(Shape::line(doc, st));
+            painter.line_segment([p(0.26, -0.75), p(0.26, -0.38)], thin);
+            painter.line_segment([p(0.26, -0.38), p(0.62, -0.38)], thin);
+            // Incoming right-down arrow into sheet
+            painter.line_segment([p(-0.78, -0.18), p(0.08, -0.18)], st);
+            painter.line_segment([p(-0.18, -0.44), p(0.10, -0.18)], st);
+            painter.line_segment([p(-0.18, 0.08), p(0.10, -0.18)], st);
+            // Table row lines inside document
+            painter.line_segment([p(-0.22, 0.24), p(0.36, 0.24)], thin);
+            painter.line_segment([p(-0.22, 0.48), p(0.36, 0.48)], thin);
         }
     }
 }
