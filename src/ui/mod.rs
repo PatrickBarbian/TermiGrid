@@ -101,6 +101,13 @@ enum SidebarDeckTab {
     Library,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Step3ViewMode {
+    CadOverview,
+    Bridge,
+    Eplan,
+}
+
 #[derive(Debug, Clone)]
 struct NtQueueEntry {
     strip_idx: usize,
@@ -1447,6 +1454,91 @@ impl TermiGridApp {
         }
     }
 
+    fn clear_transient_canvas_interaction(&mut self) {
+        self.canvas_state.drag_start = None;
+        self.canvas_state.drag_current = None;
+        self.canvas_state.is_marquee_active = false;
+        self.canvas_state.bridge_drag_action = None;
+        self.canvas_state.bridge_painted.clear();
+        self.canvas_state.bridge_last_pos = None;
+        self.canvas_state.editing_tier = None;
+    }
+
+    fn current_step3_mode(&self) -> Step3ViewMode {
+        if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+            Step3ViewMode::Bridge
+        } else if self.canvas_state.e_planer_mode {
+            Step3ViewMode::Eplan
+        } else {
+            Step3ViewMode::CadOverview
+        }
+    }
+
+    fn enter_edit_mode(&mut self) {
+        self.clear_transient_canvas_interaction();
+        if let Some(strip) = self.project.strips.get_mut(self.active_strip) {
+            strip.end_plates_generated = false;
+        }
+        self.canvas_state.e_planer_mode = false;
+        if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+            self.canvas_state.interaction_mode = CanvasInteractionMode::default();
+        }
+        self.notify(
+            ToastTone::Info,
+            "Bearbeitungsmodus aktiv — Klemmen anpassen und danach Endplatten generieren.",
+        );
+    }
+
+    fn set_step3_mode(&mut self, mode: Step3ViewMode) {
+        if self.active_strip >= self.project.strips.len() {
+            return;
+        }
+        self.clear_transient_canvas_interaction();
+        if !self.project.strips[self.active_strip].end_plates_generated
+            && !self.project.strips[self.active_strip].blocks.is_empty()
+        {
+            self.generate_active_strip();
+        }
+        match mode {
+            Step3ViewMode::CadOverview => {
+                self.canvas_state.e_planer_mode = false;
+                if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+                    self.canvas_state.interaction_mode = CanvasInteractionMode::default();
+                }
+                self.notify(ToastTone::Info, "CAD-Ansicht aktiv.");
+            }
+            Step3ViewMode::Bridge => {
+                self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
+                self.canvas_state.e_planer_mode = false;
+                self.selected_end_bracket = None;
+                let strip = &mut self.project.strips[self.active_strip];
+                if strip.potentials.is_empty() {
+                    let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
+                    self.active_potential_id = Some(id);
+                } else if self
+                    .active_potential_id
+                    .is_none_or(|id| !strip.potentials.iter().any(|p| p.id == id))
+                {
+                    self.active_potential_id = strip.potentials.first().map(|p| p.id);
+                }
+                self.notify(
+                    ToastTone::Info,
+                    "Brücken-Modus aktiv — Klemmen-Ebenen im CAD anklicken oder überstreichen.",
+                );
+            }
+            Step3ViewMode::Eplan => {
+                self.canvas_state.e_planer_mode = true;
+                if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+                    self.canvas_state.interaction_mode = CanvasInteractionMode::default();
+                }
+                self.notify(
+                    ToastTone::Info,
+                    "ePlan 1:1 Aufbaubild aktiv — maßstabsgetreuer DXF-Export bereit.",
+                );
+            }
+        }
+    }
+
     fn execute_palette_command(&mut self, ctx: &egui::Context, cmd: PaletteCommand) {
         match cmd {
             PaletteCommand::GenerateActiveStrip => self.generate_active_strip(),
@@ -1482,41 +1574,17 @@ impl TermiGridApp {
             PaletteCommand::ExportCsv => self.export_csv(),
             PaletteCommand::ExportDxf => self.export_dxf(),
             PaletteCommand::ToggleBridgeMode => {
-                if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
-                    self.canvas_state.interaction_mode = CanvasInteractionMode::default();
-                    self.notify(ToastTone::Info, "Brücken-Modus beendet.");
+                if self.current_step3_mode() == Step3ViewMode::Bridge {
+                    self.set_step3_mode(Step3ViewMode::CadOverview);
                 } else {
-                    self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
-                    self.canvas_state.e_planer_mode = false;
-                    self.selected_end_bracket = None;
-                    if let Some(strip) = self.project.strips.get_mut(self.active_strip) {
-                        if strip.potentials.is_empty() {
-                            let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
-                            self.active_potential_id = Some(id);
-                        } else if self.active_potential_id.is_none() {
-                            self.active_potential_id = strip.potentials.first().map(|p| p.id);
-                        }
-                    }
-                    self.notify(
-                        ToastTone::Info,
-                        "Brücken-Modus aktiv — Klemmen-Ebenen anklicken oder überstreichen.",
-                    );
+                    self.set_step3_mode(Step3ViewMode::Bridge);
                 }
             }
             PaletteCommand::ToggleEplanMode => {
-                self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
-                if self.canvas_state.e_planer_mode
-                    && self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign
-                {
-                    self.canvas_state.interaction_mode = CanvasInteractionMode::SelectBox;
-                }
-                if self.canvas_state.e_planer_mode {
-                    self.notify(
-                        ToastTone::Info,
-                        "ePlan 1:1 Aufbaubild aktiv — maßstabsgetreuer DXF-Export bereit.",
-                    );
+                if self.current_step3_mode() == Step3ViewMode::Eplan {
+                    self.set_step3_mode(Step3ViewMode::CadOverview);
                 } else {
-                    self.notify(ToastTone::Info, "Standard CAD-Ansicht aktiv.");
+                    self.set_step3_mode(Step3ViewMode::Eplan);
                 }
             }
             PaletteCommand::ConvertNToNt => {
@@ -3849,13 +3917,19 @@ impl TermiGridApp {
         let mut deferred_convert: Option<bool> = None;
         let mut deferred_generate = false;
         let mut deferred_reedit = false;
-        let mut deferred_toggle_bridge = false;
-        let mut deferred_toggle_eplan = false;
+        let mut deferred_step3_mode: Option<Step3ViewMode> = None;
         let mut deferred_export_xlsx = false;
         let mut deferred_export_csv = false;
         let mut deferred_export_dxf = false;
 
         let is_generated = self.project.strips[self.active_strip].end_plates_generated;
+        // Keep Step 1 clean when editing or switching to an ungenerated strip
+        if !is_generated {
+            self.canvas_state.e_planer_mode = false;
+            if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
+                self.canvas_state.interaction_mode = CanvasInteractionMode::default();
+            }
+        }
         let has_blocks = !self.project.strips[self.active_strip].blocks.is_empty();
         let plates_count = if is_generated {
             calculate_end_plates(&self.project.strips[self.active_strip], &self.catalog).len()
@@ -3938,17 +4012,33 @@ impl TermiGridApp {
                         {
                             deferred_reedit = true;
                         }
-                        if selectable_icon_button(
-                            ui,
-                            is_bridge_mode,
-                            UiIcon::ModeBridge,
-                            "Brücken-Modus",
-                        )
-                        .on_hover_text(s.mode_bridge_tip)
-                        .clicked()
-                        {
-                            deferred_toggle_bridge = true;
+
+                        // Explicit 3-way view/mode switcher so every Step 3 mode transitions 1-click to any other mode
+                        let mut active_mode = self.current_step3_mode();
+                        let step3_modes = [
+                            (
+                                Step3ViewMode::CadOverview,
+                                UiIcon::CadEditor,
+                                "CAD-Ansicht",
+                                "Standard-CAD-Ansicht mit Endplatten & Beschriftung",
+                            ),
+                            (
+                                Step3ViewMode::Bridge,
+                                UiIcon::ModeBridge,
+                                "Brücken-Modus",
+                                s.mode_bridge_tip,
+                            ),
+                            (
+                                Step3ViewMode::Eplan,
+                                UiIcon::ModeEplan,
+                                "ePlan-Modus",
+                                s.mode_eplaner_tip,
+                            ),
+                        ];
+                        if segmented_control(ui, &mut active_mode, &step3_modes) {
+                            deferred_step3_mode = Some(active_mode);
                         }
+
                         if subtle_success_icon_button(
                             ui,
                             UiIcon::ExportXlsx,
@@ -3966,17 +4056,6 @@ impl TermiGridApp {
                             .clicked()
                         {
                             deferred_export_csv = true;
-                        }
-                        if selectable_icon_button(
-                            ui,
-                            is_eplan_mode,
-                            UiIcon::ModeEplan,
-                            "ePlan-Modus",
-                        )
-                        .on_hover_text(s.mode_eplaner_tip)
-                        .clicked()
-                        {
-                            deferred_toggle_eplan = true;
                         }
                         if is_eplan_mode
                             && icon_button(ui, UiIcon::ExportDxf, "DXF (1:1 mm)")
@@ -4318,50 +4397,9 @@ impl TermiGridApp {
             }
             self.generate_active_strip();
         } else if deferred_reedit {
-            self.project.strips[self.active_strip].end_plates_generated = false;
-            self.canvas_state.e_planer_mode = false;
-            if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
-                self.canvas_state.interaction_mode = CanvasInteractionMode::default();
-            }
-            self.notify(
-                ToastTone::Info,
-                "Bearbeitungsmodus aktiv — Klemmen anpassen und danach Endplatten generieren.",
-            );
-        } else if deferred_toggle_bridge {
-            if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
-                self.canvas_state.interaction_mode = CanvasInteractionMode::default();
-                self.notify(ToastTone::Info, "Brücken-Modus beendet.");
-            } else {
-                self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
-                self.canvas_state.e_planer_mode = false;
-                self.selected_end_bracket = None;
-                let strip = &mut self.project.strips[self.active_strip];
-                if strip.potentials.is_empty() {
-                    let id = strip.add_potential("+24V", POTENTIAL_PALETTE[0]);
-                    self.active_potential_id = Some(id);
-                } else if self.active_potential_id.is_none() {
-                    self.active_potential_id = strip.potentials.first().map(|p| p.id);
-                }
-                self.notify(
-                    ToastTone::Info,
-                    "Brücken-Modus aktiv — Klemmen-Ebenen im CAD anklicken oder überstreichen.",
-                );
-            }
-        } else if deferred_toggle_eplan {
-            self.canvas_state.e_planer_mode = !self.canvas_state.e_planer_mode;
-            if self.canvas_state.e_planer_mode
-                && self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign
-            {
-                self.canvas_state.interaction_mode = CanvasInteractionMode::default();
-            }
-            if self.canvas_state.e_planer_mode {
-                self.notify(
-                    ToastTone::Info,
-                    "ePlan 1:1 Aufbaubild aktiv — maßstabsgetreuer DXF-Export bereit.",
-                );
-            } else {
-                self.notify(ToastTone::Info, "Standard CAD-Ansicht aktiv.");
-            }
+            self.enter_edit_mode();
+        } else if let Some(next_mode) = deferred_step3_mode {
+            self.set_step3_mode(next_mode);
         } else if deferred_export_xlsx {
             self.export_xlsx();
         } else if deferred_export_csv {
