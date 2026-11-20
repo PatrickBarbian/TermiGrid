@@ -3,6 +3,7 @@ use egui::{
     Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
 };
 
+use crate::i18n::{tr, Language};
 use crate::ui::theme::tokens;
 
 /// Consistent vector icon stroke width across all UI pictograms.
@@ -1097,6 +1098,15 @@ pub fn compact_mfg_badge(ui: &mut Ui, manufacturer: &str) {
 
 /// Renders a responsive modal window sized to `min(92vw, desired_w)` × `max 88vh`,
 /// with a subtle backdrop scrim, fixed header, scrollable body, and fixed footer.
+pub fn set_active_lang(ctx: &Context, lang: Language) {
+    ctx.data_mut(|d| d.insert_temp(egui::Id::unique("termi_active_lang"), lang));
+}
+
+pub fn active_lang(ctx: &Context) -> Language {
+    ctx.data(|d| d.get_temp::<Language>(egui::Id::unique("termi_active_lang")))
+        .unwrap_or_default()
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn show_responsive_modal<T>(
     ctx: &Context,
@@ -1146,6 +1156,7 @@ pub fn show_responsive_modal<T>(
     let body_max_h = (max_h - header_and_footer_reserve).max(90.0);
 
     let mut close_requested = false;
+    let lang = active_lang(ctx);
 
     egui::Window::new("")
         .id(egui::Id::unique(id))
@@ -1189,7 +1200,7 @@ pub fn show_responsive_modal<T>(
                     egui::Label::new(egui::RichText::new(title).strong().size(16.5)).wrap(),
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if icon_only_button(ui, UiIcon::Close, false, "Schließen").clicked() {
+                    if icon_only_button(ui, UiIcon::Close, false, tr::close(lang)).clicked() {
                         close_requested = true;
                     }
                 });

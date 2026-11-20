@@ -8,7 +8,7 @@ use egui::{
 
 use crate::catalog::accessories::EndBracketSpec;
 use crate::catalog::TerminalSpec;
-use crate::i18n::Language;
+use crate::i18n::{tr, Language};
 use crate::model::TierColor;
 use crate::ui::icons::{icon_button, UiIcon};
 use crate::ui::logos::{show_logo_badge, BrandLogos};
@@ -314,6 +314,7 @@ pub fn show_product_preview_card(
     open_product_label: &str,
     chambers_label: &str,
     height_label: &str,
+    lang: Language,
 ) {
     let dark = ui.visuals().dark_mode;
     let sec = secondary_text_color(ui);
@@ -363,9 +364,10 @@ pub fn show_product_preview_card(
             ui.add(
                 egui::Label::new(
                     egui::RichText::new(format!(
-                        "{:.1} mm · {} Etagen",
+                        "{:.1} mm · {} {}",
                         f32::from(spec.width_tenths_mm) / 10.0,
-                        spec.levels
+                        spec.levels,
+                        tr::levels_summary(lang, spec.levels),
                     ))
                     .small(),
                 )
@@ -390,7 +392,7 @@ pub fn show_product_preview_card(
                 );
             }
             let slot_summary = if slots == 0 {
-                format!("0× {chambers_label} (nicht brückbar)")
+                tr::non_bridgeable_chambers(lang, chambers_label)
             } else {
                 format!("{slots}× {chambers_label} (max. {max_poles}p)")
             };

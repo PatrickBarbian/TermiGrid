@@ -7,7 +7,7 @@ use egui::{
 
 use crate::catalog::accessories::{find_end_bracket, EndBracketSpec, EndPlatePlacement};
 use crate::catalog::TerminalCatalog;
-use crate::i18n::Strings;
+use crate::i18n::{tr, Language, Strings};
 use crate::model::bridging::BridgePlan;
 use crate::model::{TerminalBlock, TerminalStrip, TierColor};
 use crate::ui::icons::{draw_icon, UiIcon};
@@ -1194,11 +1194,7 @@ pub fn show_cad_canvas(
                     && qa_rect.expand(4.0).contains(hover_pos)
                     && let Some(blk) = strip.blocks.get(target_idx)
                 {
-                    let tip = format!(
-                        "Gleiche Klemme direkt nach #{} hinzufügen ({})",
-                        target_idx + 1,
-                        blk.spec_name
-                    );
+                    let tip = tr::insert_same_after_canvas(strings.lang, target_idx, &blk.spec_name);
                     response.on_hover_text_at_pointer(tip);
                 } else if let Some((_, is_left)) = bracket_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
                 {
@@ -1206,6 +1202,11 @@ pub fn show_cad_canvas(
                         strings.end_bracket_left
                     } else {
                         strings.end_bracket_right
+                    };
+                    let mounting = if strings.lang == Language::De {
+                        end_bracket.mounting_de
+                    } else {
+                        end_bracket.mounting_en
                     };
                     let tip = format!(
                         "{} ({}): {}\n{} | Art.-Nr. {} | {:.1} mm | {}: {:.1} mm\n{}",
@@ -1217,7 +1218,7 @@ pub fn show_cad_canvas(
                         f32::from(end_bracket.width_tenths_mm) / 10.0,
                         strings.height_label,
                         f32::from(end_bracket.height_tenths_mm) / 10.0,
-                        end_bracket.mounting_de,
+                        mounting,
                     );
                     response.on_hover_text_at_pointer(tip);
                 } else if let Some((_, plate)) = plate_hit_rects.iter().find(|(r, _)| r.contains(hover_pos))
@@ -1255,11 +1256,7 @@ pub fn show_cad_canvas(
                         "{:.1} mm{height_str} | {} {}",
                         f32::from(block.width_tenths_mm) / 10.0,
                         block.tiers.len(),
-                        if block.tiers.len() == 1 {
-                            "Ebene"
-                        } else {
-                            "Ebenen"
-                        }
+                        tr::levels_summary(strings.lang, block.tiers.len()),
                     ));
                     let pe_count = block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
                     for (t_idx, tier) in block.tiers.iter().enumerate().rev() {
@@ -2438,6 +2435,7 @@ pub fn draw_mini_eplan_preview(
     strip: &TerminalStrip,
     catalog: &TerminalCatalog,
     height: f32,
+    lang: Language,
 ) {
     let dark = ui.visuals().dark_mode;
     let t = crate::ui::theme::ThemeTokens::for_mode(dark);
@@ -2479,7 +2477,7 @@ pub fn draw_mini_eplan_preview(
         painter.text(
             rect.center(),
             Align2::CENTER_CENTER,
-            "Leere Klemmleiste",
+            tr::empty_strip_canvas(lang),
             FontId::proportional(10.5),
             t.text_muted,
         );

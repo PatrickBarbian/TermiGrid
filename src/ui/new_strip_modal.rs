@@ -4,7 +4,7 @@ use crate::catalog::accessories::{
     all_end_brackets, find_end_bracket, DEFAULT_END_BRACKET_ID,
 };
 use crate::catalog::TerminalCatalog;
-use crate::i18n::{Language, Strings};
+use crate::i18n::{tr, Language, Strings};
 use crate::model::{StripSequenceMode, TerminalStrip};
 use crate::ui::icons::{
     compact_mfg_badge, draw_icon, icon_button, icon_only_button, primary_icon_button,
@@ -143,17 +143,17 @@ pub fn show_new_strip_modal(
                         }
                     }
 
-                    ui.label("Zählfolge");
+                    ui.label(tr::sequence_label_long(lang));
                     ui.horizontal_wrapped(|ui| {
                         ui.radio_value(
                             &mut state.sequence_mode,
                             StripSequenceMode::ByBlock,
-                            "Klemmenweise (1,2 | 3,4)",
+                            tr::seq_by_block(lang),
                         );
                         ui.radio_value(
                             &mut state.sequence_mode,
                             StripSequenceMode::ByLevel,
-                            "Ebenenweise (E1: 1,2,3 | E2: 4,5,6)",
+                            tr::seq_by_level_long(lang),
                         );
                     });
                     ui.end_row();
@@ -186,6 +186,7 @@ pub fn show_new_strip_modal(
                     strings.open_product_page,
                     strings.bridge_chambers_unit,
                     strings.height_label,
+                    lang,
                 );
             }
 
@@ -423,7 +424,8 @@ pub fn show_spec_picker(
                 .hint_text(search_hint)
                 .desired_width(field_w),
         );
-        if has_query && icon_only_button(ui, UiIcon::Clear, false, "Suche leeren").clicked() {
+        if has_query && icon_only_button(ui, UiIcon::Clear, false, tr::clear_search(lang)).clicked()
+        {
             search_query.clear();
         }
     });
@@ -437,12 +439,9 @@ pub fn show_spec_picker(
 
     if has_query && manufacturer_filter.is_some() {
         ui.label(
-            egui::RichText::new(format!(
-                "Globale Suche über alle Hersteller ({} Treffer)",
-                filtered.len()
-            ))
-            .color(egui::Color32::from_rgb(14, 165, 233))
-            .small(),
+            egui::RichText::new(tr::global_search_hits(lang, filtered.len()))
+                .color(egui::Color32::from_rgb(14, 165, 233))
+                .small(),
         );
     }
 
@@ -455,7 +454,7 @@ pub fn show_spec_picker(
     if has_query {
         if filtered.is_empty() {
             ui.label(
-                egui::RichText::new("Keine passenden Klemmen gefunden.")
+                egui::RichText::new(tr::no_matching_terminals(lang))
                     .color(secondary_text_color(ui))
                     .small(),
             );
@@ -499,9 +498,9 @@ pub fn show_spec_picker(
                             }
                             if filtered.len() > 50 {
                                 ui.label(
-                                    egui::RichText::new(format!(
-                                        "… {} weitere Treffer (Suchbegriff eingrenzen)",
-                                        filtered.len() - 50
+                                    egui::RichText::new(tr::more_hits_hint(
+                                        lang,
+                                        filtered.len() - 50,
                                     ))
                                     .color(secondary_text_color(ui))
                                     .small(),
@@ -531,7 +530,7 @@ pub fn show_spec_picker(
                     if is_compat && !in_compat_section {
                         in_compat_section = true;
                         ui.label(
-                            egui::RichText::new("Passende Typen (gleiche Serie / Profil)")
+                            egui::RichText::new(tr::matching_series_types(lang))
                                 .color(egui::Color32::from_rgb(14, 165, 233))
                                 .small()
                                 .strong(),
@@ -542,7 +541,7 @@ pub fn show_spec_picker(
                             ui.separator();
                         }
                         ui.label(
-                            egui::RichText::new("Weitere Typen")
+                            egui::RichText::new(tr::more_types(lang))
                                 .color(secondary_text_color(ui))
                                 .small(),
                         );
@@ -736,10 +735,11 @@ pub fn show_install_supply_prompt_modal(
 
     let mut resolution: Option<InstallPromptResolution> = None;
     let mut open = state.open;
+    let lang = strings.lang;
     let modal_title = state
         .title_context
         .as_deref()
-        .unwrap_or("Installations- / NT-Klemme, N-Einspeisung & Sammelschienenträger")
+        .unwrap_or_else(|| tr::nt_modal_heading(lang))
         .to_string();
 
     show_responsive_modal(
@@ -753,10 +753,8 @@ pub fn show_install_supply_prompt_modal(
         |ui, state| {
             ui.add(
                 egui::Label::new(
-                    egui::RichText::new(
-                        "Für NT-Trennklemmen (mit N-Trennschlitten) bitte Ausführung, N-Einspeiseklemme und Sammelschienenträger (Auflagebock) wählen:",
-                    )
-                    .color(secondary_text_color(ui)),
+                    egui::RichText::new(tr::nt_modal_subtitle(lang))
+                        .color(secondary_text_color(ui)),
                 )
                 .wrap(),
             );
@@ -765,7 +763,7 @@ pub fn show_install_supply_prompt_modal(
                 egui::Frame::group(ui.style()).show(ui, |ui| {
                     ui.add(
                         egui::Label::new(
-                            egui::RichText::new("Hinweise aus PDF-Stückliste:")
+                            egui::RichText::new(tr::nt_pdf_hints(lang))
                                 .small()
                                 .strong(),
                         )
@@ -788,11 +786,7 @@ pub fn show_install_supply_prompt_modal(
             // 1. NT-Klemmen-Auswahl (N-Trennschlitten vs. Standard)
             ui.group(|ui| {
                 ui.add(
-                    egui::Label::new(
-                        egui::RichText::new("1. Ausführung der Installationsklemme (NT / Standard)")
-                            .strong(),
-                    )
-                    .wrap(),
+                    egui::Label::new(egui::RichText::new(tr::nt_step1(lang)).strong()).wrap(),
                 );
                 ui.add_space(2.0);
 
@@ -801,7 +795,8 @@ pub fn show_install_supply_prompt_modal(
                         &mut state.use_nt_variant,
                         false,
                         format!(
-                            "Gewählte Klemme beibehalten: {} {} [{}]",
+                            "{}: {} {} [{}]",
+                            tr::nt_keep_selected(lang),
                             base_spec.manufacturer,
                             base_spec.name,
                             base_spec.pattern_summary()
@@ -811,7 +806,7 @@ pub fn show_install_supply_prompt_modal(
                         &mut state.use_nt_variant,
                         true,
                         format!(
-                            "Als NT-Trennklemme (mit N-Trennschlitten) setzen: {} {} [{}]",
+                            "NT: {} {} [{}]",
                             nt_spec.manufacturer,
                             nt_spec.name,
                             nt_spec.pattern_summary()
@@ -830,8 +825,10 @@ pub fn show_install_supply_prompt_modal(
                         ui.add(
                             egui::Label::new(
                                 egui::RichText::new(format!(
-                                    "NT-Trennklemme mit N-Trennschlitten ausgewählt: {} {}",
-                                    base_spec.manufacturer, base_spec.name
+                                    "{}: {} {}",
+                                    tr::nt_selected_nt(lang),
+                                    base_spec.manufacturer,
+                                    base_spec.name
                                 ))
                                 .color(egui::Color32::from_rgb(16, 185, 129))
                                 .strong(),
@@ -842,7 +839,8 @@ pub fn show_install_supply_prompt_modal(
                 } else {
                     ui.add(
                         egui::Label::new(format!(
-                            "Ausgewählt: {} {} [{}]",
+                            "{}: {} {} [{}]",
+                            tr::nt_selected(lang),
                             base_spec.manufacturer,
                             base_spec.name,
                             base_spec.pattern_summary()
@@ -867,30 +865,23 @@ pub fn show_install_supply_prompt_modal(
                     strings.open_product_page,
                     strings.bridge_chambers_unit,
                     strings.height_label,
+                    lang,
                 );
             });
 
             ui.add_space(6.0);
 
-            // 2. Passende N-Sammelschienen-Einspeiseklemme (z. B. WAGO 2016-7714)
+            // 2. Passende N-Sammelschienen-Einspeiseklemme
             ui.group(|ui| {
                 ui.add(
-                    egui::Label::new(
-                        egui::RichText::new(
-                            "2. Passende N-Einspeiseklemme (z. B. WAGO 2016-7714) setzen?",
-                        )
-                        .strong(),
-                    )
-                    .wrap(),
+                    egui::Label::new(egui::RichText::new(tr::nt_step2(lang)).strong()).wrap(),
                 );
                 if state.strip_already_has_supply {
                     ui.add(
                         egui::Label::new(
-                            egui::RichText::new(
-                                "Hinweis: In dieser Klemmleiste befindet sich bereits eine N-Einspeiseklemme.",
-                            )
-                            .color(secondary_text_color(ui))
-                            .small(),
+                            egui::RichText::new(tr::nt_already_supply(lang))
+                                .color(secondary_text_color(ui))
+                                .small(),
                         )
                         .wrap(),
                     );
@@ -900,17 +891,17 @@ pub fn show_install_supply_prompt_modal(
                 ui.radio_value(
                     &mut state.supply_placement,
                     InstallSupplyPlacement::BeforeGroup,
-                    "Ja – Vor den Installationsklemmen einfügen (links einspeisen)",
+                    tr::nt_yes_before(lang),
                 );
                 ui.radio_value(
                     &mut state.supply_placement,
                     InstallSupplyPlacement::AfterGroup,
-                    "Ja – Nach den Installationsklemmen einfügen (rechts einspeisen)",
+                    tr::nt_yes_after(lang),
                 );
                 ui.radio_value(
                     &mut state.supply_placement,
                     InstallSupplyPlacement::None,
-                    "Nein – Keine N-Einspeiseklemme hinzufügen",
+                    tr::nt_no_supply(lang),
                 );
 
                 if state.supply_placement != InstallSupplyPlacement::None {
@@ -942,7 +933,7 @@ pub fn show_install_supply_prompt_modal(
                         })
                         .unwrap_or_else(|| state.supply_spec_id.clone());
 
-                    ui.label("Auswahl N-Einspeiseklemme:");
+                    ui.label(tr::nt_pick_supply(lang));
                     let combo_w = (ui.available_width() - 12.0).clamp(140.0, 440.0);
                     egui::ComboBox::from_id_salt("install_supply_spec_combo")
                         .width(combo_w)
@@ -977,6 +968,7 @@ pub fn show_install_supply_prompt_modal(
                             strings.open_product_page,
                             strings.bridge_chambers_unit,
                             strings.height_label,
+                            lang,
                         );
                     }
                 }
@@ -995,22 +987,14 @@ pub fn show_install_supply_prompt_modal(
                 ui.add_space(6.0);
                 ui.group(|ui| {
                     ui.add(
-                        egui::Label::new(
-                            egui::RichText::new(
-                                "3. Sammelschienenträger / Auflagebock (N-Sammelschiene 10×3 mm)",
-                            )
-                            .strong(),
-                        )
-                        .wrap(),
+                        egui::Label::new(egui::RichText::new(tr::nt_step3(lang)).strong()).wrap(),
                     );
                     if state.strip_already_has_carriers {
                         ui.add(
                             egui::Label::new(
-                                egui::RichText::new(
-                                    "Hinweis: In dieser Klemmleiste sind bereits Sammelschienenträger / Auflageböcke platziert.",
-                                )
-                                .color(secondary_text_color(ui))
-                                .small(),
+                                egui::RichText::new(tr::nt_already_carriers(lang))
+                                    .color(secondary_text_color(ui))
+                                    .small(),
                             )
                             .wrap(),
                         );
@@ -1030,7 +1014,7 @@ pub fn show_install_supply_prompt_modal(
 
                     ui.checkbox(
                         &mut state.add_outer_busbar_carriers,
-                        "Äußere Sammelschienenträger / Auflageböcke vor N-Einspeiseklemme & nach letzter Klemme setzen",
+                        tr::nt_outer_carriers(lang),
                     );
 
                     if state.add_outer_busbar_carriers {
@@ -1081,6 +1065,7 @@ pub fn show_install_supply_prompt_modal(
                                 strings.open_product_page,
                                 strings.bridge_chambers_unit,
                                 strings.height_label,
+                                lang,
                             );
                         }
                     }
@@ -1088,7 +1073,7 @@ pub fn show_install_supply_prompt_modal(
                     ui.add_space(4.0);
                     ui.checkbox(
                         &mut state.add_intermediate_busbar_supports,
-                        "Bei langen Klemmenreihen automatisch alle 200 mm Zwischenstütze einfügen",
+                        tr::nt_intermediate_supports(lang),
                     );
 
                     if state.add_intermediate_busbar_supports {
@@ -1142,6 +1127,7 @@ pub fn show_install_supply_prompt_modal(
                                 strings.open_product_page,
                                 strings.bridge_chambers_unit,
                                 strings.height_label,
+                                lang,
                             );
                         }
                     }
@@ -1156,7 +1142,7 @@ pub fn show_install_supply_prompt_modal(
             } else {
                 base_spec
             };
-            if primary_icon_button(ui, UiIcon::Check, "Übernehmen & Einfügen").clicked()
+            if primary_icon_button(ui, UiIcon::Check, tr::nt_apply_insert(lang)).clicked()
                 && let Some(action) = state.action.take()
             {
                 resolution = Some(InstallPromptResolution {

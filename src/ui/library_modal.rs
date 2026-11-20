@@ -1,7 +1,7 @@
 use egui::Context;
 
 use crate::catalog::TerminalCatalog;
-use crate::i18n::Strings;
+use crate::i18n::{tr, Strings};
 use crate::model::library::{default_library_path, StripLibrary, StripTemplate};
 use crate::model::TerminalStrip;
 use crate::ui::icons::{
@@ -78,25 +78,21 @@ pub fn show_save_strip_to_library_modal(
         confirmed: None,
     };
     let mut open = data.state.open;
+    let lang = strings.lang;
 
     show_responsive_modal(
         ctx,
         "save_strip_library_modal",
         UiIcon::Bookmark,
-        "Klemmleiste in Bibliothek speichern",
+        tr::save_to_lib_modal_title(lang),
         540.0,
         &mut open,
         &mut data,
         |ui, data| {
             let sec = secondary_text_color(ui);
             ui.add(
-                egui::Label::new(
-                    egui::RichText::new(
-                        "Speichert Aufbau, Klemmentypen, Brückungs-Potentiale, Nummerierungsmodus und Endhalter als wiederverwendbare Vorlage.",
-                    )
-                    .color(sec),
-                )
-                .wrap(),
+                egui::Label::new(egui::RichText::new(tr::save_to_lib_desc(lang)).color(sec))
+                    .wrap(),
             );
             ui.add_space(6.0);
 
@@ -104,14 +100,16 @@ pub fn show_save_strip_to_library_modal(
             recessed_card(ui, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.label(
-                        egui::RichText::new(format!("Aktive Leiste: {}", data.strip.name))
-                            .strong(),
+                        egui::RichText::new(tr::active_strip_line(
+                            lang,
+                            &data.strip.name,
+                            data.strip.blocks.len(),
+                        ))
+                        .strong(),
                     );
                     ui.label(
                         egui::RichText::new(format!(
-                            "· {} {} · {:.1} mm · {} Potential(e)",
-                            data.strip.blocks.len(),
-                            strings.blocks_unit,
+                            "· {:.1} mm · {}× Potential",
                             data.strip.total_width_mm(),
                             data.strip.potentials.len(),
                         ))
@@ -122,42 +120,40 @@ pub fn show_save_strip_to_library_modal(
 
             ui.add_space(8.0);
             let input_w = (ui.available_width() - 16.0).clamp(160.0, 460.0);
-            ui.label(egui::RichText::new("Vorlagenname *").strong());
+            ui.label(egui::RichText::new(tr::tpl_name_required(lang)).strong());
             ui.add(
                 egui::TextEdit::singleline(&mut data.state.template_name)
-                    .hint_text("z. B. Einspeisung 24V DC, Motorabgang 400V …")
+                    .hint_text("24V DC, 400V, …")
                     .desired_width(input_w),
             );
             if data.state.template_name.trim().is_empty() {
                 ui.label(
-                    egui::RichText::new("Bitte einen Namen für die Vorlage eingeben.")
+                    egui::RichText::new(tr::tpl_name_prompt(lang))
                         .color(egui::Color32::from_rgb(239, 68, 68))
                         .small(),
                 );
             }
 
             ui.add_space(6.0);
-            ui.label(egui::RichText::new("Beschreibung / Suchbegriffe (optional)").strong());
+            ui.label(egui::RichText::new(tr::desc_optional_hint(lang)).strong());
             ui.add(
-                egui::TextEdit::singleline(&mut data.state.description)
-                    .hint_text("z. B. Schaltschrank Hauptverteilung, mit N-Sammelschiene")
-                    .desired_width(input_w),
+                egui::TextEdit::singleline(&mut data.state.description).desired_width(input_w),
             );
 
             if let Some((_, existing_name)) = &data.existing_match {
                 ui.add_space(6.0);
                 ui.checkbox(
                     &mut data.state.overwrite_existing,
-                    format!(
-                        "Vorhandene Vorlage „{existing_name}“ aktualisieren (überschreiben)"
-                    ),
+                    tr::tpl_overwrite_chk(lang, existing_name),
                 );
             }
         },
         |ui, data, close_requested| {
             let can_save = !data.state.template_name.trim().is_empty();
             ui.add_enabled_ui(can_save, |ui| {
-                if success_icon_button(ui, UiIcon::Bookmark, "In Bibliothek speichern").clicked() {
+                if success_icon_button(ui, UiIcon::Bookmark, tr::save_to_lib_modal_title(lang))
+                    .clicked()
+                {
                     let overwrite_id = if data.state.overwrite_existing {
                         data.existing_match.as_ref().map(|(id, _)| id.clone())
                     } else {
@@ -252,12 +248,13 @@ pub fn show_strip_library_modal(
         action: None,
     };
     let mut open = data.state.open;
+    let lang = data.strings.lang;
 
     show_responsive_modal(
         ctx,
         "strip_library_browser_modal",
         UiIcon::Library,
-        "Persönliche Klemmleisten-Bibliothek",
+        tr::lib_modal_title(lang),
         680.0,
         &mut open,
         &mut data,
@@ -267,15 +264,13 @@ pub fn show_strip_library_modal(
             let lib_path_str = default_library_path().display().to_string();
             ui.add(
                 egui::Label::new(
-                    egui::RichText::new(
-                        "Projektübergreifend auf diesem PC gespeichert (für alle Projekte verfügbar).",
-                    )
-                    .color(sec)
-                    .small(),
+                    egui::RichText::new(tr::lib_pcwide_desc(lang))
+                        .color(sec)
+                        .small(),
                 )
                 .wrap(),
             )
-            .on_hover_text(format!("Speicherort: {lib_path_str}"));
+            .on_hover_text(lib_path_str);
             ui.add_space(4.0);
 
             // Search bar + hit counter
@@ -291,11 +286,11 @@ pub fn show_strip_library_modal(
                 let search_w = (ui.available_width() - clear_reserve).max(120.0);
                 ui.add(
                     egui::TextEdit::singleline(&mut data.state.search_query)
-                        .hint_text("Nach Name, Beschreibung, Klemmentyp oder Art.-Nr. suchen …")
+                        .hint_text(tr::lib_search_full_hint(lang))
                         .desired_width(search_w),
                 );
                 if !data.state.search_query.is_empty()
-                    && icon_only_button(ui, UiIcon::Clear, false, "Suche leeren").clicked()
+                    && icon_only_button(ui, UiIcon::Clear, false, tr::clear_search(lang)).clicked()
                 {
                     data.state.search_query.clear();
                 }
@@ -314,7 +309,7 @@ pub fn show_strip_library_modal(
                 ui.add_space(4.0);
                 ui.horizontal_wrapped(|ui| {
                     ui.label(
-                        egui::RichText::new("Ziel-Bezeichnung beim Einfügen (optional):")
+                        egui::RichText::new(tr::lib_target_bmk(lang))
                             .color(sec)
                             .small(),
                     );
@@ -332,19 +327,11 @@ pub fn show_strip_library_modal(
 
             if total_count == 0 {
                 section_card(ui, |ui| {
-                    ui.label(
-                        egui::RichText::new("Noch keine eigenen Klemmleisten gespeichert.")
-                            .strong(),
-                    );
+                    ui.label(egui::RichText::new(tr::lib_none_yet(lang)).strong());
                     ui.add_space(4.0);
                     ui.add(
-                        egui::Label::new(
-                            egui::RichText::new(
-                                "Konfiguriere eine Klemmleiste im Editor und klicke links unter „Klemmleisten“ auf „In Bibliothek“, um sie hier dauerhaft mit eigenem Namen abzulegen.",
-                            )
-                            .color(sec),
-                        )
-                        .wrap(),
+                        egui::Label::new(egui::RichText::new(tr::lib_none_hint(lang)).color(sec))
+                            .wrap(),
                     );
                 });
                 return;
@@ -360,9 +347,9 @@ pub fn show_strip_library_modal(
             if matching.is_empty() {
                 ui.add(
                     egui::Label::new(
-                        egui::RichText::new(format!(
-                            "Keine Vorlagen gefunden für „{}“.",
-                            data.state.search_query.trim()
+                        egui::RichText::new(tr::lib_empty_query(
+                            lang,
+                            data.state.search_query.trim(),
                         ))
                         .color(sec),
                     )
@@ -412,12 +399,12 @@ pub fn show_strip_library_modal(
                         if is_editing {
                             ui.add_space(4.0);
                             let edit_w = (ui.available_width() - 16.0).clamp(140.0, 460.0);
-                            ui.label(egui::RichText::new("Vorlagenname:").small().strong());
+                            ui.label(egui::RichText::new(tr::tpl_name_colon(lang)).small().strong());
                             ui.add(
                                 egui::TextEdit::singleline(&mut data.state.edit_name)
                                     .desired_width(edit_w),
                             );
-                            ui.label(egui::RichText::new("Beschreibung:").small().strong());
+                            ui.label(egui::RichText::new(tr::info_colon(lang)).small().strong());
                             ui.add(
                                 egui::TextEdit::singleline(&mut data.state.edit_description)
                                     .desired_width(edit_w),
@@ -426,7 +413,8 @@ pub fn show_strip_library_modal(
                             ui.horizontal_wrapped(|ui| {
                                 let valid = !data.state.edit_name.trim().is_empty();
                                 ui.add_enabled_ui(valid, |ui| {
-                                    if success_icon_button(ui, UiIcon::Check, "Speichern").clicked()
+                                    if success_icon_button(ui, UiIcon::Check, tr::save(lang))
+                                        .clicked()
                                     {
                                         pending_rename = Some((
                                             tpl.id.clone(),
@@ -457,9 +445,9 @@ pub fn show_strip_library_modal(
                             ui.add_space(6.0);
                             ui.horizontal_wrapped(|ui| {
                                 let insert_label = if data.has_active_project {
-                                    "In Projekt einfügen"
+                                    tr::insert_into_proj(lang)
                                 } else {
-                                    "Projekt damit starten"
+                                    tr::start_proj_with(lang)
                                 };
                                 if primary_icon_button(ui, UiIcon::Add, insert_label).clicked() {
                                     let target = {
@@ -476,7 +464,7 @@ pub fn show_strip_library_modal(
                                     });
                                 }
 
-                                if icon_button(ui, UiIcon::Edit, "Umbenennen").clicked() {
+                                if icon_button(ui, UiIcon::Edit, tr::edit(lang)).clicked() {
                                     data.state.editing_id = Some(tpl.id.clone());
                                     data.state.edit_name = tpl.name.clone();
                                     data.state.edit_description = tpl.description.clone();
@@ -487,7 +475,7 @@ pub fn show_strip_library_modal(
                                     if danger_icon_button(
                                         ui,
                                         UiIcon::Delete,
-                                        "Wirklich löschen?",
+                                        tr::confirm_delete_q(lang),
                                     )
                                     .clicked()
                                     {
@@ -498,7 +486,8 @@ pub fn show_strip_library_modal(
                                     {
                                         data.state.confirm_delete_id = None;
                                     }
-                                } else if icon_button(ui, UiIcon::Delete, "Löschen").clicked() {
+                                } else if icon_button(ui, UiIcon::Delete, tr::delete(lang)).clicked()
+                                {
                                     data.state.confirm_delete_id = Some(tpl.id.clone());
                                 }
                             });
@@ -511,7 +500,7 @@ pub fn show_strip_library_modal(
                 if data.library.rename_template(&id, new_name, new_desc) {
                     match data.library.save_default() {
                         Ok(_) => {
-                            *data.status_message = "Bibliothek-Vorlage aktualisiert.".to_string();
+                            *data.status_message = tr::toast_tpl_updated(lang).to_string();
                         }
                         Err(e) => {
                             *data.status_message =
@@ -526,7 +515,7 @@ pub fn show_strip_library_modal(
                 if data.library.delete_template(&id) {
                     match data.library.save_default() {
                         Ok(_) => {
-                            *data.status_message = "Vorlage aus Bibliothek entfernt.".to_string();
+                            *data.status_message = tr::toast_tpl_removed(lang).to_string();
                         }
                         Err(e) => {
                             *data.status_message =
@@ -539,12 +528,13 @@ pub fn show_strip_library_modal(
         },
         |ui, data, close_requested| {
             if data.can_save_active_strip
-                && success_icon_button(ui, UiIcon::Bookmark, "Aktive Leiste speichern").clicked()
+                && success_icon_button(ui, UiIcon::Bookmark, tr::save_active_strip_btn(lang))
+                    .clicked()
             {
                 data.action = Some(StripLibraryAction::SaveActiveStrip);
                 *close_requested = true;
             }
-            if icon_button(ui, UiIcon::Close, "Schließen").clicked() {
+            if icon_button(ui, UiIcon::Close, tr::close(lang)).clicked() {
                 *close_requested = true;
             }
         },

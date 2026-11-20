@@ -1,3 +1,5 @@
+pub mod tr;
+
 /// Supported UI languages (German is default per specification).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Language {
@@ -49,6 +51,7 @@ impl Language {
 
 /// Complete localized text table for TermiGrid.
 pub struct Strings {
+    pub lang: Language,
     pub app_subtitle: &'static str,
     pub menu_new_project: &'static str,
     pub menu_open_project: &'static str,
@@ -254,6 +257,7 @@ pub struct Strings {
 }
 
 pub static DE: Strings = Strings {
+    lang: Language::De,
     app_subtitle: "Reihenklemmen-Konfigurator für Schaltschrankbau",
     menu_new_project: "Neu",
     menu_open_project: "Öffnen (.termi/.json)",
@@ -457,6 +461,7 @@ pub static DE: Strings = Strings {
 };
 
 pub static EN: Strings = Strings {
+    lang: Language::En,
     app_subtitle: "Terminal Block Strip Configurator for Control Cabinets",
     menu_new_project: "New",
     menu_open_project: "Open (.termi/.json)",
@@ -660,6 +665,7 @@ pub static EN: Strings = Strings {
 };
 
 pub static FR: Strings = Strings {
+    lang: Language::Fr,
     app_subtitle: "Configurateur de borniers pour armoires électriques",
     menu_new_project: "Nouveau",
     menu_open_project: "Ouvrir (.termi/.json)",
@@ -863,6 +869,7 @@ pub static FR: Strings = Strings {
 };
 
 pub static IT: Strings = Strings {
+    lang: Language::It,
     app_subtitle: "Configuratore morsettiere per quadri elettrici",
     menu_new_project: "Nuovo",
     menu_open_project: "Apri (.termi/.json)",
@@ -1066,6 +1073,7 @@ pub static IT: Strings = Strings {
 };
 
 pub static ES: Strings = Strings {
+    lang: Language::Es,
     app_subtitle: "Configurador de bornes para cuadros eléctricos",
     menu_new_project: "Nuevo",
     menu_open_project: "Abrir (.termi/.json)",
@@ -1269,6 +1277,7 @@ pub static ES: Strings = Strings {
 };
 
 pub static PL: Strings = Strings {
+    lang: Language::Pl,
     app_subtitle: "Konfigurator listew zaciskowych do szaf sterowniczych",
     menu_new_project: "Nowy",
     menu_open_project: "Otwórz (.termi/.json)",
@@ -1472,6 +1481,7 @@ pub static PL: Strings = Strings {
 };
 
 pub static NL: Strings = Strings {
+    lang: Language::Nl,
     app_subtitle: "Klemmenstrook-configurator voor schakelkastbouw",
     menu_new_project: "Nieuw",
     menu_open_project: "Openen (.termi/.json)",

@@ -25,7 +25,7 @@ use crate::catalog::{TerminalCatalog, TerminalSpec};
 use crate::export::{
     csv::export_to_csv, dxf::export_to_dxf, xlsx::export_to_xlsx, ExportOptions, PrintOrder,
 };
-use crate::i18n::{strings, Language};
+use crate::i18n::{strings, tr, Language};
 use crate::import::{import_pdf_bytes, import_pdf_path, planner::instantiate_imported_strip};
 use crate::model::bridging::{
     calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
@@ -52,8 +52,8 @@ use crate::ui::guide_modal::{
 };
 use crate::ui::icons::{
     danger_icon_button, draw_icon, ghost_icon_button, icon_button, icon_only_button,
-    primary_icon_button, segmented_control, selectable_icon_button, show_responsive_modal,
-    subtle_success_icon_button, UiIcon,
+    primary_icon_button, segmented_control, selectable_icon_button, set_active_lang,
+    show_responsive_modal, subtle_success_icon_button, UiIcon,
 };
 use crate::ui::library_modal::{
     show_save_strip_to_library_modal, show_strip_library_modal, SaveStripLibraryDialogState,
@@ -307,7 +307,7 @@ impl TermiGridApp {
             self.ui_time,
             tone,
             text,
-            Some(("Rückgängig".to_string(), ToastActionKind::Undo)),
+            Some((tr::undo_short(self.lang).to_string(), ToastActionKind::Undo)),
         );
     }
 
@@ -342,14 +342,9 @@ impl TermiGridApp {
                         strip.recalculate_labels();
                     }
                 }
-                let suffix = if updated_blocks > 0 {
-                    format!(" ({updated_blocks} Klemmen im Projekt aktualisiert)")
-                } else {
-                    String::new()
-                };
                 self.notify(
                     ToastTone::Success,
-                    format!("Klemmentyp „{spec_name}“ gespeichert (PC-weit aktiv){suffix}."),
+                    tr::toast_spec_saved(self.lang, &spec_name, updated_blocks),
                 );
             }
             DatabaseAction::ResetOrDeleteSpec { id, is_builtin } => {
@@ -375,20 +370,12 @@ impl TermiGridApp {
                             strip.recalculate_labels();
                         }
                     }
-                    let suffix = if restored_blocks > 0 {
-                        format!(" ({restored_blocks} Klemmen aktualisiert)")
-                    } else {
-                        String::new()
-                    };
                     self.notify(
                         ToastTone::Info,
-                        format!(
-                            "Klemmentyp „{}“ auf Werkszustand zurückgesetzt{suffix}.",
-                            default_spec.name
-                        ),
+                        tr::toast_spec_reset(self.lang, &default_spec.name, restored_blocks),
                     );
                 } else {
-                    self.notify(ToastTone::Info, "Eigener Klemmentyp gelöscht.");
+                    self.notify(ToastTone::Info, tr::toast_spec_deleted(self.lang));
                 }
             }
         }
@@ -405,7 +392,7 @@ impl TermiGridApp {
                 .min(self.project.strips.len().saturating_sub(1));
             self.selected_blocks.clear();
             self.selected_end_bracket = None;
-            self.notify(ToastTone::Info, "Schritt rückgängig gemacht.");
+            self.notify(ToastTone::Info, tr::toast_undone(self.lang));
         }
     }
 
@@ -420,7 +407,7 @@ impl TermiGridApp {
                 .min(self.project.strips.len().saturating_sub(1));
             self.selected_blocks.clear();
             self.selected_end_bracket = None;
-            self.notify(ToastTone::Info, "Schritt wiederhergestellt.");
+            self.notify(ToastTone::Info, tr::toast_redone(self.lang));
         }
     }
 
@@ -527,10 +514,7 @@ impl TermiGridApp {
             self.mobile_pane = MobilePane::Cad;
             self.notify(
                 ToastTone::Success,
-                format!(
-                    "Klemmleiste „{}“ aus Vorlage „{}“ eingefügt.",
-                    inserted_name, tpl.name
-                ),
+                tr::toast_inserted_from_lib(self.lang, &inserted_name, &tpl.name),
             );
         }
     }
@@ -661,6 +645,7 @@ impl eframe::App for TermiGridApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let s = strings(self.lang);
         let t = tokens(ui);
+        set_active_lang(ui.ctx(), self.lang);
         self.ui_time = ui.ctx().input(|i| i.time);
 
         // Prompt Save / Discard when closing with unsaved project changes
@@ -764,7 +749,7 @@ impl eframe::App for TermiGridApp {
                     self.canvas_state.selection_anchor = None;
                     self.notify_undoable(
                         ToastTone::Info,
-                        format!("{deleted_count} Klemme(n) gelöscht."),
+                        tr::toast_blocks_deleted(self.lang, deleted_count),
                     );
                 }
             }
@@ -837,11 +822,11 @@ impl eframe::App for TermiGridApp {
                         primary_icon_button(ui, UiIcon::Menu, "Update")
                     } else {
                         ghost_icon_button(ui, UiIcon::Menu, "")
-                            .on_hover_text("Info, Updates & Open-Source-Lizenzen")
+                            .on_hover_text(tr::about_tip(s.lang))
                     };
                     egui::Popup::menu(&menu_btn).show(|ui| {
                         ui.set_min_width(230.0);
-                        if icon_button(ui, UiIcon::Info, "Über TermiGrid & Lizenzen").clicked() {
+                        if icon_button(ui, UiIcon::Info, tr::about_modal_title(s.lang)).clicked() {
                             *show_about = true;
                             ui.close();
                         }
@@ -854,7 +839,7 @@ impl eframe::App for TermiGridApp {
                                 if primary_icon_button(
                                     ui,
                                     UiIcon::DownloadUpdate,
-                                    &format!("Update: {latest_tag}"),
+                                    &tr::update_badge(s.lang, &latest_tag),
                                 )
                                 .on_hover_text(s.update_open_release)
                                 .clicked()
@@ -915,7 +900,7 @@ impl eframe::App for TermiGridApp {
                                 let cmd_btn = ui
                                     .add(
                                         egui::Button::new(
-                                            egui::RichText::new("Befehle  Strg+K")
+                                            egui::RichText::new(tr::commands_btn(self.lang))
                                                 .size(12.0)
                                                 .color(t.text_secondary),
                                         )
@@ -923,7 +908,7 @@ impl eframe::App for TermiGridApp {
                                         .stroke(egui::Stroke::new(1.0, t.border_hairline))
                                         .corner_radius(egui::CornerRadius::same(6)),
                                     )
-                                    .on_hover_text("Befehlspalette & Klemmen-Schnellsuche öffnen (Strg+K)");
+                                    .on_hover_text(tr::commands_tip(self.lang));
                                 if cmd_btn.clicked() {
                                     self.command_palette.open_now();
                                 }
@@ -950,7 +935,7 @@ impl eframe::App for TermiGridApp {
                             ui,
                             UiIcon::Search,
                             self.command_palette.open,
-                            "Befehlspalette öffnen (Strg+K)",
+                            tr::cmd_palette_tip_only(self.lang),
                         )
                         .clicked()
                         {
@@ -983,10 +968,8 @@ impl eframe::App for TermiGridApp {
                     if icon_button(ui, UiIcon::FolderOpen, s.menu_open_project).clicked() {
                         self.open_project();
                     }
-                    if icon_button(ui, UiIcon::ImportPdf, "PDF-Stückliste")
-                        .on_hover_text(
-                            "EPLAN-Stückliste (.pdf) intelligent importieren (auch per Drag & Drop)",
-                        )
+                    if icon_button(ui, UiIcon::ImportPdf, tr::pdf_bom_short(self.lang))
+                        .on_hover_text(tr::pdf_bom_tip(self.lang))
                         .clicked()
                     {
                         self.import_pdf_dialog();
@@ -1017,7 +1000,7 @@ impl eframe::App for TermiGridApp {
                                     ui,
                                     UiIcon::Undo,
                                     false,
-                                    "Rückgängig / Undo (Strg+Z)",
+                                    tr::undo_tip(self.lang),
                                 )
                             })
                             .inner
@@ -1031,7 +1014,7 @@ impl eframe::App for TermiGridApp {
                                     ui,
                                     UiIcon::Redo,
                                     false,
-                                    "Wiederholen / Redo (Strg+Y)",
+                                    "Redo (Ctrl+Y)",
                                 )
                             })
                             .inner
@@ -1098,16 +1081,16 @@ impl eframe::App for TermiGridApp {
                             },
                         );
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            kbd_chip(ui, "Entf");
+                            kbd_chip(ui, "Del");
                             ui.label(
-                                egui::RichText::new("Löschen")
+                                egui::RichText::new(tr::delete(self.lang))
                                     .size(11.5)
                                     .color(t.text_muted),
                             );
                             ui.add_space(4.0);
-                            kbd_chip(ui, "Strg+K");
+                            kbd_chip(ui, "Ctrl+K");
                             ui.label(
-                                egui::RichText::new("Befehle")
+                                egui::RichText::new(tr::commands_btn_mobile(self.lang))
                                     .size(11.5)
                                     .color(t.text_muted),
                             );
@@ -1196,9 +1179,7 @@ impl eframe::App for TermiGridApp {
             self.active_tab = ActiveTab::Editor;
             self.notify(
                 ToastTone::Success,
-                format!(
-                    "Klemmleiste „{strip_name}“ angelegt — Klemmen anpassen und dann Endplatten generieren."
-                ),
+                tr::toast_strip_created(self.lang, &strip_name),
             );
         }
 
@@ -1293,19 +1274,14 @@ impl eframe::App for TermiGridApp {
                 self.show_welcome = false;
                 self.active_tab = ActiveTab::Editor;
                 self.mobile_pane = MobilePane::Cad;
-                if total_nt > 0 {
-                    self.notify(
-                        ToastTone::Info,
-                        format!(
-                            "{imported_count} Klemmleisten aus PDF importiert ({total_nt}× NT-Konfiguration ausstehend)."
-                        ),
-                    );
-                } else {
-                    self.notify(
-                        ToastTone::Success,
-                        format!("{imported_count} Klemmleisten aus PDF importiert."),
-                    );
-                }
+                self.notify(
+                    if total_nt > 0 {
+                        ToastTone::Info
+                    } else {
+                        ToastTone::Success
+                    },
+                    tr::toast_pdf_imported(self.lang, imported_count, total_nt),
+                );
             }
         }
 
@@ -1318,9 +1294,11 @@ impl eframe::App for TermiGridApp {
         {
             let has_supply = self.strip_has_n_supply(next_nt.strip_idx);
             let has_carriers = self.strip_has_busbar_carriers(next_nt.strip_idx);
-            let title_ctx = format!(
-                "NT-Konfiguration für {} ({}/{})",
-                next_nt.strip_bmk, next_nt.ordinal, next_nt.total
+            let title_ctx = tr::nt_modal_title(
+                self.lang,
+                &next_nt.strip_bmk,
+                next_nt.ordinal,
+                next_nt.total,
             );
             self.active_strip = next_nt
                 .strip_idx
@@ -1369,10 +1347,7 @@ impl eframe::App for TermiGridApp {
                 Ok(_) => {
                     self.notify(
                         ToastTone::Success,
-                        format!(
-                            "Vorlage „{}“ in persönlicher Bibliothek gespeichert.",
-                            confirm.template_name
-                        ),
+                        tr::toast_tpl_saved(self.lang, &confirm.template_name),
                     );
                 }
                 Err(e) => {
@@ -1415,7 +1390,8 @@ impl eframe::App for TermiGridApp {
 
         // Sonner-style floating toast notifications (with inline Undo when deleting blocks)
         if let Some(ToastActionKind::Undo) =
-            self.toast_queue.show(ui.ctx(), self.safe_insets.bottom)
+            self.toast_queue
+                .show(ui.ctx(), self.safe_insets.bottom, self.lang)
         {
             self.perform_undo();
         }
@@ -1428,6 +1404,7 @@ impl eframe::App for TermiGridApp {
             has_active_project,
             !self.undo_stack.is_empty(),
             !self.redo_stack.is_empty(),
+            self.lang,
         ) {
             self.execute_palette_command(ui.ctx(), cmd);
         }
@@ -1458,14 +1435,17 @@ impl TermiGridApp {
             project_name: &'a str,
             strip_count: usize,
             block_count: usize,
+            lang: Language,
             choice: Option<CloseChoice>,
         }
 
         let block_count: usize = self.project.strips.iter().map(|st| st.blocks.len()).sum();
+        let lang = self.lang;
         let mut data = CloseModalData {
             project_name: &self.project.project_name,
             strip_count: self.project.strips.len(),
             block_count,
+            lang,
             choice: None,
         };
         let mut open = self.show_close_confirm_modal;
@@ -1474,7 +1454,7 @@ impl TermiGridApp {
             ctx,
             "close_confirm_modal",
             UiIcon::Save,
-            "Änderungen vor dem Schließen speichern?",
+            tr::close_confirm_title(lang),
             470.0,
             &mut open,
             &mut data,
@@ -1482,9 +1462,9 @@ impl TermiGridApp {
                 let t = tokens(ui);
                 ui.add(
                     egui::Label::new(
-                        egui::RichText::new(format!(
-                            "Das Projekt „{}“ enthält ungespeicherte Änderungen.",
-                            data.project_name
+                        egui::RichText::new(tr::close_confirm_project(
+                            data.lang,
+                            data.project_name,
                         ))
                         .strong()
                         .color(t.text_primary),
@@ -1494,9 +1474,10 @@ impl TermiGridApp {
                 ui.add_space(6.0);
                 ui.add(
                     egui::Label::new(
-                        egui::RichText::new(format!(
-                            "{} Klemmleiste(n) · {} Klemme(n) — Möchten Sie diese Änderungen jetzt speichern oder verwerfen?",
-                            data.strip_count, data.block_count
+                        egui::RichText::new(tr::close_confirm_counts(
+                            data.lang,
+                            data.strip_count,
+                            data.block_count,
                         ))
                         .color(t.text_secondary),
                     )
@@ -1504,13 +1485,14 @@ impl TermiGridApp {
                 );
             },
             |ui, data, close_requested| {
-                if primary_icon_button(ui, UiIcon::Save, "Speichern & Schließen").clicked() {
+                if primary_icon_button(ui, UiIcon::Save, tr::save_and_close(data.lang)).clicked() {
                     data.choice = Some(CloseChoice::SaveAndClose);
                 }
-                if danger_icon_button(ui, UiIcon::Delete, "Verwerfen").clicked() {
+                if danger_icon_button(ui, UiIcon::Delete, tr::discard_changes(data.lang)).clicked()
+                {
                     data.choice = Some(CloseChoice::DiscardAndClose);
                 }
-                if icon_button(ui, UiIcon::Close, "Abbrechen").clicked() {
+                if icon_button(ui, UiIcon::Close, tr::cancel(data.lang)).clicked() {
                     data.choice = Some(CloseChoice::Cancel);
                     *close_requested = true;
                 }
@@ -1568,10 +1550,7 @@ impl TermiGridApp {
         if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
             self.canvas_state.interaction_mode = CanvasInteractionMode::default();
         }
-        self.notify(
-            ToastTone::Info,
-            "Bearbeitungsmodus aktiv — Klemmen anpassen und danach Endplatten generieren.",
-        );
+        self.notify(ToastTone::Info, tr::toast_edit_active(self.lang));
     }
 
     fn set_step3_mode(&mut self, mode: Step3ViewMode) {
@@ -1590,7 +1569,7 @@ impl TermiGridApp {
                 if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
                     self.canvas_state.interaction_mode = CanvasInteractionMode::default();
                 }
-                self.notify(ToastTone::Info, "CAD-Ansicht aktiv.");
+                self.notify(ToastTone::Info, tr::toast_cad_active(self.lang));
             }
             Step3ViewMode::Bridge => {
                 self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
@@ -1606,20 +1585,14 @@ impl TermiGridApp {
                 {
                     self.active_potential_id = strip.potentials.first().map(|p| p.id);
                 }
-                self.notify(
-                    ToastTone::Info,
-                    "Brücken-Modus aktiv — Klemmen-Ebenen im CAD anklicken oder überstreichen.",
-                );
+                self.notify(ToastTone::Info, tr::toast_bridge_active(self.lang));
             }
             Step3ViewMode::Eplan => {
                 self.canvas_state.e_planer_mode = true;
                 if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
                     self.canvas_state.interaction_mode = CanvasInteractionMode::default();
                 }
-                self.notify(
-                    ToastTone::Info,
-                    "ePlan 1:1 Aufbaubild aktiv — maßstabsgetreuer DXF-Export bereit.",
-                );
+                self.notify(ToastTone::Info, tr::toast_eplan_active(self.lang));
             }
         }
     }
@@ -1680,12 +1653,8 @@ impl TermiGridApp {
                     };
                     strip.recalculate_labels();
                     let msg = match strip.sequence_mode {
-                        StripSequenceMode::ByLevel => {
-                            "Zählfolge: Ebenenweise (E1: 1,2,3 → E2: 4,5,6)."
-                        }
-                        StripSequenceMode::ByBlock => {
-                            "Zählfolge: Klemmenweise (1,2 | 3,4)."
-                        }
+                        StripSequenceMode::ByLevel => tr::toast_seq_by_level(self.lang),
+                        StripSequenceMode::ByBlock => tr::toast_seq_by_block(self.lang),
                     };
                     self.notify(ToastTone::Info, msg);
                 }
@@ -1696,7 +1665,7 @@ impl TermiGridApp {
                     if converted > 0 {
                         self.notify(
                             ToastTone::Info,
-                            format!("{converted} N-Klemme(n) in NT-Trennklemmen umgewandelt."),
+                            tr::toast_n_to_nt(self.lang, converted, false),
                         );
                     }
                 }
@@ -1707,7 +1676,7 @@ impl TermiGridApp {
                     if converted > 0 {
                         self.notify(
                             ToastTone::Info,
-                            format!("{converted} NT-Trennklemme(n) in Standard-N-Klemmen zurückgewandelt."),
+                            tr::toast_nt_to_n(self.lang, converted, false),
                         );
                     }
                 }
@@ -1815,7 +1784,10 @@ impl TermiGridApp {
             self.canvas_state.selection_anchor = Some(insert_pos + count - 1);
             self.selected_end_bracket = None;
         }
-        self.notify(ToastTone::Info, format!("{}× {} eingefügt.", count, spec.name));
+        self.notify(
+            ToastTone::Info,
+            tr::toast_blocks_inserted(self.lang, count, &spec.name),
+        );
     }
 
     fn insert_sequence_direct(
@@ -1843,7 +1815,10 @@ impl TermiGridApp {
             self.selected_blocks = inserted;
             self.selected_end_bracket = None;
         }
-        self.notify(ToastTone::Success, format!("Block eingefügt: {summary}"));
+        self.notify(
+            ToastTone::Success,
+            tr::toast_group_inserted(self.lang, summary),
+        );
     }
 
     /// Computes & reveals end/partition plates for the active strip and opens the NT configuration
@@ -1854,7 +1829,7 @@ impl TermiGridApp {
             return;
         }
         if self.project.strips[strip_idx].blocks.is_empty() {
-            self.notify(ToastTone::Warning, "Klemmleiste enthält noch keine Klemmen.");
+            self.notify(ToastTone::Warning, tr::toast_strip_empty(self.lang));
             return;
         }
 
@@ -1894,31 +1869,25 @@ impl TermiGridApp {
                         anchor_end: last_nt + 1,
                     },
                     nt_spec,
-                    format!("NT-Konfiguration für {strip_name}"),
+                    tr::nt_modal_title_single(self.lang, &strip_name),
                     Vec::new(),
                     has_supply,
                     has_carriers,
                 );
                 self.notify(
                     ToastTone::Info,
-                    format!(
-                        "Endplatten ({plates_count}×) berechnet — NT-Konfiguration für „{strip_name}“ prüfen."
-                    ),
+                    tr::toast_endplates_nt_check(self.lang, plates_count, &strip_name),
                 );
                 return;
             }
             self.notify(
                 ToastTone::Success,
-                format!(
-                    "Endplatten für „{strip_name}“ generiert ({plates_count}×). Weiter: Brücken, Excel oder ePlan."
-                ),
+                tr::toast_endplates_ready(self.lang, plates_count, &strip_name),
             );
         } else {
             self.notify(
                 ToastTone::Success,
-                format!(
-                    "Endplatten für „{strip_name}“ generiert ({plates_count}×). Weiter: Brücken, Excel oder ePlan."
-                ),
+                tr::toast_endplates_ready(self.lang, plates_count, &strip_name),
             );
         }
     }
@@ -2022,9 +1991,7 @@ impl TermiGridApp {
                     self.selected_end_bracket = None;
                     self.notify(
                         ToastTone::Success,
-                        format!(
-                            "Endplatten ({plates_count}×) & NT-Zubehör für „{strip_name}“ übernommen."
-                        ),
+                        tr::toast_endplates_and_nt_applied(self.lang, plates_count, &strip_name),
                     );
                 }
             }
@@ -2072,7 +2039,7 @@ impl TermiGridApp {
                 ui,
                 UiIcon::SidebarRight(self.show_inspector),
                 self.show_inspector,
-                "Rechte Seitenleiste (Eigenschaften) ein-/ausblenden",
+                s.inspector_title,
             )
             .clicked()
             {
@@ -2082,7 +2049,7 @@ impl TermiGridApp {
                 ui,
                 UiIcon::SidebarLeft(self.show_left_sidebar),
                 self.show_left_sidebar,
-                "Linke Seitenleiste (Klemmleisten & Bibliothek) ein-/ausblenden",
+                tr::sidebar_toggle_tip(self.lang),
             )
             .clicked()
             {
@@ -2117,11 +2084,9 @@ impl TermiGridApp {
                                 );
                                 ui.add_space(4.0);
                                 ui.label(
-                                    egui::RichText::new(
-                                        "Geradliniger Ablauf: 1. Startquelle wählen → 2. Klemmen im CAD anpassen → 3. Endplatten generieren → 4. Brücken, Excel-Export oder ePlan 1:1.",
-                                    )
-                                    .size(13.5)
-                                    .color(t.text_secondary),
+                                    egui::RichText::new(tr::pipeline_subtitle(self.lang))
+                                        .size(13.5)
+                                        .color(t.text_secondary),
                                 );
                                 ui.add_space(14.0);
 
@@ -2152,9 +2117,9 @@ impl TermiGridApp {
                                     ui.label(egui::RichText::new("→").color(t.text_muted));
                                     step_chip(ui, s.welcome_step_2, step2_active);
                                     ui.label(egui::RichText::new("→").color(t.text_muted));
-                                    step_chip(ui, "3. Endplatten", false);
+                                    step_chip(ui, tr::step_endplates_short(self.lang), false);
                                     ui.label(egui::RichText::new("→").color(t.text_muted));
-                                    step_chip(ui, "4. Export / ePlan", false);
+                                    step_chip(ui, tr::step_export_short(self.lang), false);
                                 });
 
                                 ui.add_space(14.0);
@@ -2175,15 +2140,19 @@ impl TermiGridApp {
 
                                 // The 3 crisp linear start choices
                                 ui.label(
-                                    egui::RichText::new("Projektstart wählen")
+                                    egui::RichText::new(tr::choose_project_start(self.lang))
                                         .size(12.5)
                                         .color(t.text_secondary)
                                         .strong(),
                                 );
                                 ui.add_space(6.0);
                                 ui.horizontal_wrapped(|ui| {
-                                    if primary_icon_button(ui, UiIcon::Add, "Neues Projekt")
-                                        .clicked()
+                                    if primary_icon_button(
+                                        ui,
+                                        UiIcon::Add,
+                                        tr::welcome_new_project(self.lang),
+                                    )
+                                    .clicked()
                                     {
                                         self.project.strips.clear();
                                         self.project.custom_specs.clear();
@@ -2197,7 +2166,7 @@ impl TermiGridApp {
                                     if icon_button(
                                         ui,
                                         UiIcon::FolderOpen,
-                                        "Bestehendes Projekt laden",
+                                        tr::welcome_load_project(self.lang),
                                     )
                                     .clicked()
                                     {
@@ -2206,11 +2175,9 @@ impl TermiGridApp {
                                     if icon_button(
                                         ui,
                                         UiIcon::ImportPdf,
-                                        "PDF-Stückliste laden",
+                                        tr::welcome_load_pdf(self.lang),
                                     )
-                                    .on_hover_text(
-                                        "EPLAN-Stückliste (.pdf) automatisch erkennen & übernehmen (auch per Drag & Drop)",
-                                    )
+                                    .on_hover_text(tr::pdf_bom_tip(self.lang))
                                     .clicked()
                                     {
                                         self.import_pdf_dialog();
@@ -2222,17 +2189,15 @@ impl TermiGridApp {
                                 ui.add_space(8.0);
                                 ui.horizontal_wrapped(|ui| {
                                     let lib_btn_label = if self.strip_library.templates.is_empty() {
-                                        "Aus Bibliothek".to_string()
+                                        tr::welcome_from_lib(self.lang).to_string()
                                     } else {
-                                        format!(
-                                            "Aus Bibliothek ({})",
-                                            self.strip_library.templates.len()
+                                        tr::welcome_from_lib_count(
+                                            self.lang,
+                                            self.strip_library.templates.len(),
                                         )
                                     };
                                     if ghost_icon_button(ui, UiIcon::Library, &lib_btn_label)
-                                        .on_hover_text(
-                                            "Persönliche Klemmleisten-Bibliothek durchsuchen & direkt starten",
-                                        )
+                                        .on_hover_text(tr::welcome_from_lib_tip(self.lang))
                                         .clicked()
                                     {
                                         self.strip_library.refresh_from_default();
@@ -2429,9 +2394,9 @@ impl TermiGridApp {
         let back_sheet_is_library = self.sidebar_deck_tab == SidebarDeckTab::Strips;
         let back_label = if back_sheet_is_library {
             if self.strip_library.templates.is_empty() {
-                "Bibliothek".to_string()
+                tr::library_tab(self.lang).to_string()
             } else {
-                format!("Bibliothek ({})", self.strip_library.templates.len())
+                tr::library_tab_count(self.lang, self.strip_library.templates.len())
             }
         } else if self.project.strips.is_empty() {
             s.strips_heading.to_string()
@@ -2439,9 +2404,9 @@ impl TermiGridApp {
             format!("{} ({})", s.strips_heading, self.project.strips.len())
         };
         let back_tip = if back_sheet_is_library {
-            "Zur Bibliothek wechseln (Vorlagen mit Mini-ePlan-Vorschau)"
+            tr::to_library_tip(self.lang)
         } else {
-            "Zu den Projekt-Klemmleisten wechseln"
+            tr::to_strips_tip(self.lang)
         };
 
         let r_resp = ui
@@ -2571,14 +2536,14 @@ impl TermiGridApp {
                 egui::Id::unique("sidebar_dot_strips"),
                 egui::Sense::click(),
             )
-            .on_hover_text("Klemmleisten (Hauptansicht)");
+            .on_hover_text(tr::dot_strips_tip(self.lang));
         let dot1_resp = ui
             .interact(
                 dot1_hit,
                 egui::Id::unique("sidebar_dot_library"),
                 egui::Sense::click(),
             )
-            .on_hover_text("Bibliothek (Vorlagen mit Mini-ePlan)");
+            .on_hover_text(tr::dot_library_tip(self.lang));
 
         for (idx, (hit, resp)) in [(dot0_hit, &dot0_resp), (dot1_hit, &dot1_resp)]
             .into_iter()
@@ -2732,7 +2697,11 @@ impl TermiGridApp {
                 let active_strip = &mut self.project.strips[active_idx];
                 section_card(ui, |ui| {
                     ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new("Name:").size(12.0).color(t.text_secondary));
+                        ui.label(
+                            egui::RichText::new(tr::name_colon(self.lang))
+                                .size(12.0)
+                                .color(t.text_secondary),
+                        );
                         let name_resp = ui.add(
                             egui::TextEdit::singleline(&mut active_strip.name)
                                 .hint_text("-X1")
@@ -2744,10 +2713,14 @@ impl TermiGridApp {
                     });
                     ui.add_space(3.0);
                     ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new("Info:").size(12.0).color(t.text_secondary));
+                        ui.label(
+                            egui::RichText::new(tr::info_colon(self.lang))
+                                .size(12.0)
+                                .color(t.text_secondary),
+                        );
                         ui.add(
                             egui::TextEdit::singleline(&mut active_strip.description)
-                                .hint_text("Beschreibung (optional)")
+                                .hint_text(tr::desc_optional_hint(self.lang))
                                 .desired_width((ui.available_width() - 4.0).max(80.0)),
                         );
                     });
@@ -2755,10 +2728,8 @@ impl TermiGridApp {
             }
             ui.add_space(6.0);
             ui.horizontal_wrapped(|ui| {
-                if icon_button(ui, UiIcon::Bookmark, "In Bibliothek")
-                    .on_hover_text(
-                        "Aktive Klemmleiste unter eigenem Namen in der Bibliothek speichern",
-                    )
+                if icon_button(ui, UiIcon::Bookmark, tr::in_library_btn(self.lang))
+                    .on_hover_text(tr::in_library_tip(self.lang))
                     .clicked()
                     && self.active_strip < self.project.strips.len()
                 {
@@ -2785,7 +2756,7 @@ impl TermiGridApp {
             self.selected_end_bracket = None;
             self.notify_undoable(
                 ToastTone::Info,
-                format!("Klemmleiste „{removed_name}“ gelöscht."),
+                tr::toast_strip_deleted(self.lang, &removed_name),
             );
         }
     }
@@ -2795,7 +2766,11 @@ impl TermiGridApp {
         let t = tokens(ui);
 
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new("Bibliothek").strong().size(14.5));
+            ui.label(
+                egui::RichText::new(tr::library_tab(self.lang))
+                    .strong()
+                    .size(14.5),
+            );
             pill_badge(
                 ui,
                 &format!("{}", self.strip_library.templates.len()),
@@ -2807,7 +2782,7 @@ impl TermiGridApp {
                     ui,
                     UiIcon::Settings,
                     false,
-                    "Bibliothek verwalten (Umbenennen / Löschen)",
+                    tr::lib_manage_tip(self.lang),
                 )
                 .clicked()
                 {
@@ -2819,7 +2794,7 @@ impl TermiGridApp {
                         ui,
                         UiIcon::Bookmark,
                         false,
-                        "Aktive Klemmleiste in Bibliothek speichern",
+                        tr::lib_save_active_tip(self.lang),
                     )
                     .clicked()
                 {
@@ -2852,11 +2827,12 @@ impl TermiGridApp {
                     ui.add(
                         egui::TextEdit::singleline(&mut self.sidebar_lib_search)
                             .frame(egui::Frame::NONE)
-                            .hint_text("Vorlage suchen…")
+                            .hint_text(tr::lib_search_hint(self.lang))
                             .desired_width(edit_w),
                     );
                     if !self.sidebar_lib_search.is_empty()
-                        && icon_only_button(ui, UiIcon::Close, false, "Suche leeren").clicked()
+                        && icon_only_button(ui, UiIcon::Close, false, tr::clear_search(self.lang))
+                            .clicked()
                     {
                         self.sidebar_lib_search.clear();
                     }
@@ -2886,7 +2862,7 @@ impl TermiGridApp {
                     recessed_card(ui, |ui| {
                         ui.add(
                             egui::Label::new(
-                                egui::RichText::new("Noch keine Vorlagen gespeichert.")
+                                egui::RichText::new(tr::lib_empty_title(self.lang))
                                     .strong()
                                     .color(t.text_primary)
                                     .size(12.5),
@@ -2896,11 +2872,9 @@ impl TermiGridApp {
                         ui.add_space(3.0);
                         ui.add(
                             egui::Label::new(
-                                egui::RichText::new(
-                                    "Aktive Leiste über ‚In Bibliothek‘ sichern, um sie hier mit ePlan-Vorschau abzulegen.",
-                                )
-                                .color(t.text_secondary)
-                                .small(),
+                                egui::RichText::new(tr::lib_empty_sub(self.lang))
+                                    .color(t.text_secondary)
+                                    .small(),
                             )
                             .wrap(),
                         );
@@ -2911,9 +2885,9 @@ impl TermiGridApp {
                 if matching.is_empty() {
                     ui.add(
                         egui::Label::new(
-                            egui::RichText::new(format!(
-                                "Keine Treffer für „{}“.",
-                                self.sidebar_lib_search.trim()
+                            egui::RichText::new(tr::lib_no_hits(
+                                self.lang,
+                                self.sidebar_lib_search.trim(),
                             ))
                             .color(t.text_secondary)
                             .small(),
@@ -2956,14 +2930,22 @@ impl TermiGridApp {
                             ui.add_space(4.0);
 
                             // Mini proportional ePlan 1:1 Aufbaubild preview
-                            draw_mini_eplan_preview(ui, &tpl.strip, &self.catalog, 40.0);
+                            draw_mini_eplan_preview(
+                                ui,
+                                &tpl.strip,
+                                &self.catalog,
+                                40.0,
+                                self.lang,
+                            );
 
                             ui.add_space(5.0);
-                            if subtle_success_icon_button(ui, UiIcon::Add, "Einfügen")
-                                .on_hover_text(
-                                    "Diese Klemmleisten-Vorlage ins aktive Projekt einfügen",
-                                )
-                                .clicked()
+                            if subtle_success_icon_button(
+                                ui,
+                                UiIcon::Add,
+                                tr::insert_btn(self.lang),
+                            )
+                            .on_hover_text(tr::insert_lib_tip(self.lang))
+                            .clicked()
                             {
                                 insert_tpl_id = Some(tpl.id.clone());
                             }
@@ -3001,14 +2983,18 @@ impl TermiGridApp {
                         if !self.selected_blocks.is_empty() {
                             pill_badge(
                                 ui,
-                                &format!("{} markiert", self.selected_blocks.len()),
+                                &tr::selected_count(self.lang, self.selected_blocks.len()),
                                 t.accent_text,
                                 t.accent_soft,
                             );
                         } else if let Some(is_left) = self.selected_end_bracket {
                             pill_badge(
                                 ui,
-                                if is_left { "EH Links" } else { "EH Rechts" },
+                                if is_left {
+                                    tr::eb_left_badge(self.lang)
+                                } else {
+                                    tr::eb_right_badge(self.lang)
+                                },
                                 t.accent_text,
                                 t.accent_soft,
                             );
@@ -3359,6 +3345,7 @@ impl TermiGridApp {
                                 s.open_product_page,
                                 s.bridge_chambers_unit,
                                 s.height_label,
+                                self.lang,
                             );
                         }
 
@@ -3376,8 +3363,11 @@ impl TermiGridApp {
                             let count = indices.len();
                             self.project.strips[self.active_strip]
                                 .reassign_blocks(&indices, spec);
-                            applied_msg =
-                                Some(format!("{count}× Klemme auf {} geändert.", spec.name));
+                            applied_msg = Some(tr::toast_blocks_changed(
+                                self.lang,
+                                count,
+                                &spec.name,
+                            ));
                         }
 
                         // 1-Polig & 3-Polig feeder-block buttons right below "Typ auf Auswahl anwenden"
@@ -3400,14 +3390,11 @@ impl TermiGridApp {
                         ui.horizontal_wrapped(|ui| {
                             let tip_1p = plan_1p
                                 .as_ref()
-                                .map(|p| format!("1-Polig Blockgruppe einfügen: {}", p.summary))
-                                .unwrap_or_else(|| {
-                                    "Kein 1-Polig Block (L + N + PE) für diesen Klemmentyp verfügbar"
-                                        .to_string()
-                                });
+                                .map(|p| tr::pole_group_tip(self.lang, 1, &p.summary))
+                                .unwrap_or_else(|| tr::pole_group_unavail(self.lang, 1));
                             let btn_1p = ui
                                 .add_enabled_ui(plan_1p.is_some(), |ui| {
-                                    icon_button(ui, UiIcon::PoleBlock1, "1-Polig")
+                                    icon_button(ui, UiIcon::PoleBlock1, tr::pole1_btn(self.lang))
                                 })
                                 .inner
                                 .on_hover_text(&tip_1p)
@@ -3421,14 +3408,11 @@ impl TermiGridApp {
 
                             let tip_3p = plan_3p
                                 .as_ref()
-                                .map(|p| format!("3-Polig Blockgruppe einfügen: {}", p.summary))
-                                .unwrap_or_else(|| {
-                                    "Kein 3-Polig Block (3× L + N + PE) für diesen Klemmentyp verfügbar"
-                                        .to_string()
-                                });
+                                .map(|p| tr::pole_group_tip(self.lang, 3, &p.summary))
+                                .unwrap_or_else(|| tr::pole_group_unavail(self.lang, 3));
                             let btn_3p = ui
                                 .add_enabled_ui(plan_3p.is_some(), |ui| {
-                                    icon_button(ui, UiIcon::PoleBlock3, "3-Polig")
+                                    icon_button(ui, UiIcon::PoleBlock3, tr::pole3_btn(self.lang))
                                 })
                                 .inner
                                 .on_hover_text(&tip_3p)
@@ -3479,7 +3463,7 @@ impl TermiGridApp {
                                 ui,
                                 UiIcon::MoveLeft,
                                 false,
-                                "Nach links verschieben (Alt+Links)",
+                                tr::move_left_tip(self.lang),
                             )
                             .clicked()
                             {
@@ -3490,15 +3474,15 @@ impl TermiGridApp {
                                 ui,
                                 UiIcon::MoveRight,
                                 false,
-                                "Nach rechts verschieben (Alt+Rechts)",
+                                tr::move_right_tip(self.lang),
                             )
                             .clicked()
                             {
                                 self.selected_blocks = self.project.strips[self.active_strip]
                                     .move_selected_blocks(&self.selected_blocks, 1);
                             }
-                            if icon_button(ui, UiIcon::Duplicate, "Duplizieren")
-                                .on_hover_text("Auswahl klonen (Strg+D)")
+                            if icon_button(ui, UiIcon::Duplicate, tr::duplicate(self.lang))
+                                .on_hover_text(tr::clone_selection_tip(self.lang))
                                 .clicked()
                             {
                                 self.selected_blocks = self.project.strips[self.active_strip]
@@ -3515,7 +3499,7 @@ impl TermiGridApp {
                                 self.canvas_state.selection_anchor = None;
                                 self.notify_undoable(
                                     ToastTone::Info,
-                                    format!("{del_count} Klemme(n) gelöscht."),
+                                    tr::toast_blocks_deleted(self.lang, del_count),
                                 );
                             }
                         });
@@ -3792,11 +3776,9 @@ impl TermiGridApp {
                 } else if !strip.blocks.is_empty() {
                     ui.add(
                         egui::Label::new(
-                            egui::RichText::new(
-                                "Endplatten & NT-Prüfung erscheinen nach Klick auf „Endplatten generieren“.",
-                            )
-                            .color(sec)
-                            .small(),
+                            egui::RichText::new(tr::endplates_deferred_hint(self.lang))
+                                .color(sec)
+                                .small(),
                         )
                         .wrap(),
                     );
@@ -3969,11 +3951,9 @@ impl TermiGridApp {
                 } else if !strip.blocks.is_empty() {
                     ui.add(
                         egui::Label::new(
-                            egui::RichText::new(
-                                "Endplatten & NT-Prüfung erscheinen nach Klick auf „Endplatten generieren“.",
-                            )
-                            .color(sec)
-                            .small(),
+                            egui::RichText::new(tr::endplates_deferred_hint(self.lang))
+                                .color(sec)
+                                .small(),
                         )
                         .wrap(),
                     );
@@ -4103,21 +4083,25 @@ impl TermiGridApp {
                     };
 
                     if !is_generated {
-                        step_pill(ui, "1. Klemmen anpassen", true, false);
+                        step_pill(ui, tr::step1_edit_terminals(self.lang), true, false);
                         ui.label(egui::RichText::new("→").color(t.text_muted));
-                        step_pill(ui, "2. Endplatten generieren", false, false);
+                        step_pill(ui, tr::step2_gen_endplates(self.lang), false, false);
                         ui.label(egui::RichText::new("→").color(t.text_muted));
-                        step_pill(ui, "3. Brücken / Excel / ePlan", false, false);
+                        step_pill(ui, tr::step3_bridge_excel_eplan(self.lang), false, false);
 
                         ui.separator();
                         let gen_tip = if has_blocks {
-                            "Abschluss-/Zwischenplatten berechnen und auf NT-Trennklemmen prüfen"
+                            tr::gen_endplates_tip(self.lang)
                         } else {
-                            "Zuerst Klemmen auf der Klemmleiste platzieren"
+                            tr::gen_endplates_empty_tip(self.lang)
                         };
                         let gen_btn = ui
                             .add_enabled_ui(has_blocks, |ui| {
-                                primary_icon_button(ui, UiIcon::Bolt, "Endplatten generieren")
+                                primary_icon_button(
+                                    ui,
+                                    UiIcon::Bolt,
+                                    tr::gen_endplates_btn(self.lang),
+                                )
                             })
                             .inner
                             .on_hover_text(gen_tip)
@@ -4126,22 +4110,20 @@ impl TermiGridApp {
                             deferred_generate = true;
                         }
                     } else {
-                        step_pill(ui, "✓ 1. Klemmen", false, true);
+                        step_pill(ui, tr::step1_done_pill(self.lang), false, true);
                         ui.label(egui::RichText::new("→").color(t.text_muted));
                         step_pill(
                             ui,
-                            &format!("✓ 2. Endplatten ({plates_count}×)"),
+                            &tr::step2_done_pill(self.lang, plates_count),
                             false,
                             true,
                         );
                         ui.label(egui::RichText::new("→").color(t.text_muted));
-                        step_pill(ui, "3. Nächster Schritt", true, false);
+                        step_pill(ui, tr::step3_next_pill(self.lang), true, false);
 
                         ui.separator();
-                        if icon_button(ui, UiIcon::Edit, "Erneut bearbeiten")
-                            .on_hover_text(
-                                "Zurück in den Klemmen-Bearbeitungsmodus wechseln, um Klemmen oder Nummerierung anzupassen",
-                            )
+                        if icon_button(ui, UiIcon::Edit, tr::reedit_btn(self.lang))
+                            .on_hover_text(tr::reedit_tip(self.lang))
                             .clicked()
                         {
                             deferred_reedit = true;
@@ -4153,19 +4135,19 @@ impl TermiGridApp {
                             (
                                 Step3ViewMode::CadOverview,
                                 UiIcon::CadEditor,
-                                "CAD-Ansicht",
-                                "Standard-CAD-Ansicht mit Endplatten & Beschriftung",
+                                tr::cad_view_btn(self.lang),
+                                tr::cad_view_tip(self.lang),
                             ),
                             (
                                 Step3ViewMode::Bridge,
                                 UiIcon::ModeBridge,
-                                "Brücken-Modus",
+                                tr::bridge_mode_btn(self.lang),
                                 s.mode_bridge_tip,
                             ),
                             (
                                 Step3ViewMode::Eplan,
                                 UiIcon::ModeEplan,
-                                "ePlan-Modus",
+                                tr::eplan_mode_btn(self.lang),
                                 s.mode_eplaner_tip,
                             ),
                         ];
@@ -4176,26 +4158,22 @@ impl TermiGridApp {
                         if subtle_success_icon_button(
                             ui,
                             UiIcon::ExportXlsx,
-                            "Excel-Export",
+                            tr::excel_export_btn(self.lang),
                         )
-                        .on_hover_text(
-                            "Exportiert alle Klemmleisten als 4-Blatt-Excel-Arbeitsmappe (.xlsx)",
-                        )
+                        .on_hover_text(tr::excel_export_tip(self.lang))
                         .clicked()
                         {
                             deferred_export_xlsx = true;
                         }
                         if ghost_icon_button(ui, UiIcon::ExportCsv, "CSV")
-                            .on_hover_text("Flache Druckdaten als .csv exportieren")
+                            .on_hover_text(tr::csv_tip(self.lang))
                             .clicked()
                         {
                             deferred_export_csv = true;
                         }
                         if is_eplan_mode
-                            && icon_button(ui, UiIcon::ExportDxf, "DXF (1:1 mm)")
-                                .on_hover_text(
-                                    "Exportiert alle Klemmleisten maßstabsgetreu (1:1 mm) als DXF für EPLAN Electric P8",
-                                )
+                            && icon_button(ui, UiIcon::ExportDxf, tr::dxf_btn(self.lang))
+                                .on_hover_text(tr::dxf_tip(self.lang))
                                 .clicked()
                         {
                             deferred_export_dxf = true;
@@ -4219,7 +4197,7 @@ impl TermiGridApp {
                             let active_idx = self.active_strip;
                             let strip = &mut self.project.strips[active_idx];
                             ui.label(
-                                egui::RichText::new("Leiste")
+                                egui::RichText::new(tr::strip_word(self.lang))
                                     .size(12.5)
                                     .color(t.text_secondary),
                             );
@@ -4244,23 +4222,23 @@ impl TermiGridApp {
                             }
 
                             ui.label(
-                                egui::RichText::new("Folge")
+                                egui::RichText::new(tr::sequence_label(self.lang))
                                     .size(12.5)
                                     .color(t.text_secondary),
                             );
                             let seq_text = match strip.sequence_mode {
-                                StripSequenceMode::ByBlock => "Klemmenweise (1,2 | 3,4)",
-                                StripSequenceMode::ByLevel => "Ebenenweise (1,2,3 | 4,5,6)",
+                                StripSequenceMode::ByBlock => tr::seq_by_block(self.lang),
+                                StripSequenceMode::ByLevel => tr::seq_by_level(self.lang),
                             };
                             egui::ComboBox::from_id_salt("seq_mode_combo")
                                 .truncate()
                                 .selected_text(seq_text)
                                 .show_ui(ui, |ui| {
                                     for (mode, lbl) in [
-                                        (StripSequenceMode::ByBlock, "Klemmenweise (1,2 | 3,4)"),
+                                        (StripSequenceMode::ByBlock, tr::seq_by_block(self.lang)),
                                         (
                                             StripSequenceMode::ByLevel,
-                                            "Ebenenweise (E1: 1,2,3 | E2: 4,5,6)",
+                                            tr::seq_by_level_long(self.lang),
                                         ),
                                     ] {
                                         if ui
@@ -4368,13 +4346,9 @@ impl TermiGridApp {
                         let append_target_spec = marked_spec
                             .or_else(|| self.catalog.find_by_id(&strip.default_spec_id));
                         let append_tip = if let (Some(idx), Some(sp)) = (anchor_idx, marked_spec) {
-                            format!(
-                                "Gleiche Klemme wie #{} ({}) direkt danach hinzufügen",
-                                idx + 1,
-                                sp.name
-                            )
+                            tr::add_same_after_tip(self.lang, idx, &sp.name)
                         } else if let Some(sp) = append_target_spec {
-                            format!("Standardklemme ({}) am Leistenende hinzufügen", sp.name)
+                            tr::add_default_end_tip(self.lang, &sp.name)
                         } else {
                             s.btn_append_block.to_string()
                         };
@@ -4418,11 +4392,9 @@ impl TermiGridApp {
                                 "N → NT".to_string()
                             };
                             let tip_to_nt = if to_nt_count > 0 {
-                                format!(
-                                    "Wandelt alle {to_nt_count} N-Klemmen dieser Leiste in passende NT-Trennklemmen um"
-                                )
+                                tr::convert_n_to_nt_tip(self.lang, to_nt_count)
                             } else {
-                                "Keine umwandelbaren N-Klemmen vorhanden".to_string()
+                                tr::convert_n_to_nt_none(self.lang).to_string()
                             };
                             if ui
                                 .add_enabled_ui(to_nt_count > 0, |ui| {
@@ -4441,11 +4413,9 @@ impl TermiGridApp {
                                 "NT → N".to_string()
                             };
                             let tip_to_n = if to_n_count > 0 {
-                                format!(
-                                    "Wandelt alle {to_n_count} NT-Trennklemmen wieder in Standard-N-Klemmen um"
-                                )
+                                tr::convert_nt_to_n_tip(self.lang, to_n_count)
                             } else {
-                                "Keine umwandelbaren NT-Trennklemmen vorhanden".to_string()
+                                tr::convert_nt_to_n_none(self.lang).to_string()
                             };
                             if ui
                                 .add_enabled_ui(to_n_count > 0, |ui| {
@@ -4497,7 +4467,9 @@ impl TermiGridApp {
                                 .show_value(false),
                         );
                     });
-                    if icon_only_button(ui, UiIcon::ZoomIn, false, "Vergrößern").clicked() {
+                    if icon_only_button(ui, UiIcon::ZoomIn, false, tr::zoom_in_tip(self.lang))
+                        .clicked()
+                    {
                         self.canvas_state.zoom = (self.canvas_state.zoom * 1.15).clamp(0.4, 2.5);
                     }
                     ui.label(
@@ -4558,7 +4530,7 @@ impl TermiGridApp {
 
                     if is_compact
                         && has_selection
-                        && primary_icon_button(ui, UiIcon::Edit, "Bearbeiten").clicked()
+                        && primary_icon_button(ui, UiIcon::Edit, tr::edit(self.lang)).clicked()
                     {
                         self.mobile_pane = MobilePane::Inspector;
                     }
@@ -4598,9 +4570,7 @@ impl TermiGridApp {
                 if converted > 0 {
                     self.notify(
                         ToastTone::Info,
-                        format!(
-                            "{converted} N-Klemme(n) in NT-Trennklemmen umgewandelt — anschließend auf „Endplatten generieren“ klicken."
-                        ),
+                        tr::toast_n_to_nt(self.lang, converted, true),
                     );
                 }
             } else {
@@ -4609,9 +4579,7 @@ impl TermiGridApp {
                 if converted > 0 {
                     self.notify(
                         ToastTone::Info,
-                        format!(
-                            "{converted} NT-Trennklemme(n) in Standard-N-Klemmen zurückgewandelt — anschließend auf „Endplatten generieren“ klicken."
-                        ),
+                        tr::toast_nt_to_n(self.lang, converted, true),
                     );
                 }
             }
@@ -4659,7 +4627,7 @@ impl TermiGridApp {
                         }
                         if is_active
                             && strip.potentials.len() > 1
-                            && icon_only_button(ui, UiIcon::Close, false, "Potential entfernen")
+                            && icon_only_button(ui, UiIcon::Close, false, tr::delete(self.lang))
                                 .clicked()
                         {
                             remove_id = Some(pot.id);
@@ -4705,7 +4673,7 @@ impl TermiGridApp {
         if let Some(pname) = added_potential_name {
             self.notify(
                 ToastTone::Success,
-                format!("Potential „{pname}“ hinzugefügt."),
+                tr::toast_potential_added(self.lang, &pname),
             );
         }
 

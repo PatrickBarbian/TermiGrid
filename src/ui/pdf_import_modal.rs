@@ -2,7 +2,7 @@ use egui::{Color32, Context, CornerRadius, Frame, Margin, Pos2, Rect, Stroke, Ve
 
 use crate::catalog::accessories::find_end_bracket;
 use crate::catalog::TerminalCatalog;
-use crate::i18n::Strings;
+use crate::i18n::{tr, Strings};
 use crate::import::planner::{PdfBomImportPlan, StripImportPlan};
 use crate::ui::icons::{
     compact_mfg_badge, icon_button, primary_icon_button, show_responsive_modal, UiIcon,
@@ -135,10 +135,11 @@ pub fn show_pdf_import_modal(
 
     let mut confirmed: Option<Vec<SelectedStripImport>> = None;
     let mut open = state.open;
+    let lang = strings.lang;
     let title = if state.source_label.is_empty() {
-        "PDF-Stückliste importieren (EPLAN)".to_string()
+        tr::pdf_import_title(lang).to_string()
     } else {
-        format!("PDF-Stückliste importieren: {}", state.source_label)
+        tr::pdf_import_file_title(lang, &state.source_label)
     };
 
     show_responsive_modal(
@@ -167,7 +168,7 @@ pub fn show_pdf_import_modal(
             }
 
             let Some(plan) = state.plan.as_ref() else {
-                ui.label("Keine Stücklistendaten geladen.");
+                ui.label(tr::pdf_no_data(lang));
                 return;
             };
 
@@ -175,8 +176,8 @@ pub fn show_pdf_import_modal(
                 plan.strips.iter().map(|s| s.total_terminal_count).sum();
             ui.horizontal_wrapped(|ui| {
                 ui.label(
-                    egui::RichText::new(format!(
-                        "{} Klemmleisten erkannt  |  {} Klemmen gesamt  |  {} Fremdartikel übersprungen  |  {} Nicht-Klemmen (-Q/-T/-W) gefiltert",
+                    egui::RichText::new(tr::pdf_summary(
+                        lang,
                         plan.strips.len(),
                         recognized_total,
                         plan.skipped_foreign.len(),
@@ -189,12 +190,12 @@ pub fn show_pdf_import_modal(
 
             if !plan.strips.is_empty() {
                 ui.horizontal_wrapped(|ui| {
-                    if icon_button(ui, UiIcon::SelectAll, "Alle wählbaren").clicked() {
+                    if icon_button(ui, UiIcon::SelectAll, tr::pdf_all_selectable(lang)).clicked() {
                         for (s, c) in plan.strips.iter().zip(state.choices.iter_mut()) {
                             c.selected = s.total_terminal_count > 0 && !s.variants.is_empty();
                         }
                     }
-                    if icon_button(ui, UiIcon::SelectNone, "Keine").clicked() {
+                    if icon_button(ui, UiIcon::SelectNone, tr::select_none(strings.lang)).clicked() {
                         for c in &mut state.choices {
                             c.selected = false;
                         }
@@ -206,10 +207,8 @@ pub fn show_pdf_import_modal(
             if plan.strips.is_empty() {
                 ui.add(
                     egui::Label::new(
-                        egui::RichText::new(
-                            "Keine Klemmleisten (-X...) mit unterstützten Herstellern (WAGO, Phoenix Contact, Weidmüller) gefunden.",
-                        )
-                        .color(secondary_text_color(ui)),
+                        egui::RichText::new(tr::pdf_none_found(lang))
+                            .color(secondary_text_color(ui)),
                     )
                     .wrap(),
                 );
@@ -244,18 +243,18 @@ pub fn show_pdf_import_modal(
                             compact_mfg_badge(ui, &strip.dominant_manufacturer);
 
                             let page_str = if strip.pages.len() <= 1 {
-                                format!("S. {}", strip.pages.first().copied().unwrap_or(1))
+                                format!("P. {}", strip.pages.first().copied().unwrap_or(1))
                             } else {
                                 format!(
-                                    "S. {}-{}",
+                                    "P. {}-{}",
                                     strip.pages.first().copied().unwrap_or(1),
                                     strip.pages.last().copied().unwrap_or(1)
                                 )
                             };
                             ui.label(
                                 egui::RichText::new(format!(
-                                    "({} Klemmen | {page_str})",
-                                    strip.total_terminal_count
+                                    "({} {} | {page_str})",
+                                    strip.total_terminal_count, strings.blocks_unit
                                 ))
                                 .color(secondary_text_color(ui)),
                             );
@@ -263,7 +262,7 @@ pub fn show_pdf_import_modal(
                             if strip.has_nt_or_install {
                                 draw_pill_badge(
                                     ui,
-                                    "NT-Klemmen",
+                                    tr::pdf_nt_badge(lang),
                                     Color32::from_rgb(14, 116, 144),
                                     Color32::WHITE,
                                 );
@@ -273,7 +272,7 @@ pub fn show_pdf_import_modal(
                             {
                                 draw_pill_badge(
                                     ui,
-                                    "Endteile aus PDF",
+                                    "PDF End Parts",
                                     Color32::from_rgb(15, 118, 110),
                                     Color32::WHITE,
                                 );
@@ -282,7 +281,7 @@ pub fn show_pdf_import_modal(
                             {
                                 draw_pill_badge(
                                     ui,
-                                    "Endteile auto-ergänzt",
+                                    tr::pdf_end_parts_badge(lang),
                                     Color32::from_rgb(22, 163, 74),
                                     Color32::WHITE,
                                 );
@@ -290,7 +289,7 @@ pub fn show_pdf_import_modal(
                             if !strip.ignored_jumpers.is_empty() {
                                 draw_pill_badge(
                                     ui,
-                                    "Brücker ignoriert",
+                                    tr::pdf_jumpers_ignored(lang),
                                     Color32::from_rgb(100, 116, 139),
                                     Color32::WHITE,
                                 );

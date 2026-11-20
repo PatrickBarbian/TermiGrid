@@ -4,6 +4,7 @@ use egui::{
 };
 
 use crate::catalog::TerminalCatalog;
+use crate::i18n::{tr, Language};
 use crate::model::TerminalStrip;
 use crate::ui::icons::{compact_mfg_badge, draw_icon, icon_only_button, UiIcon};
 use crate::ui::theme::{kbd_chip, ThemeTokens};
@@ -73,7 +74,12 @@ impl ToastQueue {
 
     /// Renders active toasts in the bottom-right corner above the status bar.
     /// Returns an optional action if the user clicked an inline button (e.g., Undo).
-    pub fn show(&mut self, ctx: &Context, bottom_inset: f32) -> Option<ToastActionKind> {
+    pub fn show(
+        &mut self,
+        ctx: &Context,
+        bottom_inset: f32,
+        lang: Language,
+    ) -> Option<ToastActionKind> {
         let now = ctx.input(|i| i.time);
         self.items
             .retain(|item| (now - item.created_at) < item.duration_secs);
@@ -154,7 +160,7 @@ impl ToastQueue {
                                                 ui,
                                                 UiIcon::Close,
                                                 false,
-                                                "Schließen",
+                                                tr::close(lang),
                                             )
                                             .clicked()
                                             {
@@ -260,6 +266,7 @@ impl CommandPaletteState {
         has_active_project: bool,
         can_undo: bool,
         can_redo: bool,
+        lang: Language,
     ) -> Option<PaletteCommand> {
         if !self.open {
             return None;
@@ -294,6 +301,7 @@ impl CommandPaletteState {
         }
 
         // Build matching command entries
+        let s = crate::i18n::strings(lang);
         let mut entries: Vec<PaletteEntry> = Vec::new();
         let q = self.query.trim().to_lowercase();
         let matches_q = |title: &str, sub: &str| {
@@ -305,78 +313,78 @@ impl CommandPaletteState {
         if has_active_project {
             for (title, sub, icon, sc, cmd) in [
                 (
-                    "Generieren (Endplatten & NT prüfen)",
-                    "Berechnet Trennplatten und prüft NT-Einspeisung",
+                    tr::cmd_gen_title(lang),
+                    tr::cmd_gen_sub(lang),
                     UiIcon::Bolt,
                     "",
                     PaletteCommand::GenerateActiveStrip,
                 ),
                 (
-                    "Neue Klemmleiste anlegen",
-                    "Leisten-Assistent öffnen",
+                    tr::cmd_new_strip_title(lang),
+                    tr::cmd_new_strip_sub(lang),
                     UiIcon::Add,
                     "",
                     PaletteCommand::NewStrip,
                 ),
                 (
-                    "Brücken-Modus umschalten",
-                    "Potentiale & Kammbrücken zeichnen",
+                    tr::cmd_toggle_bridge_title(lang),
+                    tr::cmd_toggle_bridge_sub(lang),
                     UiIcon::ModeBridge,
                     "",
                     PaletteCommand::ToggleBridgeMode,
                 ),
                 (
-                    "EPLAN 1:1 Aufbaubild umschalten",
-                    "Maßstabsgetreue TS 35 Darstellung + DXF",
+                    tr::cmd_toggle_eplan_title(lang),
+                    tr::cmd_toggle_eplan_sub(lang),
                     UiIcon::ModeEplan,
                     "",
                     PaletteCommand::ToggleEplanMode,
                 ),
                 (
-                    "Zählfolge umschalten (Klemmenweise ↔ Ebenenweise)",
-                    "Umschalten zwischen 1,2 | 3,4 und Ebene 1: 1,2,3 → Ebene 2: 4,5,6",
+                    tr::cmd_toggle_seq_title(lang),
+                    tr::cmd_toggle_seq_sub(lang),
                     UiIcon::FlipOrder,
                     "",
                     PaletteCommand::ToggleSequenceMode,
                 ),
                 (
-                    "Excel-Export (.xlsx)",
-                    "Alle Klemmleisten als 4-Blatt-Arbeitsmappe exportieren",
+                    tr::cmd_xlsx_title(lang),
+                    tr::excel_export_tip(lang),
                     UiIcon::ExportXlsx,
                     "",
                     PaletteCommand::ExportXlsx,
                 ),
                 (
-                    "CSV-Export (.csv)",
-                    "Flache Druckdaten für Markierer exportieren",
+                    tr::cmd_csv_title(lang),
+                    tr::csv_tip(lang),
                     UiIcon::ExportCsv,
                     "",
                     PaletteCommand::ExportCsv,
                 ),
                 (
-                    "DXF-Export (EPLAN 1:1 mm)",
-                    "Maßstabsgetreue CAD-Zeichnung exportieren",
+                    tr::cmd_dxf_title(lang),
+                    tr::cmd_dxf_sub(lang),
                     UiIcon::ExportDxf,
                     "",
                     PaletteCommand::ExportDxf,
                 ),
                 (
-                    "Alle N-Klemmen in NT umwandeln",
-                    "Ersetzt Standard-N-Klemmen durch NT-Trennklemmen",
+                    tr::cmd_n_to_nt_title(lang),
+                    tr::cmd_n_to_nt_sub(lang),
                     UiIcon::ConvertNt,
                     "",
                     PaletteCommand::ConvertNToNt,
                 ),
                 (
-                    "Alle NT-Klemmen in N zurückwandeln",
-                    "Ersetzt NT-Trennklemmen durch Standard-N-Klemmen",
+                    tr::cmd_nt_to_n_title(lang),
+                    tr::cmd_nt_to_n_sub(lang),
                     UiIcon::ConvertNt,
                     "",
                     PaletteCommand::ConvertNtToN,
                 ),
                 (
-                    "Projekt speichern",
-                    "Aktuelles Projekt als .termi sichern",
+                    tr::cmd_save_proj_title(lang),
+                    tr::cmd_save_proj_sub(lang),
                     UiIcon::Save,
                     "",
                     PaletteCommand::SaveProject,
@@ -393,32 +401,33 @@ impl CommandPaletteState {
                     });
                 }
             }
-            if can_undo && matches_q("Rückgängig Undo", "Letzten Schritt zurücknehmen") {
+            if can_undo && matches_q(tr::cmd_undo_title(lang), tr::cmd_undo_sub(lang)) {
                 entries.push(PaletteEntry {
                     icon: UiIcon::Undo,
-                    title: "Rückgängig (Undo)".to_string(),
-                    subtitle: "Letzte Änderung rückgängig machen".to_string(),
-                    shortcut: "Strg+Z",
+                    title: tr::cmd_undo_title(lang).to_string(),
+                    subtitle: tr::cmd_undo_sub(lang).to_string(),
+                    shortcut: "Ctrl+Z",
                     mfg_badge: None,
                     command: PaletteCommand::Undo,
                 });
             }
-            if can_redo && matches_q("Wiederholen Redo", "Schritt wiederherstellen") {
+            if can_redo && matches_q(tr::cmd_redo_title(lang), tr::cmd_redo_sub(lang)) {
                 entries.push(PaletteEntry {
                     icon: UiIcon::Redo,
-                    title: "Wiederholen (Redo)".to_string(),
-                    subtitle: "Rückgängig gemachten Schritt wiederherstellen".to_string(),
-                    shortcut: "Strg+Y",
+                    title: tr::cmd_redo_title(lang).to_string(),
+                    subtitle: tr::cmd_redo_sub(lang).to_string(),
+                    shortcut: "Ctrl+Y",
                     mfg_badge: None,
                     command: PaletteCommand::Redo,
                 });
             }
 
             for (idx, strip) in strips.iter().enumerate() {
-                let title = format!("Klemmleiste {}", strip.name);
+                let title = tr::cmd_strip_title(lang, &strip.name);
                 let sub = format!(
-                    "{} Klemmen · {:.1} mm{}",
+                    "{} {} · {:.1} mm{}",
                     strip.blocks.len(),
+                    s.blocks_unit,
                     strip.total_width_mm(),
                     if strip.description.is_empty() {
                         String::new()
@@ -441,32 +450,32 @@ impl CommandPaletteState {
 
         for (title, sub, icon, cmd) in [
             (
-                "PDF-Stückliste importieren",
-                "EPLAN-Stückliste (.pdf) automatisch erkennen",
+                tr::cmd_pdf_title(lang),
+                tr::pdf_bom_tip(lang),
                 UiIcon::ImportPdf,
                 PaletteCommand::ImportPdf,
             ),
             (
-                "Bibliothek öffnen",
-                "PC-weite Klemmleisten-Vorlagen durchsuchen",
+                tr::cmd_lib_title(lang),
+                tr::cmd_lib_sub(lang),
                 UiIcon::Library,
                 PaletteCommand::OpenLibrary,
             ),
             (
-                "Projekt öffnen",
-                "Vorhandene .termi-Datei laden",
+                tr::cmd_open_proj_title(lang),
+                tr::cmd_open_proj_sub(lang),
                 UiIcon::FolderOpen,
                 PaletteCommand::OpenProject,
             ),
             (
-                "Neues Projekt starten",
-                "Mit leerem Projekt beginnen",
+                tr::cmd_new_proj_title(lang),
+                tr::cmd_new_proj_sub(lang),
                 UiIcon::NewFile,
                 PaletteCommand::NewProject,
             ),
             (
-                "Farbschema wechseln (System / Hell / Dunkel)",
-                "Zwischen Hell-, Dunkel- und System-Design wechseln",
+                tr::cmd_theme_title(lang),
+                tr::cmd_theme_sub(lang),
                 UiIcon::ThemeSystem,
                 PaletteCommand::CycleTheme,
             ),
@@ -486,14 +495,20 @@ impl CommandPaletteState {
         // If user typed a query and an active strip exists, append matching terminal specs for instant 1-click insert
         if !q.is_empty() && has_active_project {
             for spec in catalog.filter_specs(None, &self.query).into_iter().take(12) {
+                let desc = if lang == Language::De {
+                    &spec.description_de
+                } else {
+                    &spec.description_en
+                };
                 entries.push(PaletteEntry {
                     icon: UiIcon::Add,
-                    title: format!("{} einfügen", spec.name),
+                    title: tr::cmd_insert_block(lang, &spec.name),
                     subtitle: format!(
-                        "{:.1} mm · {} Etagen · {}",
+                        "{:.1} mm · {} {} · {}",
                         f32::from(spec.width_tenths_mm) / 10.0,
                         spec.levels,
-                        spec.description_de
+                        tr::levels_summary(lang, spec.levels),
+                        desc
                     ),
                     shortcut: "",
                     mfg_badge: Some(spec.manufacturer.clone()),
@@ -574,7 +589,7 @@ impl CommandPaletteState {
                                     .id(edit_id)
                                     .frame(Frame::NONE)
                                     .desired_width(ui.available_width() - 48.0)
-                                    .hint_text("Befehl, Klemmleiste oder Klemmentyp (z. B. 2002, PTI, Excel)…"),
+                                    .hint_text(tr::cmd_search_hint(lang)),
                             );
                             if self.just_opened {
                                 resp.request_focus();
@@ -602,7 +617,7 @@ impl CommandPaletteState {
                             ui.add_space(18.0);
                             ui.vertical_centered(|ui| {
                                 ui.label(
-                                    egui::RichText::new("Keine passenden Befehle oder Klemmen gefunden.")
+                                    egui::RichText::new(tr::cmd_no_hits(lang))
                                         .color(t.text_secondary),
                                 );
                             });
