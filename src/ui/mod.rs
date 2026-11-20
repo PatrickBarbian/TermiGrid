@@ -347,6 +347,34 @@ impl TermiGridApp {
                     tr::toast_spec_saved(self.lang, &spec_name, updated_blocks),
                 );
             }
+            DatabaseAction::ImportSpecsBatch(specs) => {
+                let count = specs.len();
+                for mut spec in specs {
+                    if TerminalCatalog::embedded_default_by_id(&spec.id).is_some() {
+                        spec.user_modified = true;
+                    }
+                    upsert_custom_spec(&mut self.global_custom_specs, spec.clone());
+                    upsert_custom_spec(&mut self.project.custom_specs, spec.clone());
+                    for strip in &mut self.project.strips {
+                        let mut touched = false;
+                        for block in &mut strip.blocks {
+                            if block.spec_id == spec.id {
+                                TerminalCatalog::apply_spec_to_block(block, &spec);
+                                touched = true;
+                            }
+                        }
+                        if touched {
+                            strip.recalculate_labels();
+                        }
+                    }
+                }
+                let _ = save_global_custom_specs(&self.global_custom_specs);
+                self.reload_catalog_with_all_custom();
+                self.notify(
+                    ToastTone::Success,
+                    tr::toast_specs_imported(self.lang, count),
+                );
+            }
             DatabaseAction::ResetOrDeleteSpec { id, is_builtin } => {
                 remove_custom_spec(&mut self.global_custom_specs, &id);
                 remove_custom_spec(&mut self.project.custom_specs, &id);

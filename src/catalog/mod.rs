@@ -110,7 +110,13 @@ impl TerminalSpec {
             return slots.min(2);
         }
         let id = self.id.as_str();
-        if id.contains("uslkg") || id.contains("ptrv") || id.contains("wnt-") {
+        if id.contains("uslkg")
+            || id.contains("ptrv")
+            || id.contains("wnt-")
+            || id.contains("ptn-")
+            || id.contains("utn-")
+            || id.contains("stn-")
+        {
             return 0;
         }
         // Single-chamber series: compact 1.5mm², installation multi-tier (PTI/AITB/2003/2005/DLI),
@@ -186,7 +192,13 @@ impl TerminalSpec {
             return if poles == 0 { 0 } else { poles.max(2) };
         }
         let id = self.id.as_str();
-        if id.contains("uslkg") || id.contains("ptrv") || id.contains("wnt-") {
+        if id.contains("uslkg")
+            || id.contains("ptrv")
+            || id.contains("wnt-")
+            || id.contains("ptn-")
+            || id.contains("utn-")
+            || id.contains("stn-")
+        {
             0
         } else if id.contains("285-")
             || id.contains("2035-")
@@ -719,6 +731,9 @@ impl TerminalSpec {
         let id = self.id.as_str();
         self.name.contains("NT")
             || self.name.contains("NDT")
+            || id.starts_with("phoenix-ptn-")
+            || id.starts_with("phoenix-utn-")
+            || id.starts_with("phoenix-stn-")
             || id.ends_with("-lnt")
             || id.ends_with("-pelnt")
             || id.ends_with("-ntlp")
@@ -729,7 +744,7 @@ impl TerminalSpec {
     }
 
     /// Returns `true` if this terminal is a building-installation terminal (`2003`, `2203`, `2005`, `2205`,
-    /// `PTI`, `STI`, `UTI`, `AITB`, `ZDL`, `DLI`) or any `NT` terminal that should prompt for NT / N-Einspeiseklemme.
+    /// `PTI`, `PTN`, `STI`, `STN`, `UTI`, `UTN`, `AITB`, `ZDL`, `DLI`) or any `NT` terminal that should prompt for NT / N-Einspeiseklemme.
     pub fn is_installation_or_nt_terminal(&self) -> bool {
         if self.is_n_supply_terminal() || self.is_busbar_carrier() {
             return false;
@@ -740,8 +755,11 @@ impl TerminalSpec {
             || id.starts_with("wago-2005-")
             || id.starts_with("wago-2205-")
             || id.starts_with("phoenix-pti-")
+            || id.starts_with("phoenix-ptn-")
             || id.starts_with("phoenix-sti-")
+            || id.starts_with("phoenix-stn-")
             || id.starts_with("phoenix-uti-")
+            || id.starts_with("phoenix-utn-")
             || id.starts_with("weidmuller-aitb-")
             || id.starts_with("weidmuller-zdl-")
             || id.starts_with("weidmuller-dli-")
@@ -784,6 +802,8 @@ impl TerminalSpec {
             } else {
                 Some("wago-2205-7640")
             }
+        } else if id == "phoenix-pti-25-bu" {
+            Some("phoenix-ptn-25")
         } else if id.starts_with("phoenix-pti-25-") {
             if self.levels >= 3 {
                 Some("phoenix-pti-25-pelnt")
@@ -792,12 +812,18 @@ impl TerminalSpec {
             } else {
                 None
             }
+        } else if id == "phoenix-pti-4-bu" {
+            Some("phoenix-ptn-4")
         } else if id.starts_with("phoenix-pti-4-") {
             if self.levels >= 2 {
                 Some("phoenix-pti-4-pelnt")
             } else {
                 None
             }
+        } else if id == "phoenix-pti-6-bu" {
+            Some("phoenix-ptn-6")
+        } else if id == "phoenix-pti-16s-bu" {
+            Some("phoenix-ptn-16s")
         } else if id.starts_with("weidmuller-aitb-25-") {
             if self.levels >= 3 {
                 Some("weidmuller-aitb-25-ntlp")
@@ -859,24 +885,37 @@ impl TerminalSpec {
             "wago-2004-1204" | "wago-2004-1304" | "wago-2004-1404" => Some("wago-2005-7640"),
             "wago-2204-1204" | "wago-2204-1304" | "wago-2204-1404" => Some("wago-2205-7640"),
 
-            // Phoenix Contact PTI / PT / ST / UT N -> NT
+            // Phoenix Contact PTI / PTN / PT / ST / STN / UT / UTN N -> NT
             "phoenix-pti-25-peln" | "phoenix-pt-25-peln" => Some("phoenix-pti-25-pelnt"),
-            "phoenix-pti-25-ln"
-            | "phoenix-pttb-25-ln-real"
-            | "phoenix-pti-25-bu"
+            "phoenix-pti-25-ln" | "phoenix-pttb-25-ln-real" => Some("phoenix-pti-25-lnt"),
+            "phoenix-pti-25-bu"
             | "phoenix-pt-25-bu"
             | "phoenix-pt-25-twin-bu"
-            | "phoenix-pt-25-quattro-bu" => Some("phoenix-pti-25-lnt"),
-            "phoenix-pti-4-peln"
-            | "phoenix-pti-4-ln"
-            | "phoenix-pti-4-bu"
-            | "phoenix-pt-4-bu" => Some("phoenix-pti-4-pelnt"),
+            | "phoenix-pt-25-quattro-bu" => Some("phoenix-ptn-25"),
+            "phoenix-pti-4-peln" | "phoenix-pti-4-ln" => Some("phoenix-pti-4-pelnt"),
+            "phoenix-pti-4-bu"
+            | "phoenix-pt-4-bu"
+            | "phoenix-pt-4-twin-bu"
+            | "phoenix-pt-4-quattro-bu" => Some("phoenix-ptn-4"),
+            "phoenix-pti-6-bu"
+            | "phoenix-pt-6-bu"
+            | "phoenix-pt-6-twin-bu"
+            | "phoenix-pt-6-quattro-bu" => Some("phoenix-ptn-6"),
+            "phoenix-pti-16s-bu" | "phoenix-pt-16n-bu" | "phoenix-pt-16-twin-n-bu" => {
+                Some("phoenix-ptn-16s")
+            }
             "phoenix-st-25-bu" | "phoenix-st-25-twin-bu" | "phoenix-st-25-quattro-bu" => {
-                Some("phoenix-sti-25-pelnt")
+                Some("phoenix-stn-25")
             }
+            "phoenix-st-4-bu" => Some("phoenix-stn-4"),
             "phoenix-ut-25-bu" | "phoenix-ut-25-twin-bu" | "phoenix-ut-25-quattro-bu" => {
-                Some("phoenix-uti-25-peln")
+                Some("phoenix-utn-25")
             }
+            "phoenix-ut-4-bu" | "phoenix-ut-4-twin-bu" => Some("phoenix-utn-4"),
+            "phoenix-ut-6-bu" => Some("phoenix-utn-6"),
+            "phoenix-ut-10-bu" => Some("phoenix-utn-10"),
+            "phoenix-ut-16-bu" => Some("phoenix-utn-16"),
+            "phoenix-ut-35-bu" => Some("phoenix-utn-35"),
 
             // Weidmüller AITB / A-Series / W-Series / Z-Series N -> NT
             "weidmuller-aitb-25-nlp" | "weidmuller-a3t-25-peln" => Some("weidmuller-aitb-25-ntlp"),
@@ -901,7 +940,7 @@ impl TerminalSpec {
     }
 
     /// Maps an `NT` disconnect terminal back to its matching standard `N` counterpart with the same
-    /// conductor count (`PE/L/NT -> PE/L/N`, `L/NT -> L/N`, `WNT -> WDU BL`), preserving all L/PE tiers.
+    /// conductor count (`PE/L/NT -> PE/L/N`, `L/NT -> L/N`, `PTN -> PTI BU`, `UTN -> UT BU`, `STN -> ST BU`, `WNT -> WDU BL`), preserving all L/PE tiers.
     pub fn matching_n_from_nt_id(&self) -> Option<&'static str> {
         if !self.is_nt_disconnect_terminal() {
             return None;
@@ -920,6 +959,20 @@ impl TerminalSpec {
             "phoenix-pti-25-pelnt" => Some("phoenix-pti-25-peln"),
             "phoenix-pti-25-lnt" => Some("phoenix-pti-25-ln"),
             "phoenix-pti-4-pelnt" => Some("phoenix-pti-4-peln"),
+            "phoenix-ptn-25" => Some("phoenix-pti-25-bu"),
+            "phoenix-ptn-4" => Some("phoenix-pti-4-bu"),
+            "phoenix-ptn-6" => Some("phoenix-pti-6-bu"),
+            "phoenix-ptn-16s" => Some("phoenix-pti-16s-bu"),
+            "phoenix-utn-25" => Some("phoenix-ut-25-bu"),
+            "phoenix-utn-4" => Some("phoenix-ut-4-bu"),
+            "phoenix-utn-6" => Some("phoenix-ut-6-bu"),
+            "phoenix-utn-10" => Some("phoenix-ut-10-bu"),
+            "phoenix-utn-16" => Some("phoenix-ut-16-bu"),
+            "phoenix-utn-35" => Some("phoenix-ut-35-bu"),
+            "phoenix-stn-25" => Some("phoenix-st-25-bu"),
+            "phoenix-stn-4" => Some("phoenix-st-4-bu"),
+            "phoenix-stn-10" => Some("phoenix-ptv-10-bu"),
+            "phoenix-stn-16" => Some("phoenix-ptv-16-bu"),
             "weidmuller-aitb-25-ntlp" => Some("weidmuller-aitb-25-nlp"),
             "weidmuller-aitb-25-ndt" => Some("weidmuller-aitb-25-nl"),
             "weidmuller-aitb-4-ntlp" => Some("weidmuller-aitb-4-nlp"),
@@ -1026,41 +1079,60 @@ impl TerminalSpec {
                 } else if id.starts_with("phoenix-ptv-16") {
                     "phx:ptv-16".to_string()
                 } else if id.starts_with("phoenix-pti-25")
+                    || id.starts_with("phoenix-ptn-25")
                     || id == "phoenix-ab-pti"
                     || id == "phoenix-ab-pti-3"
                 {
                     "phx:pti-2.5".to_string()
-                } else if id.starts_with("phoenix-pti-4") || id == "phoenix-ab-pti-4-3" {
+                } else if id.starts_with("phoenix-pti-4")
+                    || id.starts_with("phoenix-ptn-4")
+                    || id == "phoenix-ab-pti-4-3"
+                {
                     "phx:pti-4".to_string()
-                } else if id.starts_with("phoenix-pti-6") || id == "phoenix-ab-pti-6" {
+                } else if id.starts_with("phoenix-pti-6")
+                    || id.starts_with("phoenix-ptn-6")
+                    || id == "phoenix-ab-pti-6"
+                {
                     "phx:pti-6".to_string()
-                } else if id.starts_with("phoenix-pti-16") || id.starts_with("phoenix-ab-pti-16") {
+                } else if id.starts_with("phoenix-pti-16")
+                    || id.starts_with("phoenix-ptn-16")
+                    || id.starts_with("phoenix-ab-pti-16")
+                {
                     "phx:pti-16".to_string()
                 } else if id.starts_with("phoenix-sti-") || id.starts_with("phoenix-ab-sti") {
                     "phx:sti".to_string()
                 } else if id.starts_with("phoenix-uti-") || id.starts_with("phoenix-ab-uti") {
                     "phx:uti".to_string()
-                } else if id.starts_with("phoenix-st-25") || id.starts_with("phoenix-sttb-25") {
+                } else if id.starts_with("phoenix-st-25")
+                    || id.starts_with("phoenix-stn-25")
+                    || id.starts_with("phoenix-sttb-25")
+                {
                     "phx:st-2.5".to_string()
-                } else if id.starts_with("phoenix-st-4") {
+                } else if id.starts_with("phoenix-st-4") || id.starts_with("phoenix-stn-4") {
                     "phx:st-4".to_string()
                 } else if id.starts_with("phoenix-st-6") {
                     "phx:st-6".to_string()
-                } else if id.starts_with("phoenix-st-10") {
+                } else if id.starts_with("phoenix-st-10") || id.starts_with("phoenix-stn-10") {
                     "phx:st-10".to_string()
-                } else if id.starts_with("phoenix-st-16") {
+                } else if id.starts_with("phoenix-st-16") || id.starts_with("phoenix-stn-16") {
                     "phx:st-16".to_string()
-                } else if id.starts_with("phoenix-ut-25") || id.starts_with("phoenix-uttb-25") {
+                } else if id.starts_with("phoenix-ut-25")
+                    || id.starts_with("phoenix-utn-25")
+                    || id.starts_with("phoenix-uttb-25")
+                {
                     "phx:ut-2.5".to_string()
-                } else if id.starts_with("phoenix-ut-4") || id.starts_with("phoenix-uttb-4") {
+                } else if id.starts_with("phoenix-ut-4")
+                    || id.starts_with("phoenix-utn-4")
+                    || id.starts_with("phoenix-uttb-4")
+                {
                     "phx:ut-4".to_string()
-                } else if id.starts_with("phoenix-ut-6") {
+                } else if id.starts_with("phoenix-ut-6") || id.starts_with("phoenix-utn-6") {
                     "phx:ut-6".to_string()
-                } else if id.starts_with("phoenix-ut-10") {
+                } else if id.starts_with("phoenix-ut-10") || id.starts_with("phoenix-utn-10") {
                     "phx:ut-10".to_string()
-                } else if id.starts_with("phoenix-ut-16") {
+                } else if id.starts_with("phoenix-ut-16") || id.starts_with("phoenix-utn-16") {
                     "phx:ut-16".to_string()
-                } else if id.starts_with("phoenix-ut-35") {
+                } else if id.starts_with("phoenix-ut-35") || id.starts_with("phoenix-utn-35") {
                     "phx:ut-35".to_string()
                 } else if id.starts_with("phoenix-uk-")
                     || id.starts_with("phoenix-uslkg")
@@ -1278,6 +1350,7 @@ impl TerminalSpec {
             "Phoenix Contact" => &[
                 "phoenix-pti-16-nls-bu",
                 "phoenix-pti-16-nls",
+                "phoenix-ptn-16s",
                 "wago-2016-7714",
             ],
             "Weidmüller" => &[
@@ -1305,16 +1378,22 @@ impl TerminalSpec {
             "Phoenix Contact" => {
                 if id.starts_with("phoenix-uti-6") {
                     Some("phoenix-ab-uti-6-3")
-                } else if id.starts_with("phoenix-uti-") {
+                } else if id.starts_with("phoenix-uti-") || id.starts_with("phoenix-utn-") {
                     Some("phoenix-ab-uti-3")
-                } else if id.starts_with("phoenix-sti-") {
+                } else if id.starts_with("phoenix-sti-") || id.starts_with("phoenix-stn-") {
                     Some("phoenix-ab-sti-3")
-                } else if id.starts_with("phoenix-pti-16-") {
+                } else if id.starts_with("phoenix-pti-16") || id.starts_with("phoenix-ptn-16") {
                     Some("phoenix-ab-pti-16-nls-bu")
-                } else if id.starts_with("phoenix-pti-6") {
+                } else if id.starts_with("phoenix-pti-6") || id.starts_with("phoenix-ptn-6") {
                     Some("phoenix-ab-pti-6")
                 } else if id.starts_with("phoenix-pti-4") {
-                    Some("phoenix-ab-pti-4-3")
+                    if self.levels <= 1 {
+                        Some("phoenix-ab-pti")
+                    } else {
+                        Some("phoenix-ab-pti-4-3")
+                    }
+                } else if id.starts_with("phoenix-ptn-") {
+                    Some("phoenix-ab-pti")
                 } else if id.starts_with("phoenix-pti-") {
                     if self.levels <= 1 {
                         Some("phoenix-ab-pti")
@@ -1836,6 +1915,23 @@ fn resolve_manufacturer_meta(spec_id: &str) -> Option<(&'static str, &'static st
         "phoenix-pt-25-pell" => Some(("3210541", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pt-25-pell-3210541", "https://caas.phoenixcontact.com/caas/v1/stable/media/270960/full/b408?format=jpg")),
         "phoenix-pti-16-nls-bu" => Some(("1030131", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16-nls-fi-bu-1030131", "https://caas.phoenixcontact.com/caas/v1/stable/media/253860/full/b408?format=jpg")),
         "phoenix-pti-16-nls" => Some(("1030130", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16-nls-fi-1030130", "https://caas.phoenixcontact.com/caas/v1/stable/media/265136/full/b408?format=jpg")),
+        "phoenix-ptn-25" => Some(("3213963", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-25-3213963", "https://caas.phoenixcontact.com/caas/v1/stable/media/212566/full/b408?format=jpg")),
+        "phoenix-ptn-4" => Some(("3213965", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-4-3213965", "https://caas.phoenixcontact.com/caas/v1/stable/media/216676/full/b408?format=jpg")),
+        "phoenix-ptn-6" => Some(("3213967", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-6-3213967", "https://caas.phoenixcontact.com/caas/v1/stable/media/205572/full/b408?format=jpg")),
+        "phoenix-ptn-16s" => Some(("3214025", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-16s-3214025", "https://caas.phoenixcontact.com/caas/v1/stable/media/198908/full/b408?format=jpg")),
+        "phoenix-pti-16s" => Some(("3214029", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16s-3214029", "https://caas.phoenixcontact.com/caas/v1/stable/media/198028/full/b408?format=jpg")),
+        "phoenix-pti-16s-bu" => Some(("3214023", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16s-bu-3214023", "https://caas.phoenixcontact.com/caas/v1/stable/media/196908/full/b408?format=jpg")),
+        "phoenix-pti-16s-pe" => Some(("3214024", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-16s-pe-3214024", "https://caas.phoenixcontact.com/caas/v1/stable/media/216274/full/b408?format=jpg")),
+        "phoenix-utn-25" => Some(("3245011", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-25-3245011", "https://caas.phoenixcontact.com/caas/v1/stable/media/243838/full/b408?format=jpg")),
+        "phoenix-utn-4" => Some(("3245024", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-4-3245024", "https://caas.phoenixcontact.com/caas/v1/stable/media/236014/full/b408?format=jpg")),
+        "phoenix-utn-6" => Some(("3245037", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-6-3245037", "https://caas.phoenixcontact.com/caas/v1/stable/media/200156/full/b408?format=jpg")),
+        "phoenix-utn-10" => Some(("3245040", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-10-3245040", "https://caas.phoenixcontact.com/caas/v1/stable/media/204904/full/b408?format=jpg")),
+        "phoenix-utn-16" => Some(("3245053", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-16-3245053", "https://caas.phoenixcontact.com/caas/v1/stable/media/259262/full/b408?format=jpg")),
+        "phoenix-utn-35" => Some(("3245066", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-35-3245066", "https://caas.phoenixcontact.com/caas/v1/stable/media/244166/full/b408?format=jpg")),
+        "phoenix-stn-25" => Some(("3031940", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-25-3031940", "https://caas.phoenixcontact.com/caas/v1/stable/media/233464/full/b408?format=jpg")),
+        "phoenix-stn-4" => Some(("3031979", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-4-3031979", "https://caas.phoenixcontact.com/caas/v1/stable/media/108630/full/b408?format=jpg")),
+        "phoenix-stn-10" => Some(("3038244", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-10-3038244", "https://caas.phoenixcontact.com/caas/v1/stable/media/233464/full/b408?format=jpg")),
+        "phoenix-stn-16" => Some(("3038286", "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-16-3038286", "https://caas.phoenixcontact.com/caas/v1/stable/media/108630/full/b408?format=jpg")),
         "phoenix-pti-25-peln" => Some(("3213950", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-peln-3213950", "https://caas.phoenixcontact.com/caas/v1/stable/media/244572/full/b408?format=jpg")),
         "phoenix-pti-25-pelnt" => Some(("3213946", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-pelnt-3213946", "https://caas.phoenixcontact.com/caas/v1/stable/media/123154/full/b408?format=jpg")),
         "phoenix-pti-25-pell" => Some(("3213949", "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-25-pell-3213949", "https://caas.phoenixcontact.com/caas/v1/stable/media/212236/full/b408?format=jpg")),
@@ -2657,15 +2753,38 @@ impl TerminalCatalog {
                     }
                 } else if reference.levels == 1 {
                     let (l_id, n_id, pe_id) = match id {
-                        "phoenix-pti-25" | "phoenix-pti-25-bu" | "phoenix-pti-25-pe" => {
-                            ("phoenix-pti-25", "phoenix-pti-25-bu", "phoenix-pti-25-pe")
-                        }
-                        "phoenix-pti-4" | "phoenix-pti-4-bu" | "phoenix-pti-4-pe" => {
-                            ("phoenix-pti-4", "phoenix-pti-4-bu", "phoenix-pti-4-pe")
-                        }
-                        "phoenix-pti-6" | "phoenix-pti-6-bu" | "phoenix-pti-6-pe" => {
-                            ("phoenix-pti-6", "phoenix-pti-6-bu", "phoenix-pti-6-pe")
-                        }
+                        "phoenix-pti-25"
+                        | "phoenix-pti-25-bu"
+                        | "phoenix-pti-25-pe"
+                        | "phoenix-ptn-25" => (
+                            "phoenix-pti-25",
+                            if is_nt { "phoenix-ptn-25" } else { "phoenix-pti-25-bu" },
+                            "phoenix-pti-25-pe",
+                        ),
+                        "phoenix-pti-4"
+                        | "phoenix-pti-4-bu"
+                        | "phoenix-pti-4-pe"
+                        | "phoenix-ptn-4" => (
+                            "phoenix-pti-4",
+                            if is_nt { "phoenix-ptn-4" } else { "phoenix-pti-4-bu" },
+                            "phoenix-pti-4-pe",
+                        ),
+                        "phoenix-pti-6"
+                        | "phoenix-pti-6-bu"
+                        | "phoenix-pti-6-pe"
+                        | "phoenix-ptn-6" => (
+                            "phoenix-pti-6",
+                            if is_nt { "phoenix-ptn-6" } else { "phoenix-pti-6-bu" },
+                            "phoenix-pti-6-pe",
+                        ),
+                        "phoenix-pti-16s"
+                        | "phoenix-pti-16s-bu"
+                        | "phoenix-pti-16s-pe"
+                        | "phoenix-ptn-16s" => (
+                            "phoenix-pti-16s",
+                            if is_nt { "phoenix-ptn-16s" } else { "phoenix-pti-16s-bu" },
+                            "phoenix-pti-16s-pe",
+                        ),
                         s if s.starts_with("phoenix-pt-15s-quattro") => (
                             "phoenix-pt-15s-quattro",
                             "phoenix-pt-15s-quattro-bu",
@@ -2803,20 +2922,28 @@ impl TerminalCatalog {
                             "phoenix-st-25-twin-bu",
                             "phoenix-st-25-twin-pe",
                         ),
-                        s if s.starts_with("phoenix-st-25") => {
+                        s if s.starts_with("phoenix-st-25") || s == "phoenix-stn-25" => {
                             let l = if s == "phoenix-st-25-mt" { id } else { "phoenix-st-25" };
-                            (l, "phoenix-st-25-bu", "phoenix-st-25-pe")
+                            (
+                                l,
+                                if is_nt { "phoenix-stn-25" } else { "phoenix-st-25-bu" },
+                                "phoenix-st-25-pe",
+                            )
                         }
                         "phoenix-st-4-quattro" => {
                             ("phoenix-st-4-quattro", "phoenix-st-4-bu", "phoenix-st-4-pe")
                         }
                         "phoenix-st-4-twin" => ("phoenix-st-4-twin", "phoenix-st-4-bu", "phoenix-st-4-pe"),
-                        s if s.starts_with("phoenix-st-4") => {
-                            ("phoenix-st-4", "phoenix-st-4-bu", "phoenix-st-4-pe")
-                        }
+                        s if s.starts_with("phoenix-st-4") || s == "phoenix-stn-4" => (
+                            "phoenix-st-4",
+                            if is_nt { "phoenix-stn-4" } else { "phoenix-st-4-bu" },
+                            "phoenix-st-4-pe",
+                        ),
                         s if s.starts_with("phoenix-st-6") => {
                             ("phoenix-st-6", "phoenix-st-6-bu", "phoenix-st-6-pe")
                         }
+                        "phoenix-stn-10" => ("phoenix-st-10", "phoenix-stn-10", "phoenix-st-10-pe"),
+                        "phoenix-stn-16" => ("phoenix-st-16", "phoenix-stn-16", "phoenix-st-16-pe"),
                         s if s.starts_with("phoenix-ut-25-quattro") => (
                             "phoenix-ut-25-quattro",
                             "phoenix-ut-25-quattro-bu",
@@ -2827,9 +2954,13 @@ impl TerminalCatalog {
                             "phoenix-ut-25-twin-bu",
                             "phoenix-ut-25-twin-pe",
                         ),
-                        s if s.starts_with("phoenix-ut-25") => {
+                        s if s.starts_with("phoenix-ut-25") || s == "phoenix-utn-25" => {
                             let l = if s == "phoenix-ut-25-mt" { id } else { "phoenix-ut-25" };
-                            (l, "phoenix-ut-25-bu", "phoenix-ut-25-pe")
+                            (
+                                l,
+                                if is_nt { "phoenix-utn-25" } else { "phoenix-ut-25-bu" },
+                                "phoenix-ut-25-pe",
+                            )
                         }
                         "phoenix-ut-4-quattro" | "phoenix-ut-4-quattro-pe" => (
                             "phoenix-ut-4-quattro",
@@ -2841,26 +2972,38 @@ impl TerminalCatalog {
                             "phoenix-ut-4-twin-bu",
                             "phoenix-ut-4-twin-pe",
                         ),
-                        s if s.starts_with("phoenix-ut-4") => {
+                        s if s.starts_with("phoenix-ut-4") || s == "phoenix-utn-4" => {
                             let l = if s.contains("-hesi") || s == "phoenix-ut-4-mt" {
                                 id
                             } else {
                                 "phoenix-ut-4"
                             };
-                            (l, "phoenix-ut-4-bu", "phoenix-ut-4-pe")
+                            (
+                                l,
+                                if is_nt { "phoenix-utn-4" } else { "phoenix-ut-4-bu" },
+                                "phoenix-ut-4-pe",
+                            )
                         }
-                        s if s.starts_with("phoenix-ut-6") => {
-                            ("phoenix-ut-6", "phoenix-ut-6-bu", "phoenix-ut-6-pe")
-                        }
-                        s if s.starts_with("phoenix-ut-10") => {
-                            ("phoenix-ut-10", "phoenix-ut-10-bu", "phoenix-ut-10-pe")
-                        }
-                        s if s.starts_with("phoenix-ut-16") => {
-                            ("phoenix-ut-16", "phoenix-ut-16-bu", "phoenix-ut-16-pe")
-                        }
-                        s if s.starts_with("phoenix-ut-35") => {
-                            ("phoenix-ut-35", "phoenix-ut-35-bu", "phoenix-ut-35-pe")
-                        }
+                        s if s.starts_with("phoenix-ut-6") || s == "phoenix-utn-6" => (
+                            "phoenix-ut-6",
+                            if is_nt { "phoenix-utn-6" } else { "phoenix-ut-6-bu" },
+                            "phoenix-ut-6-pe",
+                        ),
+                        s if s.starts_with("phoenix-ut-10") || s == "phoenix-utn-10" => (
+                            "phoenix-ut-10",
+                            if is_nt { "phoenix-utn-10" } else { "phoenix-ut-10-bu" },
+                            "phoenix-ut-10-pe",
+                        ),
+                        s if s.starts_with("phoenix-ut-16") || s == "phoenix-utn-16" => (
+                            "phoenix-ut-16",
+                            if is_nt { "phoenix-utn-16" } else { "phoenix-ut-16-bu" },
+                            "phoenix-ut-16-pe",
+                        ),
+                        s if s.starts_with("phoenix-ut-35") || s == "phoenix-utn-35" => (
+                            "phoenix-ut-35",
+                            if is_nt { "phoenix-utn-35" } else { "phoenix-ut-35-bu" },
+                            "phoenix-ut-35-pe",
+                        ),
                         "phoenix-uk-5n" | "phoenix-uk-5n-bu" | "phoenix-uslkg-5" => {
                             ("phoenix-uk-5n", "phoenix-uk-5n-bu", "phoenix-uslkg-5")
                         }
@@ -3539,15 +3682,38 @@ mod tests {
             assert_eq!(spec.effective_rail_offset_tenths_mm(), 0);
         }
 
-        // Phoenix Contact 260-spec terminal block catalog verifications
+        // Phoenix Contact 277-spec terminal block catalog verifications (incl. PTN, PTI 16/S, UTN, STN)
         assert_eq!(
             catalog
                 .all()
                 .iter()
                 .filter(|s| s.manufacturer == "Phoenix Contact" && !s.is_busbar_carrier())
                 .count(),
-            260
+            277
         );
+        for ptn_id in [
+            "phoenix-ptn-25",
+            "phoenix-ptn-4",
+            "phoenix-ptn-6",
+            "phoenix-ptn-16s",
+            "phoenix-utn-25",
+            "phoenix-utn-4",
+            "phoenix-utn-6",
+            "phoenix-utn-10",
+            "phoenix-utn-16",
+            "phoenix-utn-35",
+            "phoenix-stn-25",
+            "phoenix-stn-4",
+            "phoenix-stn-10",
+            "phoenix-stn-16",
+        ] {
+            let ptn = catalog.find_by_id(ptn_id).expect(ptn_id);
+            assert_eq!(ptn.levels, 1);
+            assert!(ptn.is_nt_disconnect_terminal(), "{ptn_id} must be recognized as NT");
+            assert!(ptn.is_installation_or_nt_terminal());
+            assert_eq!(ptn.effective_jumper_slots(), 0);
+            assert_eq!(ptn.effective_max_jumper_poles(), 0);
+        }
         assert_eq!(
             catalog.find_by_id("phoenix-uslkg-5").unwrap().effective_jumper_slots(),
             0
@@ -3854,7 +4020,7 @@ mod tests {
     #[test]
     fn all_catalog_specs_and_end_brackets_have_valid_image_urls_and_unique_skus() {
         let catalog = TerminalCatalog::load_embedded();
-        assert_eq!(catalog.all().len(), 724);
+        assert_eq!(catalog.all().len(), 741);
 
         let mut seen_skus = std::collections::HashSet::new();
         for spec in catalog.all() {

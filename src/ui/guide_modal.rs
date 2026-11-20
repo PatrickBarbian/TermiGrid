@@ -32,6 +32,8 @@ pub struct CustomSpecDraft {
     pub jumper_slots: u8,
     pub tier_kinds: [CustomTierKind; 4],
     pub tier_fixed: [String; 4],
+    pub json_import_buf: String,
+    pub json_import_error: Option<String>,
 }
 
 impl Default for CustomSpecDraft {
@@ -54,6 +56,8 @@ impl Default for CustomSpecDraft {
                 "N".to_string(),
                 "N".to_string(),
             ],
+            json_import_buf: String::new(),
+            json_import_error: None,
         }
     }
 }
@@ -281,6 +285,8 @@ THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMP
 pub enum DatabaseAction {
     /// Save a newly created or manually edited specification (persists PC-wide & in active project).
     SaveSpec(Box<TerminalSpec>),
+    /// Batch-import multiple terminal specifications from a pasted JSON array/object.
+    ImportSpecsBatch(Vec<TerminalSpec>),
     /// Reset an edited built-in spec to factory defaults or delete a user-created custom spec.
     ResetOrDeleteSpec { id: String, is_builtin: bool },
 }
@@ -597,6 +603,66 @@ pub fn show_database_tab(
 
                 action = Some(DatabaseAction::SaveSpec(Box::new(spec)));
             }
+        });
+
+    ui.add_space(4.0);
+    egui::CollapsingHeader::new(tr::json_batch_heading(lang))
+        .default_open(false)
+        .show(ui, |ui| {
+            ui.label(
+                egui::RichText::new(tr::json_batch_hint(lang))
+                    .color(secondary_text_color(ui))
+                    .small(),
+            );
+            ui.add_space(4.0);
+            ui.add(
+                egui::TextEdit::multiline(&mut draft.json_import_buf)
+                    .font(egui::TextStyle::Monospace)
+                    .desired_rows(5)
+                    .desired_width(f32::INFINITY)
+                    .hint_text("[\n  {\n    \"id\": \"phoenix-ptn-25\",\n    \"name\": \"PTN 2,5 (2,5mm² N-Trennklemme Blau)\",\n    ...\n  }\n]"),
+            );
+            if let Some(err) = &draft.json_import_error {
+                ui.add_space(2.0);
+                ui.label(
+                    egui::RichText::new(err)
+                        .color(egui::Color32::from_rgb(239, 68, 68))
+                        .small(),
+                );
+            }
+            ui.add_space(4.0);
+            ui.horizontal_wrapped(|ui| {
+                let can_import = !draft.json_import_buf.trim().is_empty();
+                if ui
+                    .add_enabled_ui(can_import, |ui| {
+                        success_icon_button(ui, UiIcon::Add, tr::json_batch_btn(lang))
+                    })
+                    .inner
+                    .clicked()
+                {
+                    let raw = draft.json_import_buf.trim();
+                    let parsed = serde_json::from_str::<Vec<TerminalSpec>>(raw).or_else(|e_arr| {
+                        serde_json::from_str::<TerminalSpec>(raw)
+                            .map(|single| vec![single])
+                            .map_err(|_| e_arr)
+                    });
+                    match parsed {
+                        Ok(specs) if !specs.is_empty() => {
+                            draft.json_import_error = None;
+                            draft.json_import_buf.clear();
+                            action = Some(DatabaseAction::ImportSpecsBatch(specs));
+                        }
+                        Ok(_) => {
+                            draft.json_import_error =
+                                Some(tr::json_batch_err(lang, "Empty JSON array"));
+                        }
+                        Err(e) => {
+                            draft.json_import_error =
+                                Some(tr::json_batch_err(lang, &e.to_string()));
+                        }
+                    }
+                }
+            });
         });
 
     ui.add_space(6.0);

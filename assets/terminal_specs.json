@@ -17786,5 +17786,443 @@
     "article_number": "2669130000",
     "product_url": "https://eshop.weidmueller.com/de/aeb-itb-16-bb-bl/p/2669130000",
     "image_url": "https://assets.dam.weidmueller.com/assets/api/242abe79-710f-4754-a294-2bdfa167741f/DAP_Master_PP,w_800,q_80"
+  },
+  {
+    "id": "phoenix-ptn-25",
+    "name": "PTN 2,5 (2,5mm² N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 590,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Neutralleiter-Trennklemme 2,5 mm² (0,14–4 mm²) mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (5,2 mm)",
+    "description_en": "Push-in N disconnect terminal block 2.5 mm² (0.14–4 mm²) with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (5.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3213963",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-25-3213963",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/212566/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-ptn-4",
+    "name": "PTN 4 (4mm² N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 660,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Neutralleiter-Trennklemme 4 mm² (0,2–6 mm²) mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (6,2 mm)",
+    "description_en": "Push-in N disconnect terminal block 4 mm² (0.2–6 mm²) with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3213965",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-4-3213965",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/216676/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-ptn-6",
+    "name": "PTN 6 (6mm² N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "height_tenths_mm": 663,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Neutralleiter-Trennklemme 6 mm² (0,5–10 mm²) mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (8,2 mm)",
+    "description_en": "Push-in N disconnect terminal block 6 mm² (0.5–10 mm²) with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (8.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3213967",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-6-3213967",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/205572/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-ptn-16s",
+    "name": "PTN 16/S (16mm² N-Trennklemme / Einspeisung Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 102,
+    "height_tenths_mm": 777,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Push-in-Neutralleiter-Trennklemme / N-Einspeiseklemme 16 mm² (0,5–16 mm²) mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (10,2 mm)",
+    "description_en": "Push-in N disconnect / N-supply terminal block 16 mm² (0.5–16 mm²) with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (10.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3214025",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-ptn-16s-3214025",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/198908/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-pti-16s",
+    "name": "PTI 16/S (16mm² Installations-Durchgang Grau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 102,
+    "height_tenths_mm": 777,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Durchgangsklemme 16 mm² (konturgleich zu PTN 16/S), grau (10,2 mm)",
+    "description_en": "Push-in installation feed-through terminal block 16 mm² (contour-matched to PTN 16/S), gray (10.2 mm)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2,
+    "article_number": "3214029",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16s-3214029",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/198028/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-pti-16s-bu",
+    "name": "PTI 16/S BU (16mm² Installations-N Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 102,
+    "height_tenths_mm": 777,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Neutralleiterklemme 16 mm² (konturgleich zu PTN 16/S), blau (10,2 mm)",
+    "description_en": "Push-in installation neutral terminal block 16 mm² (contour-matched to PTN 16/S), blue (10.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2,
+    "article_number": "3214023",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-pti-16s-bu-3214023",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/196908/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-pti-16s-pe",
+    "name": "PTI 16/S-PE (16mm² Installations-PE)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE PTI",
+    "levels": 1,
+    "width_tenths_mm": 102,
+    "height_tenths_mm": 777,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Installations-Schutzleiterklemme 16 mm² (konturgleich zu PTN 16/S), grün-gelb (10,2 mm)",
+    "description_en": "Push-in installation PE ground terminal block 16 mm² (contour-matched to PTN 16/S), green-yellow (10.2 mm)",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      }
+    ],
+    "jumper_slots_per_tier": 1,
+    "max_jumper_poles": 2,
+    "article_number": "3214024",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/schutzleiterklemme-pti-16s-pe-3214024",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/216274/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-utn-25",
+    "name": "UTN 2,5 (2,5mm² Schraub N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 550,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiter-Trennklemme 2,5 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (5,2 mm)",
+    "description_en": "Screw N disconnect terminal block 2.5 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (5.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3245011",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-25-3245011",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/243838/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-utn-4",
+    "name": "UTN 4 (4mm² Schraub N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 550,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiter-Trennklemme 4 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (6,2 mm)",
+    "description_en": "Screw N disconnect terminal block 4 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3245024",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-4-3245024",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/236014/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-utn-6",
+    "name": "UTN 6 (6mm² Schraub N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "height_tenths_mm": 550,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiter-Trennklemme 6 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (8,2 mm)",
+    "description_en": "Screw N disconnect terminal block 6 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (8.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3245037",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-6-3245037",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/200156/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-utn-10",
+    "name": "UTN 10 (10mm² Schraub N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 1,
+    "width_tenths_mm": 102,
+    "height_tenths_mm": 550,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiter-Trennklemme 10 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (10,2 mm)",
+    "description_en": "Screw N disconnect terminal block 10 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (10.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3245040",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-10-3245040",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/204904/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-utn-16",
+    "name": "UTN 16 (16mm² Schraub N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 1,
+    "width_tenths_mm": 122,
+    "height_tenths_mm": 550,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiter-Trennklemme 16 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), geschlossenes Gehäuse, blau (12,2 mm)",
+    "description_en": "Screw N disconnect terminal block 16 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), closed housing, blue (12.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3245053",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-16-3245053",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/259262/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-utn-35",
+    "name": "UTN 35 (35mm² Schraub N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE UT",
+    "levels": 1,
+    "width_tenths_mm": 150,
+    "height_tenths_mm": 550,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Schraub-Neutralleiter-Trennklemme / Einspeiseklemme 35 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), geschlossenes Gehäuse, blau (15,0 mm)",
+    "description_en": "Screw N disconnect / supply terminal block 35 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), closed housing, blue (15.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3245066",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-utn-35-3245066",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/244166/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-stn-25",
+    "name": "STN 2,5 (2,5mm² Zugfeder N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "height_tenths_mm": 600,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Neutralleiter-Trennklemme 2,5 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (5,2 mm)",
+    "description_en": "Spring-cage N disconnect terminal block 2.5 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (5.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3031940",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-25-3031940",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/233464/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-stn-4",
+    "name": "STN 4 (4mm² Zugfeder N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 1,
+    "width_tenths_mm": 62,
+    "height_tenths_mm": 655,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Neutralleiter-Trennklemme 4 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (6,2 mm)",
+    "description_en": "Spring-cage N disconnect terminal block 4 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (6.2 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3031979",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-4-3031979",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/108630/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-stn-10",
+    "name": "STN 10 (10mm² Zugfeder N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 1,
+    "width_tenths_mm": 100,
+    "height_tenths_mm": 655,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Neutralleiter-Trennklemme 10 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (10,0 mm)",
+    "description_en": "Spring-cage N disconnect terminal block 10 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (10.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3038244",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-10-3038244",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/233464/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-stn-16",
+    "name": "STN 16 (16mm² Zugfeder N-Trennklemme Blau)",
+    "manufacturer": "Phoenix Contact",
+    "series": "CLIPLINE ST",
+    "levels": 1,
+    "width_tenths_mm": 120,
+    "height_tenths_mm": 655,
+    "rail_offset_tenths_mm": 0,
+    "numbering_order": "BottomToTop",
+    "description_de": "Zugfeder-Neutralleiter-Trennklemme 16 mm² mit N-Trennschlitten für N-Sammelschiene 10x3 mm (NLS-CU 3/10), blau (12,0 mm)",
+    "description_en": "Spring-cage N disconnect terminal block 16 mm² with N-disconnect slide for 10x3 mm neutral busbar (NLS-CU 3/10), blue (12.0 mm)",
+    "tiers": [
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      }
+    ],
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "3038286",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-16-3038286",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/108630/full/b408?format=jpg"
   }
 ]

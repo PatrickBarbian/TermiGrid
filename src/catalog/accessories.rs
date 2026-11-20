@@ -438,6 +438,98 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
         };
     }
 
+    if id.contains("ptn-25") {
+        return TerminalAccessories {
+            end_plate: "D-PTN 2,5 (3213977)".to_string(),
+            jumpers: "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)".to_string(),
+            markers: "ZBF 5 / UCT-TMF 5 / TMT 5 R".to_string(),
+            end_bracket,
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-PTI (3214006)".to_string()),
+        };
+    }
+
+    if id.contains("ptn-4") {
+        return TerminalAccessories {
+            end_plate: "D-PTN 4 (3213978)".to_string(),
+            jumpers: "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)".to_string(),
+            markers: "ZBF 6 / UCT-TMF 6".to_string(),
+            end_bracket,
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-PTI (3214006)".to_string()),
+        };
+    }
+
+    if id.contains("ptn-6") {
+        return TerminalAccessories {
+            end_plate: "D-PTN 6 (3213979)".to_string(),
+            jumpers: "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)".to_string(),
+            markers: "ZBF 8 / UCT-TMF 8".to_string(),
+            end_bracket,
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-PTI 6 (3214008)".to_string()),
+        };
+    }
+
+    if id.contains("ptn-16s") || id.contains("pti-16s") {
+        let jumpers = if id.contains("ptn-16s") {
+            "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)"
+        } else {
+            "FBS 2-10 (3005947)"
+        };
+        return TerminalAccessories {
+            end_plate: "D-PTN 16/S (3214028)".to_string(),
+            jumpers: jumpers.to_string(),
+            markers: "ZBF 10 / UCT-TM 10".to_string(),
+            end_bracket,
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-PTI 16-NLS BU (1030138)".to_string()),
+        };
+    }
+
+    if id.contains("utn-") {
+        let end_plate = if id.contains("utn-16") || id.contains("utn-35") {
+            "Geschlossenes Gehäuse (kein Enddeckel nötig)"
+        } else {
+            "AB-UTN 2,5/10 (3245082)"
+        };
+        let markers = if id.contains("utn-35") {
+            "ZB 15 / UCT-TM 15"
+        } else if id.contains("utn-16") {
+            "ZB 12 / UCT-TM 12"
+        } else if id.contains("utn-10") {
+            "ZB 10 / UCT-TM 10"
+        } else if id.contains("utn-6") {
+            "ZB 8 / UCT-TM 8"
+        } else if id.contains("utn-4") {
+            "ZB 6 / UCT-TM 6"
+        } else {
+            "ZB 5 / UCT-TM 5"
+        };
+        return TerminalAccessories {
+            end_plate: end_plate.to_string(),
+            jumpers: "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)".to_string(),
+            markers: markers.to_string(),
+            end_bracket,
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-UTN 2,5/10 (3245082)".to_string()),
+        };
+    }
+
+    if id.contains("stn-") {
+        let (end_plate, markers) = if id.contains("stn-16") {
+            ("AB-STN 16 (3038309)", "ZBF 12 / UCT-TM 12")
+        } else if id.contains("stn-10") {
+            ("AB-STN 10 (3038260)", "ZBF 10 / UCT-TM 10")
+        } else if id.contains("stn-4") {
+            ("D-STN 4 (3031995)", "ZBF 6 / UCT-TM 6")
+        } else {
+            ("D-STN 2,5 (3031966)", "ZBF 5 / UCT-TM 5")
+        };
+        return TerminalAccessories {
+            end_plate: end_plate.to_string(),
+            jumpers: "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene)".to_string(),
+            markers: markers.to_string(),
+            end_bracket,
+            extra: Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-STN".to_string()),
+        };
+    }
+
     if id.contains("pti-25") || id.contains("sti-25") || id.contains("uti-25") {
         let end_plate = if id.contains("uti") {
             "D-UTI 2,5 (3076038)"
@@ -1312,6 +1404,8 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
                 || id.contains("ptfix")
                 || id.contains("ptio-in")
                 || id.contains("ut-35")
+                || id.contains("utn-16")
+                || id.contains("utn-35")
                 || id.contains("ut-4-mt")
                 || id.contains("uslkg")
                 || id.contains("hesi")
@@ -1325,8 +1419,10 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
                 18 // 1.8 mm (D-UK 4/10 / D-UK 4/10 BU)
             } else if id.contains("uk-") {
                 15 // 1.5 mm (D-UK 4/10 / D-UK 16)
+            } else if id.contains("stn-") {
+                20 // 2.0 mm (D-STN 2,5 / D-STN 4 / AB-STN 10 / AB-STN 16)
             } else {
-                22 // 2.2 mm (CLIPLINE complete D-PT / D-PTTB / D-PTI / D-ST / D-UT / D-PTV / D-PTRV)
+                22 // 2.2 mm (CLIPLINE complete D-PT / D-PTTB / D-PTI / D-PTN / D-ST / D-UT / AB-UTN / D-PTV / D-PTRV)
             }
         }
         "Weidmüller" => {
@@ -1364,6 +1460,41 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
         }
         _ => 15,
     }
+}
+
+fn shares_end_plate_contour(
+    a: &TerminalSpec,
+    a_end_plate: &str,
+    b: &TerminalSpec,
+    b_end_plate: &str,
+) -> bool {
+    if a.manufacturer != b.manufacturer {
+        return false;
+    }
+    if a_end_plate == b_end_plate {
+        return true;
+    }
+    if a.manufacturer == "Phoenix Contact" && a.levels == 1 && b.levels == 1 {
+        let pti_ptn_group = |id: &str| -> Option<&'static str> {
+            if id.starts_with("phoenix-pti-25") || id.starts_with("phoenix-ptn-25") {
+                Some("2.5")
+            } else if id.starts_with("phoenix-pti-4") || id.starts_with("phoenix-ptn-4") {
+                Some("4")
+            } else if id.starts_with("phoenix-pti-6") || id.starts_with("phoenix-ptn-6") {
+                Some("6")
+            } else if id.starts_with("phoenix-pti-16s") || id.starts_with("phoenix-ptn-16s") {
+                Some("16s")
+            } else {
+                None
+            }
+        };
+        if let (Some(ga), Some(gb)) = (pti_ptn_group(&a.id), pti_ptn_group(&b.id))
+            && ga == gb
+        {
+            return true;
+        }
+    }
+    false
 }
 
 /// Automatically detected end/partition plate placement after block `after_block_idx`.
@@ -1408,8 +1539,7 @@ pub fn calculate_end_plates(
                         false
                     } else {
                         let next_acc = catalog.accessories_for(next_spec);
-                        next_acc.end_plate != acc.end_plate
-                            || next_block.manufacturer != block.manufacturer
+                        !shares_end_plate_contour(spec, &acc.end_plate, next_spec, &next_acc.end_plate)
                     }
                 } else {
                     true

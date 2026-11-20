@@ -1702,3 +1702,60 @@ pub fn toast_potential_added(l: Language, pname: &str) -> String {
         Language::Nl => format!("Potentiaal \"{pname}\" toegevoegd."),
     }
 }
+
+pub const fn json_batch_heading(l: Language) -> &'static str {
+    pick(l, [
+        "JSON-Liste einfügen / importieren (Batch-Import)",
+        "Paste / Import JSON List (Batch Import)",
+        "Coller / Importer une liste JSON (Import groupé)",
+        "Incolla / Importa lista JSON (Importazione batch)",
+        "Pegar / Importar lista JSON (Importación por lotes)",
+        "Wklej / Importuj listę JSON (Import zbiorczy)",
+        "JSON-lijst plakken / importeren (Batch-import)",
+    ])
+}
+pub const fn json_batch_hint(l: Language) -> &'static str {
+    pick(l, [
+        "JSON-Array ([ { \"id\": ... }, ... ]) oder einzelnes Klemmen-Objekt hier einfügen (wird PC-weit in custom_specs.json gespeichert):",
+        "Paste a JSON array ([ { \"id\": ... }, ... ]) or single terminal object here (saved PC-wide to custom_specs.json):",
+        "Collez un tableau JSON ([ { \"id\": ... }, ... ]) ou un objet borne ici (enregistré dans custom_specs.json) :",
+        "Incolla qui un array JSON ([ { \"id\": ... }, ... ]) o un singolo oggetto morsetto (salvato in custom_specs.json):",
+        "Pegue aquí un array JSON ([ { \"id\": ... }, ... ]) o un objeto de borna (guardado en custom_specs.json):",
+        "Wklej tutaj tablicę JSON ([ { \"id\": ... }, ... ]) lub pojedynczy obiekt zacisku (zapisywane w custom_specs.json):",
+        "Plak hier een JSON-array ([ { \"id\": ... }, ... ]) of enkel klemobject (opgeslagen in custom_specs.json):",
+    ])
+}
+pub const fn json_batch_btn(l: Language) -> &'static str {
+    pick(l, [
+        "JSON-Liste in Datenbank importieren",
+        "Import JSON List into Database",
+        "Importer la liste JSON dans la base",
+        "Importa lista JSON nel database",
+        "Importar lista JSON en la base de datos",
+        "Importuj listę JSON do bazy danych",
+        "JSON-lijst in database importeren",
+    ])
+}
+pub fn json_batch_err(l: Language, err: &str) -> String {
+    match l {
+        Language::De => format!("Ungültiges JSON-Format: {err}"),
+        Language::En => format!("Invalid JSON format: {err}"),
+        Language::Fr => format!("Format JSON invalide : {err}"),
+        Language::It => format!("Formato JSON non valido: {err}"),
+        Language::Es => format!("Formato JSON no válido: {err}"),
+        Language::Pl => format!("Nieprawidłowy format JSON: {err}"),
+        Language::Nl => format!("Ongeldig JSON-formaat: {err}"),
+    }
+}
+pub fn toast_specs_imported(l: Language, count: usize) -> String {
+    match l {
+        Language::De => format!("{count} Klemmentyp(en) in Datenbank importiert (custom_specs.json)."),
+        Language::En => format!("Imported {count} terminal type(s) into database (custom_specs.json)."),
+        Language::Fr => format!("{count} type(s) de bornes importé(s) dans la base (custom_specs.json)."),
+        Language::It => format!("Importati {count} tipi di morsetto nel database (custom_specs.json)."),
+        Language::Es => format!("Se importaron {count} tipo(s) de borna en la base (custom_specs.json)."),
+        Language::Pl => format!("Zaimportowano {count} typ(ów) zacisków do bazy (custom_specs.json)."),
+        Language::Nl => format!("{count} klemtype(n) in database geïmporteerd (custom_specs.json)."),
+    }
+}
+

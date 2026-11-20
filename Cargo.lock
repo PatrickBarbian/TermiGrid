@@ -3194,7 +3194,7 @@ dependencies = [
 
 [[package]]
 name = "termigrid"
-version = "1.7.5"
+version = "1.7.6"
 dependencies = [
  "eframe",
  "egui",
