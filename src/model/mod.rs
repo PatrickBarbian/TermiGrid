@@ -189,6 +189,16 @@ pub enum PeLabelMode {
     SeparateCounterSuffixPe,
 }
 
+/// Controls how sequential numbers are distributed across multi-level blocks on a strip.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum StripSequenceMode {
+    /// Block-by-block numbering (standard): Block 1 gets 1, 2; Block 2 gets 3, 4; ...
+    #[default]
+    ByBlock,
+    /// Level-by-level continuous numbering: Ebene 1 gets 1, 2, 3...; Ebene 2 continues 4, 5, 6...
+    ByLevel,
+}
+
 /// Represents a named electrical potential whose assigned terminal tiers should be bridged.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct JumperPotential {
@@ -229,6 +239,9 @@ pub struct TerminalStrip {
     pub blocks: Vec<TerminalBlock>,
     /// Next unique block ID counter.
     next_block_id: u64,
+    /// Numbering sequence across multi-level blocks (`ByBlock` vs `ByLevel`).
+    #[serde(default)]
+    pub sequence_mode: StripSequenceMode,
     /// Numbering behavior for `N` tiers on this strip.
     #[serde(default)]
     pub neutral_mode: NeutralLabelMode,
@@ -271,6 +284,7 @@ impl TerminalStrip {
             default_spec_id: default_spec_id.into(),
             blocks: Vec::new(),
             next_block_id: 1,
+            sequence_mode: StripSequenceMode::ByBlock,
             neutral_mode: NeutralLabelMode::Fixed,
             pe_mode: PeLabelMode::Fixed,
             potentials: Vec::new(),

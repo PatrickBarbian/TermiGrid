@@ -5,7 +5,7 @@ use crate::catalog::accessories::{
 };
 use crate::catalog::TerminalCatalog;
 use crate::i18n::{Language, Strings};
-use crate::model::TerminalStrip;
+use crate::model::{StripSequenceMode, TerminalStrip};
 use crate::ui::icons::{
     compact_mfg_badge, draw_icon, icon_button, icon_only_button, primary_icon_button,
     show_responsive_modal, UiIcon,
@@ -31,6 +31,7 @@ pub struct NewStripDialogState {
     pub end_number: u32,
     pub block_count: usize,
     pub mode: NewStripMode,
+    pub sequence_mode: StripSequenceMode,
     pub manufacturer_filter: Option<String>,
     pub search_query: String,
     pub selected_spec_id: String,
@@ -49,6 +50,7 @@ impl Default for NewStripDialogState {
             end_number: 50,
             block_count: 25,
             mode: NewStripMode::ByRange,
+            sequence_mode: StripSequenceMode::ByBlock,
             manufacturer_filter: None,
             search_query: String::new(),
             selected_spec_id: "wago-2002-1201".to_string(),
@@ -67,6 +69,7 @@ impl NewStripDialogState {
         self.start_number = 1;
         self.end_number = 50;
         self.block_count = 25;
+        self.sequence_mode = StripSequenceMode::ByBlock;
         self.end_bracket_left = true;
         self.end_bracket_right = true;
     }
@@ -142,6 +145,21 @@ pub fn show_new_strip_modal(
                             ui.end_row();
                         }
                     }
+
+                    ui.label("Zählfolge");
+                    ui.horizontal_wrapped(|ui| {
+                        ui.radio_value(
+                            &mut state.sequence_mode,
+                            StripSequenceMode::ByBlock,
+                            "Klemmenweise (1,2 | 3,4)",
+                        );
+                        ui.radio_value(
+                            &mut state.sequence_mode,
+                            StripSequenceMode::ByLevel,
+                            "Ebenenweise (E1: 1,2,3 | E2: 4,5,6)",
+                        );
+                    });
+                    ui.end_row();
                 });
 
             ui.separator();
@@ -267,9 +285,11 @@ pub fn show_new_strip_modal(
                     ),
                 };
                 strip.description = state.description.trim().to_string();
+                strip.sequence_mode = state.sequence_mode;
                 strip.end_bracket_id = state.end_bracket_id.clone();
                 strip.end_bracket_left = state.end_bracket_left;
                 strip.end_bracket_right = state.end_bracket_right;
+                strip.recalculate_labels();
                 created = Some(strip);
                 *close_requested = true;
             }

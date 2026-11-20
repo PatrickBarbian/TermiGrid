@@ -1,6 +1,7 @@
 use crate::catalog::{TerminalCatalog, TerminalSpec};
 use crate::model::{
-    NeutralLabelMode, NumberingOrder, PeLabelMode, TerminalStrip, TierBehavior,
+    ConnectionPoint, NeutralLabelMode, NumberingOrder, PeLabelMode, StripSequenceMode,
+    TerminalStrip, TierBehavior,
 };
 
 /// Controls how a newly created strip determines its initial number of physical terminal blocks.
@@ -10,6 +11,114 @@ pub enum StripGenerationMode {
     ByNumberRange,
     /// Generate an exact number of physical terminal blocks.
     ByBlockCount(usize),
+}
+
+fn assign_tier_label(
+    tier: &mut ConnectionPoint,
+    level_idx: usize,
+    neutral_mode: NeutralLabelMode,
+    pe_mode: PeLabelMode,
+    next_number: &mut u32,
+    next_n: &mut u32,
+    next_pe: &mut u32,
+) {
+    tier.level_index = level_idx;
+
+    let wrap_affix = |base: &str, prefix: &str, suffix: &str| -> String {
+        if prefix.is_empty() && suffix.is_empty() {
+            base.to_string()
+        } else {
+            format!("{prefix}{base}{suffix}")
+        }
+    };
+
+    if let Some(override_text) = &tier.custom_override {
+        let trimmed = override_text.trim();
+        let label = if trimmed.is_empty() {
+            String::new()
+        } else {
+            wrap_affix(trimmed, &tier.label_prefix, &tier.label_suffix)
+        };
+        tier.computed_label = label.clone();
+        tier.cad_display_label = if label.is_empty() && tier.behavior.is_pe() {
+            wrap_affix("PE", &tier.label_prefix, &tier.label_suffix)
+        } else {
+            label
+        };
+        return;
+    }
+
+    if tier.behavior.is_neutral() {
+        let base = match neutral_mode {
+            NeutralLabelMode::Fixed => "N".to_string(),
+            NeutralLabelMode::SharedSequenceNumber => {
+                let v = next_number.to_string();
+                *next_number = next_number.saturating_add(1);
+                v
+            }
+            NeutralLabelMode::SharedSequenceSuffixN => {
+                let v = format!("{next_number}N");
+                *next_number = next_number.saturating_add(1);
+                v
+            }
+            NeutralLabelMode::SeparateCounterSuffixN => {
+                let v = format!("{next_n}N");
+                *next_n = next_n.saturating_add(1);
+                v
+            }
+        };
+        let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+        tier.computed_label = full.clone();
+        tier.cad_display_label = full;
+        return;
+    }
+
+    match &tier.behavior {
+        TierBehavior::Sequential => {
+            let base = next_number.to_string();
+            *next_number = next_number.saturating_add(1);
+            let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+            tier.computed_label = full.clone();
+            tier.cad_display_label = full;
+        }
+        TierBehavior::Fixed(fixed) => {
+            let full = wrap_affix(fixed, &tier.label_prefix, &tier.label_suffix);
+            tier.computed_label = full.clone();
+            tier.cad_display_label = full;
+        }
+        TierBehavior::ProtectiveEarth => match pe_mode {
+            PeLabelMode::Fixed => {
+                tier.computed_label.clear();
+                tier.cad_display_label =
+                    wrap_affix("PE", &tier.label_prefix, &tier.label_suffix);
+            }
+            PeLabelMode::SharedSequenceNumber => {
+                let base = next_number.to_string();
+                *next_number = next_number.saturating_add(1);
+                let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                tier.computed_label = full.clone();
+                tier.cad_display_label = full;
+            }
+            PeLabelMode::SharedSequenceSuffixPe => {
+                let base = format!("{next_number}PE");
+                *next_number = next_number.saturating_add(1);
+                let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                tier.computed_label = full.clone();
+                tier.cad_display_label = full;
+            }
+            PeLabelMode::SeparateCounterSuffixPe => {
+                let base = format!("{next_pe}PE");
+                *next_pe = next_pe.saturating_add(1);
+                let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
+                tier.computed_label = full.clone();
+                tier.cad_display_label = full;
+            }
+        },
+        TierBehavior::Unlabeled => {
+            tier.computed_label.clear();
+            tier.cad_display_label.clear();
+        }
+    }
 }
 
 impl TerminalStrip {
@@ -56,117 +165,69 @@ impl TerminalStrip {
     }
 
     /// Recomputes `computed_label` and `cad_display_label` for every tier of every block
-    /// by distributing the linear sequence starting at `self.start_number`, applying N/PE modes
-    /// and per-tier prefix/suffix special characters.
+    /// by distributing the linear sequence starting at `self.start_number`, honoring
+    /// `self.sequence_mode` (`ByBlock` vs `ByLevel`), N/PE modes, and prefix/suffix overrides.
     pub fn recalculate_labels(&mut self) {
         let mut next_number = self.start_number;
         let mut next_n = 1u32;
         let mut next_pe = 1u32;
 
-        for block in &mut self.blocks {
-            let tier_count = block.tiers.len();
-            let indices: Vec<usize> = match block.numbering_order {
-                NumberingOrder::BottomToTop => (0..tier_count).collect(),
-                NumberingOrder::TopToBottom => (0..tier_count).rev().collect(),
-            };
+        match self.sequence_mode {
+            StripSequenceMode::ByBlock => {
+                for block in &mut self.blocks {
+                    let tier_count = block.tiers.len();
+                    let indices: Vec<usize> = match block.numbering_order {
+                        NumberingOrder::BottomToTop => (0..tier_count).collect(),
+                        NumberingOrder::TopToBottom => (0..tier_count).rev().collect(),
+                    };
 
-            for idx in indices {
-                let tier = &mut block.tiers[idx];
-                tier.level_index = idx;
-
-                let wrap_affix = |base: &str, prefix: &str, suffix: &str| -> String {
-                    if prefix.is_empty() && suffix.is_empty() {
-                        base.to_string()
-                    } else {
-                        format!("{prefix}{base}{suffix}")
+                    for idx in indices {
+                        assign_tier_label(
+                            &mut block.tiers[idx],
+                            idx,
+                            self.neutral_mode,
+                            self.pe_mode,
+                            &mut next_number,
+                            &mut next_n,
+                            &mut next_pe,
+                        );
                     }
-                };
-
-                if let Some(override_text) = &tier.custom_override {
-                    let trimmed = override_text.trim();
-                    let label = if trimmed.is_empty() {
-                        String::new()
-                    } else {
-                        wrap_affix(trimmed, &tier.label_prefix, &tier.label_suffix)
-                    };
-                    tier.computed_label = label.clone();
-                    tier.cad_display_label = if label.is_empty() && tier.behavior.is_pe() {
-                        wrap_affix("PE", &tier.label_prefix, &tier.label_suffix)
-                    } else {
-                        label
-                    };
-                    continue;
+                }
+            }
+            StripSequenceMode::ByLevel => {
+                let mut min_row = isize::MAX;
+                let mut max_row = isize::MIN;
+                for block in &self.blocks {
+                    for l_idx in 0..block.tiers.len() {
+                        let r = block.tier_visual_row(l_idx);
+                        min_row = min_row.min(r);
+                        max_row = max_row.max(r);
+                    }
+                }
+                if min_row > max_row {
+                    return;
                 }
 
-                if tier.behavior.is_neutral() {
-                    let base = match self.neutral_mode {
-                        NeutralLabelMode::Fixed => "N".to_string(),
-                        NeutralLabelMode::SharedSequenceNumber => {
-                            let v = next_number.to_string();
-                            next_number = next_number.saturating_add(1);
-                            v
+                for row in min_row..=max_row {
+                    for block in &mut self.blocks {
+                        let tier_count = block.tiers.len();
+                        let indices: Vec<usize> = match block.numbering_order {
+                            NumberingOrder::BottomToTop => (0..tier_count).collect(),
+                            NumberingOrder::TopToBottom => (0..tier_count).rev().collect(),
+                        };
+                        for idx in indices {
+                            if block.tier_visual_row(idx) == row {
+                                assign_tier_label(
+                                    &mut block.tiers[idx],
+                                    idx,
+                                    self.neutral_mode,
+                                    self.pe_mode,
+                                    &mut next_number,
+                                    &mut next_n,
+                                    &mut next_pe,
+                                );
+                            }
                         }
-                        NeutralLabelMode::SharedSequenceSuffixN => {
-                            let v = format!("{next_number}N");
-                            next_number = next_number.saturating_add(1);
-                            v
-                        }
-                        NeutralLabelMode::SeparateCounterSuffixN => {
-                            let v = format!("{next_n}N");
-                            next_n = next_n.saturating_add(1);
-                            v
-                        }
-                    };
-                    let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
-                    tier.computed_label = full.clone();
-                    tier.cad_display_label = full;
-                    continue;
-                }
-
-                match &tier.behavior {
-                    TierBehavior::Sequential => {
-                        let base = next_number.to_string();
-                        next_number = next_number.saturating_add(1);
-                        let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
-                        tier.computed_label = full.clone();
-                        tier.cad_display_label = full;
-                    }
-                    TierBehavior::Fixed(fixed) => {
-                        let full = wrap_affix(fixed, &tier.label_prefix, &tier.label_suffix);
-                        tier.computed_label = full.clone();
-                        tier.cad_display_label = full;
-                    }
-                    TierBehavior::ProtectiveEarth => match self.pe_mode {
-                        PeLabelMode::Fixed => {
-                            tier.computed_label.clear();
-                            tier.cad_display_label =
-                                wrap_affix("PE", &tier.label_prefix, &tier.label_suffix);
-                        }
-                        PeLabelMode::SharedSequenceNumber => {
-                            let base = next_number.to_string();
-                            next_number = next_number.saturating_add(1);
-                            let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
-                            tier.computed_label = full.clone();
-                            tier.cad_display_label = full;
-                        }
-                        PeLabelMode::SharedSequenceSuffixPe => {
-                            let base = format!("{next_number}PE");
-                            next_number = next_number.saturating_add(1);
-                            let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
-                            tier.computed_label = full.clone();
-                            tier.cad_display_label = full;
-                        }
-                        PeLabelMode::SeparateCounterSuffixPe => {
-                            let base = format!("{next_pe}PE");
-                            next_pe = next_pe.saturating_add(1);
-                            let full = wrap_affix(&base, &tier.label_prefix, &tier.label_suffix);
-                            tier.computed_label = full.clone();
-                            tier.cad_display_label = full;
-                        }
-                    },
-                    TierBehavior::Unlabeled => {
-                        tier.computed_label.clear();
-                        tier.cad_display_label.clear();
                     }
                 }
             }
@@ -857,4 +918,68 @@ mod tests {
         assert_eq!(strip.blocks[3].spec_id, "phoenix-pt-25");
         assert_ne!(strip.blocks[2].id, strip.blocks[3].id);
     }
+
+    #[test]
+    fn by_level_sequence_numbers_each_tier_continuously_across_blocks() {
+        let catalog = TerminalCatalog::load_embedded();
+        let double_ll = catalog.find_by_id("wago-2002-2201").unwrap();
+        let triple_lll = catalog.find_by_id("wago-2002-3201").unwrap();
+        let install_peln = catalog.find_by_id("wago-2003-7641").unwrap();
+
+        // 1. 3x 2-level (L/L): Ebene 1 = 1, 2, 3; Ebene 2 = 4, 5, 6
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 6, 3, double_ll);
+        strip.sequence_mode = StripSequenceMode::ByLevel;
+        strip.recalculate_labels();
+
+        assert_eq!(
+            strip.blocks.iter().map(|b| b.tiers[0].computed_label.as_str()).collect::<Vec<_>>(),
+            vec!["1", "2", "3"]
+        );
+        assert_eq!(
+            strip.blocks.iter().map(|b| b.tiers[1].computed_label.as_str()).collect::<Vec<_>>(),
+            vec!["4", "5", "6"]
+        );
+
+        // Switching back to ByBlock restores 1,2 | 3,4 | 5,6
+        strip.sequence_mode = StripSequenceMode::ByBlock;
+        strip.recalculate_labels();
+        assert_eq!(strip.blocks[0].tiers[0].computed_label, "1");
+        assert_eq!(strip.blocks[0].tiers[1].computed_label, "2");
+        assert_eq!(strip.blocks[1].tiers[0].computed_label, "3");
+        assert_eq!(strip.blocks[1].tiers[1].computed_label, "4");
+
+        // 2. 3x 3-level (L/L/L): Ebene 1 = 1..=3, Ebene 2 = 4..=6, Ebene 3 = 7..=9
+        let mut strip3 = TerminalStrip::generate_with_block_count("-X2", 1, 9, 3, triple_lll);
+        strip3.sequence_mode = StripSequenceMode::ByLevel;
+        strip3.recalculate_labels();
+        assert_eq!(
+            strip3.blocks.iter().map(|b| b.tiers[0].computed_label.as_str()).collect::<Vec<_>>(),
+            vec!["1", "2", "3"]
+        );
+        assert_eq!(
+            strip3.blocks.iter().map(|b| b.tiers[1].computed_label.as_str()).collect::<Vec<_>>(),
+            vec!["4", "5", "6"]
+        );
+        assert_eq!(
+            strip3.blocks.iter().map(|b| b.tiers[2].computed_label.as_str()).collect::<Vec<_>>(),
+            vec!["7", "8", "9"]
+        );
+
+        // 3. Mixed strip (2x PE/L/N + 2x L/L) with custom override on E1 #2:
+        // PE = empty/PE, E1 = 1, +24V, 2, 3, E2 = N, N, 4, 5
+        let mut mixed = TerminalStrip::generate_with_block_count("-X3", 1, 10, 4, double_ll);
+        mixed.reassign_blocks(&[0, 1], install_peln);
+        mixed.blocks[1].tiers[1].custom_override = Some("+24V".to_string());
+        mixed.sequence_mode = StripSequenceMode::ByLevel;
+        mixed.recalculate_labels();
+        assert_eq!(mixed.blocks[0].tiers[1].computed_label, "1");
+        assert_eq!(mixed.blocks[1].tiers[1].computed_label, "+24V");
+        assert_eq!(mixed.blocks[2].tiers[0].computed_label, "2");
+        assert_eq!(mixed.blocks[3].tiers[0].computed_label, "3");
+        assert_eq!(mixed.blocks[0].tiers[2].computed_label, "N");
+        assert_eq!(mixed.blocks[1].tiers[2].computed_label, "N");
+        assert_eq!(mixed.blocks[2].tiers[1].computed_label, "4");
+        assert_eq!(mixed.blocks[3].tiers[1].computed_label, "5");
+    }
 }
+

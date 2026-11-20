@@ -35,7 +35,7 @@ use crate::model::library::{
     merge_template_custom_specs, save_global_custom_specs, StripLibrary,
 };
 use crate::model::{
-    NeutralLabelMode, NumberingOrder, PeLabelMode, Project, TerminalStrip,
+    NeutralLabelMode, NumberingOrder, PeLabelMode, Project, StripSequenceMode, TerminalStrip,
 };
 use crate::ui::android_insets::{current_safe_insets, SafeAreaInsets};
 use crate::ui::cad_canvas::{
@@ -1585,6 +1585,24 @@ impl TermiGridApp {
                     self.set_step3_mode(Step3ViewMode::CadOverview);
                 } else {
                     self.set_step3_mode(Step3ViewMode::Eplan);
+                }
+            }
+            PaletteCommand::ToggleSequenceMode => {
+                if let Some(strip) = self.project.strips.get_mut(self.active_strip) {
+                    strip.sequence_mode = match strip.sequence_mode {
+                        StripSequenceMode::ByBlock => StripSequenceMode::ByLevel,
+                        StripSequenceMode::ByLevel => StripSequenceMode::ByBlock,
+                    };
+                    strip.recalculate_labels();
+                    let msg = match strip.sequence_mode {
+                        StripSequenceMode::ByLevel => {
+                            "Zählfolge: Ebenenweise (E1: 1,2,3 → E2: 4,5,6)."
+                        }
+                        StripSequenceMode::ByBlock => {
+                            "Zählfolge: Klemmenweise (1,2 | 3,4)."
+                        }
+                    };
+                    self.notify(ToastTone::Info, msg);
                 }
             }
             PaletteCommand::ConvertNToNt => {
@@ -4094,6 +4112,35 @@ impl TermiGridApp {
                             {
                                 recalc_needed = true;
                             }
+
+                            ui.label(
+                                egui::RichText::new("Folge")
+                                    .size(12.5)
+                                    .color(t.text_secondary),
+                            );
+                            let seq_text = match strip.sequence_mode {
+                                StripSequenceMode::ByBlock => "Klemmenweise (1,2 | 3,4)",
+                                StripSequenceMode::ByLevel => "Ebenenweise (1,2,3 | 4,5,6)",
+                            };
+                            egui::ComboBox::from_id_salt("seq_mode_combo")
+                                .truncate()
+                                .selected_text(seq_text)
+                                .show_ui(ui, |ui| {
+                                    for (mode, lbl) in [
+                                        (StripSequenceMode::ByBlock, "Klemmenweise (1,2 | 3,4)"),
+                                        (
+                                            StripSequenceMode::ByLevel,
+                                            "Ebenenweise (E1: 1,2,3 | E2: 4,5,6)",
+                                        ),
+                                    ] {
+                                        if ui
+                                            .selectable_value(&mut strip.sequence_mode, mode, lbl)
+                                            .changed()
+                                        {
+                                            recalc_needed = true;
+                                        }
+                                    }
+                                });
 
                             ui.label(
                                 egui::RichText::new(s.n_mode_label)

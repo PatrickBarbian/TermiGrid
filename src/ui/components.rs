@@ -208,6 +208,7 @@ pub enum PaletteCommand {
     ExportDxf,
     ToggleBridgeMode,
     ToggleEplanMode,
+    ToggleSequenceMode,
     ConvertNToNt,
     ConvertNtToN,
     Undo,
@@ -330,6 +331,13 @@ impl CommandPaletteState {
                     UiIcon::ModeEplan,
                     "",
                     PaletteCommand::ToggleEplanMode,
+                ),
+                (
+                    "Zählfolge umschalten (Klemmenweise ↔ Ebenenweise)",
+                    "Umschalten zwischen 1,2 | 3,4 und Ebene 1: 1,2,3 → Ebene 2: 4,5,6",
+                    UiIcon::FlipOrder,
+                    "",
+                    PaletteCommand::ToggleSequenceMode,
                 ),
                 (
                     "Excel-Export (.xlsx)",
