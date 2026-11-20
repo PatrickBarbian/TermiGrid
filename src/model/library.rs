@@ -510,6 +510,44 @@ fn next_available_strip_name(base_name: &str, existing_strips: &[TerminalStrip])
     }
 }
 
+/// Persistent application-level UI preferences stored beside `strip_library.json`.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct UiPrefs {
+    pub has_seen_onboarding: bool,
+}
+
+/// Returns the platform-appropriate path for `ui_prefs.json` beside `strip_library.json`.
+pub fn default_ui_prefs_path() -> PathBuf {
+    default_library_path().with_file_name("ui_prefs.json")
+}
+
+impl UiPrefs {
+    pub fn load_default() -> Self {
+        let path = default_ui_prefs_path();
+        Self::load_from_path(&path).unwrap_or_default()
+    }
+
+    pub fn save_default(&self) -> Result<PathBuf, String> {
+        let path = default_ui_prefs_path();
+        self.save_to_path(&path)?;
+        Ok(path)
+    }
+
+    pub fn load_from_path(path: &Path) -> Result<Self, String> {
+        let raw = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&raw).map_err(|e| e.to_string())
+    }
+
+    pub fn save_to_path(&self, path: &Path) -> Result<(), String> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        let json = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
+        std::fs::write(path, json).map_err(|e| e.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -572,5 +610,27 @@ mod tests {
         assert_eq!(mutable.find_by_id(&tpl_id).unwrap().name, "24V Steuerung Neu");
         assert!(mutable.delete_template(&tpl_id));
         assert!(mutable.templates.is_empty());
+    }
+
+    #[test]
+    fn ui_prefs_save_and_load_roundtrip() {
+        let tmp_dir = std::env::temp_dir().join(format!(
+            "termigrid_prefs_test_{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let prefs_path = tmp_dir.join("ui_prefs.json");
+        assert!(UiPrefs::load_from_path(&prefs_path).is_err());
+
+        let prefs = UiPrefs {
+            has_seen_onboarding: true,
+        };
+        prefs.save_to_path(&prefs_path).expect("save prefs");
+        let loaded = UiPrefs::load_from_path(&prefs_path).expect("load prefs");
+        assert!(loaded.has_seen_onboarding);
+
+        let _ = std::fs::remove_dir_all(&tmp_dir);
     }
 }

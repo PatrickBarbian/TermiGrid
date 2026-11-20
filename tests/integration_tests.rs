@@ -1189,4 +1189,189 @@ fn manual_database_override_persists_updates_blocks_and_resets_cleanly() {
     let _ = std::fs::remove_dir_all(&tmp_dir);
 }
 
+#[test]
+fn strict_manufacturer_accessory_isolation_across_all_catalog_specs() {
+    let catalog = TerminalCatalog::load_embedded();
+
+    for spec in catalog.all() {
+        let acc = catalog.accessories_for(spec);
+        let all_text = format!(
+            "{} | {} | {} | {} | {}",
+            acc.end_plate,
+            acc.jumpers,
+            acc.markers,
+            acc.end_bracket,
+            acc.extra.as_deref().unwrap_or("")
+        );
+
+        match spec.manufacturer.as_str() {
+            "Phoenix Contact" => {
+                for forbidden in ["WAGO", "2009-", "2016-", "2002-", "2003-", "249-", "Weidmüller", "WEW", "AEB", "ZQV"] {
+                    assert!(
+                        !all_text.contains(forbidden),
+                        "Phoenix Contact spec {} leaked cross-brand accessory '{forbidden}': {all_text}",
+                        spec.id
+                    );
+                }
+            }
+            "WAGO" => {
+                for forbidden in ["Phoenix", "CLIPFIX", "FBS ", "D-PT", "ZBF", "Weidmüller", "WEW", "ZQV", "DEK "] {
+                    assert!(
+                        !all_text.contains(forbidden),
+                        "WAGO spec {} leaked cross-brand accessory '{forbidden}': {all_text}",
+                        spec.id
+                    );
+                }
+            }
+            "Weidmüller" => {
+                for forbidden in ["WAGO", "2009-", "2016-", "249-", "Phoenix", "CLIPFIX", "FBS ", "D-PT", "ZBF"] {
+                    assert!(
+                        !all_text.contains(forbidden),
+                        "Weidmüller spec {} leaked cross-brand accessory '{forbidden}': {all_text}",
+                        spec.id
+                    );
+                }
+            }
+            _ => {}
+        }
+
+        // Strict brand isolation for N-supply & busbar carrier recommendations
+        if spec.is_installation_or_nt_terminal() {
+            let rec_sup = catalog
+                .find_by_id(spec.recommended_n_supply_spec_id())
+                .unwrap_or_else(|| panic!("Missing recommended N-supply for {}", spec.id));
+            assert_eq!(
+                rec_sup.manufacturer, spec.manufacturer,
+                "Recommended N-supply {} must match manufacturer of {}",
+                rec_sup.id, spec.id
+            );
+        }
+        for &cid in spec.compatible_n_supply_spec_ids() {
+            let cspec = catalog
+                .find_by_id(cid)
+                .unwrap_or_else(|| panic!("Missing compatible N-supply {cid}"));
+            assert_eq!(
+                cspec.manufacturer, spec.manufacturer,
+                "Cross-brand N-supply {cid} leaked onto {} ({})",
+                spec.id, spec.manufacturer
+            );
+        }
+        for &cid in spec.compatible_busbar_carrier_spec_ids() {
+            let cspec = catalog
+                .find_by_id(cid)
+                .unwrap_or_else(|| panic!("Missing compatible carrier {cid}"));
+            assert_eq!(
+                cspec.manufacturer, spec.manufacturer,
+                "Cross-brand busbar carrier {cid} leaked onto {} ({})",
+                spec.id, spec.manufacturer
+            );
+        }
+    }
+}
+
+#[test]
+fn xlsx_export_separates_strips_into_tabs_with_markers_and_auto_calculates_accessories() {
+    use termigrid_core::catalog::accessories::calculate_end_plates;
+    use termigrid_core::export::{
+        build_tier_columns_for_strips, prepare_strips_for_export,
+        xlsx::sanitize_excel_sheet_name,
+    };
+
+    let catalog = TerminalCatalog::load_embedded();
+    let w_single = catalog.find_by_id("wago-2002-1201").unwrap();
+    let w_nt = catalog.find_by_id("wago-2003-7641").unwrap();
+    let phx_nt = catalog.find_by_id("phoenix-pti-25-pelnt").unwrap();
+
+    // Mixed contours on -X1 (partition plate needed between 2003 and 2002 + end plate at strip end)
+    let mut x1 = TerminalStrip::generate_with_block_count("-X1", 1, 10, 4, w_single);
+    x1.reassign_blocks(&[0, 1], w_nt);
+    assert!(!x1.end_plates_generated);
+
+    // Second strip -X2 using Phoenix Contact terminals (different marker type)
+    let x2 = TerminalStrip::generate_with_block_count("-X2", 1, 10, 2, phx_nt);
+    assert!(!x2.end_plates_generated);
+
+    let mut project = Project {
+        format_version: 1,
+        project_name: "SeparatedTabsTest".to_string(),
+        strips: vec![x1, x2],
+        ..Default::default()
+    };
+
+    // Auto-prepare before export must enable accessories idempotently without duplicating blocks
+    let opts = ExportOptions::default();
+    prepare_strips_for_export(&mut project, 0, &opts);
+    prepare_strips_for_export(&mut project, 0, &opts);
+    assert!(project.strips[0].end_plates_generated);
+    assert!(project.strips[1].end_plates_generated);
+    assert_eq!(project.strips[0].blocks.len(), 4);
+    assert_eq!(project.strips[1].blocks.len(), 2);
+
+    // Auto-calculated plates cover both contour change (idx 1) and strip end (idx 3)
+    let x1_plates = calculate_end_plates(&project.strips[0], &catalog);
+    assert_eq!(x1_plates.len(), 2);
+
+    // Per-strip tier columns stay completely isolated
+    let x1_cols = build_tier_columns_for_strips(&[&project.strips[0]], &opts, true);
+    let x2_cols = build_tier_columns_for_strips(&[&project.strips[1]], &opts, true);
+    assert_eq!(x1_cols[0].1, vec!["1", "2", "3", "4"]);
+    assert_eq!(x2_cols[0].1, vec!["1", "2"]);
+
+    // Tab names sanitize cleanly as -X1 and -X2
+    let mut used = Vec::new();
+    let reserved = ["ebenen-matrix", "stückliste & montage"];
+    assert_eq!(sanitize_excel_sheet_name(&project.strips[0].name, &mut used, &reserved), "-X1");
+    assert_eq!(sanitize_excel_sheet_name(&project.strips[1].name, &mut used, &reserved), "-X2");
+
+    let out_path = std::env::temp_dir().join("termigrid_separated_strips_test.xlsx");
+    let _ = std::fs::remove_file(&out_path);
+    let total_labels = export_to_xlsx(&out_path, &project, 0, &opts, true).unwrap();
+    assert_eq!(total_labels, 10); // -X1: 2*(L+NT) + 2*L = 6; -X2: 2*(L+NT) = 4
+    assert!(out_path.exists());
+    let _ = std::fs::remove_file(&out_path);
+}
+
+#[test]
+fn dxf_export_writes_individual_files_per_strip() {
+    use termigrid_core::export::dxf::{export_all_strips_to_dxf_dir, export_strip_to_dxf};
+
+    let catalog = TerminalCatalog::load_embedded();
+    let wago = catalog.find_by_id("wago-2002-1201").unwrap();
+    let phx = catalog.find_by_id("phoenix-pt-25").unwrap();
+
+    let x1 = TerminalStrip::generate_with_block_count("-X1", 1, 4, 3, wago);
+    let x2 = TerminalStrip::generate_with_block_count("-X2", 10, 15, 2, phx);
+
+    let project = Project {
+        format_version: 1,
+        project_name: "SplitDxfTest".to_string(),
+        strips: vec![x1, x2],
+        ..Default::default()
+    };
+
+    let tmp_dir = std::env::temp_dir().join(format!("termigrid_split_dxf_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+
+    let written = export_all_strips_to_dxf_dir(&tmp_dir, &project, &catalog).unwrap();
+    assert_eq!(written.len(), 2);
+    assert_eq!(written[0].file_name().and_then(|n| n.to_str()), Some("-X1.dxf"));
+    assert_eq!(written[1].file_name().and_then(|n| n.to_str()), Some("-X2.dxf"));
+
+    let dxf1 = std::fs::read_to_string(&written[0]).unwrap();
+    let dxf2 = std::fs::read_to_string(&written[1]).unwrap();
+    assert!(dxf1.contains("AC1009"));
+    assert!(dxf1.contains("-X1"));
+    assert!(!dxf1.contains("-X2"));
+
+    assert!(dxf2.contains("AC1009"));
+    assert!(dxf2.contains("-X2"));
+    assert!(!dxf2.contains("-X1"));
+
+    // Also test direct single-strip DXF file writer
+    let single_path = tmp_dir.join("custom_single.dxf");
+    export_strip_to_dxf(&single_path, &project.strips[0], &project.project_name, &catalog).unwrap();
+    assert!(single_path.exists());
+
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+}
 

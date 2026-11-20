@@ -1351,18 +1351,17 @@ impl TerminalSpec {
                 "phoenix-pti-16-nls-bu",
                 "phoenix-pti-16-nls",
                 "phoenix-ptn-16s",
-                "wago-2016-7714",
             ],
             "Weidmüller" => &[
                 "weidmuller-aitb-16-ndt-bl",
                 "weidmuller-aitb-16-nlo-bl",
-                "wago-2016-7714",
             ],
-            _ => &[
+            "WAGO" => &[
                 "wago-2016-7714",
                 "wago-2216-7714",
                 "wago-2016-7614",
             ],
+            _ => &[],
         }
     }
 

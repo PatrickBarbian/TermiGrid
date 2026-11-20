@@ -52,6 +52,88 @@ pub struct PrintLabelRow {
     pub terminal_type: String,
 }
 
+/// Ensures end/partition plates and end brackets are enabled/initialized idempotently
+/// before running Excel export (without duplicating existing brackets or blocks).
+pub fn prepare_strips_for_export(
+    project: &mut Project,
+    active_strip_index: usize,
+    options: &ExportOptions,
+) {
+    let target_indices: Vec<usize> = if options.all_strips {
+        (0..project.strips.len()).collect()
+    } else if active_strip_index < project.strips.len() {
+        vec![active_strip_index]
+    } else {
+        Vec::new()
+    };
+
+    for idx in target_indices {
+        let strip = &mut project.strips[idx];
+        if strip.blocks.is_empty() {
+            continue;
+        }
+        if strip.end_bracket_id.trim().is_empty() {
+            strip.end_bracket_id =
+                crate::catalog::accessories::DEFAULT_END_BRACKET_ID.to_string();
+        }
+        strip.end_plates_generated = true;
+    }
+}
+
+/// Flattens a single `strip` into ordered `PrintLabelRow`s according to `options`, updating `seq`.
+pub fn build_print_rows_for_strip(
+    strip: &TerminalStrip,
+    options: &ExportOptions,
+    seq: &mut usize,
+) -> Vec<PrintLabelRow> {
+    let mut rows = Vec::new();
+    match options.print_order {
+        PrintOrder::ByBlockBottomToTop | PrintOrder::ByBlockTopToBottom => {
+            for (b_idx, block) in strip.blocks.iter().enumerate() {
+                let indices: Vec<usize> = match options.print_order {
+                    PrintOrder::ByBlockBottomToTop => (0..block.tiers.len()).collect(),
+                    PrintOrder::ByBlockTopToBottom => (0..block.tiers.len()).rev().collect(),
+                    PrintOrder::ByTierStrip => unreachable!(),
+                };
+
+                for t_idx in indices {
+                    let vrow = block.tier_visual_row(t_idx);
+                    if let Some(row) = extract_row(strip, b_idx, t_idx, vrow, options, seq) {
+                        rows.push(row);
+                    }
+                }
+            }
+        }
+        PrintOrder::ByTierStrip => {
+            let max_row = strip
+                .blocks
+                .iter()
+                .flat_map(|b| (0..b.tiers.len()).map(|l| b.tier_visual_row(l)))
+                .max()
+                .unwrap_or(0);
+
+            let mut row_order: Vec<isize> = (0..=max_row).collect();
+            if options.include_pe_labels {
+                row_order.push(-1);
+            }
+
+            for target_row in row_order {
+                for (b_idx, block) in strip.blocks.iter().enumerate() {
+                    for t_idx in 0..block.tiers.len() {
+                        if block.tier_visual_row(t_idx) == target_row
+                            && let Some(row) =
+                                extract_row(strip, b_idx, t_idx, target_row, options, seq)
+                        {
+                            rows.push(row);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    rows
+}
+
 /// Flattens one or more strips into ordered `PrintLabelRow`s according to `options`.
 pub fn build_print_rows(
     project: &Project,
@@ -72,81 +154,19 @@ pub fn build_print_rows(
     let mut seq = 1usize;
 
     for strip in strips {
-        match options.print_order {
-            PrintOrder::ByBlockBottomToTop | PrintOrder::ByBlockTopToBottom => {
-                for (b_idx, block) in strip.blocks.iter().enumerate() {
-                    let indices: Vec<usize> = match options.print_order {
-                        PrintOrder::ByBlockBottomToTop => (0..block.tiers.len()).collect(),
-                        PrintOrder::ByBlockTopToBottom => (0..block.tiers.len()).rev().collect(),
-                        PrintOrder::ByTierStrip => unreachable!(),
-                    };
-
-                    for t_idx in indices {
-                        let vrow = block.tier_visual_row(t_idx);
-                        if let Some(row) =
-                            extract_row(strip, b_idx, t_idx, vrow, options, &mut seq)
-                        {
-                            rows.push(row);
-                        }
-                    }
-                }
-            }
-            PrintOrder::ByTierStrip => {
-                let max_row = strip
-                    .blocks
-                    .iter()
-                    .flat_map(|b| (0..b.tiers.len()).map(|l| b.tier_visual_row(l)))
-                    .max()
-                    .unwrap_or(0);
-
-                let mut row_order: Vec<isize> = (0..=max_row).collect();
-                if options.include_pe_labels {
-                    row_order.push(-1);
-                }
-
-                for target_row in row_order {
-                    for (b_idx, block) in strip.blocks.iter().enumerate() {
-                        for t_idx in 0..block.tiers.len() {
-                            if block.tier_visual_row(t_idx) == target_row
-                                && let Some(row) = extract_row(
-                                    strip,
-                                    b_idx,
-                                    t_idx,
-                                    target_row,
-                                    options,
-                                    &mut seq,
-                                )
-                            {
-                                rows.push(row);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        rows.extend(build_print_rows_for_strip(strip, options, &mut seq));
     }
 
     rows
 }
 
 /// Builds contiguous label lists per logical level (`Ebene 1`, `Ebene 2`, ..., optionally `PE`)
-/// for direct column import / copy-paste into labeling printer software.
-pub fn build_tier_columns(
-    project: &Project,
-    active_strip_index: usize,
+/// across the provided `strips` slice.
+pub fn build_tier_columns_for_strips(
+    strips: &[&TerminalStrip],
     options: &ExportOptions,
     german_headers: bool,
 ) -> Vec<(String, Vec<String>)> {
-    let strips: Vec<&TerminalStrip> = if options.all_strips {
-        project.strips.iter().collect()
-    } else {
-        project
-            .strips
-            .get(active_strip_index)
-            .into_iter()
-            .collect()
-    };
-
     let max_row = strips
         .iter()
         .flat_map(|s| s.blocks.iter())
@@ -174,7 +194,7 @@ pub fn build_tier_columns(
                 format!("Tier {}", target_row + 1)
             };
             let mut labels = Vec::new();
-            for strip in &strips {
+            for strip in strips {
                 for block in &strip.blocks {
                     for (t_idx, tier) in block.tiers.iter().enumerate() {
                         if !tier.behavior.is_pe()
@@ -192,7 +212,7 @@ pub fn build_tier_columns(
 
     if options.include_pe_labels {
         let mut pe_labels = Vec::new();
-        for strip in &strips {
+        for strip in strips {
             for block in &strip.blocks {
                 for tier in &block.tiers {
                     if tier.behavior.is_pe() {
@@ -212,6 +232,27 @@ pub fn build_tier_columns(
     }
 
     columns
+}
+
+/// Builds contiguous label lists per logical level (`Ebene 1`, `Ebene 2`, ..., optionally `PE`)
+/// for direct column import / copy-paste into labeling printer software.
+pub fn build_tier_columns(
+    project: &Project,
+    active_strip_index: usize,
+    options: &ExportOptions,
+    german_headers: bool,
+) -> Vec<(String, Vec<String>)> {
+    let strips: Vec<&TerminalStrip> = if options.all_strips {
+        project.strips.iter().collect()
+    } else {
+        project
+            .strips
+            .get(active_strip_index)
+            .into_iter()
+            .collect()
+    };
+
+    build_tier_columns_for_strips(&strips, options, german_headers)
 }
 
 fn extract_row(

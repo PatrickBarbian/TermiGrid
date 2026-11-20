@@ -90,7 +90,7 @@
         "^\\d{7}$"
       ],
       "type_patterns": [
-        "^(?:PT|PTI|PTV|PTTB|PTTBS|PTME|PTIO|PTFIX|PTPOWER|PTRV|ST|STI|STTB|UT|UTI|UTTB|UK|UKK|UDMTK|USLKG|CLIPFIX|E/NS|E/UK|D-|FBS|AB-)\\b"
+        "^(?:PT|PTN|PTI|PTV|PTTB|PTTBS|PTME|PTIO|PTFIX|PTPOWER|PTRV|ST|STN|STI|STTB|UT|UTN|UTI|UTTB|UK|UKK|UDMTK|USLKG|CLIPFIX|E/NS|E/UK|D-|FBS|AB-)\\b"
       ],
       "default_end_bracket_id": "phoenix-clipfix-35-5"
     },

@@ -913,11 +913,22 @@ pub fn show_install_supply_prompt_modal(
                     } else {
                         base_spec
                     };
-                    let compat_ids = active_spec.compatible_n_supply_spec_ids();
-                    if !compat_ids.contains(&state.supply_spec_id.as_str())
-                        && let Some(&first_id) = compat_ids.first()
-                    {
-                        state.supply_spec_id = first_id.to_string();
+                    let compat_ids: Vec<&'static str> = active_spec
+                        .compatible_n_supply_spec_ids()
+                        .iter()
+                        .copied()
+                        .filter(|cid| {
+                            catalog
+                                .find_by_id(cid)
+                                .is_some_and(|cs| cs.manufacturer == active_spec.manufacturer)
+                        })
+                        .collect();
+                    if !compat_ids.contains(&state.supply_spec_id.as_str()) {
+                        state.supply_spec_id = compat_ids
+                            .first()
+                            .copied()
+                            .unwrap_or_default()
+                            .to_string();
                     }
 
                     let selected_supply = catalog.find_by_id(&state.supply_spec_id);
@@ -931,45 +942,47 @@ pub fn show_install_supply_prompt_modal(
                                 f32::from(s.width_tenths_mm) / 10.0
                             )
                         })
-                        .unwrap_or_else(|| state.supply_spec_id.clone());
+                        .unwrap_or_else(|| "—".to_string());
 
-                    ui.label(tr::nt_pick_supply(lang));
-                    let combo_w = (ui.available_width() - 12.0).clamp(140.0, 440.0);
-                    egui::ComboBox::from_id_salt("install_supply_spec_combo")
-                        .width(combo_w)
-                        .truncate()
-                        .selected_text(selected_supply_text)
-                        .show_ui(ui, |ui| {
-                            for &cid in compat_ids {
-                                if let Some(cspec) = catalog.find_by_id(cid) {
-                                    let label = format!(
-                                        "{} {} (Art. {}, {:.1} mm)",
-                                        cspec.manufacturer,
-                                        cspec.name,
-                                        cspec.effective_article_number().unwrap_or("—"),
-                                        f32::from(cspec.width_tenths_mm) / 10.0
-                                    );
-                                    ui.selectable_value(
-                                        &mut state.supply_spec_id,
-                                        cspec.id.clone(),
-                                        label,
-                                    );
+                    if !compat_ids.is_empty() {
+                        ui.label(tr::nt_pick_supply(lang));
+                        let combo_w = (ui.available_width() - 12.0).clamp(140.0, 440.0);
+                        egui::ComboBox::from_id_salt("install_supply_spec_combo")
+                            .width(combo_w)
+                            .truncate()
+                            .selected_text(selected_supply_text)
+                            .show_ui(ui, |ui| {
+                                for cid in &compat_ids {
+                                    if let Some(cspec) = catalog.find_by_id(cid) {
+                                        let label = format!(
+                                            "{} {} (Art. {}, {:.1} mm)",
+                                            cspec.manufacturer,
+                                            cspec.name,
+                                            cspec.effective_article_number().unwrap_or("—"),
+                                            f32::from(cspec.width_tenths_mm) / 10.0
+                                        );
+                                        ui.selectable_value(
+                                            &mut state.supply_spec_id,
+                                            cspec.id.clone(),
+                                            label,
+                                        );
+                                    }
                                 }
-                            }
-                        });
+                            });
 
-                    if let Some(sup_spec) = catalog.find_by_id(&state.supply_spec_id) {
-                        ui.add_space(4.0);
-                        show_product_preview_card(
-                            ui,
-                            sup_spec,
-                            logos,
-                            media_cache,
-                            strings.open_product_page,
-                            strings.bridge_chambers_unit,
-                            strings.height_label,
-                            lang,
-                        );
+                        if let Some(sup_spec) = catalog.find_by_id(&state.supply_spec_id) {
+                            ui.add_space(4.0);
+                            show_product_preview_card(
+                                ui,
+                                sup_spec,
+                                logos,
+                                media_cache,
+                                strings.open_product_page,
+                                strings.bridge_chambers_unit,
+                                strings.height_label,
+                                lang,
+                            );
+                        }
                     }
                 }
             });
@@ -982,7 +995,16 @@ pub fn show_install_supply_prompt_modal(
             } else {
                 base_spec
             };
-            let compat_carriers = active_spec.compatible_busbar_carrier_spec_ids();
+            let compat_carriers: Vec<&'static str> = active_spec
+                .compatible_busbar_carrier_spec_ids()
+                .iter()
+                .copied()
+                .filter(|cid| {
+                    catalog
+                        .find_by_id(cid)
+                        .is_some_and(|cs| cs.manufacturer == active_spec.manufacturer)
+                })
+                .collect();
             if !compat_carriers.is_empty() {
                 ui.add_space(6.0);
                 ui.group(|ui| {
@@ -1001,15 +1023,21 @@ pub fn show_install_supply_prompt_modal(
                     }
                     ui.add_space(2.0);
 
-                    if !compat_carriers.contains(&state.outer_carrier_spec_id.as_str())
-                        && let Some(rec) = active_spec.recommended_outer_busbar_carrier_spec_id()
-                    {
-                        state.outer_carrier_spec_id = rec.to_string();
+                    if !compat_carriers.contains(&state.outer_carrier_spec_id.as_str()) {
+                        state.outer_carrier_spec_id = active_spec
+                            .recommended_outer_busbar_carrier_spec_id()
+                            .filter(|rec| compat_carriers.contains(rec))
+                            .or_else(|| compat_carriers.first().copied())
+                            .unwrap_or_default()
+                            .to_string();
                     }
-                    if !compat_carriers.contains(&state.intermediate_support_spec_id.as_str())
-                        && let Some(rec) = active_spec.recommended_intermediate_busbar_support_spec_id()
-                    {
-                        state.intermediate_support_spec_id = rec.to_string();
+                    if !compat_carriers.contains(&state.intermediate_support_spec_id.as_str()) {
+                        state.intermediate_support_spec_id = active_spec
+                            .recommended_intermediate_busbar_support_spec_id()
+                            .filter(|rec| compat_carriers.contains(rec))
+                            .or_else(|| compat_carriers.first().copied())
+                            .unwrap_or_default()
+                            .to_string();
                     }
 
                     ui.checkbox(
@@ -1037,7 +1065,7 @@ pub fn show_install_supply_prompt_modal(
                             .truncate()
                             .selected_text(selected_outer_text)
                             .show_ui(ui, |ui| {
-                                for &cid in compat_carriers {
+                                for cid in &compat_carriers {
                                     if let Some(cspec) = catalog.find_by_id(cid) {
                                         let label = format!(
                                             "{} {} (Art. {}, {:.1} mm)",
@@ -1096,7 +1124,7 @@ pub fn show_install_supply_prompt_modal(
                             .truncate()
                             .selected_text(selected_mid_text)
                             .show_ui(ui, |ui| {
-                                for &cid in compat_carriers {
+                                for cid in &compat_carriers {
                                     if let Some(cspec) = catalog.find_by_id(cid) {
                                         let label = format!(
                                             "{} {} (Art. {}, {:.1} mm)",

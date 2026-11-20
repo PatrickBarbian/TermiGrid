@@ -91,6 +91,22 @@ pub fn pick_export_dxf_path(default_filename: &str) -> Option<PathBuf> {
     }
 }
 
+/// Prompts for a target folder to export one individual `.dxf` per terminal strip on desktop,
+/// or creates a project subfolder under Android Downloads.
+pub fn pick_export_dxf_dir(default_subdir: &str) -> Option<PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = default_subdir;
+        rfd::FileDialog::new().pick_folder()
+    }
+    #[cfg(target_os = "android")]
+    {
+        let dir = android_export_dir().join(default_subdir);
+        let _ = std::fs::create_dir_all(&dir);
+        Some(dir)
+    }
+}
+
 /// Prompts for an EPLAN PDF parts list to import on desktop, or picks the newest `.pdf` in Android Downloads.
 pub fn pick_import_pdf_path() -> Option<PathBuf> {
     #[cfg(not(target_os = "android"))]

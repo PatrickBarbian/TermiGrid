@@ -531,14 +531,14 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
     }
 
     if id.contains("pti-25") || id.contains("sti-25") || id.contains("uti-25") {
-        let end_plate = if id.contains("uti") {
-            "D-UTI 2,5 (3076038)"
+        let (end_plate, carrier_hint) = if id.contains("uti") {
+            ("D-UTI 2,5 (3076038)", "AB-UTI/3 (3076039)")
         } else if id.contains("sti") {
-            "D-STI/3 (3038626)"
+            ("D-STI/3 (3038626)", "AB-STI/3 (3030844)")
         } else if spec.levels == 1 {
-            "D-PTI 2,5 (3213974)"
+            ("D-PTI 2,5 (3213974)", "AB-PTI (3214006)")
         } else {
-            "D-PTI/3 (3213975)"
+            ("D-PTI/3 (3213975)", "AB-PTI/3 (3213976)")
         };
         return TerminalAccessories {
             end_plate: end_plate.to_string(),
@@ -546,7 +546,9 @@ fn resolve_phoenix(spec: &TerminalSpec) -> TerminalAccessories {
             markers: "ZBF 5 / UCT-TMF 5 / TMT 5 R".to_string(),
             end_bracket,
             extra: if spec.levels >= 2 {
-                Some("NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + AB-PTI".to_string())
+                Some(format!(
+                    "NLS-CU 3/10 SN 1000MM (0402174 N-Sammelschiene) + {carrier_hint}"
+                ))
             } else {
                 None
             },

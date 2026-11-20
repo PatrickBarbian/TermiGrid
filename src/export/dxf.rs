@@ -1,5 +1,5 @@
 use std::fmt::Write as _;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::catalog::accessories::{calculate_end_plates, find_end_bracket};
 use crate::catalog::TerminalCatalog;
@@ -25,18 +25,39 @@ fn block_bounds_mm(block: &crate::model::TerminalBlock, catalog: &TerminalCatalo
 }
 
 /// Generates an EPLAN Electric P8–compatible ASCII DXF (`AC1009` / AutoCAD R12) in 1:1 millimeters
+/// for a **single terminal strip**.
+pub fn export_strip_to_dxf_string(
+    strip: &TerminalStrip,
+    project_name: &str,
+    catalog: &TerminalCatalog,
+) -> String {
+    export_strips_to_dxf_string(&[strip], project_name, catalog)
+}
+
+/// Generates an EPLAN Electric P8–compatible ASCII DXF (`AC1009` / AutoCAD R12) in 1:1 millimeters
 /// containing **all terminal strips** of `project` in a single drawing file (`Aufbaubild`).
+pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> String {
+    let refs: Vec<&TerminalStrip> = project.strips.iter().collect();
+    export_strips_to_dxf_string(&refs, &project.project_name, catalog)
+}
+
+/// Generates an EPLAN Electric P8–compatible ASCII DXF (`AC1009` / AutoCAD R12) in 1:1 millimeters
+/// containing the provided `strips`.
 ///
 /// Uses strictly `LINE` and `TEXT` entities with `$INSUNITS = 4` (millimeters) and `$MEASUREMENT = 1`
 /// (metric) to ensure clean import in EPLAN Electric P8, AutoCAD, LibreCAD, and QCAD without solid fills
 /// or unsupported polyline/MTEXT entities.
-pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> String {
+pub fn export_strips_to_dxf_string(
+    strips: &[&TerminalStrip],
+    project_name: &str,
+    catalog: &TerminalCatalog,
+) -> String {
     let mut entities = String::new();
     let mut bounds = Bounds::default();
 
     let mut rail_cy: f64 = 0.0;
 
-    for strip in &project.strips {
+    for &strip in strips {
         let eb = find_end_bracket(&strip.end_bracket_id);
         let eb_w = f64::from(eb.width_tenths_mm) / 10.0;
         let eb_h = f64::from(eb.height_tenths_mm) / 10.0;
@@ -402,6 +423,17 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
         title_right,
         title_top,
     );
+    let legend_detail = if strips.len() == 1 {
+        format!(
+            "TermiGrid Aufbaubild (1:1 mm) - Projekt: {project_name} | Leiste: {}",
+            strips[0].name
+        )
+    } else {
+        format!(
+            "TermiGrid Aufbaubild (1:1 mm) - Projekt: {project_name} | Leisten: {}",
+            strips.len()
+        )
+    };
     draw_text(
         &mut entities,
         &mut bounds,
@@ -410,11 +442,7 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
         title_top - 7.5,
         4.0,
         0.0,
-        &format!(
-            "TermiGrid Aufbaubild (1:1 mm) - Projekt: {} | Leisten: {}",
-            project.project_name,
-            project.strips.len()
-        ),
+        &legend_detail,
     );
     draw_text(
         &mut entities,
@@ -428,6 +456,70 @@ pub fn export_to_dxf_string(project: &Project, catalog: &TerminalCatalog) -> Str
     );
 
     build_dxf_document(&entities, bounds)
+}
+
+/// Sanitizes a terminal strip designation into a unique `<StripName>.dxf` filename.
+pub fn sanitize_dxf_strip_filename(strip_name: &str, used_lower: &mut Vec<String>) -> String {
+    let clean: String = strip_name
+        .trim()
+        .chars()
+        .map(|c| match c {
+            '\\' | '/' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            c if c.is_control() => '_',
+            c => c,
+        })
+        .collect();
+    let stem = clean.trim_matches('.').trim();
+    let base = if stem.is_empty() { "Strip" } else { stem };
+
+    let first = format!("{base}.dxf");
+    if !used_lower.iter().any(|u| u == &first.to_lowercase()) {
+        used_lower.push(first.to_lowercase());
+        return first;
+    }
+
+    let mut suffix = 2usize;
+    loop {
+        let cand = format!("{base}_{suffix}.dxf");
+        if !used_lower.iter().any(|u| u == &cand.to_lowercase()) {
+            used_lower.push(cand.to_lowercase());
+            return cand;
+        }
+        suffix += 1;
+    }
+}
+
+/// Writes a 1:1 EPLAN DXF for a single `strip` to `path`.
+pub fn export_strip_to_dxf(
+    path: &Path,
+    strip: &TerminalStrip,
+    project_name: &str,
+    catalog: &TerminalCatalog,
+) -> Result<(), String> {
+    let content = export_strip_to_dxf_string(strip, project_name, catalog);
+    std::fs::write(path, content.as_bytes()).map_err(|e| format!("DXF write failed: {e}"))
+}
+
+/// Batch-exports every terminal strip of `project` into `dir` as an individual `<StripName>.dxf` file,
+/// returning all written file paths in strip order.
+pub fn export_all_strips_to_dxf_dir(
+    dir: &Path,
+    project: &Project,
+    catalog: &TerminalCatalog,
+) -> Result<Vec<PathBuf>, String> {
+    if project.strips.is_empty() {
+        return Ok(Vec::new());
+    }
+    std::fs::create_dir_all(dir).map_err(|e| format!("DXF directory create failed: {e}"))?;
+    let mut used_lower = Vec::new();
+    let mut written = Vec::with_capacity(project.strips.len());
+    for strip in &project.strips {
+        let filename = sanitize_dxf_strip_filename(&strip.name, &mut used_lower);
+        let file_path = dir.join(filename);
+        export_strip_to_dxf(&file_path, strip, &project.project_name, catalog)?;
+        written.push(file_path);
+    }
+    Ok(written)
 }
 
 /// Writes the 1:1 EPLAN DXF containing all strips of `project` to `path`, returning strip count.

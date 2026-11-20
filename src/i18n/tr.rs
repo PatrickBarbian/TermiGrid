@@ -1759,3 +1759,452 @@ pub fn toast_specs_imported(l: Language, count: usize) -> String {
     }
 }
 
+// ── Guided Tour & Onboarding (Basic + Advanced) ────────────────────────────
+
+pub const fn tour_menu_heading(l: Language) -> &'static str {
+    pick(l, [
+        "Hilfe & Anleitung",
+        "Help & Guided Tours",
+        "Aide & Tutoriels",
+        "Aiuto e Guide",
+        "Ayuda y Tutoriales",
+        "Pomoc i Samouczki",
+        "Help & Rondleidingen",
+    ])
+}
+
+pub const fn tour_start_basic(l: Language) -> &'static str {
+    pick(l, [
+        "Basis-Tutorial starten",
+        "Start Basic Tour",
+        "Démarrer le tutoriel de base",
+        "Avvia tutorial base",
+        "Iniciar tutorial básico",
+        "Uruchom samouczek podstawowy",
+        "Basisrondleiding starten",
+    ])
+}
+
+pub const fn tour_start_advanced(l: Language) -> &'static str {
+    pick(l, [
+        "Fortgeschrittenes Tutorial starten",
+        "Start Advanced Tour",
+        "Démarrer le tutoriel avancé",
+        "Avvia tutorial avanzato",
+        "Iniciar tutorial avanzado",
+        "Uruchom samouczek zaawansowany",
+        "Gevorderde rondleiding starten",
+    ])
+}
+
+pub const fn tour_badge_basic(l: Language) -> &'static str {
+    pick(l, [
+        "Basis-Tutorial",
+        "Basic Tour",
+        "Tutoriel de base",
+        "Tutorial base",
+        "Tutorial básico",
+        "Samouczek podstawowy",
+        "Basisrondleiding",
+    ])
+}
+
+pub const fn tour_badge_advanced(l: Language) -> &'static str {
+    pick(l, [
+        "Fortgeschrittenes Tutorial",
+        "Advanced Tour",
+        "Tutoriel avancé",
+        "Tutorial avanzato",
+        "Tutorial avanzado",
+        "Samouczek zaawansowany",
+        "Gevorderde rondleiding",
+    ])
+}
+
+pub fn tour_step_counter(l: Language, current: usize, total: usize) -> String {
+    match l {
+        Language::De => format!("Schritt {current} von {total}"),
+        Language::En => format!("Step {current} of {total}"),
+        Language::Fr => format!("Étape {current} sur {total}"),
+        Language::It => format!("Passo {current} di {total}"),
+        Language::Es => format!("Paso {current} de {total}"),
+        Language::Pl => format!("Krok {current} z {total}"),
+        Language::Nl => format!("Stap {current} van {total}"),
+    }
+}
+
+pub const fn tour_btn_back(l: Language) -> &'static str {
+    pick(l, [
+        "Zurück",
+        "Back",
+        "Retour",
+        "Indietro",
+        "Atrás",
+        "Wstecz",
+        "Terug",
+    ])
+}
+
+pub const fn tour_btn_next(l: Language) -> &'static str {
+    pick(l, [
+        "Weiter",
+        "Next",
+        "Suivant",
+        "Avanti",
+        "Siguiente",
+        "Dalej",
+        "Volgende",
+    ])
+}
+
+pub const fn tour_btn_finish(l: Language) -> &'static str {
+    pick(l, [
+        "Fertig",
+        "Finish",
+        "Terminer",
+        "Fine",
+        "Finalizar",
+        "Zakończ",
+        "Voltooien",
+    ])
+}
+
+pub const fn tour_btn_skip(l: Language) -> &'static str {
+    pick(l, [
+        "Überspringen",
+        "Skip",
+        "Ignorer",
+        "Salta",
+        "Omitir",
+        "Pomiń",
+        "Overslaan",
+    ])
+}
+
+pub const fn tour_btn_finish_work(l: Language) -> &'static str {
+    pick(l, [
+        "Fertig & Loslegen",
+        "Finish & Start Working",
+        "Terminer et commencer",
+        "Fine e inizia a lavorare",
+        "Finalizar y empezar",
+        "Zakończ i rozpocznij pracę",
+        "Voltooien & aan de slag",
+    ])
+}
+
+pub const fn tour_shortcut_hint(l: Language) -> &'static str {
+    pick(l, [
+        "←/→ Schritt · Enter Weiter · Esc Beenden",
+        "←/→ Step · Enter Next · Esc Skip",
+        "←/→ Étape · Entrée Suivant · Échap Quitter",
+        "←/→ Passo · Invio Avanti · Esc Esci",
+        "←/→ Paso · Enter Siguiente · Esc Salir",
+        "←/→ Krok · Enter Dalej · Esc Zakończ",
+        "←/→ Stap · Enter Volgende · Esc Sluiten",
+    ])
+}
+
+// ── Tour A: Basic Tour (6 Steps) ───────────────────────────────────────────
+
+pub const fn tour_basic_1_title(l: Language) -> &'static str {
+    pick(l, [
+        "Willkommen bei TermiGrid",
+        "Welcome to TermiGrid",
+        "Bienvenue dans TermiGrid",
+        "Benvenuti in TermiGrid",
+        "Bienvenido a TermiGrid",
+        "Witamy w TermiGrid",
+        "Welkom bij TermiGrid",
+    ])
+}
+
+pub const fn tour_basic_1_body(l: Language) -> &'static str {
+    pick(l, [
+        "TermiGrid unterstützt dich im Schaltschrankbau bei der schnellen Planung von DIN-Schienen-Klemmleisten – inklusive 2D-CAD-Aufbauvorschau, automatischer Ebenen-Nummerierung, Abschlussplatten-Berechnung und druckerfertigem Excel-/CSV-Export.\n\nIn diesem kurzen Basis-Tutorial zeigen wir dir die wichtigsten Schritte vom Anlegen bis zum fertigen Beschriftungsstreifen.",
+        "TermiGrid helps you configure DIN-rail terminal strips for control cabinets — with a live 2D CAD layout, automatic multi-level numbering, end-plate calculation, and printer-ready Excel/CSV label exports.\n\nThis short Basic Tour walks you through creating a terminal strip all the way to exporting label strips.",
+        "TermiGrid vous accompagne dans la conception de borniers sur rail DIN pour armoires électriques : aperçu CAO 2D en direct, numérotation multi-niveaux automatique, calcul des flasques d'extrémité et export Excel/CSV prêt pour l'imprimante.\n\nCe tutoriel rapide présente les étapes essentielles.",
+        "TermiGrid ti aiuta a progettare morsettiere su guida DIN per quadri elettrici: anteprima CAD 2D in tempo reale, numerazione multilivello automatica, calcolo delle piastre terminali ed esportazione Excel/CSV pronta per la stampa.\n\nQuesto breve tutorial ti guida nei passaggi principali.",
+        "TermiGrid le ayuda a diseñar regleteros sobre carril DIN para armarios eléctricos: vista CAD 2D en tiempo real, numeración automática multinivel, cálculo de tapas finales y exportación Excel/CSV lista para impresoras de etiquetas.\n\nEste breve tutorial muestra el flujo principal.",
+        "TermiGrid ułatwia projektowanie listew zaciskowych na szynę DIN w szafach sterowniczych — z podglądem CAD 2D na żywo, automatyczną numeracją wielopoziomową, obliczaniem płytek końcowych oraz gotowym eksportem do Excela/CSV.\n\nTen krótki samouczek przedstawia podstawowy proces pracy.",
+        "TermiGrid helpt bij het ontwerpen van DIN-rail klemmenstroken voor schakelkasten: live 2D CAD-weergave, automatische meerlaagsnummering, eindplaatberekening en printerklare Excel/CSV-export.\n\nDeze korte basisrondleiding laat de belangrijkste stappen zien.",
+    ])
+}
+
+pub const fn tour_basic_2_title(l: Language) -> &'static str {
+    pick(l, [
+        "Klemmleiste anlegen (Name, Nummern & Standardtyp)",
+        "Create Terminal Strip (Name, Numbers & Default Type)",
+        "Créer un bornier (Nom, numéros et type par défaut)",
+        "Crea morsettiera (Nome, numeri e tipo predefinito)",
+        "Crear regletero (Nombre, números y tipo base)",
+        "Utwórz listwę zaciskową (Nazwa, numery i typ domyślny)",
+        "Klemmenstrook aanmaken (Naam, nummers & standaardtype)",
+    ])
+}
+
+pub const fn tour_basic_2_body(l: Language) -> &'static str {
+    pick(l, [
+        "Über «+ Neue Klemmleiste» legst du beliebig viele Klemmleisten an (z. B. -X1). Dort definierst du den Klemmleisten-Namen, die Start- und Endnummerierung sowie den Standard-Klemmentyp aus dem Katalog (WAGO, Phoenix Contact oder Weidmüller).\n\nAlle Leisten deines Schaltschranks bleiben hier in der Seitenleiste übersichtlich erreichbar.",
+        "Use '+ New Terminal Strip' to add strips such as -X1. Define the strip designation, start and end numbering range, and choose the default terminal block type from WAGO, Phoenix Contact, or Weidmüller.\n\nAll terminal strips in your cabinet stay organized right in this sidebar.",
+        "Utilisez « + Nouveau bornier » pour créer des borniers (ex. -X1). Définissez la désignation, la plage de numérotation début/fin et le type de borne par défaut (WAGO, Phoenix Contact ou Weidmüller).\n\nTous les borniers de l'armoire restent organisés ici.",
+        "Usa '+ Nuova morsettiera' per creare morsettiere (es. -X1). Imposta il nome, l'intervallo di numerazione iniziale/finale e il tipo di morsetto predefinito (WAGO, Phoenix Contact o Weidmüller).\n\nTutte le morsettiere del quadro restano organizzate qui.",
+        "Use '+ Nuevo regletero' para crear regleteros (p. ej. -X1). Defina la designación, la numeración inicial/final y el tipo de borna predeterminado (WAGO, Phoenix Contact o Weidmüller).\n\nTodos los regleteros permanecen organizados en esta barra lateral.",
+        "Przycisk „+ Nowa listwa zaciskowa” pozwala dodać listwy (np. -X1), określić oznaczenie, zakres numeracji początkowej/końcowej oraz domyślny typ złączki z katalogu WAGO, Phoenix Contact lub Weidmüller.\n\nWszystkie listwy szafy są uporządkowane na tym pasku.",
+        "Met '+ Nieuwe klemmenstrook' maak je stroken aan (bijv. -X1). Stel naam, start-/eindnummering en het standaard klemtype in (WAGO, Phoenix Contact of Weidmüller).\n\nAlle stroken van de schakelkast blijven hier overzichtelijk staan.",
+    ])
+}
+
+pub const fn tour_basic_3_title(l: Language) -> &'static str {
+    pick(l, [
+        "Visuelle 2D-CAD-Vorschau",
+        "Visual 2D CAD Preview",
+        "Aperçu visuel CAO 2D",
+        "Anteprima visiva CAD 2D",
+        "Vista previa visual CAD 2D",
+        "Wizualny podgląd CAD 2D",
+        "Visuele 2D CAD-weergave",
+    ])
+}
+
+pub const fn tour_basic_3_body(l: Language) -> &'static str {
+    pick(l, [
+        "Hier auf der CAD-Zeichenfläche siehst du deine gesamte Klemmleiste maßstabsgetreu auf der Hutschiene: Baubreite in Millimetern, Etagenaufbau, Endhalter, Abschlussplatten und gesetzte Kammbrücken.\n\nMit Strg+Mausrad zoomst du stufenlos; mit gedrücktem Mausrad verschiebst du die Ansicht.",
+        "This CAD workspace renders your terminal strip to scale on the DIN rail: physical block widths in millimeters, stacked tiers, end brackets, end plates, and comb jumpers.\n\nUse Ctrl+Scroll to zoom smoothly and middle-click drag to pan the canvas.",
+        "Cette zone CAO affiche le bornier à l'échelle sur le rail DIN : largeur réelle en mm, étages superposés, butées, flasques et peignes de pontage.\n\nUtilisez Ctrl+Molette pour zoomer et le bouton du milieu pour déplacer la vue.",
+        "L'area CAD mostra la morsettiera in scala sulla guida DIN: larghezza reale in mm, piani sovrapposti, fermi terminali, piastre terminali e ponticelli.\n\nUsa Ctrl+Rotella per lo zoom e trascina con il tasto centrale per spostare la vista.",
+        "El lienzo CAD muestra el regletero a escala sobre el carril DIN: ancho real en mm, pisos apilados, topes finales, tapas finales y puentes peinables.\n\nUse Ctrl+Rueda para hacer zoom y arrastre con el botón central para desplazarse.",
+        "Obszar CAD przedstawia listwę w skali na szynie DIN: rzeczywistą szerokość w mm, piętra zacisków, trzymacze końcowe, płytki zamykające i mostki grzebieniowe.\n\nUżyj Ctrl+Kółko, aby powiększać, a środkowego przycisku myszy do przesuwania.",
+        "Het CAD-werkveld toont de klemmenstrook op schaal op de DIN-rail: breedte in mm, verdiepingen, eindsteunen, eindplaten en kamverbinders.\n\nGebruik Ctrl+Scroll om te zoomen en sleep met de middelste muisknop om te verschuiven.",
+    ])
+}
+
+pub const fn tour_basic_4_title(l: Language) -> &'static str {
+    pick(l, [
+        "Mehrstock-Logik (z. B. WAGO 2003 / 2203)",
+        "Multi-Level Logic (e.g., WAGO 2003 / 2203)",
+        "Logique multi-niveaux (ex. WAGO 2003 / 2203)",
+        "Logica multilivello (es. WAGO 2003 / 2203)",
+        "Lógica multinivel (p. ej. WAGO 2003 / 2203)",
+        "Logika wielopoziomowa (np. WAGO 2003 / 2203)",
+        "Meerlaagslogica (bijv. WAGO 2003 / 2203)",
+    ])
+}
+
+pub const fn tour_basic_4_body(l: Language) -> &'static str {
+    pick(l, [
+        "Bei Dreistock- oder Installationsklemmen (wie WAGO 2003-7641 / 2203) verteilt TermiGrid die fortlaufenden Klemmennummern automatisch auf die aktiven Nutzebenen – reine PE-Etagen werden beim Hochzählen übersprungen.\n\nIn dieser Leiste steuerst du zudem zentral das N- und PE-Beschriftungsschema (z. B. festes «N»/«PE» oder gemeinsamer Zähler).",
+        "For multi-level terminals (such as WAGO 2003-7641 / 2203), TermiGrid automatically distributes numbering across active potential levels while automatically skipping PE ground tiers.\n\nUse these toolbar controls to switch N and PE labeling rules at any time (fixed 'N'/'PE' or shared numbering).",
+        "Pour les bornes multi-étages (comme WAGO 2003-7641 / 2203), TermiGrid répartit automatiquement la numérotation sur les niveaux actifs tout en ignorant les niveaux PE.\n\nCette barre permet aussi d'ajuster le format de repérage N et PE.",
+        "Per i morsetti multilivello (come WAGO 2003-7641 / 2203), TermiGrid distribuisce automaticamente la numerazione sui livelli attivi saltando i livelli di terra PE.\n\nQui puoi impostare rapidamente le regole di etichettatura per N e PE.",
+        "En bornas multinivel (como WAGO 2003-7641 / 2203), TermiGrid distribuye la numeración automáticamente entre niveles activos omitiendo el nivel de tierra PE.\n\nDesde aquí también ajusta el esquema de marcado N y PE.",
+        "W złączkach wielopoziomowych (np. WAGO 2003-7641 / 2203) TermiGrid automatycznie rozdziela numerację między aktywne piętra, pomijając piętro ochronne PE.\n\nTutaj zmienisz także tryb opisu zacisków N oraz PE.",
+        "Bij meeretageklemmen (zoals WAGO 2003-7641 / 2203) verdeelt TermiGrid de nummering automatisch over actieve niveaus en slaat het PE-niveau automatisch over.\n\nMet deze knoppen pas je ook de N- en PE-nummeringsregels aan.",
+    ])
+}
+
+pub const fn tour_basic_5_title(l: Language) -> &'static str {
+    pick(l, [
+        "Excel-Export für Beschriftungsdrucker",
+        "Excel Export for Label Printers",
+        "Export Excel pour imprimantes d'étiquettes",
+        "Esportazione Excel per stampanti di etichette",
+        "Exportación Excel para impresoras de etiquetas",
+        "Eksport do Excela dla drukarek oznaczników",
+        "Excel-export voor labelprinters",
+    ])
+}
+
+pub const fn tour_basic_5_body(l: Language) -> &'static str {
+    pick(l, [
+        "Nachdem Abschlussplatten berechnet wurden, erscheint hier der «Excel Export» (plus CSV daneben). Die erzeugte .xlsx-Datei enthält 4 Arbeitsblätter – darunter reine Text-Druckdaten, damit Nummern wie «01» oder «1.1» für WAGO Smart Designer, Phoenix Project Complete oder Weidmüller M-Print PRO exakt als Text erhalten bleiben.",
+        "Once end plates are generated, 'Excel Export' (alongside CSV) appears here. The exported .xlsx workbook includes 4 sheets — with every label cell strictly formatted as pure Text so WAGO Smart Designer, Phoenix Project Complete, and Weidmüller M-Print PRO never alter leading zeros or decimals.",
+        "Une fois les flasques calculées, l'export « Excel » (et CSV) apparaît ici. Le classeur .xlsx génère 4 feuilles avec toutes les cellules strictement formatées en texte brut pour WAGO Smart Designer, Phoenix Project Complete et Weidmüller M-Print PRO.",
+        "Generate le piastre terminali, qui appare « Esporta Excel » (accanto a CSV). Il file .xlsx include 4 fogli con tutte le celle rigorosamente in formato testo per WAGO Smart Designer, Phoenix Project Complete e Weidmüller M-Print PRO.",
+        "Tras generar las tapas finales, aparece «Exportar Excel» (junto a CSV). El archivo .xlsx incluye 4 hojas con todas las celdas estrictamente en formato texto para WAGO Smart Designer, Phoenix Project Complete y Weidmüller M-Print PRO.",
+        "Po wygenerowaniu płytek końcowych pojawia się przycisk «Eksport Excel» (oraz CSV). Plik .xlsx zawiera 4 arkusze z komórkami sformatowanymi wyłącznie jako tekst dla WAGO Smart Designer, Phoenix Project Complete i Weidmüller M-Print PRO.",
+        "Zodra eindplaten zijn berekend, verschijnt hier «Excel-export» (naast CSV). Het .xlsx-bestand bevat 4 werkbladen waarbij alle labelcellen strikt als tekst zijn opgemaakt voor WAGO Smart Designer, Phoenix Project Complete en Weidmüller M-Print PRO.",
+    ])
+}
+
+pub const fn tour_basic_6_title(l: Language) -> &'static str {
+    pick(l, [
+        "Basis-Tutorial abgeschlossen!",
+        "Basic Tour Completed!",
+        "Tutoriel de base terminé !",
+        "Tutorial base completato!",
+        "¡Tutorial básico completado!",
+        "Ukończono samouczek podstawowy!",
+        "Basisrondleiding voltooid!",
+    ])
+}
+
+pub const fn tour_basic_6_body(l: Language) -> &'static str {
+    pick(l, [
+        "Super – du kennst jetzt den kompletten Grund-Workflow vom Anlegen einer Klemmleiste über Mehrstocklogik bis zum druckerfertigen Export.\n\nMöchtest du gleich mit deinem Projekt starten oder im Fortgeschrittenen-Tutorial noch Mischbestückung, Herstellerwechsel, Sonderbeschriftung & Projektverwaltung kennenlernen?",
+        "Great job — you now know the core workflow from creating a terminal strip and multi-level numbering to printer-ready exports.\n\nWould you like to start working right away or continue with the Advanced Tour covering mixed strips, type reassignment, custom N/PE overrides, and project management?",
+        "Bravo ! Vous maîtrisez maintenant le flux principal, de la création du bornier à l'export pour imprimante.\n\nSouhaitez-vous commencer dès maintenant ou poursuivre avec le tutoriel avancé (bornes mixtes, réaffectation de type, repérage personnalisé et gestion de projet) ?",
+        "Ottimo! Ora conosci il flusso principale, dalla creazione della morsettiera all'esportazione per la stampa.\n\nVuoi iniziare subito a lavorare o proseguire con il tutorial avanzato su morsetti misti, riassegnazione tipo, N/PE personalizzati e gestione progetti?",
+        "¡Excelente! Ya conoce el flujo básico desde la creación del regletero hasta la exportación de etiquetas.\n\n¿Desea empezar a trabajar ahora o continuar con el tutorial avanzado sobre regleteros mixtos, cambio de tipos, numeración especial y gestión de proyectos?",
+        "Świetnie! Znasz już podstawowy proces pracy od utworzenia listwy po gotowy eksport do drukarki.\n\nChcesz od razu rozpocząć pracę czy przejść do samouczka zaawansowanego (listwy mieszane, zmiana typów, własne oznaczenia N/PE i zapisywanie projektów)?",
+        "Goed gedaan — je kent nu de basisworkflow van klemmenstrook tot printerklare export.\n\nWil je direct aan de slag gaan of verder met de gevorderde rondleiding voor gemengde stroken, typewijzigingen, N/PE-aanpassingen en projectbeheer?",
+    ])
+}
+
+// ── Tour B: Advanced Tour (5 Steps) ────────────────────────────────────────
+
+pub const fn tour_adv_1_title(l: Language) -> &'static str {
+    pick(l, [
+        "Mischbestückung & Mehrfachauswahl",
+        "Mixed Terminal Strips & Multi-Selection",
+        "Borniers mixtes et sélection multiple",
+        "Morsettiere miste e selezione multipla",
+        "Regleteros mixtos y selección múltiple",
+        "Listwy mieszane i zaznaczanie grupowe",
+        "Gemengde stroken & meervoudige selectie",
+    ])
+}
+
+pub const fn tour_adv_1_body(l: Language) -> &'static str {
+    pick(l, [
+        "Eine reale Klemmleiste kombiniert oft verschiedene Querschnitte, Schutzleiter-, Trenn- oder Mehrstockklemmen.\n\nAuf der CAD-Fläche markierst du einzelne Klemmen per Klick, ganze Bereiche über Umschalt+Klick (Shift) oder indem du ein Auswahlrechteck über mehrere Klemmen ziehst.",
+        "Real cabinet strips often mix different wire sizes, PE ground blocks, disconnect terminals, and multi-level blocks.\n\nOn the CAD canvas you can click individual terminals, Shift+Click ranges, Strg/Ctrl+Click single items, or drag a selection box across multiple terminals.",
+        "Un bornier réel associe souvent plusieurs sections, bornes de terre PE, bornes sectionnables et bornes multi-étages.\n\nSur le canevas CAO, cliquez sur une borne, utilisez Maj+Clic pour une plage, Ctrl+Clic ou tracez un cadre de sélection.",
+        "Una morsettiera reale combina spesso sezioni diverse, morsetti PE, sezionatori e morsetti multilivello.\n\nNell'area CAD puoi cliccare singoli morsetti, usare Maiusc+Clic per un intervallo, Ctrl+Clic o trascinare un riquadro di selezione.",
+        "Un regletero real suele combinar distintas secciones, bornas PE, seccionables y multinivel.\n\nEn el lienzo CAD puede hacer clic en bornas individuales, Mayús+Clic para rangos, Ctrl+Clic o arrastrar un recuadro de selección.",
+        "Rzeczywista listwa często łączy różne przekroje, złączki ochronne PE, rozłączalne i wielopoziomowe.\n\nNa obszarze CAD klikaj pojedyncze złączki, używaj Shift+Klik dla zakresu, Ctrl+Klik lub zaznaczaj ramką.",
+        "Een echte klemmenstrook combineert vaak verschillende doorsneden, PE-klemmen, scheidingsklemmen en meeretageklemmen.\n\nOp het CAD-canvas selecteer je klemmen met klik, Shift+Klik, Ctrl+Klik of door een selectiekader te slepen.",
+    ])
+}
+
+pub const fn tour_adv_2_title(l: Language) -> &'static str {
+    pick(l, [
+        "Klemmentyp & Hersteller gezielt umstellen",
+        "Reassign Terminal Type & Manufacturer",
+        "Réaffecter le type et le fabricant",
+        "Riassegna tipo di morsetto e produttore",
+        "Reasignar tipo y fabricante de borna",
+        "Zmiana typu złączki i producenta",
+        "Klemtype en fabrikant opnieuw toewijzen",
+    ])
+}
+
+pub const fn tour_adv_2_body(l: Language) -> &'static str {
+    pick(l, [
+        "Sobald Klemmen ausgewählt sind, wählst du hier im Inspektor Hersteller (WAGO, Phoenix Contact, Weidmüller) und Zieltyp inklusive Live-Vorschau und klickst auf «Typ auf Auswahl anwenden».\n\nBaubreite, benötigte Zwischenplatten bei Profilwechsel sowie die Drucker-Exportreihenfolge passen sich sofort dynamisch an.",
+        "Whenever terminals are selected, pick a manufacturer (WAGO, Phoenix Contact, Weidmüller) and target block type here in the Inspector with live preview, then click 'Apply Type to Selection'.\n\nBlock widths, automatic intermediate end plates on profile changes, and export order update dynamically.",
+        "Lorsque des bornes sont sélectionnées, choisissez ici le fabricant (WAGO, Phoenix Contact, Weidmüller) et le type cible avec aperçu en direct, puis cliquez sur « Appliquer le type à la sélection ».\n\nLargeurs, flasques intermédiaires et ordre d'export s'adaptent dynamiquement.",
+        "Con i morsetti selezionati, scegli qui nell'Ispettore il produttore (WAGO, Phoenix Contact, Weidmüller) e il tipo con anteprima live, quindi premi «Applica tipo alla selezione».\n\nLarghezze, piastre intermedie automatiche e ordine di esportazione si aggiornano dinamicamente.",
+        "Con bornas seleccionadas, elija aquí el fabricante (WAGO, Phoenix Contact, Weidmüller) y el tipo destino con vista previa en vivo y pulse «Aplicar tipo a la selección».\n\nLos anchos, tapas intermedias y orden de exportación se ajustan al instante.",
+        "Po zaznaczeniu zacisków wybierz w Inspektorze producenta (WAGO, Phoenix Contact, Weidmüller) i typ docelowy z podglądem na żywo, a następnie kliknij «Zastosuj typ do zaznaczenia».\n\nSzerokości, płytki pośrednie i kolejność eksportu aktualizują się automatycznie.",
+        "Zodra klemmen zijn geselecteerd, kies je hier in de Inspector de fabrikant (WAGO, Phoenix Contact, Weidmüller) en het doeltype met live voorbeeld, en klik je op «Type toepassen op selectie».\n\nBreedtes, tussenplaten en exportvolgorde worden direct bijgewerkt.",
+    ])
+}
+
+pub const fn tour_adv_3_title(l: Language) -> &'static str {
+    pick(l, [
+        "Sonderbeschriftung: N, PE & eigene Etagentexte",
+        "Special Numbering: N, PE & Custom Tier Overrides",
+        "Numérotation spéciale : N, PE et niveaux personnalisés",
+        "Numerazione speciale: N, PE e livelli personalizzati",
+        "Numeración especial: N, PE y niveles personalizados",
+        "Oznaczenia specjalne: N, PE i własne opisy pięter",
+        "Speciale nummering: N, PE & aangepaste niveauteksten",
+    ])
+}
+
+pub const fn tour_adv_3_body(l: Language) -> &'static str {
+    pick(l, [
+        "Bei Einzel- oder Mehrstockklemmen kannst du im Inspektor die Etagen-Zählrichtung umkehren (Unten→Oben / Oben→Unten) und jeder Ebene (Ober-, Mittel-, Unterklemme – inkl. Neutralleiter «N» oder «PE») einen eigenen Text zuweisen.\n\nTipp: Doppelklick auf eine Klemme im CAD öffnet ebenfalls die Direkteingabe.",
+        "For single or multi-level terminals, switch the level counting direction (Bottom→Top / Top→Bottom) right here and enter custom overrides for any upper, middle, or lower tier (such as custom 'N' or 'PE' designations).\n\nTip: Double-clicking a label directly on the CAD canvas also edits it inline.",
+        "Pour les bornes simples ou multi-étages, inversez l'ordre de numérotation (Bas→Haut / Haut→Bas) et saisissez un libellé personnalisé par niveau (supérieur, médian, inférieur, ex. « N » ou « PE »).\n\nAstuce : un double-clic sur le canevas permet l'édition directe.",
+        "Per morsetti singoli o multilivello puoi invertire l'ordine dei livelli (Basso→Alto / Alto→Basso) e impostare testi personalizzati su ogni piano (superiore, intermedio, inferiore, es. «N» o «PE»).\n\nSuggerimento: anche il doppio clic sul CAD apre la modifica rapida.",
+        "En bornas simples o multinivel puede invertir el orden de conteo (Abajo→Arriba / Arriba→Abajo) y asignar textos personalizados a cada nivel (superior, medio, inferior, p. ej. «N» o «PE»).\n\nConsejo: el doble clic en el CAD también edita la etiqueta al instante.",
+        "Dla złączek jedno- i wielopoziomowych zmienisz tutaj kierunek numeracji pięter (Dół→Góra / Góra→Dół) oraz nadasz własne opisy wybranym poziomom (np. niestandardowe «N» lub «PE»).\n\nWskazówka: podwójne kliknięcie etykiety w CAD otwiera szybką edycję.",
+        "Voor enkel- of meeretageklemmen keer je hier de telrichting om (Onder→Boven / Boven→Onder) en stel je eigen teksten in per niveau (boven, midden, onder, bijv. «N» of «PE»).\n\nTip: dubbelklikken op het CAD-label bewerkt het ook direct.",
+    ])
+}
+
+pub const fn tour_adv_4_title(l: Language) -> &'static str {
+    pick(l, [
+        "Projektverwaltung (Neu, Laden, PDF-BOM & Speichern)",
+        "Project Management (New, Open, PDF BOM & Save)",
+        "Gestion de projet (Nouveau, Ouvrir, PDF et Enregistrer)",
+        "Gestione progetto (Nuovo, Apri, PDF e Salva)",
+        "Gestión de proyectos (Nuevo, Abrir, PDF y Guardar)",
+        "Zarządzanie projektem (Nowy, Otwórz, PDF i Zapisz)",
+        "Projectbeheer (Nieuw, Openen, PDF-BOM & Opslaan)",
+    ])
+}
+
+pub const fn tour_adv_4_body(l: Language) -> &'static str {
+    pick(l, [
+        "Hier in der Projekt-Werkzeugleiste startest du ein neues Schaltschrank-Projekt, öffnest gespeicherte Projektdateien (.termi / .tgrid.json), importierst EPLAN-PDF-Stücklisten direkt in konfigurierte Klemmleisten oder speicherst deine Arbeit sicher lokal ab.\n\nBeim Schließen warnt dich TermiGrid automatisch vor ungespeicherten Änderungen.",
+        "This project toolbar lets you start a new cabinet project, open existing project files (.termi / .tgrid.json), import EPLAN PDF BOM lists directly into configured terminal strips, and save your work safely to disk.\n\nTermiGrid also prompts before closing if you have unsaved changes.",
+        "Cette barre d'outils permet de créer un nouveau projet, d'ouvrir un fichier (.termi / .tgrid.json), d'importer une nomenclature PDF EPLAN et d'enregistrer votre projet.\n\nTermiGrid vous avertit automatiquement avant de fermer en cas de modifications non enregistrées.",
+        "Questa barra consente di avviare un nuovo progetto, aprire file salvati (.termi / .tgrid.json), importare distinte PDF EPLAN e salvare il lavoro.\n\nAlla chiusura, TermiGrid avvisa automaticamente se ci sono modifiche non salvate.",
+        "Esta barra de herramientas permite iniciar un proyecto nuevo, abrir archivos guardados (.termi / .tgrid.json), importar listas de materiales PDF de EPLAN y guardar el proyecto.\n\nAl cerrar, TermiGrid le avisará si hay cambios sin guardar.",
+        "Ten pasek narzędzi pozwala rozpocząć nowy projekt, otworzyć zapisane pliki (.termi / .tgrid.json), zaimportować zestawienie PDF z EPLAN i bezpiecznie zapisać konfigurację.\n\nPrzy zamykaniu TermiGrid ostrzega o niezapisanych zmianach.",
+        "Met deze werkbalk start je een nieuw project, open je opgeslagen projectbestanden (.termi / .tgrid.json), importeer je EPLAN PDF-stuklijsten en sla je je werk op.\n\nBij afsluiten waarschuwt TermiGrid voor niet-opgeslagen wijzigingen.",
+    ])
+}
+
+pub const fn tour_adv_5_title(l: Language) -> &'static str {
+    pick(l, [
+        "Sprache, Erscheinungsbild & Hilfe-Menü",
+        "Language, Theme & Help Menu",
+        "Langue, thème et menu d'aide",
+        "Lingua, tema e menu Aiuto",
+        "Idioma, tema y menú de Ayuda",
+        "Język, motyw i menu Pomocy",
+        "Taal, thema & Helpmenu",
+    ])
+}
+
+pub const fn tour_adv_5_body(l: Language) -> &'static str {
+    pick(l, [
+        "Hier wechselst du jederzeit zwischen allen 7 UI-Sprachen sowie System-, Hell- und Dunkel-Design.\n\nÜber das Menü (☰) oben links kannst du sowohl das Basis-Tutorial als auch dieses Fortgeschrittene Tutorial jederzeit erneut starten!",
+        "Switch between all 7 supported UI languages and System / Light / Dark themes right here at any time.\n\nYou can restart either the Basic Tour or this Advanced Tour whenever you need from the top-left Menu (☰)!",
+        "Basculez ici à tout moment entre les 7 langues et les thèmes Système / Clair / Sombre.\n\nVous pouvez relancer le tutoriel de base ou ce tutoriel avancé à tout moment depuis le menu (☰) en haut à gauche !",
+        "Qui puoi cambiare in qualsiasi momento tra tutte le 7 lingue e i temi Sistema / Chiaro / Scuro.\n\nPuoi riavviare il Tutorial base o questo Tutorial avanzato in qualunque momento dal menu (☰) in alto a sinistra!",
+        "Cambie aquí en cualquier momento entre los 7 idiomas y los temas Sistema / Claro / Oscuro.\n\n¡Puede reiniciar tanto el Tutorial básico como este Tutorial avanzado cuando quiera desde el menú (☰) superior izquierdo!",
+        "Tutaj w każdej chwili przełączysz między 7 językami interfejsu oraz motywem Systemowym / Jasnym / Ciemnym.\n\nOba samouczki możesz w dowolnym momencie uruchomić ponownie z menu (☰) w lewym górnym rogu!",
+        "Wissel hier op elk moment tussen alle 7 ondersteunde talen en het Systeem-, Licht- of Donker-thema.\n\nJe kunt zowel de basisrondleiding als deze gevorderde rondleiding altijd opnieuw starten via het menu (☰) linksboven!",
+    ])
+}
+
+pub fn dxf_single_strip_item(l: Language, strip_name: &str) -> String {
+    match l {
+        Language::De => format!("Aktive Leiste ({strip_name}.dxf)"),
+        Language::En => format!("Active strip ({strip_name}.dxf)"),
+        Language::Fr => format!("Bornier actif ({strip_name}.dxf)"),
+        Language::It => format!("Morsettiera attiva ({strip_name}.dxf)"),
+        Language::Es => format!("Regletero activo ({strip_name}.dxf)"),
+        Language::Pl => format!("Aktywna listwa ({strip_name}.dxf)"),
+        Language::Nl => format!("Actieve strook ({strip_name}.dxf)"),
+    }
+}
+
+pub fn dxf_all_strips_dir_item(l: Language, count: usize) -> String {
+    match l {
+        Language::De => format!("Alle {count} Leisten einzeln (Ordner)"),
+        Language::En => format!("All {count} strips individually (Folder)"),
+        Language::Fr => format!("Les {count} borniers séparément (Dossier)"),
+        Language::It => format!("Tutte le {count} morsettiere singole (Cartella)"),
+        Language::Es => format!("Los {count} regleteros por separado (Carpeta)"),
+        Language::Pl => format!("Wszystkie {count} listwy osobno (Folder)"),
+        Language::Nl => format!("Alle {count} stroken afzonderlijk (Map)"),
+    }
+}
+
+pub fn toast_dxf_dir_exported(l: Language, count: usize, folder_name: &str) -> String {
+    match l {
+        Language::De => format!("{count} einzelne DXF-Dateien (1:1 mm) nach «{folder_name}» exportiert."),
+        Language::En => format!("Exported {count} individual DXF files (1:1 mm) into '{folder_name}'."),
+        Language::Fr => format!("{count} fichiers DXF individuels (1:1 mm) exportés vers « {folder_name} »."),
+        Language::It => format!("Esportati {count} file DXF singoli (1:1 mm) in «{folder_name}»."),
+        Language::Es => format!("Se exportaron {count} archivos DXF individuales (1:1 mm) en «{folder_name}»."),
+        Language::Pl => format!("Wyeksportowano {count} osobnych plików DXF (1:1 mm) do „{folder_name}”."),
+        Language::Nl => format!("{count} afzonderlijke DXF-bestanden (1:1 mm) geëxporteerd naar \"{folder_name}\"."),
+    }
+}
