@@ -32,7 +32,8 @@ use crate::model::bridging::{
 };
 use crate::model::library::{
     instantiate_strip_from_template, load_global_custom_specs, merge_custom_specs_into,
-    merge_template_custom_specs, save_global_custom_specs, StripLibrary,
+    merge_template_custom_specs, remove_custom_spec, save_global_custom_specs,
+    upsert_custom_spec, StripLibrary,
 };
 use crate::model::{
     NeutralLabelMode, NumberingOrder, PeLabelMode, Project, StripSequenceMode, TerminalStrip,
@@ -46,7 +47,8 @@ use crate::ui::components::{
     CommandPaletteState, PaletteCommand, ToastActionKind, ToastQueue, ToastTone,
 };
 use crate::ui::guide_modal::{
-    show_about_modal, show_database_tab, show_guide_tab, CustomSpecDraft,
+    show_about_modal, show_database_tab, show_guide_tab, show_spec_editor_modal, CustomSpecDraft,
+    DatabaseAction, SpecEditorModalState,
 };
 use crate::ui::icons::{
     danger_icon_button, draw_icon, ghost_icon_button, icon_button, icon_only_button,
@@ -141,6 +143,7 @@ pub struct TermiGridApp {
     db_mfg_filter: Option<String>,
     db_search: String,
     custom_spec_draft: CustomSpecDraft,
+    spec_editor_modal: SpecEditorModalState,
 
     // Export & File state
     export_options: ExportOptions,
@@ -240,6 +243,7 @@ impl TermiGridApp {
             db_mfg_filter: None,
             db_search: String::new(),
             custom_spec_draft: CustomSpecDraft::default(),
+            spec_editor_modal: SpecEditorModalState::default(),
             export_options: ExportOptions::default(),
             current_file: None,
             status_message: strings(Language::De).status_ready.to_string(),
@@ -309,6 +313,83 @@ impl TermiGridApp {
         let mut combined = self.global_custom_specs.clone();
         merge_custom_specs_into(&self.project.custom_specs, &mut combined);
         self.catalog.reload_with_custom(&combined);
+    }
+
+    fn apply_database_action(&mut self, action: DatabaseAction) {
+        match action {
+            DatabaseAction::SaveSpec(spec) => {
+                let spec = *spec;
+                let spec_id = spec.id.clone();
+                let spec_name = spec.name.clone();
+                upsert_custom_spec(&mut self.global_custom_specs, spec.clone());
+                upsert_custom_spec(&mut self.project.custom_specs, spec.clone());
+                let _ = save_global_custom_specs(&self.global_custom_specs);
+                self.reload_catalog_with_all_custom();
+
+                let mut updated_blocks = 0usize;
+                for strip in &mut self.project.strips {
+                    let mut touched = false;
+                    for block in &mut strip.blocks {
+                        if block.spec_id == spec_id {
+                            TerminalCatalog::apply_spec_to_block(block, &spec);
+                            updated_blocks += 1;
+                            touched = true;
+                        }
+                    }
+                    if touched {
+                        strip.recalculate_labels();
+                    }
+                }
+                let suffix = if updated_blocks > 0 {
+                    format!(" ({updated_blocks} Klemmen im Projekt aktualisiert)")
+                } else {
+                    String::new()
+                };
+                self.notify(
+                    ToastTone::Success,
+                    format!("Klemmentyp „{spec_name}“ gespeichert (PC-weit aktiv){suffix}."),
+                );
+            }
+            DatabaseAction::ResetOrDeleteSpec { id, is_builtin } => {
+                remove_custom_spec(&mut self.global_custom_specs, &id);
+                remove_custom_spec(&mut self.project.custom_specs, &id);
+                let _ = save_global_custom_specs(&self.global_custom_specs);
+                self.reload_catalog_with_all_custom();
+
+                if is_builtin
+                    && let Some(default_spec) = self.catalog.find_by_id(&id).cloned()
+                {
+                    let mut restored_blocks = 0usize;
+                    for strip in &mut self.project.strips {
+                        let mut touched = false;
+                        for block in &mut strip.blocks {
+                            if block.spec_id == id {
+                                TerminalCatalog::apply_spec_to_block(block, &default_spec);
+                                restored_blocks += 1;
+                                touched = true;
+                            }
+                        }
+                        if touched {
+                            strip.recalculate_labels();
+                        }
+                    }
+                    let suffix = if restored_blocks > 0 {
+                        format!(" ({restored_blocks} Klemmen aktualisiert)")
+                    } else {
+                        String::new()
+                    };
+                    self.notify(
+                        ToastTone::Info,
+                        format!(
+                            "Klemmentyp „{}“ auf Werkszustand zurückgesetzt{suffix}.",
+                            default_spec.name
+                        ),
+                    );
+                } else {
+                    self.notify(ToastTone::Info, "Eigener Klemmentyp gelöscht.");
+                }
+            }
+        }
     }
 
     fn perform_undo(&mut self) {
@@ -1060,28 +1141,24 @@ impl eframe::App for TermiGridApp {
                 });
             }
             ActiveTab::Database => {
+                let mut db_action = None;
                 egui::CentralPanel::default().show(ui, |ui| {
-                    let prev_len = self.project.custom_specs.len();
-                    show_database_tab(
+                    db_action = show_database_tab(
                         ui,
-                        &mut self.catalog,
+                        &self.catalog,
                         &self.logos,
-                        &mut self.project.custom_specs,
+                        &self.project.custom_specs,
                         &mut self.db_mfg_filter,
                         &mut self.db_search,
                         &mut self.custom_spec_draft,
+                        &mut self.spec_editor_modal,
                         s,
                         self.lang,
                     );
-                    if self.project.custom_specs.len() > prev_len
-                        && merge_custom_specs_into(
-                            &self.project.custom_specs[prev_len..],
-                            &mut self.global_custom_specs,
-                        )
-                    {
-                        let _ = save_global_custom_specs(&self.global_custom_specs);
-                    }
                 });
+                if let Some(action) = db_action {
+                    self.apply_database_action(action);
+                }
             }
             ActiveTab::Editor => {
                 if self.show_welcome {
@@ -1090,6 +1167,11 @@ impl eframe::App for TermiGridApp {
                     self.show_editor_panels(ui);
                 }
             }
+        }
+
+        // Modal dialog for manual terminal database editing (zero-recompile spec overrides)
+        if let Some(action) = show_spec_editor_modal(ui.ctx(), &mut self.spec_editor_modal, s) {
+            self.apply_database_action(action);
         }
 
         // Modal dialog for new strip creation

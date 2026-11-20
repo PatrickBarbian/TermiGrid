@@ -519,6 +519,7 @@ fn strip_library_preserves_custom_specs_potentials_and_avoids_name_collisions() 
         image_url: None,
         height_tenths_mm: None,
         rail_offset_tenths_mm: None,
+        user_modified: false,
     };
 
     let mut catalog = TerminalCatalog::load_embedded();
@@ -1086,6 +1087,7 @@ fn global_custom_specs_and_strip_library_persist_across_projects() {
         image_url: None,
         height_tenths_mm: None,
         rail_offset_tenths_mm: None,
+        user_modified: false,
     };
 
     let custom_path = tmp_dir.join("custom_specs.json");
@@ -1117,4 +1119,74 @@ fn global_custom_specs_and_strip_library_persist_across_projects() {
 
     let _ = std::fs::remove_dir_all(&tmp_dir);
 }
+
+#[test]
+fn manual_database_override_persists_updates_blocks_and_resets_cleanly() {
+    use termigrid_core::catalog::{TerminalCatalog, TierSpec};
+    use termigrid_core::model::library::{
+        load_global_custom_specs_from, remove_custom_spec, save_global_custom_specs_to,
+        upsert_custom_spec,
+    };
+    use termigrid_core::model::{TerminalStrip, TierBehavior, TierColor};
+
+    let tmp_dir = std::env::temp_dir().join(format!(
+        "termigrid_db_edit_test_{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+    std::fs::create_dir_all(&tmp_dir).unwrap();
+    let custom_path = tmp_dir.join("custom_specs.json");
+
+    // Verify embedded default for UDMTK 5 now has 2 levels
+    let mut catalog = TerminalCatalog::load_embedded();
+    let base_udmtk = catalog.find_by_id("phoenix-udmtk-5").unwrap().clone();
+    assert_eq!(base_udmtk.levels, 2);
+    assert_eq!(base_udmtk.tiers.len(), 2);
+
+    // Simulate user editing a built-in spec in the Database UI without recompiling
+    let mut edited = catalog.find_by_id("phoenix-pt-25").unwrap().clone();
+    edited.levels = 2;
+    edited.width_tenths_mm = 65;
+    edited.article_number = Some("3209510-CUSTOM".to_string());
+    edited.tiers.push(TierSpec {
+        behavior: TierBehavior::Fixed("N".to_string()),
+        color: TierColor::BlueNeutral,
+    });
+    edited.user_modified = true;
+
+    let mut global_overrides = Vec::new();
+    upsert_custom_spec(&mut global_overrides, edited.clone());
+    save_global_custom_specs_to(&custom_path, &global_overrides).unwrap();
+
+    // Reload from disk and verify override takes precedence (including article number)
+    let reloaded_overrides = load_global_custom_specs_from(&custom_path);
+    catalog.reload_with_custom(&reloaded_overrides);
+    let active = catalog.find_by_id("phoenix-pt-25").unwrap().clone();
+    assert!(active.user_modified);
+    assert_eq!(active.levels, 2);
+    assert_eq!(active.width_tenths_mm, 65);
+    assert_eq!(active.effective_article_number(), Some("3209510-CUSTOM"));
+
+    // Updating an already-placed block applies the modified levels/width immediately
+    let mut strip = TerminalStrip::generate_with_block_count("-X9", 1, 2, 1, &base_udmtk);
+    for blk in &mut strip.blocks {
+        TerminalCatalog::apply_spec_to_block(blk, &active);
+    }
+    strip.recalculate_labels();
+    assert_eq!(strip.blocks[0].tiers.len(), 2);
+    assert_eq!(strip.blocks[0].width_tenths_mm, 65);
+
+    // Resetting back to factory default removes the override and restores embedded metadata
+    assert!(TerminalCatalog::embedded_default_by_id("phoenix-pt-25").is_some());
+    assert!(remove_custom_spec(&mut global_overrides, "phoenix-pt-25"));
+    save_global_custom_specs_to(&custom_path, &global_overrides).unwrap();
+    catalog.reload_with_custom(&global_overrides);
+    let restored = catalog.find_by_id("phoenix-pt-25").unwrap();
+    assert!(!restored.user_modified);
+    assert_eq!(restored.levels, 1);
+    assert_eq!(restored.effective_article_number(), Some("3209510"));
+
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+}
+
 

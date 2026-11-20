@@ -7676,14 +7676,18 @@
     "name": "UDMTK 5 (2-reihige Messertrennklemme)",
     "manufacturer": "Phoenix Contact",
     "series": "CLIPLINE UK / UDMTK",
-    "levels": 1,
+    "levels": 2,
     "width_tenths_mm": 62,
     "height_tenths_mm": 930,
     "rail_offset_tenths_mm": 0,
     "numbering_order": "BottomToTop",
     "description_de": "Messertrennklemme 4 mm², Schraubanschluss, 2-reihig (6,2 mm, geschlossenes Gehäuse)",
-    "description_en": "Knife-disconnect terminal block 4 mm², screw connection (6.2 mm, closed housing)",
+    "description_en": "Double-level knife-disconnect terminal block 4 mm², screw connection (6.2 mm, closed housing)",
     "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "OrangeAux"
+      },
       {
         "behavior": "Sequential",
         "color": "OrangeAux"

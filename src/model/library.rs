@@ -431,6 +431,22 @@ pub fn merge_custom_specs_into(source: &[TerminalSpec], target: &mut Vec<Termina
     added
 }
 
+/// Inserts or replaces a custom/overridden terminal specification by ID.
+pub fn upsert_custom_spec(target: &mut Vec<TerminalSpec>, spec: TerminalSpec) {
+    if let Some(existing) = target.iter_mut().find(|s| s.id == spec.id) {
+        *existing = spec;
+    } else {
+        target.push(spec);
+    }
+}
+
+/// Removes a custom/overridden terminal specification by ID. Returns `true` if removed.
+pub fn remove_custom_spec(target: &mut Vec<TerminalSpec>, id: &str) -> bool {
+    let before = target.len();
+    target.retain(|s| s.id != id);
+    target.len() != before
+}
+
 /// Resolves the cross-platform persistent storage path for PC-wide custom terminal specs (`custom_specs.json`).
 pub fn default_custom_specs_path() -> PathBuf {
     default_library_path().with_file_name("custom_specs.json")

@@ -1,15 +1,15 @@
 use egui::Ui;
 
-use crate::catalog::accessories::all_end_brackets;
+use crate::catalog::accessories::{all_end_brackets, TerminalAccessories};
 use crate::catalog::{TerminalCatalog, TerminalSpec, TierSpec};
 use crate::i18n::{Language, Strings};
 use crate::model::{NumberingOrder, TierBehavior, TierColor};
 use crate::ui::icons::{
-    draw_icon, icon_button, icon_only_button, primary_icon_button, show_responsive_modal,
-    success_icon_button, UiIcon,
+    danger_icon_button, draw_icon, ghost_icon_button, icon_button, icon_only_button,
+    primary_icon_button, show_responsive_modal, success_icon_button, UiIcon,
 };
 use crate::ui::logos::{logo_filter_button, show_logo_badge, BrandLogos};
-use crate::ui::theme::{secondary_text_color, section_card};
+use crate::ui::theme::{pill_badge, secondary_text_color, section_card, tokens};
 use crate::ui::updater::{
     open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, CURRENT_VERSION,
     GITHUB_REPO_URL,
@@ -281,22 +281,203 @@ THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMP
     );
 }
 
-/// Renders the searchable embedded terminal database table ("Klemmen-Datenbank") plus a form
-/// to define custom terminal types stored with the project.
+/// Action emitted by the Terminal Database tab or the manual Spec Editor modal.
+#[derive(Debug, Clone)]
+pub enum DatabaseAction {
+    /// Save a newly created or manually edited specification (persists PC-wide & in active project).
+    SaveSpec(Box<TerminalSpec>),
+    /// Reset an edited built-in spec to factory defaults or delete a user-created custom spec.
+    ResetOrDeleteSpec { id: String, is_builtin: bool },
+}
+
+/// Modal editor state for manually modifying any terminal block specification at runtime.
+#[derive(Debug, Clone, Default)]
+pub struct SpecEditorModalState {
+    pub open: bool,
+    pub spec_id: String,
+    pub is_builtin: bool,
+    pub was_modified: bool,
+    pub manufacturer: String,
+    pub name: String,
+    pub series: String,
+    pub article_number: String,
+    pub levels: usize,
+    pub width_mm: f32,
+    pub height_mm: f32,
+    pub rail_offset_mm: f32,
+    pub jumper_slots: u8,
+    pub max_jumper_poles: u8,
+    pub numbering_order: NumberingOrder,
+    pub description_de: String,
+    pub description_en: String,
+    pub product_url: String,
+    pub image_url: String,
+    pub tier_kinds: [CustomTierKind; 4],
+    pub tier_fixed: [String; 4],
+    pub tier_colors: [TierColor; 4],
+    pub preserved_accessories: Option<TerminalAccessories>,
+}
+
+impl SpecEditorModalState {
+    /// Opens the editor pre-populated with all current effective properties of `spec`.
+    pub fn open_for(&mut self, spec: &TerminalSpec, is_builtin: bool, was_modified: bool) {
+        let mut tier_kinds = [CustomTierKind::Sequential; 4];
+        let mut tier_fixed = [String::new(), String::new(), String::new(), String::new()];
+        let mut tier_colors = [TierColor::StandardGray; 4];
+
+        for (i, tier) in spec.tiers.iter().take(4).enumerate() {
+            tier_colors[i] = tier.color;
+            match &tier.behavior {
+                TierBehavior::Sequential => {
+                    tier_kinds[i] = CustomTierKind::Sequential;
+                }
+                TierBehavior::ProtectiveEarth => {
+                    tier_kinds[i] = CustomTierKind::ProtectiveEarth;
+                }
+                TierBehavior::Fixed(txt) => {
+                    tier_kinds[i] = CustomTierKind::Fixed;
+                    tier_fixed[i] = txt.clone();
+                }
+                TierBehavior::Unlabeled => {
+                    tier_kinds[i] = CustomTierKind::Fixed;
+                    tier_fixed[i] = String::new();
+                }
+            }
+        }
+
+        self.open = true;
+        self.spec_id = spec.id.clone();
+        self.is_builtin = is_builtin;
+        self.was_modified = was_modified;
+        self.manufacturer = spec.manufacturer.clone();
+        self.name = spec.name.clone();
+        self.series = spec.series.clone();
+        self.article_number = spec
+            .effective_article_number()
+            .unwrap_or_default()
+            .to_string();
+        self.levels = spec.levels.clamp(1, 4);
+        self.width_mm = f32::from(spec.width_tenths_mm) / 10.0;
+        self.height_mm = f32::from(spec.effective_height_tenths_mm()) / 10.0;
+        self.rail_offset_mm = f32::from(spec.effective_rail_offset_tenths_mm()) / 10.0;
+        self.jumper_slots = spec.effective_jumper_slots();
+        self.max_jumper_poles = spec.effective_max_jumper_poles();
+        self.numbering_order = spec.numbering_order;
+        self.description_de = spec.description_de.clone();
+        self.description_en = spec.description_en.clone();
+        self.product_url = spec.effective_product_url();
+        self.image_url = spec.effective_image_url().unwrap_or_default();
+        self.tier_kinds = tier_kinds;
+        self.tier_fixed = tier_fixed;
+        self.tier_colors = tier_colors;
+        self.preserved_accessories = spec.accessories.clone();
+    }
+
+    fn build_spec(&self) -> TerminalSpec {
+        let levels = self.levels.clamp(1, 4);
+        let tiers: Vec<TierSpec> = (0..levels)
+            .map(|lvl| {
+                let behavior = match self.tier_kinds[lvl] {
+                    CustomTierKind::Sequential => TierBehavior::Sequential,
+                    CustomTierKind::ProtectiveEarth => TierBehavior::ProtectiveEarth,
+                    CustomTierKind::Fixed => {
+                        TierBehavior::Fixed(self.tier_fixed[lvl].trim().to_string())
+                    }
+                };
+                TierSpec {
+                    behavior,
+                    color: self.tier_colors[lvl],
+                }
+            })
+            .collect();
+
+        let trim_opt = |s: &str| {
+            let t = s.trim();
+            if t.is_empty() {
+                None
+            } else {
+                Some(t.to_string())
+            }
+        };
+
+        let mfg = if self.manufacturer.trim().is_empty() {
+            "Custom".to_string()
+        } else {
+            self.manufacturer.trim().to_string()
+        };
+        let height_tenths = (self.height_mm.clamp(10.0, 250.0) * 10.0).round() as u16;
+        let offset_tenths = (self.rail_offset_mm.clamp(-50.0, 50.0) * 10.0).round() as i16;
+
+        TerminalSpec {
+            id: self.spec_id.clone(),
+            name: self.name.trim().to_string(),
+            manufacturer: mfg,
+            series: if self.series.trim().is_empty() {
+                "Custom".to_string()
+            } else {
+                self.series.trim().to_string()
+            },
+            levels,
+            width_tenths_mm: (self.width_mm.clamp(2.0, 100.0) * 10.0).round() as u16,
+            numbering_order: self.numbering_order,
+            description_de: self.description_de.trim().to_string(),
+            description_en: self.description_en.trim().to_string(),
+            tiers,
+            accessories: self.preserved_accessories.clone(),
+            jumper_slots_per_tier: Some(self.jumper_slots.min(2)),
+            max_jumper_poles: Some(self.max_jumper_poles),
+            article_number: trim_opt(&self.article_number),
+            product_url: trim_opt(&self.product_url),
+            image_url: trim_opt(&self.image_url),
+            height_tenths_mm: Some(height_tenths),
+            rail_offset_tenths_mm: Some(offset_tenths),
+            user_modified: self.is_builtin,
+        }
+    }
+}
+
+/// Renders the searchable terminal database table ("Klemmen-Datenbank") with manual editing support.
 #[allow(clippy::too_many_arguments)]
 pub fn show_database_tab(
     ui: &mut Ui,
-    catalog: &mut TerminalCatalog,
+    catalog: &TerminalCatalog,
     logos: &BrandLogos,
-    custom_specs: &mut Vec<TerminalSpec>,
+    custom_specs: &[TerminalSpec],
     mfg_filter: &mut Option<String>,
     search_query: &mut String,
     draft: &mut CustomSpecDraft,
+    editor_modal: &mut SpecEditorModalState,
     strings: &Strings,
     lang: Language,
-) {
+) -> Option<DatabaseAction> {
+    let mut action = None;
+    let tok = tokens(ui);
+
     ui.add_space(6.0);
-    ui.heading(format!("{} ({})", strings.db_heading, catalog.all().len()));
+    ui.horizontal_wrapped(|ui| {
+        ui.heading(format!("{} ({})", strings.db_heading, catalog.all().len()));
+        let edited_count = catalog.all().iter().filter(|s| s.user_modified).count();
+        let custom_count = catalog
+            .all()
+            .iter()
+            .filter(|s| !s.user_modified && s.id.starts_with("custom-"))
+            .count();
+        if edited_count > 0 || custom_count > 0 {
+            let badge_txt = match (edited_count, custom_count) {
+                (e, 0) => format!("{e} manuell angepasst"),
+                (0, c) => format!("{c} eigene Typen"),
+                (e, c) => format!("{e} angepasst · {c} eigene"),
+            };
+            pill_badge(ui, &badge_txt, tok.accent_text, tok.accent_soft);
+        }
+        ui.label(
+            egui::RichText::new(
+                "Jeder Klemmentyp kann über „Bearbeiten“ manuell angepasst und PC-weit gespeichert werden.",
+            )
+            .color(secondary_text_color(ui))
+            .small(),
+        );
+    });
     ui.add_space(6.0);
 
     egui::CollapsingHeader::new(strings.custom_spec_heading)
@@ -422,10 +603,10 @@ pub fn show_database_tab(
                     image_url: None,
                     height_tenths_mm: None,
                     rail_offset_tenths_mm: None,
+                    user_modified: false,
                 };
 
-                custom_specs.push(spec.clone());
-                catalog.add_custom_spec(spec);
+                action = Some(DatabaseAction::SaveSpec(Box::new(spec)));
             }
         });
 
@@ -548,12 +729,19 @@ pub fn show_database_tab(
                 ui.strong(strings.acc_end_plate);
                 ui.strong(strings.custom_spec_chambers);
                 ui.strong(strings.db_col_desc);
-                ui.strong("");
+                ui.strong("Aktionen");
                 ui.end_row();
 
                 for spec in filtered_specs {
                     show_logo_badge(ui, logos, &spec.manufacturer, 18.0);
-                    ui.label(&spec.name);
+                    ui.horizontal(|ui| {
+                        ui.label(&spec.name);
+                        if spec.user_modified {
+                            pill_badge(ui, "Angepasst", tok.accent_text, tok.accent_soft);
+                        } else if spec.id.starts_with("custom-") {
+                            pill_badge(ui, "Eigene", tok.success, tok.success_soft);
+                        }
+                    });
                     ui.label(spec.levels.to_string());
                     ui.monospace(spec.pattern_summary());
                     ui.label(format!("{:.1} mm", f32::from(spec.width_tenths_mm) / 10.0));
@@ -569,11 +757,317 @@ pub fn show_database_tab(
                         _ => &spec.description_en,
                     };
                     ui.label(desc);
-                    if icon_button(ui, UiIcon::ExternalLink, "Web").clicked() {
-                        open_external_url(ui.ctx(), &spec.effective_product_url());
-                    }
+                    ui.horizontal(|ui| {
+                        if icon_button(ui, UiIcon::Edit, "Bearbeiten").clicked() {
+                            let is_builtin =
+                                TerminalCatalog::embedded_default_by_id(&spec.id).is_some();
+                            let was_modified = spec.user_modified
+                                || custom_specs.iter().any(|c| c.id == spec.id);
+                            editor_modal.open_for(spec, is_builtin, was_modified);
+                        }
+                        if icon_only_button(ui, UiIcon::ExternalLink, false, "Im Browser öffnen")
+                            .clicked()
+                        {
+                            open_external_url(ui.ctx(), &spec.effective_product_url());
+                        }
+                    });
                     ui.end_row();
                 }
             });
     });
+
+    action
 }
+
+/// Renders the modal dialog for manually editing any terminal specification without recompiling.
+pub fn show_spec_editor_modal(
+    ctx: &egui::Context,
+    state: &mut SpecEditorModalState,
+    strings: &Strings,
+) -> Option<DatabaseAction> {
+    let mut action: Option<DatabaseAction> = None;
+    let mut open = state.open;
+    let title = format!("Klemmentyp bearbeiten — {}", state.name);
+
+    show_responsive_modal(
+        ctx,
+        "spec_editor_modal",
+        UiIcon::Edit,
+        &title,
+        620.0,
+        &mut open,
+        state,
+        |ui, st| {
+            let sec = secondary_text_color(ui);
+            ui.label(
+                egui::RichText::new(format!(
+                    "ID: {} · Änderungen werden sofort PC-weit (custom_specs.json) sowie im aktuellen Projekt gespeichert.",
+                    st.spec_id
+                ))
+                .color(sec)
+                .small(),
+            );
+            ui.add_space(6.0);
+
+            section_card(ui, |ui| {
+                ui.strong("Stammdaten");
+                ui.add_space(4.0);
+                egui::Grid::new("spec_edit_meta_grid")
+                    .num_columns(2)
+                    .spacing([12.0, 6.0])
+                    .show(ui, |ui| {
+                        ui.label("Typ / Bezeichnung:");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut st.name)
+                                .desired_width(ui.available_width().max(200.0)),
+                        );
+                        ui.end_row();
+
+                        ui.label("Hersteller:");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut st.manufacturer)
+                                .desired_width(ui.available_width().max(200.0)),
+                        );
+                        ui.end_row();
+
+                        ui.label("Serie:");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut st.series)
+                                .desired_width(ui.available_width().max(200.0)),
+                        );
+                        ui.end_row();
+
+                        ui.label("Artikelnummer:");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut st.article_number)
+                                .hint_text("z. B. 3048467")
+                                .desired_width(180.0),
+                        );
+                        ui.end_row();
+
+                        ui.label("Beschreibung (DE):");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut st.description_de)
+                                .desired_width(ui.available_width().max(200.0)),
+                        );
+                        ui.end_row();
+
+                        ui.label("Beschreibung (EN):");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut st.description_en)
+                                .desired_width(ui.available_width().max(200.0)),
+                        );
+                        ui.end_row();
+                    });
+            });
+
+            ui.add_space(6.0);
+            section_card(ui, |ui| {
+                ui.strong("Geometrie, Etagen & Brücken");
+                ui.add_space(4.0);
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Etagen:");
+                    egui::ComboBox::from_id_salt("spec_edit_levels")
+                        .selected_text(format!("{}", st.levels))
+                        .show_ui(ui, |ui| {
+                            for l in 1..=4 {
+                                ui.selectable_value(&mut st.levels, l, format!("{l}"));
+                            }
+                        });
+
+                    ui.add_space(8.0);
+                    ui.label("Breite:");
+                    ui.add(
+                        egui::DragValue::new(&mut st.width_mm)
+                            .speed(0.1)
+                            .range(2.0..=100.0)
+                            .suffix(" mm"),
+                    );
+
+                    ui.add_space(8.0);
+                    ui.label("Bauhöhe:");
+                    ui.add(
+                        egui::DragValue::new(&mut st.height_mm)
+                            .speed(0.5)
+                            .range(10.0..=250.0)
+                            .suffix(" mm"),
+                    );
+
+                    ui.add_space(8.0);
+                    ui.label("TS35-Versatz:");
+                    ui.add(
+                        egui::DragValue::new(&mut st.rail_offset_mm)
+                            .speed(0.5)
+                            .range(-50.0..=50.0)
+                            .suffix(" mm"),
+                    );
+                });
+
+                ui.add_space(4.0);
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Brückerschächte / Etage:");
+                    egui::ComboBox::from_id_salt("spec_edit_jumpers")
+                        .selected_text(format!("{}×", st.jumper_slots))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut st.jumper_slots, 0, "0× (keine)");
+                            ui.selectable_value(&mut st.jumper_slots, 1, "1× (einfach)");
+                            ui.selectable_value(&mut st.jumper_slots, 2, "2× (doppelt)");
+                        });
+
+                    ui.add_space(8.0);
+                    ui.label("Max. Brücker-Pole:");
+                    ui.add(
+                        egui::DragValue::new(&mut st.max_jumper_poles)
+                            .speed(1)
+                            .range(0..=30)
+                            .suffix("-polig"),
+                    );
+
+                    ui.add_space(8.0);
+                    ui.label("Zählrichtung:");
+                    egui::ComboBox::from_id_salt("spec_edit_num_order")
+                        .selected_text(match st.numbering_order {
+                            NumberingOrder::BottomToTop => "Unten → Oben",
+                            NumberingOrder::TopToBottom => "Oben → Unten",
+                        })
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut st.numbering_order,
+                                NumberingOrder::BottomToTop,
+                                "Unten → Oben",
+                            );
+                            ui.selectable_value(
+                                &mut st.numbering_order,
+                                NumberingOrder::TopToBottom,
+                                "Oben → Unten",
+                            );
+                        });
+                });
+
+                ui.add_space(6.0);
+                for lvl in 0..st.levels.clamp(1, 4) {
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(format!("Etage E{}:", lvl + 1));
+                        egui::ComboBox::from_id_salt(format!("spec_edit_tier_kind_{lvl}"))
+                            .selected_text(match st.tier_kinds[lvl] {
+                                CustomTierKind::Sequential => strings.custom_spec_tier_seq,
+                                CustomTierKind::ProtectiveEarth => strings.custom_spec_tier_pe,
+                                CustomTierKind::Fixed => strings.custom_spec_tier_fixed,
+                            })
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(
+                                    &mut st.tier_kinds[lvl],
+                                    CustomTierKind::Sequential,
+                                    strings.custom_spec_tier_seq,
+                                );
+                                ui.selectable_value(
+                                    &mut st.tier_kinds[lvl],
+                                    CustomTierKind::ProtectiveEarth,
+                                    strings.custom_spec_tier_pe,
+                                );
+                                ui.selectable_value(
+                                    &mut st.tier_kinds[lvl],
+                                    CustomTierKind::Fixed,
+                                    strings.custom_spec_tier_fixed,
+                                );
+                            });
+
+                        if st.tier_kinds[lvl] == CustomTierKind::Fixed {
+                            ui.add(
+                                egui::TextEdit::singleline(&mut st.tier_fixed[lvl])
+                                    .hint_text("N / +24V / ...")
+                                    .desired_width(90.0),
+                            );
+                        }
+
+                        egui::ComboBox::from_id_salt(format!("spec_edit_tier_color_{lvl}"))
+                            .selected_text(tier_color_label(st.tier_colors[lvl]))
+                            .show_ui(ui, |ui| {
+                                for c in [
+                                    TierColor::StandardGray,
+                                    TierColor::BlueNeutral,
+                                    TierColor::GreenYellowPe,
+                                    TierColor::RedPhase,
+                                    TierColor::OrangeAux,
+                                ] {
+                                    ui.selectable_value(
+                                        &mut st.tier_colors[lvl],
+                                        c,
+                                        tier_color_label(c),
+                                    );
+                                }
+                            });
+                    });
+                }
+            });
+
+            ui.add_space(6.0);
+            egui::CollapsingHeader::new("Links (Produktseite & Produktfoto URL)")
+                .default_open(false)
+                .show(ui, |ui| {
+                    egui::Grid::new("spec_edit_urls_grid")
+                        .num_columns(2)
+                        .spacing([12.0, 6.0])
+                        .show(ui, |ui| {
+                            ui.label("Produkt-URL:");
+                            ui.add(
+                                egui::TextEdit::singleline(&mut st.product_url)
+                                    .desired_width(ui.available_width().max(220.0)),
+                            );
+                            ui.end_row();
+                            ui.label("Bild-URL:");
+                            ui.add(
+                                egui::TextEdit::singleline(&mut st.image_url)
+                                    .desired_width(ui.available_width().max(220.0)),
+                            );
+                            ui.end_row();
+                        });
+                });
+        },
+        |ui, st, modal_open| {
+            if st.is_builtin && st.was_modified {
+                if danger_icon_button(ui, UiIcon::Undo, "Werkszustand").clicked() {
+                    action = Some(DatabaseAction::ResetOrDeleteSpec {
+                        id: st.spec_id.clone(),
+                        is_builtin: true,
+                    });
+                    *modal_open = false;
+                }
+            } else if !st.is_builtin && danger_icon_button(ui, UiIcon::Delete, "Löschen").clicked()
+            {
+                action = Some(DatabaseAction::ResetOrDeleteSpec {
+                    id: st.spec_id.clone(),
+                    is_builtin: false,
+                });
+                *modal_open = false;
+            }
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let can_save = !st.name.trim().is_empty();
+                ui.add_enabled_ui(can_save, |ui| {
+                    if primary_icon_button(ui, UiIcon::Save, "Speichern").clicked() {
+                        action = Some(DatabaseAction::SaveSpec(Box::new(st.build_spec())));
+                        *modal_open = false;
+                    }
+                });
+                if ghost_icon_button(ui, UiIcon::Close, "Abbrechen").clicked() {
+                    *modal_open = false;
+                }
+            });
+        },
+    );
+
+    state.open = open;
+    action
+}
+
+fn tier_color_label(color: TierColor) -> &'static str {
+    match color {
+        TierColor::StandardGray => "Grau",
+        TierColor::BlueNeutral => "Blau (N)",
+        TierColor::GreenYellowPe => "Grün-Gelb (PE)",
+        TierColor::RedPhase => "Rot",
+        TierColor::OrangeAux => "Orange (Hilf/Trenn)",
+    }
+}
+

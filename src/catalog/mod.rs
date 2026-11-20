@@ -52,6 +52,13 @@ pub struct TerminalSpec {
     /// (positive values shift the housing upward above the rail center; `0` = symmetric on TS 35).
     #[serde(default)]
     pub rail_offset_tenths_mm: Option<i16>,
+    /// True when this specification was manually edited/overridden by the user at runtime.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub user_modified: bool,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 impl TerminalSpec {
@@ -322,6 +329,13 @@ impl TerminalSpec {
 
     /// Effective manufacturer article / order number (`Art.-Nr.`).
     pub fn effective_article_number(&self) -> Option<&str> {
+        if self.user_modified {
+            return self
+                .article_number
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty());
+        }
         if let Some((art, _, _)) = resolve_manufacturer_meta(&self.id) {
             return Some(art);
         }
@@ -335,6 +349,12 @@ impl TerminalSpec {
 
     /// Clean manufacturer product lookup URL for opening in desktop or mobile browser.
     pub fn effective_product_url(&self) -> String {
+        if self.user_modified
+            && let Some(url) = &self.product_url
+            && !url.trim().is_empty()
+        {
+            return url.trim().to_string();
+        }
         if let Some((_, url, _)) = resolve_manufacturer_meta(&self.id) {
             return url.to_string();
         }
@@ -367,6 +387,12 @@ impl TerminalSpec {
     /// Direct, unblocked manufacturer media CDN URL (`caas.phoenixcontact.com` / `assets.dam.weidmueller.com`)
     /// when available so product photos load directly without HTML scraping or WAF blocks.
     pub fn effective_image_url(&self) -> Option<String> {
+        if self.user_modified
+            && let Some(url) = &self.image_url
+            && !url.trim().is_empty()
+        {
+            return Some(url.trim().to_string());
+        }
         if let Some((_, _, img)) = resolve_manufacturer_meta(&self.id) {
             return Some(img.to_string());
         }
@@ -2206,6 +2232,13 @@ impl TerminalCatalog {
         catalog
     }
 
+    /// Looks up the built-in factory default specification for `id`, if `id` is an embedded catalog entry.
+    pub fn embedded_default_by_id(id: &str) -> Option<TerminalSpec> {
+        let specs: Vec<TerminalSpec> = serde_json::from_str(EMBEDDED_SPECS_JSON)
+            .expect("Embedded terminal_specs.json must be valid JSON");
+        specs.into_iter().find(|s| s.id == id)
+    }
+
     /// Rebuilds the catalog from embedded specs plus project-specific custom specs.
     pub fn reload_with_custom(&mut self, custom_specs: &[TerminalSpec]) {
         *self = Self::load_embedded();
@@ -3438,6 +3471,14 @@ mod tests {
         assert_eq!(
             catalog.find_by_id("phoenix-udmtk-5").unwrap().width_tenths_mm,
             62
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-udmtk-5").unwrap().levels,
+            2
+        );
+        assert_eq!(
+            catalog.find_by_id("phoenix-udmtk-5").unwrap().tiers.len(),
+            2
         );
         assert_eq!(
             catalog.find_by_id("phoenix-ukk-5-mtk-pp").unwrap().levels,
