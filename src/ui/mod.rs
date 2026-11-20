@@ -138,6 +138,7 @@ pub struct TermiGridApp {
     inspector_search: String,
     inspector_spec_id: String,
     last_selection_sync: Option<(usize, usize, String)>,
+    reset_inspector_scroll: bool,
 
     // Database tab filter state
     db_mfg_filter: Option<String>,
@@ -240,6 +241,7 @@ impl TermiGridApp {
             inspector_search: String::new(),
             inspector_spec_id: "wago-2002-2204".to_string(),
             last_selection_sync: None,
+            reset_inspector_scroll: false,
             db_mfg_filter: None,
             db_search: String::new(),
             custom_spec_draft: CustomSpecDraft::default(),
@@ -1189,6 +1191,7 @@ impl eframe::App for TermiGridApp {
             self.active_strip = self.project.strips.len().saturating_sub(1);
             self.selected_blocks.clear();
             self.selected_end_bracket = None;
+            self.reset_inspector_scroll = true;
             self.show_welcome = false;
             self.active_tab = ActiveTab::Editor;
             self.notify(
@@ -2625,7 +2628,7 @@ impl TermiGridApp {
 
         let mut delete_idx: Option<usize> = None;
         let sheet_w = ui.available_width().max(120.0);
-        let list_max_h = (ui.available_height() - 40.0).max(80.0);
+        let list_max_h = (ui.available_height() - 128.0).max(80.0);
         egui::ScrollArea::vertical()
             .id_salt("strips_scroll")
             .max_height(list_max_h)
@@ -2723,6 +2726,33 @@ impl TermiGridApp {
             });
 
         if !self.project.strips.is_empty() {
+            if self.active_strip < self.project.strips.len() {
+                ui.add_space(6.0);
+                let active_idx = self.active_strip;
+                let active_strip = &mut self.project.strips[active_idx];
+                section_card(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("Name:").size(12.0).color(t.text_secondary));
+                        let name_resp = ui.add(
+                            egui::TextEdit::singleline(&mut active_strip.name)
+                                .hint_text("-X1")
+                                .desired_width((ui.available_width() - 4.0).max(80.0)),
+                        );
+                        if name_resp.lost_focus() && active_strip.name.trim().is_empty() {
+                            active_strip.name = format!("-X{}", active_idx + 1);
+                        }
+                    });
+                    ui.add_space(3.0);
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("Info:").size(12.0).color(t.text_secondary));
+                        ui.add(
+                            egui::TextEdit::singleline(&mut active_strip.description)
+                                .hint_text("Beschreibung (optional)")
+                                .desired_width((ui.available_width() - 4.0).max(80.0)),
+                        );
+                    });
+                });
+            }
             ui.add_space(6.0);
             ui.horizontal_wrapped(|ui| {
                 if icon_button(ui, UiIcon::Bookmark, "In Bibliothek")
@@ -2951,10 +2981,14 @@ impl TermiGridApp {
         let t = tokens(ui);
         let sec = secondary_text_color(ui);
         let panel_max_w = (ui.available_width() - 8.0).max(160.0);
-        egui::ScrollArea::vertical()
+        let reset_scroll = std::mem::take(&mut self.reset_inspector_scroll);
+        let mut inspector_scroll = egui::ScrollArea::vertical()
             .id_salt("inspector_scroll")
-            .auto_shrink([false, false])
-            .show(ui, |ui| {
+            .auto_shrink([false, false]);
+        if reset_scroll {
+            inspector_scroll = inspector_scroll.vertical_scroll_offset(0.0);
+        }
+        inspector_scroll.show(ui, |ui| {
                 ui.set_max_width(panel_max_w);
                 ui.horizontal(|ui| {
                     ui.label(
@@ -4182,7 +4216,21 @@ impl TermiGridApp {
                     if !is_generated {
                         // Editing & Numbering controls
                         {
-                            let strip = &mut self.project.strips[self.active_strip];
+                            let active_idx = self.active_strip;
+                            let strip = &mut self.project.strips[active_idx];
+                            ui.label(
+                                egui::RichText::new("Leiste")
+                                    .size(12.5)
+                                    .color(t.text_secondary),
+                            );
+                            let bmk_resp = ui.add(
+                                egui::TextEdit::singleline(&mut strip.name)
+                                    .hint_text("-X1")
+                                    .desired_width(68.0),
+                            );
+                            if bmk_resp.lost_focus() && strip.name.trim().is_empty() {
+                                strip.name = format!("-X{}", active_idx + 1);
+                            }
                             ui.label(
                                 egui::RichText::new(s.strip_start_number)
                                     .size(12.5)

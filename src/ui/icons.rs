@@ -1109,8 +1109,17 @@ pub fn show_responsive_modal<T>(
     render_body: impl FnOnce(&mut Ui, &mut T),
     render_footer: impl FnOnce(&mut Ui, &mut T, &mut bool),
 ) {
+    let was_open_id = egui::Id::unique(format!("{id}_was_open"));
+    let was_open = ctx.data(|d| d.get_temp::<bool>(was_open_id)).unwrap_or(false);
     if !*open {
+        if was_open {
+            ctx.data_mut(|d| d.insert_temp(was_open_id, false));
+        }
         return;
+    }
+    let just_opened = !was_open;
+    if just_opened {
+        ctx.data_mut(|d| d.insert_temp(was_open_id, true));
     }
 
     let dark = ctx.theme() == egui::Theme::Dark;
@@ -1189,15 +1198,18 @@ pub fn show_responsive_modal<T>(
             ui.separator();
             ui.add_space(4.0);
 
-            // Scrollable Middle Content
-            egui::ScrollArea::vertical()
+            // Scrollable Middle Content (always starts at top whenever modal opens)
+            let mut body_scroll = egui::ScrollArea::vertical()
                 .id_salt(format!("{id}_body_scroll"))
                 .max_height(body_max_h)
-                .auto_shrink([false, true])
-                .show(ui, |ui| {
-                    ui.set_max_width(ui.available_width());
-                    render_body(ui, state);
-                });
+                .auto_shrink([false, true]);
+            if just_opened {
+                body_scroll = body_scroll.vertical_scroll_offset(0.0);
+            }
+            body_scroll.show(ui, |ui| {
+                ui.set_max_width(ui.available_width());
+                render_body(ui, state);
+            });
 
             // Fixed Footer
             ui.add_space(4.0);
@@ -1210,5 +1222,6 @@ pub fn show_responsive_modal<T>(
 
     if close_requested {
         *open = false;
+        ctx.data_mut(|d| d.insert_temp(was_open_id, false));
     }
 }

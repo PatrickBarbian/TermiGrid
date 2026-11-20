@@ -70,6 +70,7 @@ impl NewStripDialogState {
         self.end_number = 50;
         self.block_count = 25;
         self.sequence_mode = StripSequenceMode::ByBlock;
+        self.search_query.clear();
         self.end_bracket_left = true;
         self.end_bracket_right = true;
     }
@@ -86,10 +87,6 @@ pub fn show_new_strip_modal(
     strings: &Strings,
     lang: Language,
 ) -> Option<TerminalStrip> {
-    if !state.open {
-        return None;
-    }
-
     let mut created: Option<TerminalStrip> = None;
     let mut open = state.open;
 
