@@ -16,10 +16,15 @@ use crate::ui::product_media::{
 };
 use crate::ui::theme::secondary_text_color;
 
+use crate::prompt::{
+    parse_and_resolve_prompt, PromptContext, PromptManufacturer, PromptStyle,
+};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NewStripMode {
     ByRange,
     ByCount,
+    ByPrompt,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +43,8 @@ pub struct NewStripDialogState {
     pub end_bracket_id: String,
     pub end_bracket_left: bool,
     pub end_bracket_right: bool,
+    pub prompt_text: String,
+    pub prompt_ctx: PromptContext,
 }
 
 impl Default for NewStripDialogState {
@@ -57,6 +64,8 @@ impl Default for NewStripDialogState {
             end_bracket_id: DEFAULT_END_BRACKET_ID.to_string(),
             end_bracket_left: true,
             end_bracket_right: true,
+            prompt_text: String::new(),
+            prompt_ctx: PromptContext::default(),
         }
     }
 }
@@ -102,6 +111,11 @@ pub fn show_new_strip_modal(
             ui.horizontal_wrapped(|ui| {
                 ui.radio_value(&mut state.mode, NewStripMode::ByRange, strings.gen_mode_range);
                 ui.radio_value(&mut state.mode, NewStripMode::ByCount, strings.gen_mode_count);
+                ui.radio_value(
+                    &mut state.mode,
+                    NewStripMode::ByPrompt,
+                    tr::gen_mode_prompt(lang),
+                );
             });
             ui.add_space(4.0);
 
@@ -141,6 +155,7 @@ pub fn show_new_strip_modal(
                             ui.add(egui::DragValue::new(&mut state.block_count).range(1..=500));
                             ui.end_row();
                         }
+                        NewStripMode::ByPrompt => {}
                     }
 
                     ui.label(tr::sequence_label_long(lang));
@@ -161,33 +176,144 @@ pub fn show_new_strip_modal(
 
             ui.separator();
 
-            // Manufacturer filter + search + terminal spec selector + live preview
-            show_spec_picker(
-                ui,
-                catalog,
-                logos,
-                &mut state.manufacturer_filter,
-                &mut state.search_query,
-                &mut state.selected_spec_id,
-                None,
-                strings.filter_manufacturer,
-                strings.default_terminal_type,
-                strings.all_manufacturers,
-                strings.search_hint,
-                lang,
-            );
-            if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
+            if state.mode == NewStripMode::ByPrompt {
+                ui.label(egui::RichText::new(tr::quick_prompt_heading(lang)).strong());
+                ui.add_space(2.0);
+                ui.horizontal_wrapped(|ui| {
+                    for mfg in [
+                        PromptManufacturer::PhoenixContact,
+                        PromptManufacturer::Wago,
+                        PromptManufacturer::Weidmueller,
+                    ] {
+                        let active = state.prompt_ctx.default_manufacturer == mfg;
+                        if ui.selectable_label(active, mfg.short_label()).clicked() {
+                            state.prompt_ctx.default_manufacturer = mfg;
+                        }
+                    }
+                    ui.separator();
+                    for (style, lbl) in [
+                        (PromptStyle::Installation, tr::quick_prompt_style_inst(lang)),
+                        (PromptStyle::FeedThrough, tr::quick_prompt_style_feed(lang)),
+                        (PromptStyle::DoubleLevel, tr::quick_prompt_style_double(lang)),
+                    ] {
+                        let active = state.prompt_ctx.default_style == style;
+                        if ui.selectable_label(active, lbl).clicked() {
+                            state.prompt_ctx.default_style = style;
+                        }
+                    }
+                    ui.separator();
+                    ui.checkbox(&mut state.prompt_ctx.prefer_nt_for_installation, "NT");
+                    ui.checkbox(
+                        &mut state.prompt_ctx.auto_add_nt_supply_and_carriers,
+                        tr::quick_prompt_auto_nt_chk(lang),
+                    )
+                    .on_hover_text(tr::quick_prompt_auto_nt_tip(lang));
+                });
+
                 ui.add_space(4.0);
-                show_product_preview_card(
+                ui.horizontal_wrapped(|ui| {
+                    for chip in [
+                        "4x 3-pol PTI 2,5",
+                        "6x 1-pol PTI 2,5",
+                        "1x 16mm² Einspeisung",
+                        "2x Motor 4mm²",
+                        "6x +24V QUATTRO gebrückt",
+                        "2x Reserve leer",
+                    ] {
+                        if ui.small_button(format!("+ {chip}")).clicked() {
+                            if !state.prompt_text.trim().is_empty() {
+                                state.prompt_text.push_str(" + ");
+                            }
+                            state.prompt_text.push_str(chip);
+                        }
+                    }
+                    if !state.prompt_text.is_empty()
+                        && icon_only_button(ui, UiIcon::Clear, false, tr::clear_search(lang))
+                            .clicked()
+                    {
+                        state.prompt_text.clear();
+                    }
+                });
+
+                ui.add_space(4.0);
+                ui.add(
+                    egui::TextEdit::multiline(&mut state.prompt_text)
+                        .desired_rows(3)
+                        .desired_width(f32::INFINITY)
+                        .hint_text(tr::quick_prompt_hint(lang)),
+                );
+
+                let plan =
+                    parse_and_resolve_prompt(&state.prompt_text, state.prompt_ctx, catalog);
+                if !plan.is_empty() || !plan.unrecognized_clauses.is_empty() {
+                    ui.add_space(4.0);
+                    for seg in &plan.segments {
+                        let intent_lbl = if lang == Language::De {
+                            &seg.intent_label_de
+                        } else {
+                            &seg.intent_label_en
+                        };
+                        ui.horizontal_wrapped(|ui| {
+                            ui.label(
+                                egui::RichText::new(format!("• {}× {} →", seg.count, intent_lbl))
+                                    .color(secondary_text_color(ui))
+                                    .small(),
+                            );
+                            ui.label(egui::RichText::new(&seg.summary).strong().small());
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "({:.1} mm)",
+                                    (seg.width_tenths_mm as f32) / 10.0
+                                ))
+                                .color(secondary_text_color(ui))
+                                .small(),
+                            );
+                        });
+                    }
+                    if plan.auto_nt_supply_and_carriers {
+                        ui.label(
+                            egui::RichText::new(tr::quick_prompt_auto_nt_badge(lang))
+                                .color(egui::Color32::from_rgb(14, 165, 233))
+                                .small(),
+                        );
+                    }
+                    for unrec in &plan.unrecognized_clauses {
+                        ui.label(
+                            egui::RichText::new(tr::quick_prompt_unrecognized(lang, unrec))
+                                .color(egui::Color32::from_rgb(234, 179, 8))
+                                .small(),
+                        );
+                    }
+                }
+            } else {
+                // Manufacturer filter + search + terminal spec selector + live preview
+                show_spec_picker(
                     ui,
-                    spec,
+                    catalog,
                     logos,
-                    media_cache,
-                    strings.open_product_page,
-                    strings.bridge_chambers_unit,
-                    strings.height_label,
+                    &mut state.manufacturer_filter,
+                    &mut state.search_query,
+                    &mut state.selected_spec_id,
+                    None,
+                    strings.filter_manufacturer,
+                    strings.default_terminal_type,
+                    strings.all_manufacturers,
+                    strings.search_hint,
                     lang,
                 );
+                if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
+                    ui.add_space(4.0);
+                    show_product_preview_card(
+                        ui,
+                        spec,
+                        logos,
+                        media_cache,
+                        strings.open_product_page,
+                        strings.bridge_chambers_unit,
+                        strings.height_label,
+                        lang,
+                    );
+                }
             }
 
             ui.separator();
@@ -220,7 +346,27 @@ pub fn show_new_strip_modal(
             ui.separator();
 
             // Live preview of resulting block count + width + Bauhöhe incl. end brackets
-            if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
+            if state.mode == NewStripMode::ByPrompt {
+                let plan =
+                    parse_and_resolve_prompt(&state.prompt_text, state.prompt_ctx, catalog);
+                let eb_spec = find_end_bracket(&state.end_bracket_id);
+                let eb_count =
+                    usize::from(state.end_bracket_left) + usize::from(state.end_bracket_right);
+                let brackets_mm =
+                    (f32::from(eb_spec.width_tenths_mm) / 10.0) * (eb_count as f32);
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!(
+                            "-> {} {}  |  ~{:.1} mm",
+                            plan.total_blocks,
+                            strings.blocks_unit,
+                            plan.total_width_mm() + brackets_mm
+                        ))
+                        .color(secondary_text_color(ui)),
+                    )
+                    .wrap(),
+                );
+            } else if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
                 let preview_blocks = match state.mode {
                     NewStripMode::ByRange => {
                         let total = state.end_number.saturating_sub(state.start_number) + 1;
@@ -232,6 +378,7 @@ pub fn show_new_strip_modal(
                         }
                     }
                     NewStripMode::ByCount => state.block_count,
+                    NewStripMode::ByPrompt => 0,
                 };
                 let eb_spec = find_end_bracket(&state.end_bracket_id);
                 let eb_count =
@@ -259,37 +406,75 @@ pub fn show_new_strip_modal(
             }
         },
         |ui, state, close_requested| {
-            if primary_icon_button(ui, UiIcon::Add, strings.btn_create_strip).clicked()
-                && let Some(spec) = catalog.find_by_id(&state.selected_spec_id)
-            {
+            let can_create = if state.mode == NewStripMode::ByPrompt {
+                !parse_and_resolve_prompt(&state.prompt_text, state.prompt_ctx, catalog).is_empty()
+            } else {
+                catalog.find_by_id(&state.selected_spec_id).is_some()
+            };
+
+            let create_btn = ui
+                .add_enabled_ui(can_create, |ui| {
+                    primary_icon_button(ui, UiIcon::Add, strings.btn_create_strip)
+                })
+                .inner;
+
+            if create_btn.clicked() {
                 let clean_name = if state.name.trim().is_empty() {
                     "-X1".to_string()
                 } else {
                     state.name.trim().to_string()
                 };
-                let mut strip = match state.mode {
-                    NewStripMode::ByRange => TerminalStrip::generate_from_range(
-                        clean_name,
-                        state.start_number,
-                        state.end_number,
-                        spec,
-                    ),
-                    NewStripMode::ByCount => TerminalStrip::generate_with_block_count(
-                        clean_name,
-                        state.start_number,
-                        state.start_number + state.block_count as u32,
-                        state.block_count,
-                        spec,
-                    ),
-                };
-                strip.description = state.description.trim().to_string();
-                strip.sequence_mode = state.sequence_mode;
-                strip.end_bracket_id = state.end_bracket_id.clone();
-                strip.end_bracket_left = state.end_bracket_left;
-                strip.end_bracket_right = state.end_bracket_right;
-                strip.recalculate_labels();
-                created = Some(strip);
-                *close_requested = true;
+                if state.mode == NewStripMode::ByPrompt {
+                    let plan =
+                        parse_and_resolve_prompt(&state.prompt_text, state.prompt_ctx, catalog);
+                    if !plan.is_empty() {
+                        let first_spec_id = plan
+                            .segments
+                            .first()
+                            .and_then(|s| s.blocks.first())
+                            .map(|b| b.spec_id.clone())
+                            .unwrap_or_else(|| state.selected_spec_id.clone());
+                        let mut strip = TerminalStrip::new(
+                            clean_name,
+                            state.start_number,
+                            state.start_number + (plan.total_blocks as u32),
+                            first_spec_id,
+                        );
+                        strip.description = state.description.trim().to_string();
+                        strip.sequence_mode = state.sequence_mode;
+                        strip.end_bracket_id = state.end_bracket_id.clone();
+                        strip.end_bracket_left = state.end_bracket_left;
+                        strip.end_bracket_right = state.end_bracket_right;
+                        strip.apply_prompt_plan(0, true, &plan, catalog);
+                        created = Some(strip);
+                        *close_requested = true;
+                    }
+                } else if let Some(spec) = catalog.find_by_id(&state.selected_spec_id) {
+                    let mut strip = match state.mode {
+                        NewStripMode::ByRange => TerminalStrip::generate_from_range(
+                            clean_name,
+                            state.start_number,
+                            state.end_number,
+                            spec,
+                        ),
+                        NewStripMode::ByCount => TerminalStrip::generate_with_block_count(
+                            clean_name,
+                            state.start_number,
+                            state.start_number + state.block_count as u32,
+                            state.block_count,
+                            spec,
+                        ),
+                        NewStripMode::ByPrompt => unreachable!(),
+                    };
+                    strip.description = state.description.trim().to_string();
+                    strip.sequence_mode = state.sequence_mode;
+                    strip.end_bracket_id = state.end_bracket_id.clone();
+                    strip.end_bracket_left = state.end_bracket_left;
+                    strip.end_bracket_right = state.end_bracket_right;
+                    strip.recalculate_labels();
+                    created = Some(strip);
+                    *close_requested = true;
+                }
             }
 
             if icon_button(ui, UiIcon::Close, strings.btn_cancel).clicked() {

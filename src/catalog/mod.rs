@@ -770,7 +770,11 @@ impl TerminalSpec {
     /// WAGO `2003`/`2203`/`2005`/`2205`, Phoenix `PTI`, or Weidmüller `AITB`), returns the matching `NT`
     /// specification ID so the user can switch to the `NT` variant directly in the prompt dialog.
     pub fn matching_nt_spec_id(&self) -> Option<&'static str> {
-        if self.is_nt_disconnect_terminal() || self.is_n_supply_terminal() || self.is_busbar_carrier() {
+        if self.is_nt_disconnect_terminal()
+            || self.is_n_supply_terminal()
+            || self.is_busbar_carrier()
+            || !self.has_neutral_tier()
+        {
             return None;
         }
         let id = self.id.as_str();

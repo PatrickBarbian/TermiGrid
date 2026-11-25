@@ -2033,6 +2033,72 @@ pub fn quick_prompt_unrecognized(l: Language, raw: &str) -> String {
         Language::Nl => format!("Niet herkend (overgeslagen): \"{raw}\""),
     }
 }
+pub const fn quick_prompt_replace_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Leiste ersetzen",
+        "Replace Strip",
+        "Remplacer le bornier",
+        "Sostituisci morsettiera",
+        "Reemplazar regleta",
+        "Zastąp listwę",
+        "Klemmenstrook vervangen",
+    ])
+}
+pub const fn quick_prompt_replace_tip(l: Language) -> &'static str {
+    pick(l, [
+        "Ersetzt alle vorhandenen Klemmen der aktiven Klemmleiste durch das Ergebnis der Schnell-Eingabe.",
+        "Replaces all existing terminals on the active strip with the Quick Prompt result.",
+        "Remplace toutes les bornes existantes du bornier actif par le résultat de la saisie rapide.",
+        "Sostituisce tutti i morsetti esistenti della morsettiera attiva con il risultato dell'input rapido.",
+        "Reemplaza todas las bornas existentes de la regleta activa con el risultato de la entrada rápida.",
+        "Zastępuje wszystkie istniejące złączki aktywnej listwy wynikiem szybkiego wprowadzania.",
+        "Vervangt alle bestaande klemmen op de actieve strook door het resultaat van de snelle invoer.",
+    ])
+}
+pub const fn quick_prompt_auto_nt_chk(l: Language) -> &'static str {
+    pick(l, [
+        "+ N-Einspeisung & Träger",
+        "+ N-Supply & Carriers",
+        "+ Alim. N & supports",
+        "+ Alim. N e supporti",
+        "+ Alim. N y soportes",
+        "+ Zasilanie N i wsporniki",
+        "+ N-voeding & dragers",
+    ])
+}
+pub const fn quick_prompt_auto_nt_tip(l: Language) -> &'static str {
+    pick(l, [
+        "Ergänzt bei Installations-/NT-Klemmen automatisch die passende 16 mm² N-Einspeiseklemme sowie die äußeren und 200-mm-Sammelschienenträger (Auflageböcke).",
+        "Automatically frames installation/NT terminals with the matching 16 mm² N-supply terminal and outer/200 mm busbar carriers.",
+        "Ajoute automatiquement la borne d'alimentation N 16 mm² et les supports de barre omnibus pour les bornes d'installation/NT.",
+        "Aggiunge automaticamente il morsetto di alimentazione N da 16 mm² e i supporti sbarra per i morsetti d'installazione/NT.",
+        "Añade automáticamente la borna de alimentación N de 16 mm² y los soportes de barra colectora para bornas de instalación/NT.",
+        "Automatycznie dodaje złączkę zasilającą N 16 mm² oraz wsporniki szyny zbiorczej dla złączek instalacyjnych/NT.",
+        "Voegt bij installatie-/NT-klemmen automatisch de bijpassende 16 mm² N-voedingsklem en verzamelraildragers toe.",
+    ])
+}
+pub const fn quick_prompt_auto_nt_badge(l: Language) -> &'static str {
+    pick(l, [
+        "• + 1× N-Einspeiseklemme (16 mm²) & N-Sammelschienenträger (Auflageböcke)",
+        "• + 1× N-Supply Terminal (16 mm²) & N-Busbar Carriers",
+        "• + 1× Borne d'alimentation N (16 mm²) & supports de barre N",
+        "• + 1× Morsetto alimentazione N (16 mm²) e supporti sbarra N",
+        "• + 1× Borna de alimentación N (16 mm²) y soportes de barra N",
+        "• + 1× Złączka zasilająca N (16 mm²) i wsporniki szyny N",
+        "• + 1× N-voedingsklem (16 mm²) & N-verzamelraildragers",
+    ])
+}
+pub const fn gen_mode_prompt(l: Language) -> &'static str {
+    pick(l, [
+        "Per Schnell-Eingabe (Assistent)",
+        "Via Quick Prompt (Assistant)",
+        "Par saisie rapide (Assistant)",
+        "Tramite input rapido (Assistente)",
+        "Por entrada rápida (Asistente)",
+        "Przez szybkie wprowadzanie (Asystent)",
+        "Via snelle invoer (Assistent)",
+    ])
+}
 
 // ── Guided Tour & Onboarding (Basic + Advanced) ────────────────────────────
 

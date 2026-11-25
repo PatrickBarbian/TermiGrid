@@ -2005,31 +2005,53 @@ impl TermiGridApp {
         &mut self,
         strip_idx: usize,
         at_index: usize,
-        items: Vec<(String, bool)>,
-        select_inserted: bool,
-        summary: &str,
+        replace_existing: bool,
+        plan: &crate::prompt::PromptPlan,
     ) {
-        if strip_idx >= self.project.strips.len() || items.is_empty() {
+        if strip_idx >= self.project.strips.len() || plan.is_empty() {
             return;
         }
-        let insert_pos = self.effective_append_pos(strip_idx, at_index);
-        let resolved: Vec<(&TerminalSpec, bool)> = items
-            .iter()
-            .filter_map(|(id, blank)| self.catalog.find_by_id(id).map(|sp| (sp, *blank)))
-            .collect();
-        if resolved.is_empty() {
-            return;
-        }
-        let inserted =
-            self.project.strips[strip_idx].insert_prompt_sequence(insert_pos, &resolved);
-        if select_inserted && !inserted.is_empty() {
+        let insert_pos = if replace_existing {
+            0
+        } else {
+            self.effective_append_pos(strip_idx, at_index)
+        };
+        let inserted = self.project.strips[strip_idx].apply_prompt_plan(
+            insert_pos,
+            replace_existing,
+            plan,
+            &self.catalog,
+        );
+        if !inserted.is_empty() {
             self.canvas_state.selection_anchor = inserted.iter().next_back().copied();
-            self.selected_blocks = inserted;
+            // Only keep multi-block selection active in the Inspector when all inserted blocks
+            // share a single homogeneous terminal type; for heterogeneous feeder pairs (e.g.
+            // 1x PTI 2,5-L/L + 1x PTI 2,5-PE/L/NT), clear bulk selection so clicking
+            // "Typ auf Auswahl anwenden" in the Inspector cannot overwrite L/L with L/N/PE.
+            let first_id = inserted
+                .iter()
+                .next()
+                .and_then(|&i| self.project.strips[strip_idx].blocks.get(i))
+                .map(|b| b.spec_id.as_str());
+            let is_homogeneous = first_id.is_some_and(|fid| {
+                inserted.iter().all(|&i| {
+                    self.project.strips[strip_idx]
+                        .blocks
+                        .get(i)
+                        .is_some_and(|b| b.spec_id == fid)
+                })
+            });
+            if is_homogeneous {
+                self.selected_blocks = inserted;
+            } else {
+                self.selected_blocks.clear();
+            }
             self.selected_end_bracket = None;
         }
+        let summary = plan.compact_summary();
         self.notify_undoable(
             ToastTone::Success,
-            tr::toast_group_inserted(self.lang, summary),
+            tr::toast_group_inserted(self.lang, &summary),
         );
     }
 
@@ -2074,11 +2096,29 @@ impl TermiGridApp {
                     .catalog
                     .find_by_id(&self.project.strips[strip_idx].blocks[first_nt].spec_id)
             {
+                let mut zone_start = first_nt;
+                while zone_start > 0
+                    && self
+                        .catalog
+                        .find_by_id(&self.project.strips[strip_idx].blocks[zone_start - 1].spec_id)
+                        .is_some_and(|sp| sp.is_installation_or_nt_terminal())
+                {
+                    zone_start -= 1;
+                }
+                let mut zone_end = last_nt + 1;
+                while zone_end < self.project.strips[strip_idx].blocks.len()
+                    && self
+                        .catalog
+                        .find_by_id(&self.project.strips[strip_idx].blocks[zone_end].spec_id)
+                        .is_some_and(|sp| sp.is_installation_or_nt_terminal())
+                {
+                    zone_end += 1;
+                }
                 self.install_prompt_modal.open_for_imported_strip(
                     PendingInstallAction::ConfigureStripNt {
                         strip_idx,
-                        anchor_start: first_nt,
-                        anchor_end: last_nt + 1,
+                        anchor_start: zone_start,
+                        anchor_end: zone_end,
                     },
                     nt_spec,
                     tr::nt_modal_title_single(self.lang, &strip_name),
@@ -4986,9 +5026,9 @@ impl TermiGridApp {
             }
         }
 
-        // Inline Quick-Prompt Terminal Assistant Bar (Phase 1 deterministic domain NLP)
+        // Inline Quick-Prompt Terminal Assistant Bar (Phase 1 & Phase 2 deterministic domain NLP)
         if !is_generated && self.quick_prompt_open {
-            let mut deferred_prompt_insert_at: Option<usize> = None;
+            let mut deferred_prompt_action: Option<(usize, bool)> = None;
             ui.add_space(6.0);
             recessed_card(ui, |ui| {
                 ui.set_width(ui.available_width());
@@ -5028,6 +5068,11 @@ impl TermiGridApp {
 
                     ui.separator();
                     ui.checkbox(&mut self.quick_prompt_ctx.prefer_nt_for_installation, "NT");
+                    ui.checkbox(
+                        &mut self.quick_prompt_ctx.auto_add_nt_supply_and_carriers,
+                        tr::quick_prompt_auto_nt_chk(self.lang),
+                    )
+                    .on_hover_text(tr::quick_prompt_auto_nt_tip(self.lang));
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if icon_only_button(ui, UiIcon::Close, false, tr::cancel(self.lang))
@@ -5042,9 +5087,11 @@ impl TermiGridApp {
                 // Quick example chips for instant click-to-append
                 ui.horizontal_wrapped(|ui| {
                     for chip in [
+                        "4x 3-pol PTI 2,5",
+                        "6x 1-pol PTI 2,5",
                         "4x Drehstrom Abgang 2,5mm² Installationsklemmen",
-                        "6x Licht 1,5mm²",
                         "1x 16mm² Einspeisung",
+                        "6x +24V QUATTRO gebrückt",
                         "2x Motor 4mm²",
                         "4x URTK/SP",
                         "2x Reserve leer",
@@ -5108,6 +5155,13 @@ impl TermiGridApp {
                             );
                         });
                     }
+                    if plan.auto_nt_supply_and_carriers {
+                        ui.label(
+                            egui::RichText::new(tr::quick_prompt_auto_nt_badge(self.lang))
+                                .color(t.accent_text)
+                                .small(),
+                        );
+                    }
                     for unrec in &plan.unrecognized_clauses {
                         ui.label(
                             egui::RichText::new(tr::quick_prompt_unrecognized(self.lang, unrec))
@@ -5128,7 +5182,7 @@ impl TermiGridApp {
                         )
                         .clicked()
                         {
-                            deferred_prompt_insert_at = Some(append_pos);
+                            deferred_prompt_action = Some((append_pos, false));
                         }
 
                         if let Some(&last_sel) = self.selected_blocks.iter().next_back()
@@ -5139,7 +5193,19 @@ impl TermiGridApp {
                             )
                             .clicked()
                         {
-                            deferred_prompt_insert_at = Some(last_sel + 1);
+                            deferred_prompt_action = Some((last_sel + 1, false));
+                        }
+
+                        if !self.project.strips[self.active_strip].blocks.is_empty()
+                            && icon_button(
+                                ui,
+                                UiIcon::Apply,
+                                tr::quick_prompt_replace_btn(self.lang),
+                            )
+                            .on_hover_text(tr::quick_prompt_replace_tip(self.lang))
+                            .clicked()
+                        {
+                            deferred_prompt_action = Some((0, true));
                         }
 
                         ui.label(
@@ -5156,7 +5222,7 @@ impl TermiGridApp {
                 }
             });
 
-            if let Some(pos) = deferred_prompt_insert_at {
+            if let Some((pos, replace_existing)) = deferred_prompt_action {
                 let plan = parse_and_resolve_prompt(
                     &self.quick_prompt_text,
                     self.quick_prompt_ctx,
@@ -5166,9 +5232,8 @@ impl TermiGridApp {
                     self.insert_prompt_plan_direct(
                         self.active_strip,
                         pos,
-                        plan.flattened_blocks(),
-                        true,
-                        &plan.compact_summary(),
+                        replace_existing,
+                        &plan,
                     );
                     self.quick_prompt_text.clear();
                 }

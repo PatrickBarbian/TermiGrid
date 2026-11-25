@@ -404,7 +404,11 @@ impl TerminalStrip {
                 .get(&blk.base_type_group())
                 .copied()
                 .unwrap_or(usize::MAX);
-            (g_idx, blk.electrical_sort_rank())
+            // Place pure PE blocks (rank == 3, e.g. PTTB 2,5-PE, PT 2,5-PE, WPE 2.5) after
+            // their matching L/N/hybrid base blocks while preserving interleaved feeder pairs
+            // like [PTI 2,5-L/L, PTI 2,5-PE/L/NT] or [2003-7642, 2003-7641].
+            let is_pure_pe = u8::from(blk.electrical_sort_rank() == 3);
+            (g_idx, is_pure_pe)
         });
         let after_ids: Vec<u64> = self.blocks.iter().map(|b| b.id).collect();
         if before_ids != after_ids {
@@ -495,6 +499,180 @@ impl TerminalStrip {
         self.end_plates_generated = false;
         self.recalculate_labels();
         (clamped..clamped + count).collect()
+    }
+
+    /// Applies a resolved `PromptPlan` (Phase 1 & Phase 2) at `at_index` (or replacing all existing blocks
+    /// when `replace_existing == true`), applying blank markers, custom labels, prefixes/suffixes,
+    /// automatic jumper potential assignment (`gebrückt`), and optional N-supply + busbar carriers.
+    pub fn apply_prompt_plan(
+        &mut self,
+        at_index: usize,
+        replace_existing: bool,
+        plan: &crate::prompt::PromptPlan,
+        catalog: &TerminalCatalog,
+    ) -> std::collections::BTreeSet<usize> {
+        if plan.is_empty() {
+            return std::collections::BTreeSet::new();
+        }
+        if replace_existing {
+            self.blocks.clear();
+            self.potentials.clear();
+        }
+        let clamped = if replace_existing {
+            0
+        } else {
+            at_index.min(self.blocks.len())
+        };
+
+        const BRIDGE_COLORS: [[u8; 3]; 6] = [
+            [220, 38, 38],  // Red (+24V)
+            [37, 99, 235],  // Blue (0V / N)
+            [217, 119, 6],  // Amber
+            [16, 185, 129], // Emerald
+            [147, 51, 234], // Purple
+            [14, 165, 233], // Sky
+        ];
+
+        let mut new_blocks = Vec::with_capacity(plan.total_blocks);
+        let mut pending_bridges: Vec<(String, Vec<(u64, usize)>)> = Vec::new();
+
+        for seg in &plan.segments {
+            let mut seg_bridge_members: Vec<(u64, usize)> = Vec::new();
+            for item in &seg.blocks {
+                let Some(spec) = catalog.find_by_id(&item.spec_id) else {
+                    continue;
+                };
+                let id = self.allocate_block_id();
+                let mut blk = spec.instantiate_block(id);
+                for (t_idx, tier) in blk.tiers.iter_mut().enumerate() {
+                    if !tier.behavior.is_pe() {
+                        if item.blank_marker {
+                            tier.custom_override = Some(String::new());
+                        } else if let Some(ref lbl) = item.custom_label {
+                            tier.custom_override = Some(lbl.clone());
+                        }
+                        if !item.label_prefix.is_empty() {
+                            tier.label_prefix = item.label_prefix.clone();
+                        }
+                        if !item.label_suffix.is_empty() {
+                            tier.label_suffix = item.label_suffix.clone();
+                        }
+                    }
+                    // For auto-bridging, pick the first non-PE tier on each block
+                    if seg.auto_bridge_potential.is_some()
+                        && !tier.behavior.is_pe()
+                        && !seg_bridge_members.iter().any(|(bid, _)| *bid == id)
+                    {
+                        seg_bridge_members.push((id, t_idx));
+                    }
+                }
+                new_blocks.push(blk);
+            }
+            if let Some(ref pot_name) = seg.auto_bridge_potential
+                && seg_bridge_members.len() >= 2
+            {
+                pending_bridges.push((pot_name.clone(), seg_bridge_members));
+            }
+        }
+
+        if new_blocks.is_empty() {
+            return std::collections::BTreeSet::new();
+        }
+
+        if let Some(first_spec_id) = new_blocks.first().map(|b| b.spec_id.clone())
+            && replace_existing
+        {
+            self.default_spec_id = first_spec_id;
+        }
+
+        let count = new_blocks.len();
+        self.blocks.splice(clamped..clamped, new_blocks);
+
+        // Register auto-bridged jumper potentials
+        for (pot_name, members) in pending_bridges {
+            let pot_id = if let Some(existing) = self
+                .potentials
+                .iter()
+                .find(|p| p.name.eq_ignore_ascii_case(&pot_name))
+            {
+                existing.id
+            } else {
+                let color = if pot_name.contains("24") {
+                    BRIDGE_COLORS[0]
+                } else if pot_name == "0V" || pot_name.eq_ignore_ascii_case("N") {
+                    BRIDGE_COLORS[1]
+                } else {
+                    BRIDGE_COLORS[self.potentials.len() % BRIDGE_COLORS.len()]
+                };
+                self.add_potential(pot_name, color)
+            };
+            if let Some(pot) = self.potentials.iter_mut().find(|p| p.id == pot_id) {
+                for m in members {
+                    if !pot.members.contains(&m) {
+                        pot.members.push(m);
+                    }
+                }
+            }
+        }
+
+        // Phase 2: Auto-frame newly inserted installation/NT zone with N-supply & busbar carriers
+        let mut final_end = clamped + count;
+        if plan.auto_nt_supply_and_carriers {
+            let install_indices: Vec<usize> = (clamped..final_end)
+                .filter(|&i| {
+                    catalog
+                        .find_by_id(&self.blocks[i].spec_id)
+                        .is_some_and(|sp| sp.is_installation_or_nt_terminal())
+                })
+                .collect();
+            if let (Some(&first_inst), Some(&last_inst)) =
+                (install_indices.first(), install_indices.last())
+                && let Some(inst_spec) = catalog.find_by_id(&self.blocks[first_inst].spec_id)
+            {
+                let mut z0 = first_inst;
+                let mut z1 = last_inst + 1;
+                let already_has_supply = self.blocks.iter().any(|b| {
+                    catalog
+                        .find_by_id(&b.spec_id)
+                        .is_some_and(|sp| sp.is_n_supply_terminal())
+                });
+                if !already_has_supply
+                    && let Some(sup_spec) =
+                        catalog.find_by_id(inst_spec.recommended_n_supply_spec_id())
+                {
+                    let before_len = self.blocks.len();
+                    (z0, z1) = place_n_supply_in_zone(self, z0, z1, sup_spec, true, catalog);
+                    final_end += self.blocks.len().saturating_sub(before_len);
+                }
+                let already_has_carriers = self.blocks.iter().any(|b| {
+                    catalog
+                        .find_by_id(&b.spec_id)
+                        .is_some_and(|sp| sp.is_busbar_carrier())
+                });
+                if !already_has_carriers {
+                    let outer = inst_spec
+                        .recommended_outer_busbar_carrier_spec_id()
+                        .and_then(|id| catalog.find_by_id(id));
+                    let mid = inst_spec
+                        .recommended_intermediate_busbar_support_spec_id()
+                        .and_then(|id| catalog.find_by_id(id));
+                    if outer.is_some() || mid.is_some() {
+                        let before_len = self.blocks.len();
+                        let carrier_plan = BusbarCarrierPlan {
+                            outer_carrier: outer,
+                            intermediate_support: mid,
+                            max_unsupported_span_tenths_mm: 2000,
+                        };
+                        apply_n_busbar_carriers_around(self, z0, z1, catalog, &carrier_plan);
+                        final_end += self.blocks.len().saturating_sub(before_len);
+                    }
+                }
+            }
+        }
+
+        self.end_plates_generated = false;
+        self.recalculate_labels();
+        (clamped..final_end.min(self.blocks.len())).collect()
     }
 
     /// Converts all convertible `N` terminals in the strip into their matching `NT` disconnect
@@ -1162,6 +1340,70 @@ mod tests {
         assert_eq!(cols.len(), 1);
         assert_eq!(cols[0].0, "Ebene 1");
         assert_eq!(cols[0].1, vec!["1", "", "2", "3"]);
+    }
+
+    #[test]
+    fn apply_prompt_plan_builds_pti_drehstrom_pairs_bridges_and_nt_supply() {
+        use crate::prompt::{parse_and_resolve_prompt, PromptContext};
+
+        let catalog = TerminalCatalog::load_embedded();
+        let ctx = PromptContext::default();
+        let plan = parse_and_resolve_prompt(
+            "2x 3-pol PTI 2,5 mit N-Einspeisung + 4x +24V QUATTRO gebrückt",
+            ctx,
+            &catalog,
+        );
+
+        let mut strip = TerminalStrip::new("-X1", 1, 20, "phoenix-pti-25-pelnt");
+        strip.apply_prompt_plan(0, true, &plan, &catalog);
+
+        // Expected layout:
+        // [0]: AB-PTI/3 (outer carrier)
+        // [1]: PTI 16-NLS-FI BU (16 mm² N-supply)
+        // [2]: PTI 2,5-L/L (1st 3-phase feeder L1/L2)
+        // [3]: PTI 2,5-PE/L/NT (1st 3-phase feeder PE/L3/N)
+        // [4]: PTI 2,5-L/L (2nd 3-phase feeder L1/L2)
+        // [5]: PTI 2,5-PE/L/NT (2nd 3-phase feeder PE/L3/N)
+        // [6]: AB-PTI/3 (outer carrier)
+        // [7..11]: 4x PT 2,5-QUATTRO (+24V bridged)
+        let ids: Vec<&str> = strip.blocks.iter().map(|b| b.spec_id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec![
+                "phoenix-ab-pti-3",
+                "phoenix-pti-16-nls-bu",
+                "phoenix-pti-25-ll",
+                "phoenix-pti-25-pelnt",
+                "phoenix-pti-25-ll",
+                "phoenix-pti-25-pelnt",
+                "phoenix-ab-pti-3",
+                "phoenix-pt-25-quattro",
+                "phoenix-pt-25-quattro",
+                "phoenix-pt-25-quattro",
+                "phoenix-pt-25-quattro",
+            ]
+        );
+
+        // Auto-bridging created 1 potential ("+24V") with 4 members
+        assert_eq!(strip.potentials.len(), 1);
+        assert_eq!(strip.potentials[0].name, "+24V");
+        assert_eq!(strip.potentials[0].members.len(), 4);
+
+        // Grouping by base type on a PTI 3-phase strip must preserve interleaved [L/L, PE/L/NT] pairs
+        let mut pti_strip = TerminalStrip::new("-X2", 1, 10, "phoenix-pti-25-pelnt");
+        let plan_pti = parse_and_resolve_prompt("2x 3-pol PTI 2,5", ctx, &catalog);
+        pti_strip.apply_prompt_plan(0, true, &plan_pti, &catalog);
+        pti_strip.group_blocks_by_base_type();
+        let pti_ids: Vec<&str> = pti_strip.blocks.iter().map(|b| b.spec_id.as_str()).collect();
+        assert_eq!(
+            pti_ids,
+            vec![
+                "phoenix-pti-25-ll",
+                "phoenix-pti-25-pelnt",
+                "phoenix-pti-25-ll",
+                "phoenix-pti-25-pelnt",
+            ]
+        );
     }
 }
 

@@ -558,12 +558,23 @@ fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVari
 
     let base_groups = group_entries_by_base_type(&rest_entries);
 
+    let paired_nt_block = build_paired_nt_block(&nt_entries);
+
     let mut candidates: Vec<StripImportVariant> = Vec::new();
 
-    // Strategy 1: 3-phase feeders (3× L + 1× N + 1× PE), strictly scoped per base_type group
-    if let Some(rest_seq) = build_grouped_feeder_pattern(&base_groups, 3) {
-        let mut seq = nt_block.clone();
-        seq.extend(rest_seq);
+    // Strategy 1: 3-phase feeders (3× L + 1× N + 1× PE or 1× L/L + 1× PE/L/N(T)), strictly scoped per base_type group
+    let rest_3p = build_grouped_feeder_pattern(&base_groups, 3);
+    if rest_3p.is_some() || paired_nt_block.is_some() {
+        let mut seq = paired_nt_block.unwrap_or_else(|| nt_block.clone());
+        if let Some(rest_seq) = rest_3p {
+            seq.extend(rest_seq);
+        } else {
+            for g in &base_groups {
+                for e in g {
+                    seq.extend(std::iter::repeat_n(e.spec_id.clone(), e.quantity));
+                }
+            }
+        }
         let nt_note = if nt_block.is_empty() {
             ""
         } else {
@@ -572,7 +583,7 @@ fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVari
         candidates.push(StripImportVariant {
             label: format!("Drehstrom-Abgänge (3×L + N + PE{nt_note})"),
             description:
-                "Gruppiert je 3 Außenleiter mit zugehörigem N & PE innerhalb jedes Grundtyps (NT-Block geschlossen links)"
+                "Gruppiert je 3 Außenleiter (bzw. 1× L/L + 1× PE/L/N bei Installationsklemmen) je Drehstrom-Abgang innerhalb jedes Grundtyps"
                     .to_string(),
             block_spec_ids: seq,
             nt_zone,
@@ -662,6 +673,77 @@ fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVari
     }
 
     unique
+}
+
+fn build_paired_nt_block(nt_entries: &[&ImportedTerminalEntry]) -> Option<Vec<String>> {
+    if nt_entries.len() < 2 {
+        return None;
+    }
+    let nt_groups = group_entries_by_base_type(nt_entries);
+    let mut out = Vec::new();
+    let mut any_paired = false;
+
+    for group in nt_groups {
+        let mut ll_queue: Vec<(String, usize)> = Vec::new();
+        let mut peln_queue: Vec<(String, usize)> = Vec::new();
+        let mut other_queue: Vec<(String, usize)> = Vec::new();
+
+        for e in group {
+            if e.electrical_rank == 0 && e.levels >= 2 {
+                ll_queue.push((e.spec_id.clone(), e.quantity));
+            } else if e.electrical_rank == 2 && e.levels >= 3 {
+                peln_queue.push((e.spec_id.clone(), e.quantity));
+            } else {
+                other_queue.push((e.spec_id.clone(), e.quantity));
+            }
+        }
+
+        let total_ll: usize = ll_queue.iter().map(|(_, q)| *q).sum();
+        let total_peln: usize = peln_queue.iter().map(|(_, q)| *q).sum();
+
+        if total_ll == 0 || total_peln == 0 {
+            for (id, qty) in ll_queue
+                .into_iter()
+                .chain(peln_queue)
+                .chain(other_queue)
+            {
+                out.extend(std::iter::repeat_n(id, qty));
+            }
+            continue;
+        }
+
+        any_paired = true;
+        let pop_one = |q: &mut Vec<(String, usize)>| -> Option<String> {
+            for item in q.iter_mut() {
+                if item.1 > 0 {
+                    item.1 -= 1;
+                    return Some(item.0.clone());
+                }
+            }
+            None
+        };
+
+        let pairs = total_ll.min(total_peln);
+        for _ in 0..pairs {
+            if let Some(ll_id) = pop_one(&mut ll_queue) {
+                out.push(ll_id);
+            }
+            if let Some(peln_id) = pop_one(&mut peln_queue) {
+                out.push(peln_id);
+            }
+        }
+        while let Some(ll_id) = pop_one(&mut ll_queue) {
+            out.push(ll_id);
+        }
+        while let Some(peln_id) = pop_one(&mut peln_queue) {
+            out.push(peln_id);
+        }
+        for (id, qty) in other_queue {
+            out.extend(std::iter::repeat_n(id, qty));
+        }
+    }
+
+    any_paired.then_some(out)
 }
 
 fn build_grouped_feeder_pattern(
