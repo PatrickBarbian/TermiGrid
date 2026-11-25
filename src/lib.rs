@@ -3,6 +3,7 @@ pub mod export;
 pub mod i18n;
 pub mod import;
 pub mod model;
+pub mod prompt;
 pub mod ui;
 
 /// Loads the embedded TermiGrid application window icon.

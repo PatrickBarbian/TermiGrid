@@ -45,6 +45,9 @@ use crate::model::library::{
 use crate::model::{
     NeutralLabelMode, NumberingOrder, PeLabelMode, Project, StripSequenceMode, TerminalStrip,
 };
+use crate::prompt::{
+    parse_and_resolve_prompt, PromptContext, PromptManufacturer, PromptStyle,
+};
 use crate::ui::android_insets::{current_safe_insets, SafeAreaInsets};
 use crate::ui::cad_canvas::{
     draw_mini_eplan_preview, show_cad_canvas, CadCanvasState, CanvasInteractionMode,
@@ -232,9 +235,12 @@ pub struct TermiGridApp {
     pdf_import_modal: PdfImportDialogState,
     nt_popup_queue: VecDeque<NtQueueEntry>,
 
-    // Modern UI components (Sonner-style toasts + Strg+K command palette + Onboarding tour)
+    // Modern UI components (Sonner-style toasts + Strg+K command palette + Onboarding tour + Quick-Prompt Assistant)
     toast_queue: ToastQueue,
     command_palette: CommandPaletteState,
+    quick_prompt_open: bool,
+    quick_prompt_text: String,
+    quick_prompt_ctx: PromptContext,
     ui_time: f64,
     ui_prefs: UiPrefs,
     tour: TourState,
@@ -318,6 +324,9 @@ impl TermiGridApp {
             nt_popup_queue: VecDeque::new(),
             toast_queue: ToastQueue::default(),
             command_palette: CommandPaletteState::default(),
+            quick_prompt_open: false,
+            quick_prompt_text: String::new(),
+            quick_prompt_ctx: PromptContext::default(),
             ui_time: 0.0,
             ui_prefs,
             tour: TourState::default(),
@@ -1987,6 +1996,38 @@ impl TermiGridApp {
             self.selected_end_bracket = None;
         }
         self.notify(
+            ToastTone::Success,
+            tr::toast_group_inserted(self.lang, summary),
+        );
+    }
+
+    fn insert_prompt_plan_direct(
+        &mut self,
+        strip_idx: usize,
+        at_index: usize,
+        items: Vec<(String, bool)>,
+        select_inserted: bool,
+        summary: &str,
+    ) {
+        if strip_idx >= self.project.strips.len() || items.is_empty() {
+            return;
+        }
+        let insert_pos = self.effective_append_pos(strip_idx, at_index);
+        let resolved: Vec<(&TerminalSpec, bool)> = items
+            .iter()
+            .filter_map(|(id, blank)| self.catalog.find_by_id(id).map(|sp| (sp, *blank)))
+            .collect();
+        if resolved.is_empty() {
+            return;
+        }
+        let inserted =
+            self.project.strips[strip_idx].insert_prompt_sequence(insert_pos, &resolved);
+        if select_inserted && !inserted.is_empty() {
+            self.canvas_state.selection_anchor = inserted.iter().next_back().copied();
+            self.selected_blocks = inserted;
+            self.selected_end_bracket = None;
+        }
+        self.notify_undoable(
             ToastTone::Success,
             tr::toast_group_inserted(self.lang, summary),
         );
@@ -4394,6 +4435,25 @@ impl TermiGridApp {
                         {
                             deferred_group_base_types = true;
                         }
+                        if selectable_icon_button(
+                            ui,
+                            self.quick_prompt_open,
+                            UiIcon::Add,
+                            tr::quick_prompt_btn(self.lang),
+                        )
+                        .on_hover_text(tr::quick_prompt_tip(self.lang))
+                        .clicked()
+                        {
+                            self.quick_prompt_open = !self.quick_prompt_open;
+                            if self.quick_prompt_open
+                                && let Some(first_mfg) = self.project.strips[self.active_strip]
+                                    .blocks
+                                    .first()
+                                    .and_then(|b| PromptManufacturer::from_catalog_str(&b.manufacturer))
+                            {
+                                self.quick_prompt_ctx.default_manufacturer = first_mfg;
+                            }
+                        }
                     } else {
                         step_pill(ui, tr::step1_done_pill(self.lang), false, true);
                         ui.label(egui::RichText::new("→").color(t.text_muted));
@@ -4922,6 +4982,195 @@ impl TermiGridApp {
                         ToastTone::Info,
                         tr::toast_nt_to_n(self.lang, converted, true),
                     );
+                }
+            }
+        }
+
+        // Inline Quick-Prompt Terminal Assistant Bar (Phase 1 deterministic domain NLP)
+        if !is_generated && self.quick_prompt_open {
+            let mut deferred_prompt_insert_at: Option<usize> = None;
+            ui.add_space(6.0);
+            recessed_card(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(
+                        egui::RichText::new(tr::quick_prompt_heading(self.lang))
+                            .strong()
+                            .small(),
+                    );
+                    ui.separator();
+
+                    // Manufacturer default selector chips
+                    for mfg in [
+                        PromptManufacturer::PhoenixContact,
+                        PromptManufacturer::Wago,
+                        PromptManufacturer::Weidmueller,
+                    ] {
+                        let active = self.quick_prompt_ctx.default_manufacturer == mfg;
+                        if ui.selectable_label(active, mfg.short_label()).clicked() {
+                            self.quick_prompt_ctx.default_manufacturer = mfg;
+                        }
+                    }
+
+                    ui.separator();
+
+                    // Default style selector chips
+                    for (style, lbl) in [
+                        (PromptStyle::Installation, tr::quick_prompt_style_inst(self.lang)),
+                        (PromptStyle::FeedThrough, tr::quick_prompt_style_feed(self.lang)),
+                        (PromptStyle::DoubleLevel, tr::quick_prompt_style_double(self.lang)),
+                    ] {
+                        let active = self.quick_prompt_ctx.default_style == style;
+                        if ui.selectable_label(active, lbl).clicked() {
+                            self.quick_prompt_ctx.default_style = style;
+                        }
+                    }
+
+                    ui.separator();
+                    ui.checkbox(&mut self.quick_prompt_ctx.prefer_nt_for_installation, "NT");
+
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if icon_only_button(ui, UiIcon::Close, false, tr::cancel(self.lang))
+                            .clicked()
+                        {
+                            self.quick_prompt_open = false;
+                        }
+                    });
+                });
+
+                ui.add_space(4.0);
+                // Quick example chips for instant click-to-append
+                ui.horizontal_wrapped(|ui| {
+                    for chip in [
+                        "4x Drehstrom Abgang 2,5mm² Installationsklemmen",
+                        "6x Licht 1,5mm²",
+                        "1x 16mm² Einspeisung",
+                        "2x Motor 4mm²",
+                        "4x URTK/SP",
+                        "2x Reserve leer",
+                    ] {
+                        if ui.small_button(format!("+ {chip}")).clicked() {
+                            if !self.quick_prompt_text.trim().is_empty() {
+                                self.quick_prompt_text.push_str(" + ");
+                            }
+                            self.quick_prompt_text.push_str(chip);
+                        }
+                    }
+                    if !self.quick_prompt_text.is_empty()
+                        && icon_only_button(ui, UiIcon::Clear, false, tr::clear_search(self.lang))
+                            .clicked()
+                    {
+                        self.quick_prompt_text.clear();
+                    }
+                });
+
+                ui.add_space(4.0);
+                let plan = parse_and_resolve_prompt(
+                    &self.quick_prompt_text,
+                    self.quick_prompt_ctx,
+                    &self.catalog,
+                );
+
+                ui.add(
+                    egui::TextEdit::multiline(&mut self.quick_prompt_text)
+                        .desired_rows(2)
+                        .desired_width(f32::INFINITY)
+                        .hint_text(tr::quick_prompt_hint(self.lang)),
+                );
+
+                if !plan.is_empty() || !plan.unrecognized_clauses.is_empty() {
+                    ui.add_space(4.0);
+                    for seg in &plan.segments {
+                        let intent_lbl = if self.lang == Language::De {
+                            &seg.intent_label_de
+                        } else {
+                            &seg.intent_label_en
+                        };
+                        ui.horizontal_wrapped(|ui| {
+                            ui.label(
+                                egui::RichText::new(format!("• {}× {} →", seg.count, intent_lbl))
+                                    .color(secondary_text_color(ui))
+                                    .small(),
+                            );
+                            ui.label(
+                                egui::RichText::new(&seg.summary)
+                                    .color(t.accent_text)
+                                    .strong()
+                                    .small(),
+                            );
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "({:.1} mm)",
+                                    (seg.width_tenths_mm as f32) / 10.0
+                                ))
+                                .color(t.text_muted)
+                                .small(),
+                            );
+                        });
+                    }
+                    for unrec in &plan.unrecognized_clauses {
+                        ui.label(
+                            egui::RichText::new(tr::quick_prompt_unrecognized(self.lang, unrec))
+                                .color(t.warning)
+                                .small(),
+                        );
+                    }
+                }
+
+                if !plan.is_empty() {
+                    ui.add_space(4.0);
+                    ui.horizontal_wrapped(|ui| {
+                        let append_pos = self.project.strips[self.active_strip].blocks.len();
+                        if subtle_success_icon_button(
+                            ui,
+                            UiIcon::Add,
+                            tr::quick_prompt_append_btn(self.lang),
+                        )
+                        .clicked()
+                        {
+                            deferred_prompt_insert_at = Some(append_pos);
+                        }
+
+                        if let Some(&last_sel) = self.selected_blocks.iter().next_back()
+                            && icon_button(
+                                ui,
+                                UiIcon::InsertAfter,
+                                tr::quick_prompt_insert_after_btn(self.lang),
+                            )
+                            .clicked()
+                        {
+                            deferred_prompt_insert_at = Some(last_sel + 1);
+                        }
+
+                        ui.label(
+                            egui::RichText::new(tr::quick_prompt_preview_summary(
+                                self.lang,
+                                plan.total_blocks,
+                                plan.total_width_mm(),
+                            ))
+                            .color(secondary_text_color(ui))
+                            .small()
+                            .strong(),
+                        );
+                    });
+                }
+            });
+
+            if let Some(pos) = deferred_prompt_insert_at {
+                let plan = parse_and_resolve_prompt(
+                    &self.quick_prompt_text,
+                    self.quick_prompt_ctx,
+                    &self.catalog,
+                );
+                if !plan.is_empty() {
+                    self.insert_prompt_plan_direct(
+                        self.active_strip,
+                        pos,
+                        plan.flattened_blocks(),
+                        true,
+                        &plan.compact_summary(),
+                    );
+                    self.quick_prompt_text.clear();
                 }
             }
         }

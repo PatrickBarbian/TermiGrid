@@ -465,6 +465,38 @@ impl TerminalStrip {
         (clamped..clamped + count).collect()
     }
 
+    /// Inserts an ordered sequence of `(spec, blank_marker)` pairs at `at_index`, optionally
+    /// marking individual blocks as blank markers (`Leeres Schild`), recalculates labels,
+    /// and returns the newly inserted block indices.
+    pub fn insert_prompt_sequence(
+        &mut self,
+        at_index: usize,
+        items: &[(&TerminalSpec, bool)],
+    ) -> std::collections::BTreeSet<usize> {
+        if items.is_empty() {
+            return std::collections::BTreeSet::new();
+        }
+        let clamped = at_index.min(self.blocks.len());
+        let mut new_blocks = Vec::with_capacity(items.len());
+        for &(spec, blank_marker) in items {
+            let id = self.allocate_block_id();
+            let mut blk = spec.instantiate_block(id);
+            if blank_marker {
+                for tier in &mut blk.tiers {
+                    if !tier.behavior.is_pe() {
+                        tier.custom_override = Some(String::new());
+                    }
+                }
+            }
+            new_blocks.push(blk);
+        }
+        let count = new_blocks.len();
+        self.blocks.splice(clamped..clamped, new_blocks);
+        self.end_plates_generated = false;
+        self.recalculate_labels();
+        (clamped..clamped + count).collect()
+    }
+
     /// Converts all convertible `N` terminals in the strip into their matching `NT` disconnect
     /// counterparts (`matching_nt_equivalent_id`), preserving custom overrides/affixes and recalculating labels.
     /// Returns the number of converted blocks.

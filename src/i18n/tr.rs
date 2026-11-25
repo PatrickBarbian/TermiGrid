@@ -1912,6 +1912,127 @@ pub const fn batch_auto_marker_btn(l: Language) -> &'static str {
         "Automatisch (Auto)",
     ])
 }
+pub const fn quick_prompt_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Schnell-Eingabe",
+        "Quick Prompt",
+        "Saisie rapide",
+        "Input rapido",
+        "Entrada rápida",
+        "Szybkie wprowadzanie",
+        "Snelle invoer",
+    ])
+}
+pub const fn quick_prompt_tip(l: Language) -> &'static str {
+    pick(l, [
+        "Klemmen per Freitext-Befehl einfügen (z. B. \"4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht\").",
+        "Insert terminals via natural-language prompt (e.g. \"4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht\").",
+        "Insérer des bornes par texte libre (ex. « 4x Drehstrom 2,5mm² + 6x Licht »).",
+        "Inserisci morsetti tramite testo libero (es. \"4x Drehstrom 2,5mm² + 6x Licht\").",
+        "Insertar bornas mediante texto libre (p. ej. \"4x Drehstrom 2,5mm² + 6x Licht\").",
+        "Wstaw złączki poleceniem tekstowym (np. \"4x Drehstrom 2,5mm² + 6x Licht\").",
+        "Klemmen invoegen via tekstcommando (bijv. \"4x Drehstrom 2,5mm² + 6x Licht\").",
+    ])
+}
+pub const fn quick_prompt_heading(l: Language) -> &'static str {
+    pick(l, [
+        "Schnell-Eingabe (Klemmen-Assistent)",
+        "Quick Prompt (Terminal Assistant)",
+        "Saisie rapide (Assistant bornes)",
+        "Input rapido (Assistente morsetti)",
+        "Entrada rápida (Asistente de bornas)",
+        "Szybkie wprowadzanie (Asystent złączek)",
+        "Snelle invoer (Klemmen-assistent)",
+    ])
+}
+pub const fn quick_prompt_hint(l: Language) -> &'static str {
+    pick(l, [
+        "z. B. 4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht 1,5mm² + 1x 16mm² Einspeisung",
+        "e.g. 4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht 1,5mm² + 1x 16mm² Einspeisung",
+        "ex. 4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht 1,5mm² + 1x 16mm² Einspeisung",
+        "es. 4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht 1,5mm² + 1x 16mm² Einspeisung",
+        "p. ej. 4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht 1,5mm² + 1x 16mm² Einspeisung",
+        "np. 4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht 1,5mm² + 1x 16mm² Einspeisung",
+        "bijv. 4x Drehstrom Abgang 2,5mm² Installationsklemmen + 6x Licht 1,5mm² + 1x 16mm² Einspeisung",
+    ])
+}
+pub const fn quick_prompt_style_inst(l: Language) -> &'static str {
+    pick(l, [
+        "Installation (3-Et.)",
+        "Installation (3-lvl)",
+        "Installation (3 ét.)",
+        "Installazione (3 liv.)",
+        "Instalación (3 niv.)",
+        "Instalacyjna (3-poz.)",
+        "Installatie (3-et.)",
+    ])
+}
+pub const fn quick_prompt_style_feed(l: Language) -> &'static str {
+    pick(l, [
+        "Durchgang (1-Et.)",
+        "Feed-through (1-lvl)",
+        "Passage (1 ét.)",
+        "Passante (1 liv.)",
+        "Paso (1 niv.)",
+        "Przelotowa (1-poz.)",
+        "Doorgang (1-et.)",
+    ])
+}
+pub const fn quick_prompt_style_double(l: Language) -> &'static str {
+    pick(l, [
+        "Doppelstock (2-Et.)",
+        "Double-deck (2-lvl)",
+        "Double étage (2 ét.)",
+        "Doppio livello",
+        "Doble piso",
+        "Dwupoziomowa",
+        "Dubbeldek",
+    ])
+}
+pub const fn quick_prompt_append_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Am Ende anfügen",
+        "Append to Strip",
+        "Ajouter à la fin",
+        "Aggiungi alla fine",
+        "Añadir al final",
+        "Dodaj na końcu",
+        "Aan einde toevoegen",
+    ])
+}
+pub const fn quick_prompt_insert_after_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Hinter Auswahl einfügen",
+        "Insert After Selection",
+        "Insérer après sélection",
+        "Inserisci dopo selezione",
+        "Insertar tras selección",
+        "Wstaw za zaznaczeniem",
+        "Na selectie invoegen",
+    ])
+}
+pub fn quick_prompt_preview_summary(l: Language, blocks: usize, width_mm: f32) -> String {
+    match l {
+        Language::De => format!("Vorschau: {blocks} Klemmen · +{width_mm:.1} mm Hutschiene"),
+        Language::En => format!("Preview: {blocks} terminals · +{width_mm:.1} mm DIN rail"),
+        Language::Fr => format!("Aperçu : {blocks} bornes · +{width_mm:.1} mm rail DIN"),
+        Language::It => format!("Anteprima: {blocks} morsetti · +{width_mm:.1} mm guida DIN"),
+        Language::Es => format!("Vista previa: {blocks} bornas · +{width_mm:.1} mm carril DIN"),
+        Language::Pl => format!("Podgląd: {blocks} złączek · +{width_mm:.1} mm szyna DIN"),
+        Language::Nl => format!("Voorbeeld: {blocks} klemmen · +{width_mm:.1} mm DIN-rail"),
+    }
+}
+pub fn quick_prompt_unrecognized(l: Language, raw: &str) -> String {
+    match l {
+        Language::De => format!("Nicht erkannt (übersprungen): „{raw}“"),
+        Language::En => format!("Unrecognized (skipped): \"{raw}\""),
+        Language::Fr => format!("Non reconnu (ignoré) : « {raw} »"),
+        Language::It => format!("Non riconosciuto (ignorato): \"{raw}\""),
+        Language::Es => format!("No reconocido (omitido): \"{raw}\""),
+        Language::Pl => format!("Nierozpoznano (pominięto): \"{raw}\""),
+        Language::Nl => format!("Niet herkend (overgeslagen): \"{raw}\""),
+    }
+}
 
 // ── Guided Tour & Onboarding (Basic + Advanced) ────────────────────────────
 
