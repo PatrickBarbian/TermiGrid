@@ -1022,13 +1022,13 @@ pub const fn pdf_all_selectable(l: Language) -> &'static str {
 }
 pub const fn pdf_none_found(l: Language) -> &'static str {
     pick(l, [
-        "Keine Klemmleisten (-X...) mit unterstützten Herstellern (WAGO, Phoenix Contact, Weidmüller) gefunden.",
-        "No terminal strips (-X...) with supported manufacturers (WAGO, Phoenix Contact, Weidmüller) found.",
-        "Aucun bornier (-X...) de fabricant pris en charge (WAGO, Phoenix Contact, Weidmüller) trouvé.",
-        "Nessuna morsettiera (-X...) con produttori supportati (WAGO, Phoenix Contact, Weidmüller) trovata.",
-        "No se encontraron borneros (-X...) de fabricantes soportados (WAGO, Phoenix Contact, Weidmüller).",
-        "Nie znaleziono listew (-X...) obsługiwanych producentów (WAGO, Phoenix Contact, Weidmüller).",
-        "Geen klemmenstroken (-X...) van ondersteunde fabrikanten (WAGO, Phoenix Contact, Weidmüller) gevonden.",
+        "Keine Klemmleisten mit unterstützten Herstellern (WAGO, Phoenix Contact, Weidmüller) gefunden.",
+        "No terminal strips with supported manufacturers (WAGO, Phoenix Contact, Weidmüller) found.",
+        "Aucun bornier de fabricant pris en charge (WAGO, Phoenix Contact, Weidmüller) trouvé.",
+        "Nessuna morsettiera con produttori supportati (WAGO, Phoenix Contact, Weidmüller) trovata.",
+        "No se encontraron borneros de fabricantes soportados (WAGO, Phoenix Contact, Weidmüller).",
+        "Nie znaleziono listew obsługiwanych producentów (WAGO, Phoenix Contact, Weidmüller).",
+        "Geen klemmenstroken van ondersteunde fabrikanten (WAGO, Phoenix Contact, Weidmüller) gevonden.",
     ])
 }
 pub const fn pdf_nt_badge(l: Language) -> &'static str {

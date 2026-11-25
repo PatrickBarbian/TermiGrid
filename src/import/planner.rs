@@ -3,9 +3,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::catalog::TerminalCatalog;
 use crate::import::pdf_parser::RawBomRow;
-use crate::import::rules::{
-    BomItemClassification, CompiledImportRules, ManufacturerDetection,
-};
+use crate::import::rules::{AccessoryKind, BomRowDisposition, CompiledImportRules};
 use crate::model::TerminalStrip;
 
 /// Summary of an article skipped because its manufacturer is outside WAGO / Phoenix Contact / Weidmüller.
@@ -18,7 +16,7 @@ pub struct SkippedForeignItem {
     pub description: String,
 }
 
-/// Summary of an ignored non-`-X...` BOM row (e.g., `-12T1`, `-Q2.18`, `-W1`).
+/// Summary of an ignored non-terminal BOM row (e.g., `-12T1`, `-Q2.18`, `-W1`, `PLC-RSC`, `UNO2-PS`, `Han 16A`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IgnoredNonTerminalRow {
     pub bmk: String,
@@ -43,7 +41,7 @@ pub struct ImportedTerminalEntry {
     pub is_pure_pe: bool,
 }
 
-/// Article belonging to WAGO / Phoenix Contact / Weidmüller that was not found in the database.
+/// Unknown terminal article detected via heuristic fallback (not in internal database).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnknownArticleWarning {
     pub manufacturer: String,
@@ -51,6 +49,8 @@ pub struct UnknownArticleWarning {
     pub article_number: String,
     pub type_number: String,
     pub description: String,
+    pub heuristic_matched: bool,
+    pub suggested_spec_id: Option<String>,
 }
 
 /// Physical end clamps / end plates extracted directly from the PDF BOM.
@@ -85,11 +85,13 @@ pub struct StripImportVariant {
     pub nt_zone: Option<(usize, usize)>,
 }
 
-/// Complete import plan for one `-X...` terminal strip merged across all PDF rows/pages.
+/// Complete import plan for one terminal strip merged across all PDF rows/pages.
 #[derive(Debug, Clone)]
 pub struct StripImportPlan {
     pub bmk: String,
     pub dominant_manufacturer: String,
+    /// All distinct manufacturers present on this strip (supports mixed-manufacturer rails).
+    pub manufacturers: Vec<String>,
     pub pages: Vec<u32>,
     pub terminals: Vec<ImportedTerminalEntry>,
     pub total_terminal_count: usize,
@@ -105,7 +107,7 @@ pub struct StripImportPlan {
     pub variants: Vec<StripImportVariant>,
 }
 
-/// Complete result of parsing & planning an EPLAN PDF BOM.
+/// Complete result of parsing & planning an EPLAN/CAD PDF BOM.
 #[derive(Debug, Clone)]
 pub struct PdfBomImportPlan {
     pub strips: Vec<StripImportPlan>,
@@ -128,9 +130,66 @@ struct StripAccumulator {
     ignored_misc: Vec<String>,
     nt_hints: Vec<String>,
     foreign_items: Vec<SkippedForeignItem>,
+    accessory_raw_rows: Vec<IgnoredNonTerminalRow>,
 }
 
-/// Groups, classifies, and plans terminal strips from raw EPLAN BOM rows.
+fn suggest_fallback_spec_id(
+    manufacturer: &str,
+    type_number: &str,
+    description: &str,
+    catalog: &TerminalCatalog,
+) -> Option<String> {
+    let combined = format!("{type_number} {description}").to_lowercase();
+    let candidate = match manufacturer {
+        "Phoenix Contact" => {
+            if combined.contains("schutzleiter") || combined.contains("-pe") {
+                "phoenix-pt-25-pe"
+            } else if combined.contains("urtk") || combined.contains("prüftrenn") || combined.contains("mess") {
+                "phoenix-pt-6-t"
+            } else if combined.contains("trenn") {
+                "phoenix-pt-25-mt"
+            } else if combined.contains("doppelstock") || combined.contains("udk") {
+                "phoenix-pttb-25"
+            } else if combined.contains("mehrstock") || combined.contains("3-stock") {
+                "phoenix-pt-25-3l"
+            } else {
+                "phoenix-pt-25"
+            }
+        }
+        "WAGO" => {
+            if combined.contains("schutzleiter") || combined.contains("-pe") {
+                "wago-2002-1207"
+            } else if combined.contains("wandler") || combined.contains("2007") || combined.contains("trenn") {
+                "wago-2006-1671"
+            } else if combined.contains("doppelstock") {
+                "wago-2002-2201"
+            } else {
+                "wago-2002-1201"
+            }
+        }
+        "Weidmüller" => {
+            if combined.contains("schutzleiter") || combined.contains("-pe") {
+                "weidmuller-a2c-25-pe"
+            } else if combined.contains("doppelstock") {
+                "weidmuller-a2t-25"
+            } else {
+                "weidmuller-a2c-25"
+            }
+        }
+        _ => "phoenix-pt-25",
+    };
+    catalog.find_by_id(candidate).map(|s| s.id.clone())
+}
+
+fn row_display_art(row: &RawBomRow) -> String {
+    if !row.type_number.trim().is_empty() {
+        row.type_number.trim().to_string()
+    } else {
+        row.article_number.trim().to_string()
+    }
+}
+
+/// Groups, classifies, and plans terminal strips from raw BOM rows using content-based classification.
 pub fn build_import_plan(
     raw_rows: &[RawBomRow],
     rules: &CompiledImportRules,
@@ -142,17 +201,34 @@ pub fn build_import_plan(
     let mut accumulators: HashMap<String, StripAccumulator> = HashMap::new();
 
     for row in raw_rows {
-        let bmk_clean = row.bmk.trim();
-        if !rules.is_terminal_bmk(bmk_clean) {
+        let bmk_clean = CompiledImportRules::normalize_bmk(&row.bmk);
+        if bmk_clean.is_empty() {
             ignored_non_x_rows.push(IgnoredNonTerminalRow {
-                bmk: bmk_clean.to_string(),
+                bmk: String::new(),
                 quantity: row.quantity,
                 article_number: row.article_number.clone(),
             });
             continue;
         }
 
-        let key = bmk_clean.to_string();
+        let disposition = rules.classify_bom_row(
+            &row.supplier,
+            &row.article_number,
+            &row.type_number,
+            &row.description,
+            catalog,
+        );
+
+        if matches!(disposition, BomRowDisposition::NonTerminal) {
+            ignored_non_x_rows.push(IgnoredNonTerminalRow {
+                bmk: bmk_clean,
+                quantity: row.quantity,
+                article_number: row.article_number.clone(),
+            });
+            continue;
+        }
+
+        let key = bmk_clean;
         if !accumulators.contains_key(&key) {
             strip_order.push(key.clone());
             accumulators.insert(
@@ -168,13 +244,9 @@ pub fn build_import_plan(
             acc.pages.push(row.page);
         }
 
-        match rules.detect_manufacturer(
-            &row.supplier,
-            &row.article_number,
-            &row.type_number,
-            catalog,
-        ) {
-            ManufacturerDetection::Foreign(mfg_label) => {
+        match disposition {
+            BomRowDisposition::NonTerminal => unreachable!(),
+            BomRowDisposition::Foreign(mfg_label) => {
                 acc.foreign_items.push(SkippedForeignItem {
                     bmk: key,
                     manufacturer: mfg_label,
@@ -183,119 +255,91 @@ pub fn build_import_plan(
                     description: row.description.clone(),
                 });
             }
-            ManufacturerDetection::Supported(mfg) => {
-                *acc.mfg_counts.entry(mfg.clone()).or_insert(0) += row.quantity;
-                match rules.classify_item(
-                    &mfg,
-                    &row.article_number,
+            BomRowDisposition::Terminal { manufacturer, spec } => {
+                *acc.mfg_counts.entry(manufacturer).or_insert(0) += row.quantity;
+                if let Some(existing) = acc.terminal_counts.get_mut(&spec.id) {
+                    existing.quantity += row.quantity;
+                } else {
+                    acc.terminal_order.push(spec.id.clone());
+                    acc.terminal_counts.insert(
+                        spec.id.clone(),
+                        ImportedTerminalEntry {
+                            spec_id: spec.id.clone(),
+                            article_number: spec
+                                .effective_article_number()
+                                .unwrap_or(&row.type_number)
+                                .to_string(),
+                            display_name: spec.name.clone(),
+                            manufacturer: spec.manufacturer.clone(),
+                            quantity: row.quantity,
+                            levels: spec.levels,
+                            height_tenths_mm: spec.effective_height_tenths_mm(),
+                            width_tenths_mm: spec.width_tenths_mm,
+                            is_nt_or_install: spec.is_installation_or_nt_terminal(),
+                            is_nt_disconnect: spec.is_nt_disconnect_terminal(),
+                            is_pure_neutral: !spec.tiers.is_empty()
+                                && spec.tiers.iter().all(|t| t.behavior.is_neutral()),
+                            is_pure_pe: !spec.tiers.is_empty()
+                                && spec.tiers.iter().all(|t| t.behavior.is_pe()),
+                        },
+                    );
+                }
+            }
+            BomRowDisposition::HeuristicTerminal { manufacturer } => {
+                if manufacturer != "Unbekannt" {
+                    *acc.mfg_counts.entry(manufacturer.clone()).or_insert(0) += row.quantity;
+                }
+                let suggested_spec_id = suggest_fallback_spec_id(
+                    &manufacturer,
                     &row.type_number,
                     &row.description,
                     catalog,
-                ) {
-                    BomItemClassification::Terminal(spec) => {
-                        if let Some(existing) = acc.terminal_counts.get_mut(&spec.id) {
-                            existing.quantity += row.quantity;
-                        } else {
-                            acc.terminal_order.push(spec.id.clone());
-                            acc.terminal_counts.insert(
-                                spec.id.clone(),
-                                ImportedTerminalEntry {
-                                    spec_id: spec.id.clone(),
-                                    article_number: spec
-                                        .effective_article_number()
-                                        .unwrap_or(&row.type_number)
-                                        .to_string(),
-                                    display_name: spec.name.clone(),
-                                    manufacturer: spec.manufacturer.clone(),
-                                    quantity: row.quantity,
-                                    levels: spec.levels,
-                                    height_tenths_mm: spec.effective_height_tenths_mm(),
-                                    width_tenths_mm: spec.width_tenths_mm,
-                                    is_nt_or_install: spec.is_installation_or_nt_terminal(),
-                                    is_nt_disconnect: spec.is_nt_disconnect_terminal(),
-                                    is_pure_neutral: !spec.tiers.is_empty()
-                                        && spec.tiers.iter().all(|t| t.behavior.is_neutral()),
-                                    is_pure_pe: !spec.tiers.is_empty()
-                                        && spec.tiers.iter().all(|t| t.behavior.is_pe()),
-                                },
-                            );
-                        }
-                    }
-                    BomItemClassification::Jumper => {
-                        let art = if !row.type_number.is_empty() {
-                            row.type_number.clone()
-                        } else {
-                            row.article_number.clone()
-                        };
+                );
+                acc.unknown_articles.push(UnknownArticleWarning {
+                    manufacturer,
+                    quantity: row.quantity,
+                    article_number: row.article_number.clone(),
+                    type_number: row.type_number.clone(),
+                    description: row.description.clone(),
+                    heuristic_matched: true,
+                    suggested_spec_id,
+                });
+            }
+            BomRowDisposition::Accessory { manufacturer, kind } => {
+                if manufacturer != "Unbekannt" {
+                    *acc.mfg_counts.entry(manufacturer).or_insert(0) += row.quantity;
+                }
+                acc.accessory_raw_rows.push(IgnoredNonTerminalRow {
+                    bmk: key,
+                    quantity: row.quantity,
+                    article_number: row.article_number.clone(),
+                });
+                let art = row_display_art(row);
+                match kind {
+                    AccessoryKind::Jumper => {
                         acc.ignored_jumpers.push(format!("{}× {}", row.quantity, art));
                     }
-                    BomItemClassification::EndClamp { matched_bracket_id } => {
-                        let art = if !row.type_number.is_empty() {
-                            row.type_number.clone()
-                        } else {
-                            row.article_number.clone()
-                        };
+                    AccessoryKind::EndClamp { matched_bracket_id } => {
                         acc.end_clamps_from_pdf.push(PdfEndPartEntry {
                             article_number: art,
                             quantity: row.quantity,
                             matched_bracket_id,
                         });
                     }
-                    BomItemClassification::EndPlate => {
-                        let art = if !row.type_number.is_empty() {
-                            row.type_number.clone()
-                        } else {
-                            row.article_number.clone()
-                        };
+                    AccessoryKind::EndPlate => {
                         acc.end_plates_from_pdf.push(PdfEndPartEntry {
                             article_number: art,
                             quantity: row.quantity,
                             matched_bracket_id: None,
                         });
                     }
-                    BomItemClassification::NtAccessory => {
-                        let art = if !row.type_number.is_empty() {
-                            row.type_number.clone()
-                        } else {
-                            row.article_number.clone()
-                        };
+                    AccessoryKind::NtAccessory => {
                         acc.nt_hints
                             .push(format!("{}× {} ({})", row.quantity, art, row.description));
                     }
-                    BomItemClassification::MiscAccessory => {
-                        let art = if !row.type_number.is_empty() {
-                            row.type_number.clone()
-                        } else {
-                            row.article_number.clone()
-                        };
+                    AccessoryKind::MiscAccessory => {
                         acc.ignored_misc.push(format!("{}× {}", row.quantity, art));
                     }
-                    BomItemClassification::UnknownTerminalArticle => {
-                        acc.unknown_articles.push(UnknownArticleWarning {
-                            manufacturer: mfg,
-                            quantity: row.quantity,
-                            article_number: row.article_number.clone(),
-                            type_number: row.type_number.clone(),
-                            description: row.description.clone(),
-                        });
-                    }
-                }
-            }
-            ManufacturerDetection::Unknown => {
-                // Unknown supplier without matched article/type: treat as foreign if article/supplier non-empty
-                if !row.article_number.trim().is_empty() || !row.supplier.trim().is_empty() {
-                    let mfg_label = if !row.supplier.trim().is_empty() {
-                        row.supplier.trim().to_string()
-                    } else {
-                        "Unbekannt".to_string()
-                    };
-                    acc.foreign_items.push(SkippedForeignItem {
-                        bmk: key,
-                        manufacturer: mfg_label,
-                        quantity: row.quantity,
-                        article_number: row.article_number.clone(),
-                        description: row.description.clone(),
-                    });
                 }
             }
         }
@@ -307,25 +351,47 @@ pub fn build_import_plan(
             continue;
         };
 
-        let has_any_supported = !acc.terminal_order.is_empty()
-            || !acc.unknown_articles.is_empty()
-            || !acc.end_clamps_from_pdf.is_empty()
-            || !acc.end_plates_from_pdf.is_empty()
-            || !acc.nt_hints.is_empty();
+        // A valid terminal strip must contain at least one DB-matched terminal or heuristic unknown terminal.
+        let has_terminals =
+            !acc.terminal_order.is_empty() || !acc.unknown_articles.is_empty();
 
-        if !has_any_supported {
+        if !has_terminals {
             skipped_foreign.extend(acc.foreign_items);
+            ignored_non_x_rows.extend(acc.accessory_raw_rows);
             continue;
         }
         // Any stray foreign items on an otherwise supported strip still go to the skipped log
         skipped_foreign.extend(acc.foreign_items);
 
-        let dominant_manufacturer = acc
-            .mfg_counts
-            .iter()
-            .max_by_key(|(_, c)| *c)
+        let mut mfg_entries: Vec<(String, usize)> = acc.mfg_counts.into_iter().collect();
+        mfg_entries.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+
+        let dominant_manufacturer = mfg_entries
+            .first()
             .map(|(m, _)| m.clone())
+            .or_else(|| {
+                acc.unknown_articles
+                    .first()
+                    .map(|u| u.manufacturer.clone())
+            })
             .unwrap_or_else(|| "WAGO".to_string());
+
+        let mut manufacturers: Vec<String> = Vec::new();
+        for id in &acc.terminal_order {
+            if let Some(t) = acc.terminal_counts.get(id)
+                && !manufacturers.contains(&t.manufacturer)
+            {
+                manufacturers.push(t.manufacturer.clone());
+            }
+        }
+        for u in &acc.unknown_articles {
+            if u.manufacturer != "Unbekannt" && !manufacturers.contains(&u.manufacturer) {
+                manufacturers.push(u.manufacturer.clone());
+            }
+        }
+        if manufacturers.is_empty() {
+            manufacturers.push(dominant_manufacturer.clone());
+        }
 
         let terminals: Vec<ImportedTerminalEntry> = acc
             .terminal_order
@@ -366,7 +432,8 @@ pub fn build_import_plan(
             has_pdf_end_plates,
             pdf_end_clamp_count,
             pdf_end_plate_count,
-            auto_complement_brackets: !has_pdf_end_clamps && total_terminal_count > 0,
+            auto_complement_brackets: !has_pdf_end_clamps
+                && (total_terminal_count > 0 || !acc.unknown_articles.is_empty()),
         };
 
         let variants = generate_variants(&terminals);
@@ -374,6 +441,7 @@ pub fn build_import_plan(
         strips.push(StripImportPlan {
             bmk: acc.bmk,
             dominant_manufacturer,
+            manufacturers,
             pages: acc.pages,
             terminals,
             total_terminal_count,
@@ -616,20 +684,48 @@ fn build_feeder_pattern(
 }
 
 /// Builds a ready-to-add `TerminalStrip` from a `StripImportPlan` and user's selected variant/end-clamp option.
-/// Returns `(strip, nt_anchor_range)` where `nt_anchor_range` marks the contiguous NT/install block range
-/// for the sequential NT configuration modal, if applicable.
 pub fn instantiate_imported_strip(
     plan: &StripImportPlan,
     variant_index: usize,
     include_end_clamps: bool,
     catalog: &TerminalCatalog,
 ) -> Option<(TerminalStrip, Option<(usize, usize)>)> {
-    let variant = plan
+    instantiate_imported_strip_with_mappings(plan, variant_index, include_end_clamps, &[], catalog)
+}
+
+/// Builds a ready-to-add `TerminalStrip` including user-mapped heuristic/unknown terminal articles.
+pub fn instantiate_imported_strip_with_mappings(
+    plan: &StripImportPlan,
+    variant_index: usize,
+    include_end_clamps: bool,
+    unknown_mappings: &[Option<String>],
+    catalog: &TerminalCatalog,
+) -> Option<(TerminalStrip, Option<(usize, usize)>)> {
+    let mut all_spec_ids: Vec<String> = Vec::new();
+    let mut nt_zone: Option<(usize, usize)> = None;
+
+    if let Some(variant) = plan
         .variants
         .get(variant_index)
-        .or_else(|| plan.variants.first())?;
-    let default_spec_id = variant
-        .block_spec_ids
+        .or_else(|| plan.variants.first())
+    {
+        all_spec_ids.extend(variant.block_spec_ids.iter().cloned());
+        nt_zone = variant.nt_zone;
+    }
+
+    for (unk, mapped_opt) in plan.unknown_articles.iter().zip(unknown_mappings.iter()) {
+        if let Some(spec_id) = mapped_opt
+            && catalog.find_by_id(spec_id).is_some()
+        {
+            all_spec_ids.extend(std::iter::repeat_n(spec_id.clone(), unk.quantity));
+        }
+    }
+
+    if all_spec_ids.is_empty() {
+        return None;
+    }
+
+    let default_spec_id = all_spec_ids
         .first()
         .cloned()
         .unwrap_or_else(|| "wago-2002-1201".to_string());
@@ -637,10 +733,15 @@ pub fn instantiate_imported_strip(
     let mut strip = TerminalStrip::new(
         plan.bmk.clone(),
         1,
-        (plan.total_terminal_count.max(1)) as u32,
+        (all_spec_ids.len().max(1)) as u32,
         default_spec_id,
     );
-    strip.description = format!("Importiert aus PDF ({})", plan.dominant_manufacturer);
+    let mfg_summary = if plan.manufacturers.len() > 1 {
+        plan.manufacturers.join(" + ")
+    } else {
+        plan.dominant_manufacturer.clone()
+    };
+    strip.description = format!("Importiert aus PDF ({mfg_summary})");
     if include_end_clamps {
         strip.end_bracket_id = plan.end_parts.end_bracket_id.clone();
         strip.end_bracket_left = plan.end_parts.bracket_left;
@@ -651,12 +752,12 @@ pub fn instantiate_imported_strip(
         strip.end_bracket_right = false;
     }
 
-    for id in &variant.block_spec_ids {
+    for id in &all_spec_ids {
         if let Some(spec) = catalog.find_by_id(id) {
             let blk_id = strip.allocate_block_id();
             strip.blocks.push(spec.instantiate_block(blk_id));
         }
     }
     strip.recalculate_labels();
-    Some((strip, variant.nt_zone))
+    Some((strip, nt_zone))
 }

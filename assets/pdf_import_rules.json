@@ -6,6 +6,8 @@
       "bmk",
       "funktionskennzeichen",
       "device tag",
+      "kennzeichen",
+      "klemme",
       "dt"
     ],
     "quantity": [
@@ -13,11 +15,17 @@
       "anzahl",
       "stueckzahl",
       "stückzahl",
+      "stück",
+      "stueck",
       "qty",
-      "quantity"
+      "quantity",
+      "anz.",
+      "anz"
     ],
     "description": [
       "bezeichnung",
+      "bezeichnung 2",
+      "beschreibung",
       "benennung",
       "artikelbezeichnung",
       "description"
@@ -27,43 +35,66 @@
       "typ",
       "typbezeichnung",
       "type number",
-      "type"
+      "type no.",
+      "type",
+      "bezeichnung 1",
+      "bez. 1"
     ],
     "supplier": [
       "lieferant",
       "hersteller",
       "manufacturer",
-      "supplier"
+      "supplier",
+      "fabrikat",
+      "vendor"
     ],
     "article_number": [
       "artikelnummer",
       "artikelnr",
       "art.-nr.",
+      "art.nr.",
+      "art nr",
       "bestellnummer",
-      "part number"
+      "bestell-nr.",
+      "part number",
+      "part no.",
+      "order number",
+      "order no."
     ]
   },
   "footer_ignore_patterns": [
-    "(?i)^artikelst[üu]ckliste\\s*:",
+    "(?i)^artikelst[üu]ckliste\\b",
+    "(?i)\\bartikelst[üu]ckliste\\s*:",
+    "(?i)\\beplan\\s+version\\b",
+    "(?i)^eplan\\b",
+    "(?i)\\bgesamtseitenzahl\\b",
+    "(?i)\\bseitenzahl\\b",
     "(?i)^datum\\b",
+    "(?i)\\bdatum\\s*:",
     "(?i)\\bblatt\\s+\\d+",
-    "(?i)\\bseite\\s+\\d+\\s*(?:von|/)",
-    "(?i)^erstellt\\s+(?:am|durch)\\b",
+    "(?i)\\bseite\\s+\\d+\\s*(?:von|/|of)",
+    "(?i)\\bpage\\s+\\d+\\s*(?:of|/)",
+    "(?i)^erstellt\\s+(?:am|durch|von)\\b",
     "(?i)^gepr[üu]ft\\b",
     "(?i)^freigegeben\\b",
     "(?i)^[äa]nderung\\b",
-    "(?i)^kommission\\b"
+    "(?i)^kommission\\b",
+    "(?i)^projekt(?:name|nummer|nr)?\\s*:",
+    "(?i)^zeichnungs(?:nummer|nr)\\s*:",
+    "(?i)^wscad\\b"
   ],
   "manufacturers": [
     {
       "canonical_name": "WAGO",
       "supplier_aliases": [
         "WAGO",
+        "WAG",
         "WAGO KONTAKTTECHNIK",
         "WAGO GMBH"
       ],
       "article_prefixes": [
-        "WAGO"
+        "WAGO",
+        "WAG"
       ],
       "article_patterns": [
         "^\\d{3,4}-\\d{3,4}(?:/\\d{3}-\\d{3})?$"
@@ -77,12 +108,16 @@
       "canonical_name": "Phoenix Contact",
       "supplier_aliases": [
         "PXC",
+        "PHX",
+        "PHO",
         "PHOENIX",
         "PHOENIX CONTACT",
         "PHOENIXCONTACT"
       ],
       "article_prefixes": [
         "PXC",
+        "PHX",
+        "PHO",
         "PHOENIX",
         "PHOENIXCONTACT"
       ],
@@ -90,7 +125,7 @@
         "^\\d{7}$"
       ],
       "type_patterns": [
-        "^(?:PT|PTN|PTI|PTV|PTTB|PTTBS|PTME|PTIO|PTFIX|PTPOWER|PTRV|ST|STN|STI|STTB|UT|UTN|UTI|UTTB|UK|UKK|UDMTK|USLKG|CLIPFIX|E/NS|E/UK|D-|FBS|AB-)\\b"
+        "^(?:PT|PTN|PTI|PTV|PTTB|PTTBS|PTME|PTIO|PTFIX|PTPOWER|PTRV|ST|STN|STI|STTB|UT|UTN|UTI|UTTB|UK|UKK|UDK|UDMTK|URTK|QTC|QT|USLKG|CLIPFIX|E/NS|E/UK|D-|FBS|FBI|SB-|PSBJ|P-CO|ATP|AB-)\\b"
       ],
       "default_end_bracket_id": "phoenix-clipfix-35-5"
     },
@@ -99,6 +134,8 @@
       "supplier_aliases": [
         "WEI",
         "WMI",
+        "WDM",
+        "WM",
         "WEID",
         "WEIDMÜLLER",
         "WEIDMUELLER",
@@ -107,6 +144,8 @@
       "article_prefixes": [
         "WEI",
         "WMI",
+        "WDM",
+        "WM",
         "WEID",
         "WEIDMÜLLER",
         "WEIDMUELLER",
@@ -129,8 +168,14 @@
         "bruecker",
         "kammbrücke",
         "kammbruecke",
+        "schaltbrücke",
+        "schaltbruecke",
         "steckbrücke",
         "steckbruecke",
+        "festbrücke",
+        "festbruecke",
+        "einlegebrücke",
+        "einlegebruecke",
         "querbrücke",
         "querbruecke",
         "stufenbrücker",
@@ -143,6 +188,10 @@
         "(?i)^(?:200[0-6]|201[06]|220[0-6])-4[0-9]{2}$",
         "(?i)^2035-4[0-9]{2}$",
         "(?i)^FBS\\s*\\d+",
+        "(?i)^FBI\\b",
+        "(?i)^SB-\\s*\\d+",
+        "(?i)^SB\\s+\\d+",
+        "(?i)^EB\\s+\\d+",
         "(?i)^ZQV\\s*\\d+",
         "(?i)^WQV\\s*\\d+"
       ]
@@ -167,9 +216,12 @@
     },
     "end_plate": {
       "description_keywords": [
+        "abschlussdeckel",
         "abschlussplatte",
         "zwischenplatte",
         "trennplatte",
+        "abteilungstrennplatte",
+        "endplatte",
         "enddeckel",
         "abschlussteil",
         "abschluss- und zwischenplatte",
@@ -180,8 +232,8 @@
       "article_regexes": [
         "(?i)^(?:200[0-9]|201[06]|2022|2035|210[246]|211[06]|220[0-9]|221[06])-(?:1[2346789]|2[24679]|32|66|76)9[1234]$",
         "(?i)^285-(?:199|499)$",
-        "(?i)^D-(?:PT|PTI|PTV|ST|UT|PTTB|UK)",
-        "(?i)^ATP\\b",
+        "(?i)^D-(?:PT|PTI|PTV|ST|UT|PTTB|UK|URTK|UDK|QTC|MT|TG)",
+        "(?i)^ATP(?:[-\\s]|$)",
         "(?i)^(?:ZAP|WAP|AEP)\\b"
       ]
     },
@@ -216,10 +268,15 @@
         "wmb",
         "zb ",
         "dekafix",
+        "prüfsteckerbuchse",
+        "pruefsteckerbuchse",
         "prüfstecker",
         "pruefstecker",
         "prüfbuchse",
         "pruefbuchse",
+        "schaltsperre",
+        "bauelementestecker",
+        "komponentenstecker",
         "gruppenschild",
         "abdeckung",
         "warnschild",
@@ -227,8 +284,124 @@
         "test plug"
       ],
       "article_regexes": [
-        "(?i)^(?:793|2009-11|2009-14|2002-5|2004-5|2006-5)"
+        "(?i)^(?:793|2009-11|2009-14|2002-5|2004-5|2006-5)",
+        "(?i)^PSBJ\\b",
+        "(?i)^P-CO\\b",
+        "(?i)^P-FIX\\b",
+        "(?i)^P-DI\\b",
+        "(?i)^SS-\\d+"
       ]
     }
+  },
+  "terminal_heuristics": {
+    "positive_description_keywords": [
+      "durchgangsklemme",
+      "durchgangs-reihenklemme",
+      "schutzleiter",
+      "doppelstockklemme",
+      "doppelstock-reihenklemme",
+      "mehrstock",
+      "3-stockklemme",
+      "2-stockklemme",
+      "dreistock",
+      "prüftrennklemme",
+      "prueftrennklemme",
+      "messertrennklemme",
+      "trennklemme",
+      "trenngrundklemme",
+      "n-trennklemme",
+      "reihenklemme",
+      "installationsklemme",
+      "sicherungsklemme",
+      "diodenklemme",
+      "sensor-aktor-klemme",
+      "hochstromklemme",
+      "stromwandlerblock",
+      "feed-through terminal",
+      "ground terminal",
+      "disconnect terminal",
+      "multi-level terminal",
+      "terminal block"
+    ],
+    "positive_type_prefixes": [
+      "URTK",
+      "UDK",
+      "QTC",
+      "UKK",
+      "UDMTK",
+      "PT ",
+      "PTI ",
+      "PTTB ",
+      "PTME ",
+      "PTIO ",
+      "ST ",
+      "STI ",
+      "STTB ",
+      "UT ",
+      "UTI ",
+      "UTTB ",
+      "WDU ",
+      "ZDU ",
+      "A2C ",
+      "A3C ",
+      "A4C ",
+      "2002-",
+      "2003-",
+      "2004-",
+      "2005-",
+      "2006-",
+      "2007-",
+      "2202-",
+      "2203-",
+      "2204-",
+      "280-",
+      "281-",
+      "285-"
+    ],
+    "negative_keywords": [
+      "relais",
+      "koppelrelais",
+      "relaissockel",
+      "stromversorgung",
+      "netzteil",
+      "power supply",
+      "kabel",
+      "leitung",
+      "steuerleitung",
+      "mantelleitung",
+      "stecker",
+      "buchseneinsatz",
+      "stifteinsatz",
+      "steckverbinder",
+      "schütz",
+      "schuetz",
+      "sicherung",
+      "wandler",
+      "trafo",
+      "steuertrafo",
+      "trenntrafo",
+      "sammelschiene",
+      "spreizklemme",
+      "profilklemme",
+      "ls-schalter",
+      "leitungsschutzschalter",
+      "hauptschalter",
+      "motorschutz",
+      "frequenzumrichter"
+    ],
+    "negative_article_or_type_regexes": [
+      "(?i)^PLC-R(?:SC|PT)",
+      "(?i)^RIF-\\d",
+      "(?i)^(?:UNO|UNO2|QUINT4?|TRIO|STEP)-PS",
+      "(?i)^SAC-",
+      "(?i)^HAN\\b",
+      "(?i)^787-",
+      "(?i)^750-",
+      "(?i)^857-",
+      "(?i)^859-",
+      "(?i)^788-",
+      "(?i)^879-",
+      "(?i)^(?:TRS|TRZ|RSS|PRO\\s*ECO|PRO\\s*MAX)\\b"
+    ]
   }
 }

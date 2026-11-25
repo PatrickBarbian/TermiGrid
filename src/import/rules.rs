@@ -42,6 +42,18 @@ pub struct AccessoryRuleConfig {
     pub misc_accessory: AccessoryPatternSet,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TerminalHeuristicsConfig {
+    #[serde(default)]
+    pub positive_description_keywords: Vec<String>,
+    #[serde(default)]
+    pub positive_type_prefixes: Vec<String>,
+    #[serde(default)]
+    pub negative_keywords: Vec<String>,
+    #[serde(default)]
+    pub negative_article_or_type_regexes: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PdfImportRules {
     pub bmk_regex: String,
@@ -49,6 +61,8 @@ pub struct PdfImportRules {
     pub footer_ignore_patterns: Vec<String>,
     pub manufacturers: Vec<ManufacturerRule>,
     pub accessories: AccessoryRuleConfig,
+    #[serde(default)]
+    pub terminal_heuristics: TerminalHeuristicsConfig,
 }
 
 impl PdfImportRules {
@@ -117,6 +131,131 @@ impl CompiledAccessoryPatterns {
 }
 
 #[derive(Debug, Clone)]
+pub struct CompiledTerminalHeuristics {
+    pub positive_desc_lower: Vec<String>,
+    pub positive_type_prefixes_upper: Vec<String>,
+    pub negative_keywords_lower: Vec<String>,
+    pub negative_code_regexes: Vec<Regex>,
+}
+
+impl CompiledTerminalHeuristics {
+    fn from_config(cfg: &TerminalHeuristicsConfig) -> Result<Self, regex::Error> {
+        let mut negative_code_regexes =
+            Vec::with_capacity(cfg.negative_article_or_type_regexes.len());
+        for pat in &cfg.negative_article_or_type_regexes {
+            negative_code_regexes.push(Regex::new(pat)?);
+        }
+        Ok(Self {
+            positive_desc_lower: cfg
+                .positive_description_keywords
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect(),
+            positive_type_prefixes_upper: cfg
+                .positive_type_prefixes
+                .iter()
+                .map(|s| s.to_uppercase())
+                .collect(),
+            negative_keywords_lower: cfg
+                .negative_keywords
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect(),
+            negative_code_regexes,
+        })
+    }
+
+    pub fn matches_negative_code(&self, clean_article: &str, clean_type: &str) -> bool {
+        (!clean_article.is_empty()
+            && self
+                .negative_code_regexes
+                .iter()
+                .any(|re| re.is_match(clean_article)))
+            || (!clean_type.is_empty()
+                && self
+                    .negative_code_regexes
+                    .iter()
+                    .any(|re| re.is_match(clean_type)))
+    }
+
+    pub fn is_negative_non_terminal(
+        &self,
+        clean_article: &str,
+        clean_type: &str,
+        description: &str,
+    ) -> bool {
+        if self.matches_negative_code(clean_article, clean_type) {
+            return true;
+        }
+        let haystack = format!("{description} {clean_type} {clean_article}").to_lowercase();
+        if haystack.trim().is_empty() {
+            return false;
+        }
+        for kw in &self.negative_keywords_lower {
+            if !haystack.contains(kw) {
+                continue;
+            }
+            match kw.as_str() {
+                "sicherung" => {
+                    if !haystack.contains("sicherungsklemme")
+                        && !haystack.contains("sicherungsreihenklemme")
+                        && !haystack.contains("sicherungs-reihenklemme")
+                    {
+                        return true;
+                    }
+                }
+                "wandler" => {
+                    if !haystack.contains("klemme") && !haystack.contains("wandlerblock") {
+                        return true;
+                    }
+                }
+                "stecker" => {
+                    if !haystack.contains("steckklemme")
+                        && !haystack.contains("steckbare reihenklemme")
+                        && !haystack.contains("steckbare klemme")
+                    {
+                        return true;
+                    }
+                }
+                "kabel" => {
+                    if !haystack.contains("kabeldurchf")
+                        && !haystack.contains("kabelkanal")
+                        && !haystack.contains("kabelverschraubung")
+                    {
+                        return true;
+                    }
+                }
+                _ => return true,
+            }
+        }
+        false
+    }
+
+    pub fn matches_positive_terminal(
+        &self,
+        clean_article: &str,
+        clean_type: &str,
+        description: &str,
+    ) -> bool {
+        let desc_lower = description.to_lowercase();
+        if !desc_lower.is_empty()
+            && self
+                .positive_desc_lower
+                .iter()
+                .any(|kw| desc_lower.contains(kw))
+        {
+            return true;
+        }
+        let art_upper = clean_article.trim().to_uppercase();
+        let type_upper = clean_type.trim().to_uppercase();
+        self.positive_type_prefixes_upper.iter().any(|pref| {
+            (!type_upper.is_empty() && type_upper.starts_with(pref))
+                || (!art_upper.is_empty() && art_upper.starts_with(pref))
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct CompiledImportRules {
     pub raw: PdfImportRules,
     pub bmk_regex: Regex,
@@ -127,6 +266,7 @@ pub struct CompiledImportRules {
     pub end_plate: CompiledAccessoryPatterns,
     pub nt_accessory: CompiledAccessoryPatterns,
     pub misc_accessory: CompiledAccessoryPatterns,
+    pub heuristics: CompiledTerminalHeuristics,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,6 +274,15 @@ pub enum ManufacturerDetection {
     Supported(String),
     Foreign(String),
     Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AccessoryKind {
+    Jumper,
+    EndClamp { matched_bracket_id: Option<String> },
+    EndPlate,
+    NtAccessory,
+    MiscAccessory,
 }
 
 #[derive(Debug, Clone)]
@@ -145,6 +294,24 @@ pub enum BomItemClassification<'a> {
     NtAccessory,
     MiscAccessory,
     UnknownTerminalArticle,
+}
+
+/// Content-based classification for a normalized BOM row (independent of `-X` BMK naming).
+#[derive(Debug, Clone)]
+pub enum BomRowDisposition<'a> {
+    Terminal {
+        manufacturer: String,
+        spec: &'a TerminalSpec,
+    },
+    HeuristicTerminal {
+        manufacturer: String,
+    },
+    Accessory {
+        manufacturer: String,
+        kind: AccessoryKind,
+    },
+    NonTerminal,
+    Foreign(String),
 }
 
 impl CompiledImportRules {
@@ -197,13 +364,43 @@ impl CompiledImportRules {
             end_plate: CompiledAccessoryPatterns::from_set(&rules.accessories.end_plate)?,
             nt_accessory: CompiledAccessoryPatterns::from_set(&rules.accessories.nt_accessory)?,
             misc_accessory: CompiledAccessoryPatterns::from_set(&rules.accessories.misc_accessory)?,
+            heuristics: CompiledTerminalHeuristics::from_config(&rules.terminal_heuristics)?,
         })
     }
 
-    /// Strictly evaluates the BMK filter regex ONLY against the BMK column value.
+    /// Evaluates the legacy `-X...` BMK pattern.
     pub fn is_terminal_bmk(&self, bmk: &str) -> bool {
         let trimmed = bmk.trim();
         !trimmed.is_empty() && self.bmk_regex.is_match(trimmed)
+    }
+
+    /// Normalizes minor OCR/extraction quirks in IEC 81346 BMKs while preserving full `=Anlage+Ort-BMK`.
+    pub fn normalize_bmk(raw: &str) -> String {
+        let cleaned: String = raw
+            .chars()
+            .filter(|&c| c != '$')
+            .collect::<String>()
+            .trim()
+            .to_string();
+        if cleaned.is_empty() {
+            return String::new();
+        }
+        // Collapse accidental whitespace inside wrapped IEC 81346 tags (e.g. "=NSV+A01 -X2L" -> "=NSV+A01-X2L")
+        if cleaned.starts_with('=') || cleaned.starts_with('+') || cleaned.starts_with('-') {
+            let parts: Vec<&str> = cleaned.split_whitespace().collect();
+            if parts.len() > 1
+                && parts
+                    .iter()
+                    .all(|p| !p.chars().any(|c| c.is_lowercase() && c.is_alphabetic()) || p.starts_with('-') || p.starts_with('+') || p.starts_with('='))
+            {
+                return parts.concat();
+            }
+            // Also fix "=NSV+A01 -X2L" where a component has lowercase letters like "-X6-CAN" or "-Xa"
+            if parts.len() == 2 && (parts[1].starts_with('-') || parts[1].starts_with('+')) {
+                return format!("{}{}", parts[0], parts[1]);
+            }
+        }
+        cleaned
     }
 
     pub fn is_footer_line(&self, text: &str) -> bool {
@@ -219,17 +416,20 @@ impl CompiledImportRules {
             .unwrap_or("phoenix-clipfix-35-5")
     }
 
-    /// Extracts `(prefix_opt, clean_article)` from an article field like `"WAGO.2204-1201"` or `"PXC.3209510"`.
+    /// Extracts `(prefix_opt, clean_article)` from an article field like `"PXC.3210567"` or `"WAG.285-135"`.
+    /// Strips optional vendor prefixes matching `^[A-Za-z]{2,5}[.:]` or known full vendor names,
+    /// without splitting `'/'` inside type names like `"URTK/SP"` or `"PTI 2,5-PE/L/NT"`.
     pub fn split_article_prefix(article: &str) -> (Option<String>, String) {
         let trimmed = article.trim();
-        for sep in ['.', ':', '/'] {
+        for sep in ['.', ':'] {
             if let Some((head, tail)) = trimmed.split_once(sep) {
                 let h = head.trim();
                 let t = tail.trim();
                 if !h.is_empty()
                     && !t.is_empty()
-                    && h.len() <= 16
-                    && h.chars().all(|c| c.is_ascii_alphabetic() || c == ' ')
+                    && (((2..=5).contains(&h.len()) && h.chars().all(|c| c.is_ascii_alphabetic()))
+                        || (h.len() <= 16
+                            && h.chars().all(|c| c.is_alphabetic() || c == ' ')))
                 {
                     return (Some(h.to_uppercase()), t.to_string());
                 }
@@ -268,6 +468,13 @@ impl CompiledImportRules {
             {
                 return ManufacturerDetection::Supported(m.canonical_name.clone());
             }
+            // If an unknown 2..5 letter vendor prefix wraps an exact catalog article number, resolve via DB.
+            if (2..=5).contains(&prefix.len())
+                && !clean_art.is_empty()
+                && let Some(spec) = catalog.find_by_article_or_type(None, &clean_art, "")
+            {
+                return ManufacturerDetection::Supported(spec.manufacturer.clone());
+            }
             return ManufacturerDetection::Foreign(prefix);
         }
 
@@ -303,6 +510,125 @@ impl CompiledImportRules {
         }
 
         ManufacturerDetection::Unknown
+    }
+
+    /// Content-based classification for any BOM row (independent of whether BMK contains `-X`).
+    pub fn classify_bom_row<'a>(
+        &self,
+        supplier: &str,
+        article: &str,
+        type_number: &str,
+        description: &str,
+        catalog: &'a TerminalCatalog,
+    ) -> BomRowDisposition<'a> {
+        let (_, clean_art) = Self::split_article_prefix(article);
+        let clean_type = type_number.trim();
+
+        // Hard negative code exclusions (e.g. PLC-RSC, RIF-0, UNO2-PS, SAC-4P, HAN, 879-3120)
+        if self.heuristics.matches_negative_code(&clean_art, clean_type) {
+            return BomRowDisposition::NonTerminal;
+        }
+
+        let mfg_det = self.detect_manufacturer(supplier, article, type_number, catalog);
+        let mfg_hint = match &mfg_det {
+            ManufacturerDetection::Supported(m) => Some(m.as_str()),
+            _ => None,
+        };
+
+        if !matches!(mfg_det, ManufacturerDetection::Foreign(_)) {
+            // Priority 1a: EndBracket DB lookup
+            if let Some(eb) = find_matching_end_bracket(&clean_art, clean_type, mfg_hint) {
+                return BomRowDisposition::Accessory {
+                    manufacturer: eb.manufacturer.to_string(),
+                    kind: AccessoryKind::EndClamp {
+                        matched_bracket_id: Some(eb.id.to_string()),
+                    },
+                };
+            }
+
+            // Priority 1b: Exact/normalized terminal catalog DB match
+            if let Some(spec) =
+                catalog.find_by_article_or_type(mfg_hint, &clean_art, clean_type)
+            {
+                if spec.is_busbar_carrier() {
+                    return BomRowDisposition::Accessory {
+                        manufacturer: spec.manufacturer.clone(),
+                        kind: AccessoryKind::NtAccessory,
+                    };
+                }
+                return BomRowDisposition::Terminal {
+                    manufacturer: spec.manufacturer.clone(),
+                    spec,
+                };
+            }
+
+            // Accessory separation (before negative keywords so P-CO Bauelementestecker / Prüfstecker / Sammelschiene separate cleanly)
+            let acc_mfg = mfg_hint.unwrap_or("Unbekannt").to_string();
+            if self.jumper.matches(&clean_art, clean_type, description) {
+                return BomRowDisposition::Accessory {
+                    manufacturer: acc_mfg,
+                    kind: AccessoryKind::Jumper,
+                };
+            }
+            if self.end_clamp.matches(&clean_art, clean_type, description) {
+                return BomRowDisposition::Accessory {
+                    manufacturer: acc_mfg,
+                    kind: AccessoryKind::EndClamp {
+                        matched_bracket_id: None,
+                    },
+                };
+            }
+            if self.end_plate.matches(&clean_art, clean_type, description) {
+                return BomRowDisposition::Accessory {
+                    manufacturer: acc_mfg,
+                    kind: AccessoryKind::EndPlate,
+                };
+            }
+            if self
+                .nt_accessory
+                .matches(&clean_art, clean_type, description)
+            {
+                return BomRowDisposition::Accessory {
+                    manufacturer: acc_mfg,
+                    kind: AccessoryKind::NtAccessory,
+                };
+            }
+            if self
+                .misc_accessory
+                .matches(&clean_art, clean_type, description)
+            {
+                return BomRowDisposition::Accessory {
+                    manufacturer: acc_mfg,
+                    kind: AccessoryKind::MiscAccessory,
+                };
+            }
+        }
+
+        // Negative exclusion filters (relays, PSUs, cables, plugs, contactors, transformers, fuses)
+        if self
+            .heuristics
+            .is_negative_non_terminal(&clean_art, clean_type, description)
+        {
+            return BomRowDisposition::NonTerminal;
+        }
+
+        if let ManufacturerDetection::Foreign(mfg_label) = mfg_det {
+            return BomRowDisposition::Foreign(mfg_label);
+        }
+
+        // Priority 2: Heuristic keyword / terminal-family fallback for unknown terminals
+        if self
+            .heuristics
+            .matches_positive_terminal(&clean_art, clean_type, description)
+        {
+            let mfg = match mfg_det {
+                ManufacturerDetection::Supported(m) => m,
+                _ => "Unbekannt".to_string(),
+            };
+            return BomRowDisposition::HeuristicTerminal { manufacturer: mfg };
+        }
+
+        BomRowDisposition::NonTerminal
     }
 
     /// Classifies a BOM item belonging to one of our 3 supported manufacturers.

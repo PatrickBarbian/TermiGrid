@@ -699,6 +699,10 @@ pub fn extract_pdf_text_spans(pdf_bytes: &[u8]) -> Result<Vec<PdfTextSpan>, Stri
     Ok(spans)
 }
 
+use std::collections::HashSet;
+use std::sync::OnceLock;
+use regex::Regex;
+
 #[derive(Debug, Clone)]
 struct VisualRow {
     y: f32,
@@ -707,21 +711,29 @@ struct VisualRow {
 
 #[derive(Debug, Clone)]
 struct ColumnLayout {
-    /// Sorted left-to-right column descriptors: `(col_index 0..=5, anchor_x)`.
+    /// Sorted left-to-right column descriptors: `(col_index 0..=5, anchor_x, header_width)`.
     /// Column indices: 0=BMK, 1=Qty, 2=Desc, 3=Type, 4=Supplier, 5=Article.
-    columns: Vec<(usize, f32)>,
+    columns: Vec<(usize, f32, f32)>,
     /// Right boundary for each entry in `columns` (midpoint to next column; last is +inf).
     right_bounds: Vec<f32>,
 }
 
 impl ColumnLayout {
-    fn from_anchors(anchors: [Option<f32>; 6]) -> Option<Self> {
-        let mut cols: Vec<(usize, f32)> = anchors
+    fn from_anchors(anchors: [Option<(f32, f32)>; 6]) -> Option<Self> {
+        let mut cols: Vec<(usize, f32, f32)> = anchors
             .iter()
             .enumerate()
-            .filter_map(|(idx, x)| x.map(|xv| (idx, xv)))
+            .filter_map(|(idx, xw)| xw.map(|(x, w)| (idx, x, w)))
             .collect();
-        if cols.len() < 4 {
+        if cols.len() < 3 {
+            return None;
+        }
+        // Require at least BMK or Article/Type/Qty alongside other columns to avoid false 3-word matches
+        let has_key_col = anchors[0].is_some()
+            || anchors[5].is_some()
+            || anchors[3].is_some()
+            || anchors[1].is_some();
+        if !has_key_col {
             return None;
         }
         cols.sort_by(|a, b| a.1.total_cmp(&b.1));
@@ -736,7 +748,21 @@ impl ColumnLayout {
         })
     }
 
-    fn assign_column(&self, span_x: f32) -> usize {
+    fn assign_column(&self, span_x: f32, span_w: f32) -> usize {
+        // First check if the span sits directly inside a header column's horizontal footprint
+        // (handles right-aligned Quantity values under a narrow "Menge" header).
+        let center_x = span_x + span_w * 0.5;
+        for (i, &(col_idx, ax, aw)) in self.columns.iter().enumerate() {
+            let next_ax = self
+                .columns
+                .get(i + 1)
+                .map(|c| c.1 - 2.0)
+                .unwrap_or(f32::INFINITY);
+            let col_right = (ax + aw + 6.0).min(next_ax);
+            if span_x >= ax - 6.0 && center_x <= col_right && span_x < next_ax {
+                return col_idx;
+            }
+        }
         for (i, &bound) in self.right_bounds.iter().enumerate() {
             if span_x < bound {
                 return self.columns[i].0;
@@ -754,8 +780,12 @@ fn norm_header_token(s: &str) -> String {
 }
 
 fn match_header_col(text: &str, rules: &CompiledImportRules) -> Option<usize> {
-    let norm = norm_header_token(text);
-    if norm.len() < 3 {
+    let trimmed = text.trim();
+    if trimmed.is_empty() || trimmed.len() > 56 {
+        return None;
+    }
+    let norm = norm_header_token(trimmed);
+    if norm.len() < 2 || norm.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
     let groups = [
@@ -766,15 +796,49 @@ fn match_header_col(text: &str, rules: &CompiledImportRules) -> Option<usize> {
         &rules.raw.header_aliases.supplier,
         &rules.raw.header_aliases.article_number,
     ];
+
+    // Pass 1: exact normalized match (ensures "Bezeichnung 1" matches Type No., not Description)
     for (idx, aliases) in groups.iter().enumerate() {
-        if aliases
-            .iter()
-            .any(|a| norm_header_token(a) == norm || norm.contains(&norm_header_token(a)))
-        {
+        if aliases.iter().any(|a| norm_header_token(a) == norm) {
             return Some(idx);
         }
     }
-    None
+
+    // Pass 2: split by delimiters ('/', '(', '[', ':', '\n') and check exact part match (longest alias wins)
+    let mut best: Option<(usize, usize)> = None;
+    for part in trimmed.split(['/', '(', '[', ':', '\n']) {
+        let pnorm = norm_header_token(part);
+        if pnorm.len() < 2 {
+            continue;
+        }
+        for (idx, aliases) in groups.iter().enumerate() {
+            for a in *aliases {
+                let anorm = norm_header_token(a);
+                if anorm == pnorm
+                    && best.is_none_or(|(_, best_len)| anorm.len() > best_len)
+                {
+                    best = Some((idx, anorm.len()));
+                }
+            }
+        }
+    }
+    if let Some((idx, _)) = best {
+        return Some(idx);
+    }
+
+    // Pass 3: prefix match for longer aliases (>= 5 chars) like "Menge [Stk]" or "Artikelnummer (ERP)"
+    for (idx, aliases) in groups.iter().enumerate() {
+        for a in *aliases {
+            let anorm = norm_header_token(a);
+            if anorm.len() >= 5
+                && norm.starts_with(&anorm)
+                && best.is_none_or(|(_, best_len)| anorm.len() > best_len)
+            {
+                best = Some((idx, anorm.len()));
+            }
+        }
+    }
+    best.map(|(idx, _)| idx)
 }
 
 fn cluster_spans_into_rows(spans: &[PdfTextSpan]) -> Vec<VisualRow> {
@@ -803,25 +867,344 @@ fn cluster_spans_into_rows(spans: &[PdfTextSpan]) -> Vec<VisualRow> {
     rows
 }
 
-fn parse_quantity(s: &str) -> Option<usize> {
-    let trimmed = s.trim();
+fn row_full_line(row: &VisualRow) -> String {
+    row.spans
+        .iter()
+        .map(|s| s.text.trim())
+        .filter(|t| !t.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn is_unit_word(tok: &str) -> bool {
+    let clean = tok
+        .trim()
+        .trim_end_matches('.')
+        .trim_end_matches(',')
+        .to_lowercase();
+    matches!(
+        clean.as_str(),
+        "stk" | "st" | "stück" | "stueck" | "pcs" | "pc" | "x" | "×" | "mal" | "m"
+    )
+}
+
+/// Parses a plausible BOM quantity token (`1..=9999`), avoiding 6..10-digit article numbers.
+fn parse_qty_token(tok: &str) -> Option<usize> {
+    let trimmed = tok
+        .trim()
+        .trim_end_matches(['x', '×', 'X'])
+        .trim();
     if trimmed.is_empty() {
         return None;
     }
-    let first_token = trimmed.split_whitespace().next().unwrap_or("");
-    let normalized = first_token.replace(',', ".");
+    // Reject tokens with hyphens/slashes/dots-between-digits-beyond-decimals (like "285-135" or "1.2.3")
+    if trimmed.contains('-') || trimmed.contains('/') {
+        return None;
+    }
+    let normalized = trimmed.replace(',', ".");
     if let Ok(v) = normalized.parse::<f64>()
-        && v > 0.0
+        && (1.0..=9999.0).contains(&v)
         && (v - v.round()).abs() < 1e-4
     {
         return Some(v.round() as usize);
     }
-    let digits: String = first_token.chars().take_while(|c| c.is_ascii_digit()).collect();
-    digits.parse::<usize>().ok().filter(|&n| n > 0)
+    None
 }
 
-/// Parses positioned PDF text spans into 6-column EPLAN BOM rows (`RawBomRow`),
-/// resilient to slipped headers (`Typnummer`), merged cells, empty `Lieferant`, and footers.
+fn is_definite_article_token(tok: &str) -> bool {
+    static VENDOR_PREF_RE: OnceLock<Regex> = OnceLock::new();
+    static HYPHEN_CODE_RE: OnceLock<Regex> = OnceLock::new();
+    static LONG_NUM_RE: OnceLock<Regex> = OnceLock::new();
+
+    let vendor_re = VENDOR_PREF_RE
+        .get_or_init(|| Regex::new(r"^[A-Za-z]{2,5}[.:][A-Za-z0-9._/-]+$").expect("valid regex"));
+    let hyphen_re = HYPHEN_CODE_RE
+        .get_or_init(|| Regex::new(r"^\d{3,4}-\d{3,4}(?:/\d{3}-\d{3})?$").expect("valid regex"));
+    let long_num_re =
+        LONG_NUM_RE.get_or_init(|| Regex::new(r"^\d{6,12}$").expect("valid regex"));
+
+    let t = tok.trim();
+    vendor_re.is_match(t) || hyphen_re.is_match(t) || long_num_re.is_match(t)
+}
+
+fn parse_quantity_cell(s: &str) -> Option<usize> {
+    let trimmed = s.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let mut tokens = trimmed.split_whitespace();
+    let first = tokens.next()?;
+    if let Some(q) = parse_qty_token(first) {
+        return Some(q);
+    }
+    None
+}
+
+/// Extracts `(quantity, article_number)` across potentially merged, swapped, or inverted cells
+/// (e.g., `"6 PXC.3213946"`, `"PXC.3213946 6"`, `"6\nPXC.3213946"`, `"6 Stk"`).
+fn extract_qty_and_article(qty_cell: &str, art_cell: &str) -> (Option<usize>, String) {
+    let q_trim = qty_cell.trim();
+    let a_trim = art_cell.trim();
+
+    // Case 1: Both cells non-empty
+    if !q_trim.is_empty() && !a_trim.is_empty() {
+        if let Some(q) = parse_quantity_cell(q_trim) {
+            return (Some(q), a_trim.to_string());
+        }
+        // Handle completely swapped qty & article columns
+        if is_definite_article_token(q_trim)
+            && let Some(q) = parse_quantity_cell(a_trim)
+        {
+            return (Some(q), q_trim.to_string());
+        }
+        return (None, a_trim.to_string());
+    }
+
+    // Case 2: Only qty_cell is non-empty (might contain merged "6 PXC.3213946" or "PXC.3213946 6")
+    if !q_trim.is_empty() && a_trim.is_empty() {
+        let tokens: Vec<&str> = q_trim.split_whitespace().collect();
+        if tokens.len() == 1 {
+            if let Some(q) = parse_qty_token(tokens[0]) {
+                return (Some(q), String::new());
+            }
+            if is_definite_article_token(tokens[0]) {
+                return (None, tokens[0].to_string());
+            }
+            return (parse_quantity_cell(q_trim), String::new());
+        }
+
+        let mut found_qty: Option<usize> = None;
+        let mut art_parts: Vec<&str> = Vec::new();
+        for tok in &tokens {
+            if is_unit_word(tok) {
+                continue;
+            }
+            if found_qty.is_none()
+                && !is_definite_article_token(tok)
+                && let Some(q) = parse_qty_token(tok)
+            {
+                found_qty = Some(q);
+                continue;
+            }
+            art_parts.push(tok);
+        }
+        if let Some(q) = found_qty {
+            return (Some(q), art_parts.join(" "));
+        }
+        if tokens.iter().any(|t| is_definite_article_token(t)) {
+            return (None, q_trim.to_string());
+        }
+        return (parse_quantity_cell(q_trim), String::new());
+    }
+
+    // Case 3: Only art_cell is non-empty (might contain merged "6 PXC.3213946", "PXC.3213946 6", "6 3213946", or wrapped "4")
+    if q_trim.is_empty() && !a_trim.is_empty() {
+        let tokens: Vec<&str> = a_trim.split_whitespace().collect();
+        if tokens.len() == 1
+            && !is_definite_article_token(tokens[0])
+            && let Some(q) = parse_qty_token(tokens[0])
+        {
+            return (Some(q), String::new());
+        }
+        if tokens.len() >= 2 && tokens.iter().any(|t| is_definite_article_token(t)) {
+            let mut found_qty: Option<usize> = None;
+            let mut art_parts: Vec<&str> = Vec::new();
+            for tok in &tokens {
+                if is_unit_word(tok) {
+                    continue;
+                }
+                if found_qty.is_none()
+                    && !is_definite_article_token(tok)
+                    && let Some(q) = parse_qty_token(tok)
+                {
+                    found_qty = Some(q);
+                    continue;
+                }
+                art_parts.push(tok);
+            }
+            if let Some(q) = found_qty
+                && !art_parts.is_empty()
+            {
+                return (Some(q), art_parts.join(" "));
+            }
+        }
+        return (None, a_trim.to_string());
+    }
+
+    (None, String::new())
+}
+
+#[derive(Debug, Clone)]
+struct PartialBomRow {
+    page: u32,
+    bmk: String,
+    quantity: Option<usize>,
+    description: String,
+    type_number: String,
+    supplier: String,
+    article_number: String,
+    last_y: f32,
+}
+
+impl PartialBomRow {
+    fn has_payload(&self) -> bool {
+        !self.article_number.is_empty()
+            || !self.type_number.is_empty()
+            || !self.description.is_empty()
+    }
+
+    fn is_complete(&self) -> bool {
+        self.quantity.is_some() && self.has_payload()
+    }
+
+    fn into_raw(self) -> Option<RawBomRow> {
+        let qty = self.quantity?;
+        if !self.has_payload() {
+            return None;
+        }
+        Some(RawBomRow {
+            page: self.page,
+            bmk: self.bmk,
+            quantity: qty,
+            description: self.description,
+            type_number: self.type_number,
+            supplier: self.supplier,
+            article_number: self.article_number,
+        })
+    }
+}
+
+fn append_spaced(dst: &mut String, piece: &str) {
+    let p = piece.trim();
+    if p.is_empty() {
+        return;
+    }
+    if !dst.is_empty() {
+        dst.push(' ');
+    }
+    dst.push_str(p);
+}
+
+fn match_header_col_exact(text: &str, rules: &CompiledImportRules) -> Option<usize> {
+    let norm = norm_header_token(text);
+    if norm.len() < 2 || norm.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let groups = [
+        &rules.raw.header_aliases.bmk,
+        &rules.raw.header_aliases.quantity,
+        &rules.raw.header_aliases.description,
+        &rules.raw.header_aliases.type_number,
+        &rules.raw.header_aliases.supplier,
+        &rules.raw.header_aliases.article_number,
+    ];
+    for (idx, aliases) in groups.iter().enumerate() {
+        if aliases.iter().any(|a| norm_header_token(a) == norm) {
+            return Some(idx);
+        }
+    }
+    None
+}
+
+struct DetectedHeader {
+    row_idx: usize,
+    y: f32,
+    layout: ColumnLayout,
+    consumed_spans: HashSet<(usize, usize)>,
+}
+
+fn detect_page_header(
+    rows: &[VisualRow],
+    rules: &CompiledImportRules,
+) -> Option<DetectedHeader> {
+    for (idx, row) in rows.iter().enumerate() {
+        let line = row_full_line(row);
+        if rules.is_footer_line(&line) {
+            continue;
+        }
+
+        let mut anchors: [Option<(f32, f32)>; 6] = [None; 6];
+        let mut anchor_lens: [usize; 6] = [0; 6];
+        let mut consumed_spans: HashSet<(usize, usize)> = HashSet::new();
+
+        for (s_idx, sp) in row.spans.iter().enumerate() {
+            if let Some(col) = match_header_col(&sp.text, rules) {
+                let len = norm_header_token(&sp.text).len();
+                if anchors[col].is_none() || len > anchor_lens[col] {
+                    anchors[col] = Some((sp.x, sp.width));
+                    anchor_lens[col] = len;
+                }
+                consumed_spans.insert((idx, s_idx));
+            }
+        }
+
+        // Check vertically wrapped/hyphenated header continuations (e.g. "Betriebsmittel-\nkennzeichen", "Bezeichnung\n1")
+        if let Some(next_row) = rows.get(idx + 1)
+            && next_row.y - row.y <= 16.0
+        {
+            for sp1 in &row.spans {
+                let t1 = sp1.text.trim();
+                if t1.is_empty() {
+                    continue;
+                }
+                for (s2_idx, sp2) in next_row.spans.iter().enumerate() {
+                    let t2 = sp2.text.trim();
+                    if t2.is_empty() {
+                        continue;
+                    }
+                    let x_close = (sp2.x - sp1.x).abs() <= 28.0
+                        || (sp2.x >= sp1.x - 10.0 && sp2.x <= sp1.x + sp1.width + 10.0);
+                    if !x_close {
+                        continue;
+                    }
+                    let combined = if t1.ends_with('-') {
+                        format!("{}{}", t1.trim_end_matches('-'), t2)
+                    } else {
+                        format!("{t1} {t2}")
+                    };
+                    if let Some(col) = match_header_col_exact(&combined, rules) {
+                        let comb_len = norm_header_token(&combined).len();
+                        if anchors[col].is_none() || comb_len > anchor_lens[col] {
+                            anchors[col] = Some((sp1.x.min(sp2.x), sp1.width.max(sp2.width)));
+                            anchor_lens[col] = comb_len;
+                        }
+                        consumed_spans.insert((idx + 1, s2_idx));
+                    }
+                }
+            }
+        }
+
+        let matched = anchors.iter().filter(|a| a.is_some()).count();
+        if matched >= 3 {
+            // Peek nearby rows for EPLAN's slipped column headers (e.g. "Typnummer" sitting in data row 1)
+            for (n_idx, neighbor) in rows.iter().enumerate() {
+                if n_idx != idx && (neighbor.y - row.y).abs() <= 24.0 {
+                    for (s_idx, sp) in neighbor.spans.iter().enumerate() {
+                        if let Some(col) = match_header_col(&sp.text, rules)
+                            && anchors[col].is_none()
+                        {
+                            anchors[col] = Some((sp.x, sp.width));
+                            consumed_spans.insert((n_idx, s_idx));
+                        }
+                    }
+                }
+            }
+            if let Some(layout) = ColumnLayout::from_anchors(anchors) {
+                return Some(DetectedHeader {
+                    row_idx: idx,
+                    y: row.y,
+                    layout,
+                    consumed_spans,
+                });
+            }
+        }
+    }
+    None
+}
+
+/// Parses positioned PDF text spans into normalized BOM rows (`RawBomRow`),
+/// resilient to variable column orders, hyphenated headers, slipped headers (`Typnummer`),
+/// merged/inverted Quantity+Article cells, multi-line cells, page breaks, and EPLAN/CAD footers.
 pub fn parse_eplan_bom_tables(
     spans: &[PdfTextSpan],
     rules: &CompiledImportRules,
@@ -841,39 +1224,15 @@ pub fn parse_eplan_bom_tables(
             continue;
         }
 
-        // Detect header row on this page (tolerating shifted "Typnummer" +/- 24 pt vertically)
         let mut header_row_idx: Option<usize> = None;
         let mut header_y: Option<f32> = None;
-        for (idx, row) in rows.iter().enumerate() {
-            let mut anchors: [Option<f32>; 6] = [None; 6];
-            for sp in &row.spans {
-                if let Some(col) = match_header_col(&sp.text, rules)
-                    && anchors[col].is_none()
-                {
-                    anchors[col] = Some(sp.x);
-                }
-            }
-            let matched = anchors.iter().filter(|a| a.is_some()).count();
-            if matched >= 4 {
-                // Peek nearby rows (EPLAN sometimes shifts "Typnummer" onto data row 1!)
-                for neighbor in rows.iter() {
-                    if (neighbor.y - row.y).abs() <= 24.0 {
-                        for sp in &neighbor.spans {
-                            if let Some(col) = match_header_col(&sp.text, rules)
-                                && anchors[col].is_none()
-                            {
-                                anchors[col] = Some(sp.x);
-                            }
-                        }
-                    }
-                }
-                if let Some(layout) = ColumnLayout::from_anchors(anchors) {
-                    active_layout = Some(layout);
-                    header_row_idx = Some(idx);
-                    header_y = Some(row.y);
-                    break;
-                }
-            }
+        let mut consumed_header_spans: HashSet<(usize, usize)> = HashSet::new();
+
+        if let Some(hdr) = detect_page_header(&rows, rules) {
+            active_layout = Some(hdr.layout);
+            header_row_idx = Some(hdr.row_idx);
+            header_y = Some(hdr.y);
+            consumed_header_spans = hdr.consumed_spans;
         }
 
         let Some(layout) = active_layout.as_ref() else {
@@ -881,24 +1240,21 @@ pub fn parse_eplan_bom_tables(
         };
 
         let start_idx = header_row_idx.map(|i| i + 1).unwrap_or(0);
-        for row in rows.iter().skip(start_idx) {
-            let full_line: String = row
-                .spans
-                .iter()
-                .map(|s| s.text.trim())
-                .filter(|t| !t.is_empty())
-                .collect::<Vec<_>>()
-                .join(" ");
+        let mut pending: Option<PartialBomRow> = None;
 
+        for (r_idx, row) in rows.iter().enumerate().skip(start_idx) {
+            let full_line = row_full_line(row);
             if rules.is_footer_line(&full_line) {
                 continue;
             }
 
             let mut cols: [Vec<String>; 6] = Default::default();
-            for sp in &row.spans {
-                let col_idx = layout.assign_column(sp.x);
-                // Strip stray header labels (such as "Typnummer" sitting inside the first data row)
-                let near_header = header_y.is_some_and(|hy| (row.y - hy).abs() <= 28.0);
+            let near_header = header_y.is_some_and(|hy| (row.y - hy).abs() <= 28.0);
+            for (s_idx, sp) in row.spans.iter().enumerate() {
+                if consumed_header_spans.contains(&(r_idx, s_idx)) {
+                    continue;
+                }
+                let col_idx = layout.assign_column(sp.x, sp.width);
                 if near_header && match_header_col(&sp.text, rules) == Some(col_idx) {
                     continue;
                 }
@@ -908,57 +1264,122 @@ pub fn parse_eplan_bom_tables(
                 }
             }
 
-            let bmk_cell = cols[0].join(" ").trim().to_string();
+            let bmk_raw = cols[0].join(" ");
+            let bmk_cell = CompiledImportRules::normalize_bmk(&bmk_raw);
             let qty_cell = cols[1].join(" ").trim().to_string();
             let desc_cell = cols[2].join(" ").trim().to_string();
             let type_cell = cols[3].join(" ").trim().to_string();
             let sup_cell = cols[4].join(" ").trim().to_string();
             let art_cell = cols[5].join(" ").trim().to_string();
 
+            if bmk_cell.is_empty()
+                && qty_cell.is_empty()
+                && desc_cell.is_empty()
+                && type_cell.is_empty()
+                && sup_cell.is_empty()
+                && art_cell.is_empty()
+            {
+                continue;
+            }
+
+            let (qty_opt, norm_art) = extract_qty_and_article(&qty_cell, &art_cell);
+
             if !bmk_cell.is_empty() {
                 last_bmk_context = bmk_cell.clone();
             }
 
-            if let Some(qty) = parse_quantity(&qty_cell) {
-                if art_cell.is_empty() && type_cell.is_empty() && desc_cell.is_empty() {
+            // Can this visual line merge into an open `pending` row on the same page?
+            if let Some(prev) = pending.as_mut() {
+                let close_vertically = (row.y - prev.last_y).abs() <= 28.0;
+                // Case A: Previous line had article/desc/type without quantity (e.g. "PXC.3213946\n6")
+                if prev.quantity.is_none()
+                    && close_vertically
+                    && bmk_cell.is_empty()
+                    && qty_opt.is_some()
+                    && norm_art.is_empty()
+                {
+                    prev.quantity = qty_opt;
+                    append_spaced(&mut prev.description, &desc_cell);
+                    append_spaced(&mut prev.type_number, &type_cell);
+                    if prev.supplier.is_empty() && !sup_cell.is_empty() {
+                        prev.supplier = sup_cell;
+                    }
+                    prev.last_y = row.y;
                     continue;
                 }
-                let effective_bmk = if !bmk_cell.is_empty() {
-                    bmk_cell
-                } else {
-                    last_bmk_context.clone()
-                };
-                out_rows.push(RawBomRow {
+                // Case B: Previous line had BMK + quantity without article/type/desc (e.g. "6\nPXC.3213946")
+                if prev.quantity.is_some()
+                    && !prev.has_payload()
+                    && close_vertically
+                    && bmk_cell.is_empty()
+                    && qty_opt.is_none()
+                    && (!norm_art.is_empty() || !type_cell.is_empty() || !desc_cell.is_empty())
+                {
+                    if !norm_art.is_empty() {
+                        prev.article_number = norm_art;
+                    }
+                    append_spaced(&mut prev.description, &desc_cell);
+                    append_spaced(&mut prev.type_number, &type_cell);
+                    if prev.supplier.is_empty() && !sup_cell.is_empty() {
+                        prev.supplier = sup_cell;
+                    }
+                    prev.last_y = row.y;
+                    continue;
+                }
+                // Case C: Previous line is complete; this line is a wrapped description/type continuation
+                if prev.is_complete()
+                    && bmk_cell.is_empty()
+                    && qty_opt.is_none()
+                    && norm_art.is_empty()
+                    && sup_cell.is_empty()
+                    && (!desc_cell.is_empty() || !type_cell.is_empty())
+                {
+                    append_spaced(&mut prev.description, &desc_cell);
+                    append_spaced(&mut prev.type_number, &type_cell);
+                    prev.last_y = row.y;
+                    continue;
+                }
+            }
+
+            // Start a new logical row (flushing any completed previous partial row)
+            if let Some(prev) = pending.take()
+                && let Some(done) = prev.into_raw()
+            {
+                out_rows.push(done);
+            }
+
+            let effective_bmk = if !bmk_cell.is_empty() {
+                bmk_cell
+            } else {
+                last_bmk_context.clone()
+            };
+
+            // Only start a new PartialBomRow if this line carries item data (qty, article, type, or desc)
+            if qty_opt.is_some()
+                || !norm_art.is_empty()
+                || !type_cell.is_empty()
+                || !desc_cell.is_empty()
+            {
+                pending = Some(PartialBomRow {
                     page,
                     bmk: effective_bmk,
-                    quantity: qty,
+                    quantity: qty_opt,
                     description: desc_cell,
                     type_number: type_cell,
                     supplier: sup_cell,
-                    article_number: art_cell,
+                    article_number: norm_art,
+                    last_y: row.y,
                 });
-            } else if bmk_cell.is_empty()
-                && art_cell.is_empty()
-                && sup_cell.is_empty()
-                && (!desc_cell.is_empty() || !type_cell.is_empty())
-                && let Some(prev) = out_rows.last_mut()
-                && prev.page == page
-            {
-                if !desc_cell.is_empty() {
-                    if !prev.description.is_empty() {
-                        prev.description.push(' ');
-                    }
-                    prev.description.push_str(&desc_cell);
-                }
-                if !type_cell.is_empty() {
-                    if !prev.type_number.is_empty() {
-                        prev.type_number.push(' ');
-                    }
-                    prev.type_number.push_str(&type_cell);
-                }
             }
+        }
+
+        if let Some(prev) = pending.take()
+            && let Some(done) = prev.into_raw()
+        {
+            out_rows.push(done);
         }
     }
 
     out_rows
 }
+

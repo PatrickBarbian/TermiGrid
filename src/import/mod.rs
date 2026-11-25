@@ -415,4 +415,267 @@ mod tests {
             .collect();
         assert_eq!(queued, vec!["-X11", "-X12"]);
     }
+
+    #[test]
+    fn vendor_prefixes_iec_bmks_non_x_strips_plugs_relays_and_accessories() {
+        use crate::import::planner::instantiate_imported_strip_with_mappings;
+        let catalog = TerminalCatalog::load_embedded();
+        let r = |page, bmk: &str, qty, desc: &str, typ: &str, sup: &str, art: &str| RawBomRow {
+            page,
+            bmk: bmk.to_string(),
+            quantity: qty,
+            description: desc.to_string(),
+            type_number: typ.to_string(),
+            supplier: sup.to_string(),
+            article_number: art.to_string(),
+        };
+
+        let rows = vec![
+            // 1. Vendor prefixes PXC., WAG., WDM. + full IEC 81346 BMKs without collision
+            r(1, " $ =NSV+A01-X0 ", 4, "Doppelstockklemme", "PTTB 2,5", "", "PXC.3210567"),
+            r(1, "=NSV+A02-X0$", 6, "Durchgangsklemme", "WDU 2.5", "", "WDM.1020000000"),
+            r(1, "=NSV+A01-X2L", 2, "Durchgangs-Reihenklemme", "", "", "WAG.285-135"),
+            // 2. Non--X terminal strip (=SEA+SE-B01-0 with PT 6 & PT 6-PE + D-PT 6 accessory)
+            r(1, "=SEA+SE-B01-0", 4, "Durchgangsklemme", "PT 6", "PXC", "3211813"),
+            r(1, "=SEA+SE-B01-0", 2, "Schutzleiterklemme", "PT 6-PE", "PXC", "3211822"),
+            r(1, "=SEA+SE-B01-0", 1, "Abschlussdeckel", "D-PT 6", "PXC", "3212044"),
+            // 3. Heavy-duty plug with -X BMK -> MUST be excluded!
+            r(1, "=STS+AS-XS2.1", 1, "Buchseneinsatz", "Han 16A-BU-S", "HARTING", "HAR.09200162812"),
+            // 4. Non-terminal items from Phoenix Contact -> MUST be strictly excluded!
+            r(1, "=NSV+A01-K1", 2, "Relaismodul", "PLC-RSC-24DC/21", "PXC", "PXC.2966171"),
+            r(1, "=NSV+A01-K2", 1, "Industrierelais", "RIF-0-BSC/21", "PXC", "PXC.2900957"),
+            r(1, "=NSV+A01-G1", 1, "Stromversorgung", "UNO2-PS/1AC/24DC/90W", "PXC", "PXC.2902991"),
+            r(1, "=NSV+A01-W10", 1, "Sensor-/Aktor-Kabel", "SAC-4P-M12MS/5,0-PUR", "PXC", "PXC.1696756"),
+            // 5. Mixed WAGO + Phoenix Contact on =GLS+KLB-X1 across pages + accessories
+            r(1, "=GLS+KLB-X1", 3, "Hochstromklemme", "285-135", "", "WAG.285-135"),
+            r(1, "=GLS+KLB-X1", 1, "Schaltbrücke", "SB-2", "PXC", "PXC.0202150"),
+            r(1, "=GLS+KLB-X1", 1, "Prüfsteckerbuchse", "PSBJ 3/13/4", "PXC", "PXC.0201304"),
+            r(2, "=GLS+KLB-X1", 5, "Durchgangsklemme", "PT 2,5", "", "PXC.3209510"),
+            r(2, "=GLS+KLB-X1", 2, "Steckbrücke", "FBS 2-5", "PXC", "PXC.3030161"),
+            r(2, "=GLS+KLB-X1", 1, "Bauelementestecker", "P-CO", "PXC", "PXC.3036796"),
+            // 6. Heuristic unknown terminals (URTK/SP, UDK 4, QTC 1,5) + D-URTK 6 & ATP-URTK/SP accessories
+            r(2, "=SEA+SE-X6-CAN", 4, "Prüftrennklemme", "URTK/SP", "PXC", "PXC.0311005"),
+            r(2, "=SEA+SE-X6-CAN", 2, "Doppelstockklemme", "UDK 4", "PXC", "PXC.2775016"),
+            r(2, "=SEA+SE-X6-CAN", 1, "Abschlussdeckel", "D-URTK 6", "PXC", "PXC.0310038"),
+            r(2, "=SEA+SE-X6-CAN", 1, "Abteilungstrennplatte", "ATP-URTK/SP", "PXC", "PXC.0311139"),
+            r(2, "=NSV+A04-X4.1", 6, "Schnellanschluss-Reihenklemme", "QTC 1,5", "PXC", "PXC.3205019"),
+        ];
+
+        let plan = plan_from_bom_rows(&rows, &catalog);
+        let bmks: Vec<&str> = plan.strips.iter().map(|s| s.bmk.as_str()).collect();
+        assert_eq!(
+            bmks,
+            vec![
+                "=NSV+A01-X0",
+                "=NSV+A02-X0",
+                "=NSV+A01-X2L",
+                "=SEA+SE-B01-0",
+                "=GLS+KLB-X1",
+                "=SEA+SE-X6-CAN",
+                "=NSV+A04-X4.1",
+            ]
+        );
+
+        // Plug (-XS2.1) & Relays/PSU/Cables (-K1, -K2, -G1, -W10) must NOT appear in strips
+        assert!(!bmks.contains(&"=STS+AS-XS2.1"));
+        assert!(!bmks.contains(&"=NSV+A01-K1"));
+        assert!(!bmks.contains(&"=NSV+A01-G1"));
+        assert!(!bmks.contains(&"=NSV+A01-W10"));
+        assert_eq!(plan.ignored_non_x_rows.iter().filter(|r| r.bmk == "=STS+AS-XS2.1").count(), 1);
+        assert_eq!(plan.ignored_non_x_rows.iter().filter(|r| r.bmk == "=NSV+A01-K1").count(), 1);
+        assert_eq!(plan.ignored_non_x_rows.iter().filter(|r| r.bmk == "=NSV+A01-G1").count(), 1);
+        assert_eq!(plan.ignored_non_x_rows.iter().filter(|r| r.bmk == "=NSV+A01-W10").count(), 1);
+
+        // =NSV+A01-X0 and =NSV+A02-X0 kept strictly separate
+        let x0_a01 = &plan.strips[0];
+        let x0_a02 = &plan.strips[1];
+        assert_eq!(x0_a01.terminals[0].spec_id, "phoenix-pttb-25");
+        assert_eq!(x0_a01.terminals[0].quantity, 4);
+        assert_eq!(x0_a02.terminals[0].spec_id, "weidmuller-wdu-25");
+        assert_eq!(x0_a02.terminals[0].quantity, 6);
+
+        // =SEA+SE-B01-0 (non--X BMK) has 6 terminals (4x PT 6 + 2x PT 6-PE) and 1 PDF end plate (D-PT 6)
+        let b01 = &plan.strips[3];
+        assert_eq!(b01.total_terminal_count, 6);
+        assert!(b01.end_parts.has_pdf_end_plates);
+        assert_eq!(b01.end_parts.pdf_end_plate_count, 1);
+
+        // =GLS+KLB-X1 spans pages [1, 2], mixes WAGO + Phoenix Contact, and separates SB-2 / FBS 2-5 / PSBJ / P-CO
+        let gls = &plan.strips[4];
+        assert_eq!(gls.pages, vec![1, 2]);
+        assert_eq!(gls.total_terminal_count, 8);
+        assert_eq!(gls.manufacturers, vec!["WAGO", "Phoenix Contact"]);
+        assert_eq!(gls.ignored_jumpers.len(), 2);
+        assert_eq!(gls.ignored_misc.len(), 2);
+
+        // =SEA+SE-X6-CAN flags URTK/SP & UDK 4 via heuristics and separates D-URTK 6 + ATP-URTK/SP as end plates
+        let x6 = &plan.strips[5];
+        assert_eq!(x6.total_terminal_count, 0);
+        assert_eq!(x6.unknown_articles.len(), 2);
+        assert!(x6.unknown_articles.iter().all(|u| u.heuristic_matched));
+        assert_eq!(x6.end_parts.pdf_end_plate_count, 2);
+
+        // User maps the two heuristic terminals and confirms instantiation
+        let mappings = vec![
+            Some("phoenix-pt-6-t".to_string()),
+            Some("phoenix-pttb-25".to_string()),
+        ];
+        let (inst, _) =
+            instantiate_imported_strip_with_mappings(x6, 0, true, &mappings, &catalog).unwrap();
+        assert_eq!(inst.blocks.len(), 6);
+        assert_eq!(inst.blocks[0].spec_id, "phoenix-pt-6-t");
+        assert_eq!(inst.blocks[4].spec_id, "phoenix-pttb-25");
+
+        // =NSV+A04-X4.1 flags QTC 1,5 via heuristics
+        let x41 = &plan.strips[6];
+        assert_eq!(x41.unknown_articles.len(), 1);
+        assert_eq!(x41.unknown_articles[0].type_number, "QTC 1,5");
+        assert!(x41.unknown_articles[0].heuristic_matched);
+    }
+
+    #[test]
+    fn variable_layout_hyphenated_headers_merged_and_inverted_qty_article_across_pages() {
+        use lopdf::content::{Content, Operation};
+        use lopdf::{dictionary, Document, Object, Stream};
+
+        fn text_op(x: f32, y: f32, txt: &str) -> Vec<Operation> {
+            vec![
+                Operation::new("BT", vec![]),
+                Operation::new("Tf", vec![Object::Name(b"F1".to_vec()), 9.into()]),
+                Operation::new("Tm", vec![1.into(), 0.into(), 0.into(), 1.into(), x.into(), y.into()]),
+                Operation::new("Tj", vec![Object::string_literal(txt)]),
+                Operation::new("ET", vec![]),
+            ]
+        }
+
+        let mut doc = Document::with_version("1.5");
+        let pages_id = doc.new_object_id();
+        let font_id = doc.add_object(dictionary! {
+            "Type" => "Font",
+            "Subtype" => "Type1",
+            "BaseFont" => "Helvetica",
+            "Encoding" => "WinAnsiEncoding",
+        });
+        let resources_id = doc.add_object(dictionary! {
+            "Font" => dictionary! {
+                "F1" => font_id,
+            },
+        });
+
+        let mut add_page = |ops: Vec<Operation>| {
+            let encoded = Content { operations: ops }.encode().unwrap();
+            let content_id = doc.add_object(Stream::new(dictionary! {}, encoded));
+            doc.add_object(dictionary! {
+                "Type" => "Page",
+                "Parent" => pages_id,
+                "MediaBox" => vec![0.into(), 0.into(), 842.into(), 595.into()],
+                "Resources" => resources_id,
+                "Contents" => content_id,
+            })
+        };
+
+        // Page 1: Inverted column order + hyphenated header + merged/inverted qty & article cells + EPLAN 2025 title block
+        let mut ops1 = Vec::new();
+        // Title block at top (above header, must be stripped)
+        ops1.extend(text_op(40.0, 575.0, "EPLAN Version 2025.0.3  Gesamtseitenzahl: 2  Datum: 2025-05-01"));
+        // Hyphenated multi-line header in custom order: Qty/Art -> Device Tag -> Bezeichnung 1 (Type) -> Beschreibung (Desc)
+        ops1.extend(text_op(40.0, 545.0, "Anz."));
+        ops1.extend(text_op(95.0, 545.0, "Art.-Nr."));
+        ops1.extend(text_op(210.0, 545.0, "Betriebsmittel-"));
+        ops1.extend(text_op(210.0, 535.0, "kennzeichen"));
+        ops1.extend(text_op(350.0, 545.0, "Bezeichnung"));
+        ops1.extend(text_op(350.0, 535.0, "1"));
+        ops1.extend(text_op(470.0, 545.0, "Beschreibung"));
+
+        // Row 1: Merged "6 PXC.3213946" inside Art.-Nr. column (empty Anz.)
+        ops1.extend(text_op(95.0, 510.0, "6 PXC.3213946"));
+        ops1.extend(text_op(210.0, 510.0, "=NSV+A01-X2L"));
+        ops1.extend(text_op(350.0, 510.0, "PTI 2,5-PE/L/NT"));
+        ops1.extend(text_op(470.0, 510.0, "Installationsklemme"));
+
+        // Row 2: Inverted multi-line cell "PXC.3210567\n4" (article on y=488, qty on y=476) + same BMK inherited
+        ops1.extend(text_op(95.0, 488.0, "PXC.3210567"));
+        ops1.extend(text_op(350.0, 488.0, "PTTB 2,5"));
+        ops1.extend(text_op(470.0, 488.0, "Doppelstockklemme"));
+        ops1.extend(text_op(95.0, 476.0, "4"));
+
+        // Row 3: Non--X strip =SEA+SE-B01-0 with "PT 6" (must NOT split "6" out of "PT 6"!)
+        ops1.extend(text_op(40.0, 450.0, "3"));
+        ops1.extend(text_op(95.0, 450.0, "3211813"));
+        ops1.extend(text_op(210.0, 450.0, "=SEA+SE-B01-0"));
+        ops1.extend(text_op(350.0, 450.0, "PT 6"));
+        ops1.extend(text_op(470.0, 450.0, "Durchgangsklemme"));
+
+        // Footer
+        ops1.extend(text_op(40.0, 25.0, "Artikelstückliste: Projekt ABC  Seite 1 von 2"));
+
+        // Page 2: Repeating header + cross-page continuation of =SEA+SE-B01-0 + inverted "WAG.285-135 2" in Anz. column
+        let mut ops2 = Vec::new();
+        ops2.extend(text_op(40.0, 575.0, "EPLAN Version 2025.0.3  Gesamtseitenzahl: 2  Datum: 2025-05-01"));
+        ops2.extend(text_op(40.0, 545.0, "Anz."));
+        ops2.extend(text_op(95.0, 545.0, "Art.-Nr."));
+        ops2.extend(text_op(210.0, 545.0, "Betriebsmittel-"));
+        ops2.extend(text_op(210.0, 535.0, "kennzeichen"));
+        ops2.extend(text_op(350.0, 545.0, "Bezeichnung 1"));
+        ops2.extend(text_op(470.0, 545.0, "Beschreibung"));
+
+        // Continuation of =SEA+SE-B01-0 without repeating BMK!
+        ops2.extend(text_op(40.0, 510.0, "2"));
+        ops2.extend(text_op(95.0, 510.0, "PXC.3211822"));
+        ops2.extend(text_op(350.0, 510.0, "PT 6-PE"));
+        ops2.extend(text_op(470.0, 510.0, "Schutzleiterklemme"));
+
+        // Inverted "WAG.285-135 2" inside Anz. column for mixed strip =GLS+KLB-X1
+        ops2.extend(text_op(40.0, 485.0, "WAG.285-135 2"));
+        ops2.extend(text_op(210.0, 485.0, "=GLS+KLB-X1"));
+        ops2.extend(text_op(470.0, 485.0, "Hochstromklemme"));
+
+        let p1 = add_page(ops1);
+        let p2 = add_page(ops2);
+        doc.objects.insert(
+            pages_id,
+            Object::Dictionary(dictionary! {
+                "Type" => "Pages",
+                "Kids" => vec![p1.into(), p2.into()],
+                "Count" => 2,
+            }),
+        );
+        let catalog_id = doc.add_object(dictionary! {
+            "Type" => "Catalog",
+            "Pages" => pages_id,
+        });
+        doc.trailer.set("Root", catalog_id);
+
+        let mut pdf_bytes = Vec::new();
+        doc.save_to(&mut pdf_bytes).unwrap();
+
+        let catalog = TerminalCatalog::load_embedded();
+        let plan = import_pdf_bytes(&pdf_bytes, &catalog).unwrap();
+
+        let bmks: Vec<&str> = plan.strips.iter().map(|s| s.bmk.as_str()).collect();
+        assert_eq!(bmks, vec!["=NSV+A01-X2L", "=SEA+SE-B01-0", "=GLS+KLB-X1"]);
+
+        // =NSV+A01-X2L: 6x PTI 2,5-PE/L/NT + 4x PTTB 2,5 = 10 terminals
+        let x2l = &plan.strips[0];
+        assert_eq!(x2l.total_terminal_count, 10);
+        assert_eq!(x2l.terminals[0].spec_id, "phoenix-pti-25-pelnt");
+        assert_eq!(x2l.terminals[0].quantity, 6);
+        assert_eq!(x2l.terminals[1].spec_id, "phoenix-pttb-25");
+        assert_eq!(x2l.terminals[1].quantity, 4);
+
+        // =SEA+SE-B01-0: merged across Page 1 & Page 2 without repeated BMK on Page 2!
+        let b01 = &plan.strips[1];
+        assert_eq!(b01.pages, vec![1, 2]);
+        assert_eq!(b01.total_terminal_count, 5);
+        assert_eq!(b01.terminals[0].spec_id, "phoenix-pt-6");
+        assert_eq!(b01.terminals[0].quantity, 3);
+        assert_eq!(b01.terminals[1].spec_id, "phoenix-pt-6-pe");
+        assert_eq!(b01.terminals[1].quantity, 2);
+
+        // =GLS+KLB-X1: 2x WAGO 285-135 from inverted "WAG.285-135 2"
+        let gls = &plan.strips[2];
+        assert_eq!(gls.total_terminal_count, 2);
+        assert_eq!(gls.terminals[0].spec_id, "wago-285-135");
+        assert_eq!(gls.terminals[0].quantity, 2);
+    }
 }

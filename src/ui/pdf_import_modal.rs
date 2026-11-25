@@ -15,6 +15,10 @@ pub struct StripImportChoice {
     pub selected: bool,
     pub selected_variant: usize,
     pub include_end_clamps: bool,
+    /// Per-unknown-article mapping to a catalog `spec_id` (`None` = skip/unmapped).
+    pub unknown_mappings: Vec<Option<String>>,
+    /// Per-unknown-article search filter text in the mapping dropdown.
+    pub unknown_searches: Vec<String>,
 }
 
 /// Confirmed result returned when the user clicks `"Ausgewählte Leisten übernehmen"`.
@@ -23,6 +27,7 @@ pub struct SelectedStripImport {
     pub plan: StripImportPlan,
     pub variant_index: usize,
     pub include_end_clamps: bool,
+    pub unknown_mappings: Vec<Option<String>>,
 }
 
 /// Interactive state for the PDF BOM import modal.
@@ -40,11 +45,16 @@ impl PdfImportDialogState {
         self.choices = plan
             .strips
             .iter()
-            .map(|s| StripImportChoice {
-                selected: s.total_terminal_count > 0 && !s.variants.is_empty(),
-                selected_variant: 0,
-                include_end_clamps: s.end_parts.has_pdf_end_clamps
-                    || s.end_parts.auto_complement_brackets,
+            .map(|s| {
+                let unk_len = s.unknown_articles.len();
+                StripImportChoice {
+                    selected: s.total_terminal_count > 0 && !s.variants.is_empty(),
+                    selected_variant: 0,
+                    include_end_clamps: s.end_parts.has_pdf_end_clamps
+                        || s.end_parts.auto_complement_brackets,
+                    unknown_mappings: vec![None; unk_len],
+                    unknown_searches: vec![String::new(); unk_len],
+                }
             })
             .collect();
         self.source_label = source_label;
@@ -60,6 +70,11 @@ impl PdfImportDialogState {
         self.choices.clear();
         self.open = true;
     }
+}
+
+fn strip_has_importable_blocks(strip: &StripImportPlan, choice: &StripImportChoice) -> bool {
+    (strip.total_terminal_count > 0 && !strip.variants.is_empty())
+        || choice.unknown_mappings.iter().any(|m| m.is_some())
 }
 
 fn draw_pill_badge(ui: &mut egui::Ui, text: &str, bg: Color32, fg: Color32) {
@@ -192,7 +207,7 @@ pub fn show_pdf_import_modal(
                 ui.horizontal_wrapped(|ui| {
                     if icon_button(ui, UiIcon::SelectAll, tr::pdf_all_selectable(lang)).clicked() {
                         for (s, c) in plan.strips.iter().zip(state.choices.iter_mut()) {
-                            c.selected = s.total_terminal_count > 0 && !s.variants.is_empty();
+                            c.selected = strip_has_importable_blocks(s, c);
                         }
                     }
                     if icon_button(ui, UiIcon::SelectNone, tr::select_none(strings.lang)).clicked() {
@@ -220,7 +235,24 @@ pub fn show_pdf_import_modal(
                 .zip(state.choices.iter_mut())
                 .enumerate()
             {
-                let can_import = strip.total_terminal_count > 0 && !strip.variants.is_empty();
+                // Ensure mapping vectors stay sized to unknown_articles
+                if choice.unknown_mappings.len() != strip.unknown_articles.len() {
+                    choice.unknown_mappings.resize(strip.unknown_articles.len(), None);
+                }
+                if choice.unknown_searches.len() != strip.unknown_articles.len() {
+                    choice
+                        .unknown_searches
+                        .resize(strip.unknown_articles.len(), String::new());
+                }
+
+                let mapped_unknown_count: usize = strip
+                    .unknown_articles
+                    .iter()
+                    .zip(choice.unknown_mappings.iter())
+                    .filter_map(|(u, m)| m.as_ref().map(|_| u.quantity))
+                    .sum();
+                let effective_total = strip.total_terminal_count + mapped_unknown_count;
+                let can_import = strip_has_importable_blocks(strip, choice);
                 let card_stroke = if choice.selected && can_import {
                     Stroke::new(1.2, Color32::from_rgb(2, 132, 199))
                 } else {
@@ -231,7 +263,7 @@ pub fn show_pdf_import_modal(
                     .stroke(card_stroke)
                     .inner_margin(Margin::same(10))
                     .show(ui, |ui| {
-                        // Header row: Checkbox + BMK + Mfg badge + Counts + Status Badges
+                        // Header row: Checkbox + BMK + Mfg badge(s) + Counts + Status Badges
                         ui.horizontal_wrapped(|ui| {
                             if can_import {
                                 ui.checkbox(&mut choice.selected, "");
@@ -240,7 +272,13 @@ pub fn show_pdf_import_modal(
                                 ui.add_enabled(false, egui::Checkbox::new(&mut dummy, ""));
                             }
                             ui.label(egui::RichText::new(&strip.bmk).strong().size(15.5));
-                            compact_mfg_badge(ui, &strip.dominant_manufacturer);
+                            if strip.manufacturers.is_empty() {
+                                compact_mfg_badge(ui, &strip.dominant_manufacturer);
+                            } else {
+                                for mfg in &strip.manufacturers {
+                                    compact_mfg_badge(ui, mfg);
+                                }
+                            }
 
                             let page_str = if strip.pages.len() <= 1 {
                                 format!("P. {}", strip.pages.first().copied().unwrap_or(1))
@@ -253,8 +291,8 @@ pub fn show_pdf_import_modal(
                             };
                             ui.label(
                                 egui::RichText::new(format!(
-                                    "({} {} | {page_str})",
-                                    strip.total_terminal_count, strings.blocks_unit
+                                    "({effective_total} {} | {page_str})",
+                                    strings.blocks_unit
                                 ))
                                 .color(secondary_text_color(ui)),
                             );
@@ -294,11 +332,23 @@ pub fn show_pdf_import_modal(
                                     Color32::WHITE,
                                 );
                             }
-                            if !strip.unknown_articles.is_empty() {
+                            let unmapped_count = choice
+                                .unknown_mappings
+                                .iter()
+                                .filter(|m| m.is_none())
+                                .count();
+                            if unmapped_count > 0 {
                                 draw_pill_badge(
                                     ui,
-                                    "Nicht in DB",
+                                    "Heuristik / Nicht in DB",
                                     Color32::from_rgb(217, 119, 6),
+                                    Color32::WHITE,
+                                );
+                            } else if !strip.unknown_articles.is_empty() {
+                                draw_pill_badge(
+                                    ui,
+                                    "Zugeordnet",
+                                    Color32::from_rgb(22, 163, 74),
                                     Color32::WHITE,
                                 );
                             }
@@ -322,22 +372,99 @@ pub fn show_pdf_import_modal(
                             );
                         }
 
-                        // Unknown article warnings ("Nicht in DB")
-                        for unk in &strip.unknown_articles {
+                        // Unknown / heuristic terminal warnings + interactive catalog mapping
+                        for (u_idx, unk) in strip.unknown_articles.iter().enumerate() {
+                            let mapped_id = choice.unknown_mappings[u_idx].clone();
+                            let mapped_spec =
+                                mapped_id.as_deref().and_then(|id| catalog.find_by_id(id));
+                            let tag_prefix = if unk.heuristic_matched {
+                                "⚠ Heuristik (Nicht in DB)"
+                            } else {
+                                "⚠ Nicht in DB"
+                            };
+                            let warn_color = if mapped_spec.is_some() {
+                                Color32::from_rgb(22, 163, 74)
+                            } else {
+                                Color32::from_rgb(217, 119, 6)
+                            };
                             ui.add(
                                 egui::Label::new(
                                     egui::RichText::new(format!(
-                                        "⚠ Nicht in DB: {}× {} {} ({})",
+                                        "{tag_prefix}: {}× {} {} ({})",
                                         unk.quantity,
                                         unk.article_number,
                                         unk.type_number,
                                         unk.description
                                     ))
                                     .small()
-                                    .color(Color32::from_rgb(217, 119, 6)),
+                                    .color(warn_color),
                                 )
                                 .wrap(),
                             );
+
+                            ui.push_id(("unk_map", idx, u_idx), |ui| {
+                                ui.horizontal_wrapped(|ui| {
+                                    let current_label = if let Some(spec) = mapped_spec {
+                                        format!("Zugeordnet: {} ({})", spec.name, spec.manufacturer)
+                                    } else {
+                                        "Zuordnen / bestätigen…".to_string()
+                                    };
+                                    egui::ComboBox::from_id_salt(("unk_combo", idx, u_idx))
+                                        .selected_text(current_label)
+                                        .width(280.0)
+                                        .show_ui(ui, |ui| {
+                                            ui.horizontal(|ui| {
+                                                ui.label("Suche:");
+                                                ui.text_edit_singleline(
+                                                    &mut choice.unknown_searches[u_idx],
+                                                );
+                                            });
+                                            ui.separator();
+                                            if ui
+                                                .selectable_label(
+                                                    choice.unknown_mappings[u_idx].is_none(),
+                                                    "— Nicht übernehmen (überspringen) —",
+                                                )
+                                                .clicked()
+                                            {
+                                                choice.unknown_mappings[u_idx] = None;
+                                            }
+                                            let q = choice.unknown_searches[u_idx].trim();
+                                            let mfg_opt = (unk.manufacturer != "Unbekannt")
+                                                .then_some(unk.manufacturer.as_str());
+                                            for spec in catalog.filter_specs(mfg_opt, q).into_iter().take(40) {
+                                                let selected = choice.unknown_mappings[u_idx]
+                                                    .as_deref()
+                                                    == Some(spec.id.as_str());
+                                                let item_lbl = format!(
+                                                    "{} | {} ({})",
+                                                    spec.manufacturer,
+                                                    spec.name,
+                                                    spec.effective_article_number().unwrap_or("-")
+                                                );
+                                                if ui.selectable_label(selected, item_lbl).clicked() {
+                                                    choice.unknown_mappings[u_idx] =
+                                                        Some(spec.id.clone());
+                                                    choice.selected = true;
+                                                }
+                                            }
+                                        });
+
+                                    if mapped_spec.is_none()
+                                        && let Some(sug_id) = &unk.suggested_spec_id
+                                        && let Some(sug_spec) = catalog.find_by_id(sug_id)
+                                        && ui
+                                            .small_button(format!(
+                                                "✓ Als {} übernehmen",
+                                                sug_spec.name.split(" (").next().unwrap_or(&sug_spec.name)
+                                            ))
+                                            .clicked()
+                                    {
+                                        choice.unknown_mappings[u_idx] = Some(sug_spec.id.clone());
+                                        choice.selected = true;
+                                    }
+                                });
+                            });
                         }
 
                         // Ignored jumpers detail
@@ -458,7 +585,7 @@ pub fn show_pdf_import_modal(
                         ui.add(
                             egui::Label::new(
                                 egui::RichText::new(format!(
-                                    "Gefiltert (kein -X BMK): {}{}",
+                                    "Gefiltert (Nicht-Klemmen): {}{}",
                                     sample.join(", "),
                                     if plan.ignored_non_x_rows.len() > 15 {
                                         " …"
@@ -483,9 +610,7 @@ pub fn show_pdf_import_modal(
                     p.strips
                         .iter()
                         .zip(state.choices.iter())
-                        .filter(|(s, c)| {
-                            c.selected && s.total_terminal_count > 0 && !s.variants.is_empty()
-                        })
+                        .filter(|(s, c)| c.selected && strip_has_importable_blocks(s, c))
                         .count()
                 })
                 .unwrap_or(0);
@@ -507,13 +632,12 @@ pub fn show_pdf_import_modal(
                     .strips
                     .iter()
                     .zip(state.choices.iter())
-                    .filter(|(s, c)| {
-                        c.selected && s.total_terminal_count > 0 && !s.variants.is_empty()
-                    })
+                    .filter(|(s, c)| c.selected && strip_has_importable_blocks(s, c))
                     .map(|(s, c)| SelectedStripImport {
                         plan: s.clone(),
                         variant_index: c.selected_variant,
                         include_end_clamps: c.include_end_clamps,
+                        unknown_mappings: c.unknown_mappings.clone(),
                     })
                     .collect();
                 confirmed = Some(picked);

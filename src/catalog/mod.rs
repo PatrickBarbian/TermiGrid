@@ -2389,15 +2389,23 @@ impl TerminalCatalog {
         }
         fn strip_prefix(s: &str) -> &str {
             let trimmed = s.trim();
-            for sep in ['.', ':', '/'] {
+            for sep in ['.', ':'] {
                 if let Some((head, tail)) = trimmed.split_once(sep) {
-                    let h = head.trim().to_ascii_uppercase();
-                    if matches!(
-                        h.as_str(),
-                        "WAGO" | "PXC" | "PHOENIX" | "PHOENIXCONTACT" | "WEI" | "WMI" | "WEID"
-                            | "WEIDMULLER" | "WEIDMÜLLER" | "WEIDMUELLER"
-                    ) {
-                        return tail.trim();
+                    let h = head.trim();
+                    let t = tail.trim();
+                    if !t.is_empty()
+                        && (((2..=5).contains(&h.len())
+                            && h.chars().all(|c| c.is_ascii_alphabetic()))
+                            || matches!(
+                                h.to_ascii_uppercase().as_str(),
+                                "PHOENIX"
+                                    | "PHOENIXCONTACT"
+                                    | "WEIDMULLER"
+                                    | "WEIDMÜLLER"
+                                    | "WEIDMUELLER"
+                            ))
+                    {
+                        return t;
                     }
                 }
             }

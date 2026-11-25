@@ -31,7 +31,9 @@ use crate::export::{
     ExportOptions, PrintOrder,
 };
 use crate::i18n::{strings, tr, Language};
-use crate::import::{import_pdf_bytes, import_pdf_path, planner::instantiate_imported_strip};
+use crate::import::{
+    import_pdf_bytes, import_pdf_path, planner::instantiate_imported_strip_with_mappings,
+};
 use crate::model::bridging::{
     calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
 };
@@ -1372,10 +1374,11 @@ impl eframe::App for TermiGridApp {
             let mut imported_count = 0usize;
 
             for item in selected_imports {
-                if let Some((mut strip, nt_zone)) = instantiate_imported_strip(
+                if let Some((mut strip, nt_zone)) = instantiate_imported_strip_with_mappings(
                     &item.plan,
                     item.variant_index,
                     item.include_end_clamps,
+                    &item.unknown_mappings,
                     &self.catalog,
                 ) {
                     strip.end_plates_generated = !item.plan.has_nt_or_install;
