@@ -891,7 +891,7 @@ pub fn show_cad_canvas(
                 {
                     let trimmed = new_text.trim();
                     tier.custom_override = if trimmed.is_empty() {
-                        None
+                        Some(String::new())
                     } else {
                         Some(trimmed.to_string())
                     };
@@ -1260,7 +1260,9 @@ pub fn show_cad_canvas(
                     ));
                     let pe_count = block.tiers.iter().filter(|t| t.behavior.is_pe()).count();
                     for (t_idx, tier) in block.tiers.iter().enumerate().rev() {
-                        let lbl = if tier.computed_label.is_empty() {
+                        let lbl = if tier.is_blank_marker() {
+                            tr::blank_marker_tooltip(strings.lang).to_string()
+                        } else if tier.computed_label.is_empty() {
                             if tier.behavior.is_pe() {
                                 "PE (unbeschriftet / unlabeled)".to_string()
                             } else {

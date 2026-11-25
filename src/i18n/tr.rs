@@ -1835,6 +1835,83 @@ pub const fn toast_grouped_base_types(l: Language) -> &'static str {
         "Klemmen gegroepeerd op basistype (incl. bijbehorende -PE-klemmen).",
     ])
 }
+pub const fn btn_blank_marker(l: Language) -> &'static str {
+    pick(l, [
+        "Leer",
+        "Blank",
+        "Vide",
+        "Vuoto",
+        "Vacío",
+        "Pusty",
+        "Leeg",
+    ])
+}
+pub const fn btn_blank_marker_tip(l: Language) -> &'static str {
+    pick(l, [
+        "Beschriftung leer lassen (erzeugt ein leeres Schild / leere Zelle in der Excel-Druckliste).",
+        "Leave label blank (creates an empty marker / blank cell in the Excel print list).",
+        "Laisser le repère vide (crée une étiquette vierge / cellule vide dans la liste Excel).",
+        "Lascia etichetta vuota (crea un cartellino vuoto / cella vuota nella lista Excel).",
+        "Dejar etiqueta vacía (crea un marcador en blanco / celda vacía en la lista Excel).",
+        "Pozostaw opis pusty (tworzy pusty oznacznik / pustą komórkę w liście Excel).",
+        "Codering leeg laten (maakt een leeg schildje / lege cel in de Excel-printlijst).",
+    ])
+}
+pub const fn blank_marker_short(l: Language) -> &'static str {
+    pick(l, [
+        "Leeres Schild",
+        "Blank Marker",
+        "Repère vierge",
+        "Cartellino vuoto",
+        "Marcador vacío",
+        "Pusty oznacznik",
+        "Leeg schildje",
+    ])
+}
+pub const fn blank_marker_hint(l: Language) -> &'static str {
+    pick(l, [
+        "Leeres Schild (in Excel leer)",
+        "Blank marker (empty in Excel)",
+        "Repère vierge (vide dans Excel)",
+        "Cartellino vuoto (vuoto in Excel)",
+        "Marcador vacío (vacío en Excel)",
+        "Pusty oznacznik (puste w Excelu)",
+        "Leeg schildje (leeg in Excel)",
+    ])
+}
+pub const fn blank_marker_tooltip(l: Language) -> &'static str {
+    pick(l, [
+        "Leeres Schild (in Excel leer) *",
+        "Blank Marker (empty in Excel) *",
+        "Repère vierge (vide dans Excel) *",
+        "Cartellino vuoto (vuoto in Excel) *",
+        "Marcador vacío (vacío en Excel) *",
+        "Pusty oznacznik (puste w Excelu) *",
+        "Leeg schildje (leeg in Excel) *",
+    ])
+}
+pub const fn batch_blank_marker_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Leeres Schild",
+        "Blank Marker",
+        "Repère vierge",
+        "Cartellino vuoto",
+        "Marcador vacío",
+        "Pusty oznacznik",
+        "Leeg schildje",
+    ])
+}
+pub const fn batch_auto_marker_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Automatik (Auto)",
+        "Automatic (Auto)",
+        "Automatique (Auto)",
+        "Automatico (Auto)",
+        "Automático (Auto)",
+        "Automatycznie (Auto)",
+        "Automatisch (Auto)",
+    ])
+}
 
 // ── Guided Tour & Onboarding (Basic + Advanced) ────────────────────────────
 

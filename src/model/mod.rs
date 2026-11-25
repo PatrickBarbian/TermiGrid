@@ -97,6 +97,19 @@ impl ConnectionPoint {
             cad_display_label: String::new(),
         }
     }
+
+    /// Returns true when the user explicitly marked this tier to produce an empty/blank marker (`Leeres Schild`).
+    pub fn is_blank_marker(&self) -> bool {
+        self.custom_override
+            .as_ref()
+            .is_some_and(|s| s.trim().is_empty())
+    }
+
+    /// Returns true if this tier produces a marker slot in print/export lists (either a non-empty
+    /// computed label or an explicitly blank marker `Leeres Schild`).
+    pub fn has_printable_marker(&self) -> bool {
+        !self.computed_label.is_empty() || self.is_blank_marker()
+    }
 }
 
 /// Represents one physical terminal block mounted on the DIN rail.
@@ -510,12 +523,12 @@ impl TerminalStrip {
         (f32::from(spec.width_tenths_mm) / 10.0) * (count as f32)
     }
 
-    /// Returns the total number of printable (non-empty) labels in this strip.
+    /// Returns the total number of printable marker labels (including explicitly blank markers) in this strip.
     pub fn printable_label_count(&self) -> usize {
         self.blocks
             .iter()
             .flat_map(|b| b.tiers.iter())
-            .filter(|t| !t.computed_label.is_empty())
+            .filter(|t| t.has_printable_marker())
             .count()
     }
 }

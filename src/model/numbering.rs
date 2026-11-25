@@ -40,11 +40,7 @@ fn assign_tier_label(
             wrap_affix(trimmed, &tier.label_prefix, &tier.label_suffix)
         };
         tier.computed_label = label.clone();
-        tier.cad_display_label = if label.is_empty() && tier.behavior.is_pe() {
-            wrap_affix("PE", &tier.label_prefix, &tier.label_suffix)
-        } else {
-            label
-        };
+        tier.cad_display_label = label;
         return;
     }
 
@@ -253,6 +249,33 @@ impl TerminalStrip {
                 if target_visual_row.is_none_or(|r| block.tier_visual_row(t_idx) == r) {
                     block.tiers[t_idx].label_prefix = prefix.to_string();
                     block.tiers[t_idx].label_suffix = suffix.to_string();
+                }
+            }
+        }
+        self.recalculate_labels();
+    }
+
+    /// Sets or clears an explicit blank marker (`Leeres Schild`, `custom_override = Some("")`)
+    /// across selected blocks, optionally filtered to one aligned `target_visual_row`.
+    pub fn set_blank_marker_on_selection(
+        &mut self,
+        block_indices: &[usize],
+        target_visual_row: Option<isize>,
+        blank: bool,
+    ) {
+        let len = self.blocks.len();
+        for &b_idx in block_indices {
+            if b_idx >= len {
+                continue;
+            }
+            let block = &mut self.blocks[b_idx];
+            for t_idx in 0..block.tiers.len() {
+                if target_visual_row.is_none_or(|r| block.tier_visual_row(t_idx) == r) {
+                    block.tiers[t_idx].custom_override = if blank {
+                        Some(String::new())
+                    } else {
+                        None
+                    };
                 }
             }
         }
@@ -1070,6 +1093,45 @@ mod tests {
         assert_eq!(cols[2].0, "Ebene 3");
         assert_eq!(cols[2].1, vec!["2", "4"]);
     }
+
+    #[test]
+    fn blank_marker_creates_empty_cell_in_print_rows_and_tier_columns() {
+        use crate::export::{build_print_rows, build_tier_columns, ExportOptions};
+        use crate::model::Project;
+
+        let catalog = TerminalCatalog::load_embedded();
+        let single = catalog.find_by_id("wago-2002-1201").unwrap();
+        let mut strip = TerminalStrip::generate_with_block_count("-X1", 1, 4, 4, single);
+
+        // Set block at index 1 (Pos. 2) to a blank marker ("Leeres Schild")
+        strip.set_blank_marker_on_selection(&[1], None, true);
+        assert!(strip.blocks[1].tiers[0].is_blank_marker());
+        assert_eq!(strip.printable_label_count(), 4);
+
+        let project = Project {
+            format_version: 1,
+            project_name: "BlankMarkerTest".to_string(),
+            strips: vec![strip],
+            ..Default::default()
+        };
+
+        // 1. Flat print rows must include Pos. 2 with an empty label ""
+        let rows = build_print_rows(&project, 0, &ExportOptions::default());
+        assert_eq!(rows.len(), 4);
+        let positions: Vec<&str> = rows.iter().map(|r| r.block_position.as_str()).collect();
+        let labels: Vec<&str> = rows.iter().map(|r| r.label.as_str()).collect();
+        let combined: Vec<&str> = rows.iter().map(|r| r.combined_designation.as_str()).collect();
+        assert_eq!(positions, vec!["1", "2", "3", "4"]);
+        assert_eq!(labels, vec!["1", "", "2", "3"]);
+        assert_eq!(combined, vec!["-X1:1", "", "-X1:2", "-X1:3"]);
+
+        // 2. Continuous tier strip ("Ebene 1") must also preserve the empty cell "" at index 1
+        let cols = build_tier_columns(&project, 0, &ExportOptions::default(), true);
+        assert_eq!(cols.len(), 1);
+        assert_eq!(cols[0].0, "Ebene 1");
+        assert_eq!(cols[0].1, vec!["1", "", "2", "3"]);
+    }
 }
+
 
 

@@ -174,7 +174,7 @@ pub fn build_tier_columns_for_strips(
             b.tiers
                 .iter()
                 .enumerate()
-                .filter(|(_, t)| !t.behavior.is_pe())
+                .filter(|(_, t)| !t.behavior.is_pe() || t.is_blank_marker())
                 .map(|(l, _)| b.tier_visual_row(l))
         })
         .max()
@@ -183,7 +183,11 @@ pub fn build_tier_columns_for_strips(
     let has_non_pe = strips
         .iter()
         .flat_map(|s| s.blocks.iter())
-        .any(|b| b.tiers.iter().any(|t| !t.behavior.is_pe()));
+        .any(|b| {
+            b.tiers
+                .iter()
+                .any(|t| !t.behavior.is_pe() || t.is_blank_marker())
+        });
 
     let mut columns = Vec::new();
     if has_non_pe {
@@ -197,9 +201,9 @@ pub fn build_tier_columns_for_strips(
             for strip in strips {
                 for block in &strip.blocks {
                     for (t_idx, tier) in block.tiers.iter().enumerate() {
-                        if !tier.behavior.is_pe()
-                            && block.tier_visual_row(t_idx) == target_row
-                            && !tier.computed_label.is_empty()
+                        if block.tier_visual_row(t_idx) == target_row
+                            && ((!tier.behavior.is_pe() && tier.has_printable_marker())
+                                || (tier.is_blank_marker() && target_row >= 0))
                         {
                             labels.push(tier.computed_label.clone());
                         }
@@ -216,7 +220,9 @@ pub fn build_tier_columns_for_strips(
             for block in &strip.blocks {
                 for tier in &block.tiers {
                     if tier.behavior.is_pe() {
-                        let lbl = if !tier.computed_label.is_empty() {
+                        let lbl = if tier.is_blank_marker() {
+                            String::new()
+                        } else if !tier.computed_label.is_empty() {
                             tier.computed_label.clone()
                         } else {
                             "PE".to_string()
@@ -268,6 +274,8 @@ fn extract_row(
 
     let label = if !tier.computed_label.is_empty() {
         tier.computed_label.clone()
+    } else if tier.is_blank_marker() {
+        String::new()
     } else if options.include_pe_labels && tier.behavior.is_pe() {
         "PE".to_string()
     } else {
@@ -289,13 +297,19 @@ fn extract_row(
         format!("E{}", visual_row + 1)
     };
 
+    let combined_designation = if label.is_empty() {
+        String::new()
+    } else {
+        format!("{}:{}", strip.name, label)
+    };
+
     let row = PrintLabelRow {
         sequence_no: seq.to_string(),
         strip_name: strip.name.clone(),
         block_position: (block_idx + 1).to_string(),
         tier_level,
-        label: label.clone(),
-        combined_designation: format!("{}:{}", strip.name, label),
+        label,
+        combined_designation,
         manufacturer: block.manufacturer.clone(),
         terminal_type: block.short_type_name().to_string(),
     };

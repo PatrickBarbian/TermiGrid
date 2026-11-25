@@ -365,7 +365,9 @@ pub fn export_to_xlsx(
                                 && (!t.behavior.is_pe() || !is_pure_multi_pe)
                         })
                         .map(|(_, t)| {
-                            if !t.computed_label.is_empty() {
+                            if t.is_blank_marker() {
+                                ""
+                            } else if !t.computed_label.is_empty() {
                                 t.computed_label.as_str()
                             } else if t.behavior.is_pe() {
                                 "PE"
@@ -395,7 +397,9 @@ pub fn export_to_xlsx(
                     String::new()
                 } else if pe_tiers.len() == 1 {
                     let t = pe_tiers[0].1;
-                    if !t.computed_label.is_empty() {
+                    if t.is_blank_marker() {
+                        String::new()
+                    } else if !t.computed_label.is_empty() {
                         t.computed_label.clone()
                     } else if options.include_pe_labels {
                         "PE".to_string()

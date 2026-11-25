@@ -3793,26 +3793,53 @@ impl TermiGridApp {
                                         String::new()
                                     };
 
+                                    let badge_txt = if tier.is_blank_marker() {
+                                        tr::blank_marker_short(self.lang)
+                                    } else if !tier.cad_display_label.is_empty() {
+                                        tier.cad_display_label.as_str()
+                                    } else {
+                                        "—"
+                                    };
                                     ui.add(
                                         egui::Label::new(format!(
                                             "{}{}: [{}]",
-                                            tier_title, pe_tag, tier.cad_display_label
+                                            tier_title, pe_tag, badge_txt
                                         ))
                                         .wrap(),
                                     );
 
+                                    let is_blank = tier.is_blank_marker();
                                     let mut text =
                                         tier.custom_override.clone().unwrap_or_default();
+                                    let hint = if is_blank {
+                                        tr::blank_marker_hint(self.lang)
+                                    } else {
+                                        s.custom_override_hint
+                                    };
                                     ui.horizontal_wrapped(|ui| {
                                         let edit = egui::TextEdit::singleline(&mut text)
-                                            .hint_text(s.custom_override_hint)
+                                            .hint_text(hint)
                                             .desired_width(field_w);
                                         if ui.add(edit).changed() {
                                             tier.custom_override = if text.is_empty() {
                                                 None
+                                            } else if text.trim().is_empty() {
+                                                Some(String::new())
                                             } else {
                                                 Some(text)
                                             };
+                                            needs_recalc = true;
+                                        }
+                                        if !is_blank
+                                            && icon_button(
+                                                ui,
+                                                UiIcon::Clear,
+                                                tr::btn_blank_marker(self.lang),
+                                            )
+                                            .on_hover_text(tr::btn_blank_marker_tip(self.lang))
+                                            .clicked()
+                                        {
+                                            tier.custom_override = Some(String::new());
                                             needs_recalc = true;
                                         }
                                         if tier.custom_override.is_some()
@@ -3910,6 +3937,42 @@ impl TermiGridApp {
                                         self.batch_target_row,
                                         "",
                                         "",
+                                    );
+                            }
+                        });
+                        ui.add_space(4.0);
+                        ui.horizontal_wrapped(|ui| {
+                            if icon_button(
+                                ui,
+                                UiIcon::Clear,
+                                tr::batch_blank_marker_btn(self.lang),
+                            )
+                            .on_hover_text(tr::btn_blank_marker_tip(self.lang))
+                            .clicked()
+                            {
+                                let indices: Vec<usize> =
+                                    self.selected_blocks.iter().copied().collect();
+                                self.project.strips[self.active_strip]
+                                    .set_blank_marker_on_selection(
+                                        &indices,
+                                        self.batch_target_row,
+                                        true,
+                                    );
+                            }
+                            if icon_button(
+                                ui,
+                                UiIcon::FlipOrder,
+                                tr::batch_auto_marker_btn(self.lang),
+                            )
+                            .clicked()
+                            {
+                                let indices: Vec<usize> =
+                                    self.selected_blocks.iter().copied().collect();
+                                self.project.strips[self.active_strip]
+                                    .set_blank_marker_on_selection(
+                                        &indices,
+                                        self.batch_target_row,
+                                        false,
                                     );
                             }
                         });
