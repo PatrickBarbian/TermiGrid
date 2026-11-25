@@ -236,12 +236,34 @@ pub fn show_new_strip_modal(
                 });
 
                 ui.add_space(4.0);
-                ui.add(
-                    egui::TextEdit::multiline(&mut state.prompt_text)
-                        .desired_rows(3)
-                        .desired_width(f32::INFINITY)
-                        .hint_text(tr::quick_prompt_hint(lang)),
-                );
+                let dark_ink = egui::Color32::from_rgb(15, 23, 42);
+                egui::Frame::NONE
+                    .fill(egui::Color32::WHITE)
+                    .stroke(egui::Stroke::new(1.2, egui::Color32::from_rgb(148, 163, 184)))
+                    .corner_radius(egui::CornerRadius::same(6))
+                    .inner_margin(egui::Margin::symmetric(8, 6))
+                    .show(ui, |ui| {
+                        ui.scope(|ui| {
+                            let v = ui.visuals_mut();
+                            v.extreme_bg_color = egui::Color32::WHITE;
+                            v.text_cursor.stroke.color = dark_ink;
+                            v.widgets.inactive.fg_stroke.color = dark_ink;
+                            v.widgets.hovered.fg_stroke.color = dark_ink;
+                            v.widgets.active.fg_stroke.color = dark_ink;
+                            ui.add(
+                                egui::TextEdit::multiline(&mut state.prompt_text)
+                                    .frame(egui::Frame::NONE)
+                                    .background_color(egui::Color32::WHITE)
+                                    .text_color(dark_ink)
+                                    .desired_rows(3)
+                                    .desired_width(f32::INFINITY)
+                                    .hint_text(
+                                        egui::RichText::new(tr::quick_prompt_hint(lang))
+                                            .color(egui::Color32::from_rgb(100, 116, 139)),
+                                    ),
+                            );
+                        });
+                    });
 
                 let plan =
                     parse_and_resolve_prompt(&state.prompt_text, state.prompt_ctx, catalog);

@@ -163,6 +163,12 @@ pub fn default_library_path() -> PathBuf {
         .join("strip_library.json")
 }
 
+/// Resolves the cross-platform persistent storage path for the locally downloaded
+/// GitHub terminal database (`terminal_specs.json`).
+pub fn default_downloaded_db_path() -> PathBuf {
+    default_library_path().with_file_name("terminal_specs.json")
+}
+
 impl StripLibrary {
     /// Loads the personal strip library from the default OS data path (returns empty library if missing).
     pub fn load_default() -> Self {

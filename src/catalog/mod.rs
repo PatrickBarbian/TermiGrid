@@ -2309,7 +2309,103 @@ fn url_encode(s: &str) -> String {
     out
 }
 
-/// In-memory catalog loaded from the embedded JSON terminal database.
+/// Default Raw GitHub URL used to check and download terminal database updates without rebuilding the binary.
+pub const GITHUB_TERMINAL_DB_URL: &str =
+    "https://raw.githubusercontent.com/PatrickBarbian/TermiGrid/main/assets/terminal_specs.json";
+
+/// Returns the active Raw GitHub URL for terminal database updates (can be overridden via `TERMIGRID_DB_URL`).
+pub fn configured_terminal_db_url() -> String {
+    if let Ok(custom) = std::env::var("TERMIGRID_DB_URL")
+        && !custom.trim().is_empty()
+    {
+        return custom.trim().to_string();
+    }
+    GITHUB_TERMINAL_DB_URL.to_string()
+}
+
+/// Computes a deterministic 64-bit FNV-1a hex fingerprint across a list of `TerminalSpec`s.
+pub fn canonical_db_hash(specs: &[TerminalSpec]) -> String {
+    let mut sorted: Vec<&TerminalSpec> = specs.iter().collect();
+    sorted.sort_by(|a, b| a.id.cmp(&b.id));
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for sp in sorted {
+        if let Ok(s) = serde_json::to_string(sp) {
+            for b in s.as_bytes() {
+                hash ^= u64::from(*b);
+                hash = hash.wrapping_mul(0x100000001b3);
+            }
+        }
+    }
+    format!("{hash:016x}")
+}
+
+/// Parses and validates a raw terminal database JSON payload (either a top-level array `[ ... ]`
+/// or a versioned object `{ "version": "...", "terminals": [ ... ] }`).
+/// Rejects empty, malformed, or structurally invalid specs so a corrupt download can never break the app.
+pub fn parse_and_validate_db_json(
+    raw_json: &str,
+) -> Result<(Vec<TerminalSpec>, Option<String>), String> {
+    let trimmed = raw_json.trim().trim_start_matches('\u{feff}').trim();
+    if trimmed.is_empty() {
+        return Err("Leere JSON-Datenbank".to_string());
+    }
+
+    let val: serde_json::Value =
+        serde_json::from_str(trimmed).map_err(|e| format!("Ungültiges JSON: {e}"))?;
+
+    let (arr_val, version) = match val {
+        serde_json::Value::Array(arr) => (arr, None),
+        serde_json::Value::Object(mut map) => {
+            let ver = map
+                .get("version")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
+            let list = map
+                .remove("terminals")
+                .or_else(|| map.remove("specs"))
+                .ok_or_else(|| {
+                    "JSON-Objekt enthält kein 'terminals'- oder 'specs'-Array".to_string()
+                })?;
+            match list {
+                serde_json::Value::Array(arr) => (arr, ver),
+                _ => return Err("Feld 'terminals' ist kein JSON-Array".to_string()),
+            }
+        }
+        _ => return Err("Erwartet wurde ein JSON-Array oder Datenbank-Objekt".to_string()),
+    };
+
+    if arr_val.is_empty() {
+        return Err("Klemmen-Datenbank darf nicht leer sein".to_string());
+    }
+
+    let mut specs = Vec::with_capacity(arr_val.len());
+    let mut seen_ids = std::collections::HashSet::with_capacity(arr_val.len());
+    for (idx, item) in arr_val.into_iter().enumerate() {
+        let spec: TerminalSpec = serde_json::from_value(item)
+            .map_err(|e| format!("Fehler in Klemmen-Eintrag #{}: {e}", idx + 1))?;
+        if spec.id.trim().is_empty()
+            || spec.name.trim().is_empty()
+            || spec.manufacturer.trim().is_empty()
+            || spec.levels == 0
+            || spec.width_tenths_mm == 0
+            || spec.tiers.is_empty()
+        {
+            return Err(format!(
+                "Ungültige Pflichtfelder in Klemmen-Eintrag #{} ({})",
+                idx + 1,
+                spec.id
+            ));
+        }
+        if seen_ids.insert(spec.id.clone()) {
+            specs.push(spec);
+        }
+    }
+
+    Ok((specs, version))
+}
+
+/// In-memory catalog loaded from the local downloaded or embedded JSON terminal database.
 #[derive(Debug, Clone)]
 pub struct TerminalCatalog {
     specs: Vec<TerminalSpec>,
@@ -2331,6 +2427,81 @@ impl TerminalCatalog {
         catalog
     }
 
+    /// Loads the active terminal database with priority for a locally downloaded GitHub database
+    /// (`default_downloaded_db_path()`), falling back to the embedded database when no downloaded
+    /// file exists or if the local file is invalid.
+    pub fn load_active() -> Self {
+        let path = crate::model::library::default_downloaded_db_path();
+        Self::load_from_db_path_or_embedded(&path)
+    }
+
+    /// Loads the terminal database from `db_path` if it exists and is valid (merging any embedded
+    /// specs whose IDs are not present in `db_path` while giving `db_path` priority), or falls back
+    /// to `Self::load_embedded()`.
+    pub fn load_from_db_path_or_embedded(db_path: &std::path::Path) -> Self {
+        if db_path.exists()
+            && let Ok(raw) = std::fs::read_to_string(db_path)
+            && let Ok((downloaded_specs, _)) = parse_and_validate_db_json(&raw)
+        {
+            let mut merged = downloaded_specs;
+            let present_ids: std::collections::HashSet<String> =
+                merged.iter().map(|s| s.id.clone()).collect();
+            let embedded: Vec<TerminalSpec> = serde_json::from_str(EMBEDDED_SPECS_JSON)
+                .expect("Embedded terminal_specs.json must be valid JSON");
+            for emb in embedded {
+                if !present_ids.contains(&emb.id) {
+                    merged.push(emb);
+                }
+            }
+            let mut catalog = Self { specs: merged };
+            catalog.sort_by_manufacturer_and_type();
+            return catalog;
+        }
+        Self::load_embedded()
+    }
+
+    /// Validates `raw_json` and atomically writes it to `db_path`. Returns the validated spec count.
+    pub fn save_and_validate_downloaded_db(
+        db_path: &std::path::Path,
+        raw_json: &str,
+    ) -> Result<usize, String> {
+        let (specs, _) = parse_and_validate_db_json(raw_json)?;
+        if let Some(parent) = db_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        let tmp_path = db_path.with_extension("json.tmp");
+        std::fs::write(&tmp_path, raw_json).map_err(|e| e.to_string())?;
+        std::fs::rename(&tmp_path, db_path)
+            .or_else(|_| std::fs::write(db_path, raw_json))
+            .map_err(|e| e.to_string())?;
+        Ok(specs.len())
+    }
+
+    /// Returns `(canonical_hash, spec_count, optional_version)` for the currently active base database
+    /// (locally downloaded file if present and valid, otherwise the embedded database).
+    pub fn active_base_db_fingerprint() -> (String, usize, Option<String>) {
+        let path = crate::model::library::default_downloaded_db_path();
+        Self::base_db_fingerprint_for_path(&path)
+    }
+
+    /// Returns `(canonical_hash, spec_count, optional_version)` for `db_path` if present and valid,
+    /// otherwise for `EMBEDDED_SPECS_JSON`.
+    pub fn base_db_fingerprint_for_path(
+        db_path: &std::path::Path,
+    ) -> (String, usize, Option<String>) {
+        if db_path.exists()
+            && let Ok(raw) = std::fs::read_to_string(db_path)
+            && let Ok((specs, ver)) = parse_and_validate_db_json(&raw)
+        {
+            let h = canonical_db_hash(&specs);
+            return (h, specs.len(), ver);
+        }
+        let specs: Vec<TerminalSpec> = serde_json::from_str(EMBEDDED_SPECS_JSON)
+            .expect("Embedded terminal_specs.json must be valid JSON");
+        let h = canonical_db_hash(&specs);
+        (h, specs.len(), None)
+    }
+
     /// Looks up the built-in factory default specification for `id`, if `id` is an embedded catalog entry.
     pub fn embedded_default_by_id(id: &str) -> Option<TerminalSpec> {
         let specs: Vec<TerminalSpec> = serde_json::from_str(EMBEDDED_SPECS_JSON)
@@ -2341,6 +2512,16 @@ impl TerminalCatalog {
     /// Rebuilds the catalog from embedded specs plus project-specific custom specs.
     pub fn reload_with_custom(&mut self, custom_specs: &[TerminalSpec]) {
         *self = Self::load_embedded();
+        for spec in custom_specs {
+            self.add_custom_spec(spec.clone());
+        }
+        self.sort_by_manufacturer_and_type();
+    }
+
+    /// Rebuilds the catalog from the active base database (downloaded GitHub DB if present, else embedded)
+    /// plus user/project custom specs.
+    pub fn reload_active_with_custom(&mut self, custom_specs: &[TerminalSpec]) {
+        *self = Self::load_active();
         for spec in custom_specs {
             self.add_custom_spec(spec.clone());
         }
@@ -3530,7 +3711,7 @@ mod tests {
             let h = spec.effective_height_tenths_mm();
             let min_h = if spec.id.contains("ptfix") { 280 } else { 420 };
             assert!(
-                (min_h..=1600).contains(&h),
+                (min_h..=2300).contains(&h),
                 "Unrealistic front-view Bauhöhe {} for {} ({})",
                 h,
                 spec.name,
@@ -3811,7 +3992,7 @@ mod tests {
             assert_eq!(end_plate_width_tenths_mm(spec), 10);
         }
 
-        // Weidmüller 190-spec terminal block & 10-end-bracket verifications + collision checks
+        // Weidmüller 226-spec terminal block & 10-end-bracket verifications + collision checks
         let wm_specs: Vec<_> = catalog
             .all()
             .iter()
@@ -3819,7 +4000,7 @@ mod tests {
             .collect();
         assert_eq!(
             wm_specs.iter().filter(|s| !s.is_busbar_carrier()).count(),
-            190
+            226
         );
         assert_eq!(
             crate::catalog::accessories::all_end_brackets()
@@ -4031,7 +4212,7 @@ mod tests {
     #[test]
     fn all_catalog_specs_and_end_brackets_have_valid_image_urls_and_unique_skus() {
         let catalog = TerminalCatalog::load_embedded();
-        assert_eq!(catalog.all().len(), 746);
+        assert_eq!(catalog.all().len(), 782);
 
         let mut seen_skus = std::collections::HashSet::new();
         for spec in catalog.all() {
@@ -4294,5 +4475,45 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["weidmuller-aitb-25-ll", "weidmuller-aitb-25-ntlp"]
         );
+    }
+
+    #[test]
+    fn downloaded_db_priority_validation_and_hot_reload() {
+        let tmp = std::env::temp_dir().join(format!(
+            "termigrid_db_test_{}.json",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&tmp);
+
+        // 1. Missing downloaded DB falls back to embedded
+        let cat_fallback = TerminalCatalog::load_from_db_path_or_embedded(&tmp);
+        assert_eq!(cat_fallback.all().len(), 782);
+
+        // 2. Invalid JSON is rejected by save_and_validate_downloaded_db
+        assert!(TerminalCatalog::save_and_validate_downloaded_db(&tmp, "{ invalid json").is_err());
+        assert!(TerminalCatalog::save_and_validate_downloaded_db(&tmp, "[]").is_err());
+
+        // 3. Valid downloaded DB overrides matching embedded IDs and adds new specs while keeping embedded base
+        let mut custom_specs: Vec<TerminalSpec> = serde_json::from_str(EMBEDDED_SPECS_JSON).unwrap();
+        let mut extra = custom_specs[0].clone();
+        extra.id = "github-hot-added-spec".to_string();
+        extra.name = "GH-HOT 2,5 (GitHub Live Update Test)".to_string();
+        extra.article_number = Some("9999999".to_string());
+        custom_specs.push(extra);
+
+        let raw = serde_json::to_string_pretty(&custom_specs).unwrap();
+        let count = TerminalCatalog::save_and_validate_downloaded_db(&tmp, &raw).unwrap();
+        assert_eq!(count, 783);
+
+        let cat_loaded = TerminalCatalog::load_from_db_path_or_embedded(&tmp);
+        assert_eq!(cat_loaded.all().len(), 783);
+        assert!(cat_loaded.find_by_id("github-hot-added-spec").is_some());
+
+        // 4. Corrupting the file on disk still safely falls back to embedded on startup
+        std::fs::write(&tmp, "not valid json").unwrap();
+        let cat_corrupt = TerminalCatalog::load_from_db_path_or_embedded(&tmp);
+        assert_eq!(cat_corrupt.all().len(), 782);
+
+        let _ = std::fs::remove_file(&tmp);
     }
 }

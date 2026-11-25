@@ -38,9 +38,9 @@ use crate::model::bridging::{
     calculate_bridges, CombJumperSegment, WireBridgeReason, POTENTIAL_PALETTE,
 };
 use crate::model::library::{
-    instantiate_strip_from_template, load_global_custom_specs, merge_custom_specs_into,
-    merge_template_custom_specs, remove_custom_spec, save_global_custom_specs,
-    upsert_custom_spec, StripLibrary, UiPrefs,
+    default_downloaded_db_path, instantiate_strip_from_template, load_global_custom_specs,
+    merge_custom_specs_into, merge_template_custom_specs, remove_custom_spec,
+    save_global_custom_specs, upsert_custom_spec, StripLibrary, UiPrefs,
 };
 use crate::model::{
     NeutralLabelMode, NumberingOrder, PeLabelMode, Project, StripSequenceMode, TerminalStrip,
@@ -91,8 +91,8 @@ use crate::ui::theme::{
     secondary_text_color, section_card, tokens, ThemeMode,
 };
 use crate::ui::updater::{
-    open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, CURRENT_VERSION,
-    GITHUB_REPO_URL,
+    open_external_url, DbUpdateChecker, DbUpdateStatus, UpdateChecker, UpdateStatus,
+    BUYMEACOFFEE_URL, CURRENT_VERSION, GITHUB_REPO_URL,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -195,6 +195,7 @@ pub struct TermiGridApp {
     active_tab: ActiveTab,
     mobile_pane: MobilePane,
     updater: UpdateChecker,
+    db_updater: DbUpdateChecker,
 
     // Stacked left sidebar ("Klemmleisten" <-> "Bibliothek" sheet deck)
     sidebar_deck_tab: SidebarDeckTab,
@@ -249,7 +250,7 @@ pub struct TermiGridApp {
 
 impl TermiGridApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let mut catalog = TerminalCatalog::load_embedded();
+        let mut catalog = TerminalCatalog::load_active();
         let logos = BrandLogos::load(&cc.egui_ctx);
         let project = Project::default();
         let last_snapshot = project.clone();
@@ -258,7 +259,7 @@ impl TermiGridApp {
         let ui_prefs = UiPrefs::load_default();
         let global_custom_specs = load_global_custom_specs();
         if !global_custom_specs.is_empty() {
-            catalog.reload_with_custom(&global_custom_specs);
+            catalog.reload_active_with_custom(&global_custom_specs);
         }
 
         // Load native system fonts & apply high-contrast Light+Dark themes with System default
@@ -267,6 +268,9 @@ impl TermiGridApp {
 
         let updater = UpdateChecker::default();
         updater.check_async(cc.egui_ctx.clone());
+
+        let db_updater = DbUpdateChecker::default();
+        db_updater.check_async(cc.egui_ctx.clone());
 
         let mut app = Self {
             catalog,
@@ -299,6 +303,7 @@ impl TermiGridApp {
             active_tab: ActiveTab::Editor,
             mobile_pane: MobilePane::Cad,
             updater,
+            db_updater,
             sidebar_deck_tab: SidebarDeckTab::Strips,
             sidebar_lib_search: String::new(),
             clean_snapshot,
@@ -370,7 +375,7 @@ impl TermiGridApp {
     fn reload_catalog_with_all_custom(&mut self) {
         let mut combined = self.global_custom_specs.clone();
         merge_custom_specs_into(&self.project.custom_specs, &mut combined);
-        self.catalog.reload_with_custom(&combined);
+        self.catalog.reload_active_with_custom(&combined);
     }
 
     fn apply_database_action(&mut self, action: DatabaseAction) {
@@ -641,8 +646,41 @@ impl TermiGridApp {
         }
     }
 
+    fn commit_active_inline_tier_edit(&mut self) {
+        if let Some((b_idx, t_idx)) = self.canvas_state.editing_tier.take()
+            && let Some(strip) = self.project.strips.get_mut(self.active_strip)
+            && let Some(tier) = strip
+                .blocks
+                .get_mut(b_idx)
+                .and_then(|b| b.tiers.get_mut(t_idx))
+        {
+            let trimmed = self.canvas_state.edit_buffer.trim().to_string();
+            tier.custom_override = if trimmed.is_empty() {
+                Some(String::new())
+            } else {
+                Some(trimmed)
+            };
+            strip.recalculate_labels();
+        }
+    }
+
+    /// Commits any pending inline edit, closes edit-only overlays, and automatically generates/updates
+    /// end & partition plates across all non-empty terminal strips before exporting.
+    fn finalize_edit_and_generate_all_strips(&mut self) {
+        self.commit_active_inline_tier_edit();
+        self.clear_transient_canvas_interaction();
+        self.quick_prompt_open = false;
+        for strip in &mut self.project.strips {
+            if !strip.blocks.is_empty() {
+                strip.end_plates_generated = true;
+                strip.recalculate_labels();
+            }
+        }
+    }
+
     fn export_xlsx(&mut self) {
         let s = strings(self.lang);
+        self.finalize_edit_and_generate_all_strips();
         prepare_strips_for_export(&mut self.project, self.active_strip, &self.export_options);
         let default_name = format!("{}_labels.xlsx", sanitize_filename(&self.project.project_name));
         if let Some(path) = pick_export_xlsx_path(&default_name) {
@@ -674,6 +712,8 @@ impl TermiGridApp {
 
     fn export_csv(&mut self) {
         let s = strings(self.lang);
+        self.finalize_edit_and_generate_all_strips();
+        prepare_strips_for_export(&mut self.project, self.active_strip, &self.export_options);
         let default_name = format!("{}_labels.csv", sanitize_filename(&self.project.project_name));
         if let Some(path) = pick_export_csv_path(&default_name) {
             let german = self.lang == Language::De;
@@ -704,6 +744,7 @@ impl TermiGridApp {
 
     fn export_active_strip_dxf(&mut self) {
         let s = strings(self.lang);
+        self.finalize_edit_and_generate_all_strips();
         let Some(strip) = self.project.strips.get(self.active_strip) else {
             return;
         };
@@ -731,6 +772,7 @@ impl TermiGridApp {
 
     fn export_all_strips_dxf_dir_ui(&mut self) {
         let s = strings(self.lang);
+        self.finalize_edit_and_generate_all_strips();
         let subdir = format!("{}_DXF", sanitize_filename(&self.project.project_name));
         if let Some(dir) = pick_export_dxf_dir(&subdir) {
             match export_all_strips_to_dxf_dir(&dir, &self.project, &self.catalog) {
@@ -768,6 +810,32 @@ impl eframe::App for TermiGridApp {
         set_active_lang(ui.ctx(), self.lang);
         self.ui_time = ui.ctx().input(|i| i.time);
         self.tour.targets.clear();
+
+        // Poll background GitHub terminal database download completion or failure
+        if let Some((raw_json, _remote_count)) = self.db_updater.take_downloaded() {
+            let db_path = default_downloaded_db_path();
+            match TerminalCatalog::save_and_validate_downloaded_db(&db_path, &raw_json) {
+                Ok(_) => {
+                    self.reload_catalog_with_all_custom();
+                    let active_count = self.catalog.all().len();
+                    self.notify(
+                        ToastTone::Success,
+                        tr::toast_db_updated(self.lang, active_count),
+                    );
+                }
+                Err(err) => {
+                    self.notify(
+                        ToastTone::Error,
+                        tr::toast_db_update_failed(self.lang, &err),
+                    );
+                }
+            }
+        } else if let Some(err) = self.db_updater.take_error() {
+            self.notify(
+                ToastTone::Error,
+                tr::toast_db_update_failed(self.lang, &err),
+            );
+        }
 
         // Prompt Save / Discard when closing with unsaved project changes
         if ui.ctx().input(|i| i.viewport().close_requested())
@@ -936,11 +1004,13 @@ impl eframe::App for TermiGridApp {
                 let wide_header = avail_w >= 820.0;
 
                 let mut requested_tour: Option<TourId> = None;
-                let has_update = matches!(self.updater.status(), UpdateStatus::UpdateAvailable { .. });
+                let has_update = matches!(self.updater.status(), UpdateStatus::UpdateAvailable { .. })
+                    || matches!(self.db_updater.status(), DbUpdateStatus::UpdateAvailable { .. });
                 let draw_top_left_menu = |ui: &mut egui::Ui,
                                           show_about: &mut bool,
                                           tour_req: &mut Option<TourId>,
                                           updater: &UpdateChecker,
+                                          db_updater: &DbUpdateChecker,
                                           s: &crate::i18n::Strings| {
                     let menu_btn = if has_update {
                         primary_icon_button(ui, UiIcon::Menu, "Update")
@@ -971,6 +1041,19 @@ impl eframe::App for TermiGridApp {
                             ui.close();
                         }
                         ui.separator();
+                        if let DbUpdateStatus::UpdateAvailable { remote_count, .. } =
+                            db_updater.status()
+                            && subtle_success_icon_button(
+                                ui,
+                                UiIcon::DownloadUpdate,
+                                tr::db_update_available_btn(s.lang),
+                            )
+                            .on_hover_text(tr::db_update_available_tip(s.lang, remote_count))
+                            .clicked()
+                        {
+                            db_updater.download_async(ui.ctx().clone());
+                            ui.close();
+                        }
                         match updater.status() {
                             UpdateStatus::UpdateAvailable {
                                 latest_tag,
@@ -995,6 +1078,7 @@ impl eframe::App for TermiGridApp {
                                 if icon_button(ui, UiIcon::RefreshCheck, s.btn_check_update).clicked()
                                 {
                                     updater.check_async(ui.ctx().clone());
+                                    db_updater.check_async(ui.ctx().clone());
                                     ui.close();
                                 }
                             }
@@ -1016,6 +1100,31 @@ impl eframe::App for TermiGridApp {
                     (ActiveTab::Guide, UiIcon::Guide, s.tab_guide, ""),
                 ];
 
+                let render_db_update_button =
+                    |ui: &mut egui::Ui, db_updater: &DbUpdateChecker, lang: Language| {
+                        match db_updater.status() {
+                            DbUpdateStatus::UpdateAvailable { remote_count, .. } => {
+                                if subtle_success_icon_button(
+                                    ui,
+                                    UiIcon::DownloadUpdate,
+                                    tr::db_update_available_btn(lang),
+                                )
+                                .on_hover_text(tr::db_update_available_tip(lang, remote_count))
+                                .clicked()
+                                {
+                                    db_updater.download_async(ui.ctx().clone());
+                                }
+                            }
+                            DbUpdateStatus::Downloading => {
+                                let _ = ui.add_enabled(
+                                    false,
+                                    egui::Button::new(tr::db_updating_btn(lang)),
+                                );
+                            }
+                            _ => {}
+                        }
+                    };
+
                 if wide_header {
                     ui.horizontal(|ui| {
                         draw_top_left_menu(
@@ -1023,6 +1132,7 @@ impl eframe::App for TermiGridApp {
                             &mut self.show_about_modal,
                             &mut requested_tour,
                             &self.updater,
+                            &self.db_updater,
                             s,
                         );
                         ui.label(
@@ -1039,6 +1149,7 @@ impl eframe::App for TermiGridApp {
                         );
                         ui.add_space(4.0);
                         segmented_control(ui, &mut self.active_tab, &tab_items);
+                        render_db_update_button(ui, &self.db_updater, self.lang);
 
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             self.show_header_prefs(ui, 82.0, avail_w >= 960.0);
@@ -1068,6 +1179,7 @@ impl eframe::App for TermiGridApp {
                             &mut self.show_about_modal,
                             &mut requested_tour,
                             &self.updater,
+                            &self.db_updater,
                             s,
                         );
                         ui.label(
@@ -1083,6 +1195,7 @@ impl eframe::App for TermiGridApp {
                     ui.add_space(4.0);
                     ui.horizontal_wrapped(|ui| {
                         segmented_control(ui, &mut self.active_tab, &tab_items);
+                        render_db_update_button(ui, &self.db_updater, self.lang);
                         if icon_only_button(
                             ui,
                             UiIcon::Search,
@@ -1721,28 +1834,12 @@ impl TermiGridApp {
         }
     }
 
-    fn enter_edit_mode(&mut self) {
-        self.clear_transient_canvas_interaction();
-        if let Some(strip) = self.project.strips.get_mut(self.active_strip) {
-            strip.end_plates_generated = false;
-        }
-        self.canvas_state.e_planer_mode = false;
-        if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
-            self.canvas_state.interaction_mode = CanvasInteractionMode::default();
-        }
-        self.notify(ToastTone::Info, tr::toast_edit_active(self.lang));
-    }
-
     fn set_step3_mode(&mut self, mode: Step3ViewMode) {
         if self.active_strip >= self.project.strips.len() {
             return;
         }
+        self.commit_active_inline_tier_edit();
         self.clear_transient_canvas_interaction();
-        if !self.project.strips[self.active_strip].end_plates_generated
-            && !self.project.strips[self.active_strip].blocks.is_empty()
-        {
-            self.generate_active_strip();
-        }
         match mode {
             Step3ViewMode::CadOverview => {
                 self.canvas_state.e_planer_mode = false;
@@ -1752,6 +1849,11 @@ impl TermiGridApp {
                 self.notify(ToastTone::Info, tr::toast_cad_active(self.lang));
             }
             Step3ViewMode::Bridge => {
+                if !self.project.strips[self.active_strip].end_plates_generated
+                    && !self.project.strips[self.active_strip].blocks.is_empty()
+                {
+                    self.generate_active_strip();
+                }
                 self.canvas_state.interaction_mode = CanvasInteractionMode::BridgeAssign;
                 self.canvas_state.e_planer_mode = false;
                 self.selected_end_bracket = None;
@@ -1768,6 +1870,10 @@ impl TermiGridApp {
                 self.notify(ToastTone::Info, tr::toast_bridge_active(self.lang));
             }
             Step3ViewMode::Eplan => {
+                // Automatically generate/update end plates and finish edit mode when switching to EPLAN mode
+                if !self.project.strips[self.active_strip].blocks.is_empty() {
+                    self.generate_active_strip();
+                }
                 self.canvas_state.e_planer_mode = true;
                 if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
                     self.canvas_state.interaction_mode = CanvasInteractionMode::default();
@@ -2067,6 +2173,9 @@ impl TermiGridApp {
             return;
         }
 
+        self.commit_active_inline_tier_edit();
+        self.clear_transient_canvas_interaction();
+        self.quick_prompt_open = false;
         self.project.strips[strip_idx].end_plates_generated = true;
         self.project.strips[strip_idx].recalculate_labels();
 
@@ -4381,7 +4490,6 @@ impl TermiGridApp {
         let mut deferred_convert: Option<bool> = None;
         let mut deferred_generate = false;
         let mut deferred_group_base_types = false;
-        let mut deferred_reedit = false;
         let mut deferred_step3_mode: Option<Step3ViewMode> = None;
         let mut deferred_export_xlsx = false;
         let mut deferred_export_csv = false;
@@ -4408,7 +4516,7 @@ impl TermiGridApp {
         let mut tour_excel_rect: Option<egui::Rect> = None;
         let mut tour_multi_level_rect: Option<egui::Rect> = None;
 
-        // 1. Top Guided Workflow Card (Linear pipeline: Klemmen anpassen -> Endplatten generieren -> Weiterverarbeitung)
+        // 1. Top Guided Workflow Card (Automated edit mode & automatic end-plate generation on Export / EPLAN / explicit Generate)
         egui::Frame::NONE
             .fill(t.bg_panel)
             .stroke(egui::Stroke::new(1.0, t.border_hairline))
@@ -4417,7 +4525,7 @@ impl TermiGridApp {
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
 
-                // Row A: Stepper + Stage CTA / Next Steps
+                // Row A: Status Pill + Editing / Endplatten / View Mode / Export Actions
                 ui.horizontal_wrapped(|ui| {
                     let step_pill = |ui: &mut egui::Ui, text: &str, active: bool, done: bool| {
                         let (bg, border, fg) = if active {
@@ -4439,31 +4547,41 @@ impl TermiGridApp {
 
                     if !is_generated {
                         step_pill(ui, tr::step1_edit_terminals(self.lang), true, false);
-                        ui.label(egui::RichText::new("→").color(t.text_muted));
-                        step_pill(ui, tr::step2_gen_endplates(self.lang), false, false);
-                        ui.label(egui::RichText::new("→").color(t.text_muted));
-                        step_pill(ui, tr::step3_bridge_excel_eplan(self.lang), false, false);
+                    } else {
+                        step_pill(
+                            ui,
+                            &tr::step2_done_pill(self.lang, plates_count),
+                            false,
+                            true,
+                        );
+                    }
 
-                        ui.separator();
-                        let gen_tip = if has_blocks {
-                            tr::gen_endplates_tip(self.lang)
-                        } else {
-                            tr::gen_endplates_empty_tip(self.lang)
-                        };
-                        let gen_btn = ui
-                            .add_enabled_ui(has_blocks, |ui| {
+                    ui.separator();
+                    let gen_tip = if has_blocks {
+                        tr::gen_endplates_tip(self.lang)
+                    } else {
+                        tr::gen_endplates_empty_tip(self.lang)
+                    };
+                    let gen_btn = ui
+                        .add_enabled_ui(has_blocks, |ui| {
+                            if !is_generated {
                                 primary_icon_button(
                                     ui,
                                     UiIcon::Bolt,
                                     tr::gen_endplates_btn(self.lang),
                                 )
-                            })
-                            .inner
-                            .on_hover_text(gen_tip)
-                            .on_disabled_hover_text(gen_tip);
-                        if gen_btn.clicked() {
-                            deferred_generate = true;
-                        }
+                            } else {
+                                icon_button(ui, UiIcon::Bolt, tr::gen_endplates_btn(self.lang))
+                            }
+                        })
+                        .inner
+                        .on_hover_text(gen_tip)
+                        .on_disabled_hover_text(gen_tip);
+                    if gen_btn.clicked() {
+                        deferred_generate = true;
+                    }
+
+                    if !is_eplan_mode && !is_bridge_mode {
                         if has_multiple_blocks
                             && icon_button(
                                 ui,
@@ -4485,113 +4603,100 @@ impl TermiGridApp {
                         .clicked()
                         {
                             self.quick_prompt_open = !self.quick_prompt_open;
-                            if self.quick_prompt_open
-                                && let Some(first_mfg) = self.project.strips[self.active_strip]
+                            if self.quick_prompt_open {
+                                self.project.strips[self.active_strip].end_plates_generated = false;
+                                if let Some(first_mfg) = self.project.strips[self.active_strip]
                                     .blocks
                                     .first()
-                                    .and_then(|b| PromptManufacturer::from_catalog_str(&b.manufacturer))
-                            {
-                                self.quick_prompt_ctx.default_manufacturer = first_mfg;
+                                    .and_then(|b| {
+                                        PromptManufacturer::from_catalog_str(&b.manufacturer)
+                                    })
+                                {
+                                    self.quick_prompt_ctx.default_manufacturer = first_mfg;
+                                }
                             }
                         }
-                    } else {
-                        step_pill(ui, tr::step1_done_pill(self.lang), false, true);
-                        ui.label(egui::RichText::new("→").color(t.text_muted));
-                        step_pill(
+                    }
+
+                    ui.separator();
+
+                    // Explicit 3-way view/mode switcher (always directly accessible; switching to E-Planer or Brücken auto-generates end plates)
+                    let mut active_mode = self.current_step3_mode();
+                    let step3_modes = [
+                        (
+                            Step3ViewMode::CadOverview,
+                            UiIcon::CadEditor,
+                            tr::cad_view_btn(self.lang),
+                            tr::cad_view_tip(self.lang),
+                        ),
+                        (
+                            Step3ViewMode::Bridge,
+                            UiIcon::ModeBridge,
+                            tr::bridge_mode_btn(self.lang),
+                            s.mode_bridge_tip,
+                        ),
+                        (
+                            Step3ViewMode::Eplan,
+                            UiIcon::ModeEplan,
+                            tr::eplan_mode_btn(self.lang),
+                            s.mode_eplaner_tip,
+                        ),
+                    ];
+                    if segmented_control(ui, &mut active_mode, &step3_modes) {
+                        deferred_step3_mode = Some(active_mode);
+                    }
+
+                    let excel_resp = subtle_success_icon_button(
+                        ui,
+                        UiIcon::ExportXlsx,
+                        tr::excel_export_btn(self.lang),
+                    )
+                    .on_hover_text(tr::excel_export_tip(self.lang));
+                    tour_excel_rect = Some(excel_resp.rect);
+                    if excel_resp.clicked() {
+                        deferred_export_xlsx = true;
+                    }
+                    if ghost_icon_button(ui, UiIcon::ExportCsv, "CSV")
+                        .on_hover_text(tr::csv_tip(self.lang))
+                        .clicked()
+                    {
+                        deferred_export_csv = true;
+                    }
+                    if is_eplan_mode {
+                        let dxf_btn = icon_button(
                             ui,
-                            &tr::step2_done_pill(self.lang, plates_count),
-                            false,
-                            true,
-                        );
-                        ui.label(egui::RichText::new("→").color(t.text_muted));
-                        step_pill(ui, tr::step3_next_pill(self.lang), true, false);
-
-                        ui.separator();
-                        if icon_button(ui, UiIcon::Edit, tr::reedit_btn(self.lang))
-                            .on_hover_text(tr::reedit_tip(self.lang))
-                            .clicked()
-                        {
-                            deferred_reedit = true;
-                        }
-
-                        // Explicit 3-way view/mode switcher so every Step 3 mode transitions 1-click to any other mode
-                        let mut active_mode = self.current_step3_mode();
-                        let step3_modes = [
-                            (
-                                Step3ViewMode::CadOverview,
-                                UiIcon::CadEditor,
-                                tr::cad_view_btn(self.lang),
-                                tr::cad_view_tip(self.lang),
-                            ),
-                            (
-                                Step3ViewMode::Bridge,
-                                UiIcon::ModeBridge,
-                                tr::bridge_mode_btn(self.lang),
-                                s.mode_bridge_tip,
-                            ),
-                            (
-                                Step3ViewMode::Eplan,
-                                UiIcon::ModeEplan,
-                                tr::eplan_mode_btn(self.lang),
-                                s.mode_eplaner_tip,
-                            ),
-                        ];
-                        if segmented_control(ui, &mut active_mode, &step3_modes) {
-                            deferred_step3_mode = Some(active_mode);
-                        }
-
-                        let excel_resp = subtle_success_icon_button(
-                            ui,
-                            UiIcon::ExportXlsx,
-                            tr::excel_export_btn(self.lang),
+                            UiIcon::ExportDxf,
+                            tr::dxf_btn(self.lang),
                         )
-                        .on_hover_text(tr::excel_export_tip(self.lang));
-                        tour_excel_rect = Some(excel_resp.rect);
-                        if excel_resp.clicked() {
-                            deferred_export_xlsx = true;
-                        }
-                        if ghost_icon_button(ui, UiIcon::ExportCsv, "CSV")
-                            .on_hover_text(tr::csv_tip(self.lang))
-                            .clicked()
-                        {
-                            deferred_export_csv = true;
-                        }
-                        if is_eplan_mode {
-                            let dxf_btn = icon_button(
-                                ui,
-                                UiIcon::ExportDxf,
-                                tr::dxf_btn(self.lang),
-                            )
-                            .on_hover_text(tr::dxf_tip(self.lang));
-                            let strip_count = self.project.strips.len();
-                            if strip_count > 1 {
-                                let active_name = self.project.strips[self.active_strip].name.clone();
-                                egui::Popup::menu(&dxf_btn).show(|ui| {
-                                    ui.set_min_width(235.0);
-                                    if icon_button(
-                                        ui,
-                                        UiIcon::ExportDxf,
-                                        &tr::dxf_single_strip_item(self.lang, &active_name),
-                                    )
-                                    .clicked()
-                                    {
-                                        deferred_export_dxf_single = true;
-                                        ui.close();
-                                    }
-                                    if icon_button(
-                                        ui,
-                                        UiIcon::FolderOpen,
-                                        &tr::dxf_all_strips_dir_item(self.lang, strip_count),
-                                    )
-                                    .clicked()
-                                    {
-                                        deferred_export_dxf_dir = true;
-                                        ui.close();
-                                    }
-                                });
-                            } else if dxf_btn.clicked() {
-                                deferred_export_dxf_single = true;
-                            }
+                        .on_hover_text(tr::dxf_tip(self.lang));
+                        let strip_count = self.project.strips.len();
+                        if strip_count > 1 {
+                            let active_name = self.project.strips[self.active_strip].name.clone();
+                            egui::Popup::menu(&dxf_btn).show(|ui| {
+                                ui.set_min_width(235.0);
+                                if icon_button(
+                                    ui,
+                                    UiIcon::ExportDxf,
+                                    &tr::dxf_single_strip_item(self.lang, &active_name),
+                                )
+                                .clicked()
+                                {
+                                    deferred_export_dxf_single = true;
+                                    ui.close();
+                                }
+                                if icon_button(
+                                    ui,
+                                    UiIcon::FolderOpen,
+                                    &tr::dxf_all_strips_dir_item(self.lang, strip_count),
+                                )
+                                .clicked()
+                                {
+                                    deferred_export_dxf_dir = true;
+                                    ui.close();
+                                }
+                            });
+                        } else if dxf_btn.clicked() {
+                            deferred_export_dxf_single = true;
                         }
                     }
                 });
@@ -4600,13 +4705,13 @@ impl TermiGridApp {
                 ui.separator();
                 ui.add_space(4.0);
 
-                // Row B: Calm Context Tools (Editing tools only in Step 1; View/Zoom controls in all steps)
+                // Row B: Calm Context Tools (Editing tools always active in standard CAD view; View/Zoom controls in all views)
                 ui.horizontal_wrapped(|ui| {
                     let strip_len = self.project.strips[self.active_strip].blocks.len();
                     let has_selection =
                         !self.selected_blocks.is_empty() || self.selected_end_bracket.is_some();
 
-                    if !is_generated {
+                    if !is_eplan_mode && !is_bridge_mode {
                         // Editing & Numbering controls
                         {
                             let active_idx = self.active_strip;
@@ -4984,8 +5089,6 @@ impl TermiGridApp {
                 self.canvas_state.interaction_mode = CanvasInteractionMode::default();
             }
             self.generate_active_strip();
-        } else if deferred_reedit {
-            self.enter_edit_mode();
         } else if let Some(next_mode) = deferred_step3_mode {
             self.set_step3_mode(next_mode);
         } else if deferred_export_xlsx {
@@ -5027,7 +5130,7 @@ impl TermiGridApp {
         }
 
         // Inline Quick-Prompt Terminal Assistant Bar (Phase 1 & Phase 2 deterministic domain NLP)
-        if !is_generated && self.quick_prompt_open {
+        if !is_eplan_mode && !is_bridge_mode && self.quick_prompt_open {
             let mut deferred_prompt_action: Option<(usize, bool)> = None;
             ui.add_space(6.0);
             recessed_card(ui, |ui| {
@@ -5118,12 +5221,34 @@ impl TermiGridApp {
                     &self.catalog,
                 );
 
-                ui.add(
-                    egui::TextEdit::multiline(&mut self.quick_prompt_text)
-                        .desired_rows(2)
-                        .desired_width(f32::INFINITY)
-                        .hint_text(tr::quick_prompt_hint(self.lang)),
-                );
+                let dark_ink = egui::Color32::from_rgb(15, 23, 42);
+                egui::Frame::NONE
+                    .fill(egui::Color32::WHITE)
+                    .stroke(egui::Stroke::new(1.2, egui::Color32::from_rgb(148, 163, 184)))
+                    .corner_radius(egui::CornerRadius::same(6))
+                    .inner_margin(egui::Margin::symmetric(8, 6))
+                    .show(ui, |ui| {
+                        ui.scope(|ui| {
+                            let v = ui.visuals_mut();
+                            v.extreme_bg_color = egui::Color32::WHITE;
+                            v.text_cursor.stroke.color = dark_ink;
+                            v.widgets.inactive.fg_stroke.color = dark_ink;
+                            v.widgets.hovered.fg_stroke.color = dark_ink;
+                            v.widgets.active.fg_stroke.color = dark_ink;
+                            ui.add(
+                                egui::TextEdit::multiline(&mut self.quick_prompt_text)
+                                    .frame(egui::Frame::NONE)
+                                    .background_color(egui::Color32::WHITE)
+                                    .text_color(dark_ink)
+                                    .desired_rows(2)
+                                    .desired_width(f32::INFINITY)
+                                    .hint_text(
+                                        egui::RichText::new(tr::quick_prompt_hint(self.lang))
+                                            .color(egui::Color32::from_rgb(100, 116, 139)),
+                                    ),
+                            );
+                        });
+                    });
 
                 if !plan.is_empty() || !plan.unrecognized_clauses.is_empty() {
                     ui.add_space(4.0);

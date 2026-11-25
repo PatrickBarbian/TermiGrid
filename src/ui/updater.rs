@@ -116,6 +116,165 @@ pub fn is_newer_version(current: &str, latest_tag: &str) -> bool {
     }
 }
 
+/// Result of an asynchronous GitHub terminal database update check / download.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum DbUpdateStatus {
+    #[default]
+    Idle,
+    Checking,
+    UpToDate {
+        count: usize,
+    },
+    UpdateAvailable {
+        remote_count: usize,
+        local_count: usize,
+        remote_hash: String,
+    },
+    Downloading,
+    Downloaded {
+        raw_json: String,
+        remote_count: usize,
+    },
+    Error(String),
+}
+
+/// Thread-safe handle for background GitHub terminal database update checks & downloads.
+#[derive(Clone, Default)]
+pub struct DbUpdateChecker {
+    status: Arc<Mutex<DbUpdateStatus>>,
+}
+
+impl DbUpdateChecker {
+    pub fn status(&self) -> DbUpdateStatus {
+        self.status
+            .lock()
+            .map(|g| g.clone())
+            .unwrap_or(DbUpdateStatus::Idle)
+    }
+
+    /// Triggers a non-blocking update check against the configured Raw GitHub database URL.
+    pub fn check_async(&self, ctx: egui::Context) {
+        if let Ok(mut guard) = self.status.lock() {
+            if matches!(
+                *guard,
+                DbUpdateStatus::Checking | DbUpdateStatus::Downloading
+            ) {
+                return;
+            }
+            *guard = DbUpdateStatus::Checking;
+        }
+
+        let shared = Arc::clone(&self.status);
+        std::thread::spawn(move || {
+            let result = perform_db_update_check();
+            if let Ok(mut guard) = shared.lock() {
+                *guard = result;
+            }
+            ctx.request_repaint();
+        });
+    }
+
+    /// Triggers an asynchronous download & validation of the remote GitHub terminal database.
+    pub fn download_async(&self, ctx: egui::Context) {
+        if let Ok(mut guard) = self.status.lock() {
+            if matches!(*guard, DbUpdateStatus::Downloading) {
+                return;
+            }
+            *guard = DbUpdateStatus::Downloading;
+        }
+
+        let shared = Arc::clone(&self.status);
+        std::thread::spawn(move || {
+            let result = perform_db_download();
+            if let Ok(mut guard) = shared.lock() {
+                *guard = result;
+            }
+            ctx.request_repaint();
+        });
+    }
+
+    /// Atomically takes a completed download payload (`raw_json`, `remote_count`) and transitions status to `UpToDate`.
+    pub fn take_downloaded(&self) -> Option<(String, usize)> {
+        let mut guard = self.status.lock().ok()?;
+        if let DbUpdateStatus::Downloaded {
+            raw_json,
+            remote_count,
+        } = &*guard
+        {
+            let payload = (raw_json.clone(), *remote_count);
+            *guard = DbUpdateStatus::UpToDate {
+                count: payload.1,
+            };
+            Some(payload)
+        } else {
+            None
+        }
+    }
+
+    /// Atomically takes a download error and resets status to `Idle` so the user can retry.
+    pub fn take_error(&self) -> Option<String> {
+        let mut guard = self.status.lock().ok()?;
+        if let DbUpdateStatus::Error(err) = &*guard {
+            let msg = err.clone();
+            *guard = DbUpdateStatus::Idle;
+            Some(msg)
+        } else {
+            None
+        }
+    }
+}
+
+fn perform_db_update_check() -> DbUpdateStatus {
+    let url = crate::catalog::configured_terminal_db_url();
+    let body = match http_get_text(&url) {
+        Ok(text) => text,
+        // Silently stay Idle on background startup check if offline so we never spam errors
+        Err(_) => return DbUpdateStatus::Idle,
+    };
+
+    let (remote_specs, remote_ver) = match crate::catalog::parse_and_validate_db_json(&body) {
+        Ok(res) => res,
+        Err(_) => return DbUpdateStatus::Idle,
+    };
+
+    let remote_hash = crate::catalog::canonical_db_hash(&remote_specs);
+    let remote_count = remote_specs.len();
+    let (local_hash, local_count, local_ver) =
+        crate::catalog::TerminalCatalog::active_base_db_fingerprint();
+
+    let version_changed = match (local_ver.as_deref(), remote_ver.as_deref()) {
+        (Some(lv), Some(rv)) => is_newer_version(lv, rv) || lv != rv,
+        (None, Some(_)) => true,
+        _ => false,
+    };
+
+    if remote_hash != local_hash || version_changed {
+        DbUpdateStatus::UpdateAvailable {
+            remote_count,
+            local_count,
+            remote_hash,
+        }
+    } else {
+        DbUpdateStatus::UpToDate { count: local_count }
+    }
+}
+
+fn perform_db_download() -> DbUpdateStatus {
+    let url = crate::catalog::configured_terminal_db_url();
+    let body = match http_get_text(&url) {
+        Ok(text) => text,
+        Err(e) => return DbUpdateStatus::Error(e),
+    };
+
+    match crate::catalog::parse_and_validate_db_json(&body) {
+        Ok((specs, _)) => DbUpdateStatus::Downloaded {
+            raw_json: body,
+            remote_count: specs.len(),
+        },
+        Err(e) => DbUpdateStatus::Error(e),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::is_newer_version;

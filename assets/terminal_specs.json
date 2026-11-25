@@ -18401,5 +18401,2161 @@
     "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/272930/full/b408?format=jpg",
     "height_tenths_mm": 764,
     "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173890000",
+    "name": "PPV 4 GR 35X7.5 DGR (4-Etagen Potentialverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, vertikal querverbunden), TS 35x7,5, Breite 9,2 mm, Länge 70 mm, Höhe 47 mm, Grau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, vertically cross-connected), TS 35x7.5, width 9.2 mm, length 70 mm, height 47 mm, gray (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173890000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-4-gr-35x7-5-dgr/p/1173890000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173880000",
+    "name": "PPV 4 GR 35X15 DGR (4-Etagen Potentialverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, vertikal querverbunden), TS 35x15, Breite 9,2 mm, Länge 70 mm, Höhe 54,5 mm, Grau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, vertically cross-connected), TS 35x15, width 9.2 mm, length 70 mm, height 54.5 mm, gray (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173880000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-4-gr-35x15-dgr/p/1173880000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267920000",
+    "name": "PPV 4 BL 35X7.5 DGR (4-Etagen Potentialverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, vertikal querverbunden), TS 35x7,5, Breite 9,2 mm, Länge 70 mm, Höhe 47 mm, Blau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, vertically cross-connected), TS 35x7.5, width 9.2 mm, length 70 mm, height 47 mm, blue (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267920000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-4-bl-35x7-5-dgr/p/1267920000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267910000",
+    "name": "PPV 4 BL 35X15 DGR (4-Etagen Potentialverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, vertikal querverbunden), TS 35x15, Breite 9,2 mm, Länge 70 mm, Höhe 54,5 mm, Blau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, vertically cross-connected), TS 35x15, width 9.2 mm, length 70 mm, height 54.5 mm, blue (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267910000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-4-bl-35x15-dgr/p/1267910000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1301630000",
+    "name": "PPV 4 OR 35X7.5 DGR (4-Etagen Potentialverteiler Orange)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, vertikal querverbunden), TS 35x7,5, Breite 9,2 mm, Länge 70 mm, Höhe 47 mm, Orange (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, vertically cross-connected), TS 35x7.5, width 9.2 mm, length 70 mm, height 47 mm, orange (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1301630000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-4-or-35x7-5-dgr/p/1301630000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1301610000",
+    "name": "PPV 4 OR 35X15 DGR (4-Etagen Potentialverteiler Orange)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, vertikal querverbunden), TS 35x15, Breite 9,2 mm, Länge 70 mm, Höhe 54,5 mm, Orange (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, vertically cross-connected), TS 35x15, width 9.2 mm, length 70 mm, height 54.5 mm, orange (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1301610000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-4-or-35x15-dgr/p/1301610000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173870000",
+    "name": "PPV 8 GR 35X7.5 DGR (8-Etagen Potentialverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, vertikal querverbunden), TS 35x7,5, Breite 9,2 mm, Länge 120 mm, Höhe 65,5 mm, Grau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, vertically cross-connected), TS 35x7.5, width 9.2 mm, length 120 mm, height 65.5 mm, gray (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173870000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-8-gr-35x7-5-dgr/p/1173870000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173850000",
+    "name": "PPV 8 GR 35X15 DGR (8-Etagen Potentialverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, vertikal querverbunden), TS 35x15, Breite 9,2 mm, Länge 120 mm, Höhe 73 mm, Grau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, vertically cross-connected), TS 35x15, width 9.2 mm, length 120 mm, height 73 mm, gray (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173850000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-8-gr-35x15-dgr/p/1173850000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267880000",
+    "name": "PPV 8 BL 35X7.5 DGR (8-Etagen Potentialverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, vertikal querverbunden), TS 35x7,5, Breite 9,2 mm, Länge 120 mm, Höhe 65,5 mm, Blau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, vertically cross-connected), TS 35x7.5, width 9.2 mm, length 120 mm, height 65.5 mm, blue (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267880000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-8-bl-35x7-5-dgr/p/1267880000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267870000",
+    "name": "PPV 8 BL 35X15 DGR (8-Etagen Potentialverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, vertikal querverbunden), TS 35x15, Breite 9,2 mm, Länge 120 mm, Höhe 73 mm, Blau (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, vertically cross-connected), TS 35x15, width 9.2 mm, length 120 mm, height 73 mm, blue (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267870000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-8-bl-35x15-dgr/p/1267870000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1301640000",
+    "name": "PPV 8 OR 35X7.5 DGR (8-Etagen Potentialverteiler Orange)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, vertikal querverbunden), TS 35x7,5, Breite 9,2 mm, Länge 120 mm, Höhe 65,5 mm, Orange (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, vertically cross-connected), TS 35x7.5, width 9.2 mm, length 120 mm, height 65.5 mm, orange (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1301640000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-8-or-35x7-5-dgr/p/1301640000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1301620000",
+    "name": "PPV 8 OR 35X15 DGR (8-Etagen Potentialverteiler Orange)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PPV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Potentialverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, vertikal querverbunden), TS 35x15, Breite 9,2 mm, Länge 120 mm, Höhe 73 mm, Orange (Drücker dunkelgrau)",
+    "description_en": "Potential distributor terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, vertically cross-connected), TS 35x15, width 9.2 mm, length 120 mm, height 73 mm, orange (dark gray pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "Intern vertikal querverbunden (1 gemeinsames Potential)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1301620000",
+    "product_url": "https://eshop.weidmueller.com/de/ppv-8-or-35x15-dgr/p/1301620000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173830000",
+    "name": "PRV 4 SW 35X7.5 RT (4-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 70 mm, Höhe 47 mm, Schwarz (Drücker rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x7.5, width 9.2 mm, length 70 mm, height 47 mm, black (red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173830000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-sw-35x7-5-rt/p/1173830000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173840000",
+    "name": "PRV 4 SW 35X7.5 WS (4-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 70 mm, Höhe 47 mm, Schwarz (Drücker weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x7.5, width 9.2 mm, length 70 mm, height 47 mm, black (white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173840000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-sw-35x7-5-ws/p/1173840000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173810000",
+    "name": "PRV 4 SW 35X15 RT (4-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x15, Breite 9,2 mm, Länge 70 mm, Höhe 54,5 mm, Schwarz (Drücker rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x15, width 9.2 mm, length 70 mm, height 54.5 mm, black (red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173810000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-sw-35x15-rt/p/1173810000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173820000",
+    "name": "PRV 4 SW 35X15 WS (4-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x15, Breite 9,2 mm, Länge 70 mm, Höhe 54,5 mm, Schwarz (Drücker weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x15, width 9.2 mm, length 70 mm, height 54.5 mm, black (white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173820000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-sw-35x15-ws/p/1173820000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267900000",
+    "name": "PRV 4 BL 35X7.5 RT (4-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 70 mm, Höhe 47 mm, Blau (Drücker rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x7.5, width 9.2 mm, length 70 mm, height 47 mm, blue (red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267900000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-bl-35x7-5-rt/p/1267900000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173930000",
+    "name": "PRV 4 BL 35X7.5 WS (4-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 70 mm, Höhe 47 mm, Blau (Drücker weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x7.5, width 9.2 mm, length 70 mm, height 47 mm, blue (white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173930000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-bl-35x7-5-ws/p/1173930000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267890000",
+    "name": "PRV 4 BL 35X15 RT (4-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x15, Breite 9,2 mm, Länge 70 mm, Höhe 54,5 mm, Blau (Drücker rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x15, width 9.2 mm, length 70 mm, height 54.5 mm, blue (red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267890000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-bl-35x15-rt/p/1267890000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173920000",
+    "name": "PRV 4 BL 35X15 WS (4-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 4,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 4 Etagen (16 Anschlüsse, 4 Potentiale), TS 35x15, Breite 9,2 mm, Länge 70 mm, Höhe 54,5 mm, Blau (Drücker weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 4 levels (16 connections, 4 potentials), TS 35x15, width 9.2 mm, length 70 mm, height 54.5 mm, blue (white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV4 (1173700000 unbeschriftet) / TW PRV4 1-4 (1230050000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "4 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173920000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-4-bl-35x15-ws/p/1173920000",
+    "image_url": "",
+    "height_tenths_mm": 700,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173790000",
+    "name": "PRV 8 SW 35X7.5 RT/WS (8-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 120 mm, Höhe 65,5 mm, Schwarz (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x7.5, width 9.2 mm, length 120 mm, height 65.5 mm, black (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173790000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-sw-35x7-5-rtws/p/1173790000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173800000",
+    "name": "PRV 8 SW 35X7.5 WS/RT (8-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 120 mm, Höhe 65,5 mm, Schwarz (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x7.5, width 9.2 mm, length 120 mm, height 65.5 mm, black (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173800000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-sw-35x7-5-wsrt/p/1173800000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173740000",
+    "name": "PRV 8 SW 35X15 RT/WS (8-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x15, Breite 9,2 mm, Länge 120 mm, Höhe 73 mm, Schwarz (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x15, width 9.2 mm, length 120 mm, height 73 mm, black (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173740000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-sw-35x15-rtws/p/1173740000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173780000",
+    "name": "PRV 8 SW 35X15 WS/RT (8-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x15, Breite 9,2 mm, Länge 120 mm, Höhe 73 mm, Schwarz (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x15, width 9.2 mm, length 120 mm, height 73 mm, black (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173780000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-sw-35x15-wsrt/p/1173780000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267840000",
+    "name": "PRV 8 BL 35X7.5 RT/WS (8-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 120 mm, Höhe 65,5 mm, Blau (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x7.5, width 9.2 mm, length 120 mm, height 65.5 mm, blue (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267840000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-bl-35x7-5-rtws/p/1267840000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173910000",
+    "name": "PRV 8 BL 35X7.5 WS/RT (8-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 120 mm, Höhe 65,5 mm, Blau (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x7.5, width 9.2 mm, length 120 mm, height 65.5 mm, blue (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173910000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-bl-35x7-5-wsrt/p/1173910000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267830000",
+    "name": "PRV 8 BL 35X15 RT/WS (8-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x15, Breite 9,2 mm, Länge 120 mm, Höhe 73 mm, Blau (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x15, width 9.2 mm, length 120 mm, height 73 mm, blue (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267830000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-bl-35x15-rtws/p/1267830000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173900000",
+    "name": "PRV 8 BL 35X15 WS/RT (8-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 8,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 8 Etagen (32 Anschlüsse, 8 Potentiale), TS 35x15, Breite 9,2 mm, Länge 120 mm, Höhe 73 mm, Blau (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 8 levels (32 connections, 8 potentials), TS 35x15, width 9.2 mm, length 120 mm, height 73 mm, blue (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV8 (1173670000 unbeschriftet) / TW PRV8 1-8 (1230080000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "8 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173900000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-8-bl-35x15-wsrt/p/1173900000",
+    "image_url": "",
+    "height_tenths_mm": 1200,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173680000",
+    "name": "PRV 16 SW 35X7.5 RT/WS (16-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 225 mm, Höhe 106 mm, Schwarz (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x7.5, width 9.2 mm, length 225 mm, height 106 mm, black (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173680000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-sw-35x7-5-rtws/p/1173680000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173710000",
+    "name": "PRV 16 SW 35X7.5 WS/RT (16-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 225 mm, Höhe 106 mm, Schwarz (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x7.5, width 9.2 mm, length 225 mm, height 106 mm, black (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173710000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-sw-35x7-5-wsrt/p/1173710000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173620000",
+    "name": "PRV 16 SW 35X15 RT/WS (16-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x15, Breite 9,2 mm, Länge 225 mm, Höhe 113,5 mm, Schwarz (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x15, width 9.2 mm, length 225 mm, height 113.5 mm, black (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173620000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-sw-35x15-rtws/p/1173620000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1173650000",
+    "name": "PRV 16 SW 35X15 WS/RT (16-Etagen Rangierverteiler)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x15, Breite 9,2 mm, Länge 225 mm, Höhe 113,5 mm, Schwarz (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x15, width 9.2 mm, length 225 mm, height 113.5 mm, black (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1173650000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-sw-35x15-wsrt/p/1173650000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267810000",
+    "name": "PRV 16 BL 35X7.5 RT/WS (16-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 225 mm, Höhe 106 mm, Blau (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x7.5, width 9.2 mm, length 225 mm, height 106 mm, blue (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267810000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-bl-35x7-5-rtws/p/1267810000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267820000",
+    "name": "PRV 16 BL 35X7.5 WS/RT (16-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x7,5, Breite 9,2 mm, Länge 225 mm, Höhe 106 mm, Blau (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x7.5, width 9.2 mm, length 225 mm, height 106 mm, blue (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267820000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-bl-35x7-5-wsrt/p/1267820000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267790000",
+    "name": "PRV 16 BL 35X15 RT/WS (16-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x15, Breite 9,2 mm, Länge 225 mm, Höhe 113,5 mm, Blau (Drücker rot/weiß)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x15, width 9.2 mm, length 225 mm, height 113.5 mm, blue (red/white pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267790000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-bl-35x15-rtws/p/1267790000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "custom-weidmueller-1267800000",
+    "name": "PRV 16 BL 35X15 WS/RT (16-Etagen Rangierverteiler Blau)",
+    "manufacturer": "Weidmüller",
+    "series": "P-Reihe PRV",
+    "levels": 16,
+    "width_tenths_mm": 92,
+    "numbering_order": "BottomToTop",
+    "description_de": "Rangierverteilerklemme 1,5 mm² (0,13–1,5 mm²), PUSH IN, 16 Etagen (64 Anschlüsse, 16 Potentiale), TS 35x15, Breite 9,2 mm, Länge 225 mm, Höhe 113,5 mm, Blau (Drücker weiß/rot)",
+    "description_en": "Marshalling terminal block 1.5 mm² (0.13–1.5 mm²), PUSH IN, 16 levels (64 connections, 16 potentials), TS 35x15, width 9.2 mm, length 225 mm, height 113.5 mm, blue (white/red pusher)",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "BlueNeutral"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TW PRV16 (1173630000 unbeschriftet) / TW PRV16 1-16 (1230120000)",
+      "jumpers": "",
+      "markers": "WS 7.8/9.2 PLUS MC NE GR (1208970000) / WS 7.8/9.2 PLUS MC SDR (1270640000)",
+      "end_bracket": "ZEW 35/2 SW (1162610000) / ZEW 35 (9540000000)",
+      "extra": "16 unabhängige Etagen mit je 4 PUSH IN Anschlüssen (Ex i / Blau)"
+    },
+    "jumper_slots_per_tier": 0,
+    "max_jumper_poles": 0,
+    "article_number": "1267800000",
+    "product_url": "https://eshop.weidmueller.com/de/prv-16-bl-35x15-wsrt/p/1267800000",
+    "image_url": "",
+    "height_tenths_mm": 2250,
+    "rail_offset_tenths_mm": 0
   }
 ]

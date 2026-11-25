@@ -2549,3 +2549,78 @@ pub fn toast_dxf_dir_exported(l: Language, count: usize, folder_name: &str) -> S
         Language::Nl => format!("{count} afzonderlijke DXF-bestanden (1:1 mm) geëxporteerd naar \"{folder_name}\"."),
     }
 }
+
+pub const fn db_update_available_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Datenbank-Update verfügbar",
+        "Database Update Available",
+        "Mise à jour base de données disponible",
+        "Aggiornamento database disponibile",
+        "Actualización de base de datos disponible",
+        "Dostępna aktualizacja bazy danych",
+        "Database-update beschikbaar",
+    ])
+}
+
+pub fn db_update_available_tip(l: Language, remote_count: usize) -> String {
+    match l {
+        Language::De => format!(
+            "Auf GitHub ist eine neuere Klemmen-Datenbank ({remote_count} Klemmen) verfügbar. Klicken, um sie herunterzuladen und direkt im laufenden Betrieb neu zu laden."
+        ),
+        Language::En => format!(
+            "A newer terminal database ({remote_count} terminals) is available on GitHub. Click to download and hot-reload without restarting."
+        ),
+        Language::Fr => format!(
+            "Une base de données de bornes plus récente ({remote_count} bornes) est disponible sur GitHub. Cliquez pour télécharger et recharger à chaud."
+        ),
+        Language::It => format!(
+            "Su GitHub è disponibile un database morsetti più recente ({remote_count} morsetti). Clicca per scaricarlo e ricaricarlo a caldo."
+        ),
+        Language::Es => format!(
+            "Hay una base de datos de bornas más reciente ({remote_count} bornas) en GitHub. Haga clic para descargar y recargar sin reiniciar."
+        ),
+        Language::Pl => format!(
+            "W serwisie GitHub dostępna jest nowsza baza złączek ({remote_count} złączek). Kliknij, aby pobrać i przeładować bez restartu."
+        ),
+        Language::Nl => format!(
+            "Er is een nieuwere klemmendatabase ({remote_count} klemmen) beschikbaar op GitHub. Klik om te downloaden en direct te herladen."
+        ),
+    }
+}
+
+pub const fn db_updating_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Datenbank wird aktualisiert…",
+        "Updating database…",
+        "Mise à jour de la base…",
+        "Aggiornamento database…",
+        "Actualizando base de datos…",
+        "Aktualizowanie bazy…",
+        "Database bijwerken…",
+    ])
+}
+
+pub fn toast_db_updated(l: Language, count: usize) -> String {
+    match l {
+        Language::De => format!("Klemmen-Datenbank erfolgreich aktualisiert ({count} Klemmen aktiv)."),
+        Language::En => format!("Terminal database updated ({count} terminals active)."),
+        Language::Fr => format!("Base de données mise à jour ({count} bornes actives)."),
+        Language::It => format!("Database morsetti aggiornato ({count} morsetti attivi)."),
+        Language::Es => format!("Base de datos actualizada ({count} bornas activas)."),
+        Language::Pl => format!("Zaktualizowano bazę złączek ({count} aktywnych złączek)."),
+        Language::Nl => format!("Klemmendatabase bijgewerkt ({count} klemmen actief)."),
+    }
+}
+
+pub fn toast_db_update_failed(l: Language, err: &str) -> String {
+    match l {
+        Language::De => format!("Datenbank-Update fehlgeschlagen (bisherige Datenbank bleibt aktiv): {err}"),
+        Language::En => format!("Database update failed (existing database kept): {err}"),
+        Language::Fr => format!("Échec de la mise à jour (base actuelle conservée) : {err}"),
+        Language::It => format!("Aggiornamento database non riuscito (database attuale mantenuto): {err}"),
+        Language::Es => format!("Error al actualizar la base de datos (se mantiene la actual): {err}"),
+        Language::Pl => format!("Aktualizacja bazy nie powiodła się (zachowano dotychczasową bazę): {err}"),
+        Language::Nl => format!("Database-update mislukt (huidige database behouden): {err}"),
+    }
+}
+

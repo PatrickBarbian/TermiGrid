@@ -866,14 +866,27 @@ pub fn show_cad_canvas(
                 )
                 .intersect(tier_rect.expand(4.0));
 
+                let dark_ink = Color32::from_rgb(15, 23, 42);
                 let mut text_edit = egui::TextEdit::singleline(&mut state.edit_buffer)
+                    .background_color(Color32::WHITE)
+                    .text_color(dark_ink)
                     .align(Align2::CENTER_CENTER)
                     .font(FontId::monospace((11.5 * z).max(9.0)));
                 if state.edit_just_opened {
                     text_edit = text_edit.cursor_at_end(true);
                 }
 
-                let edit_resp = ui.put(edit_rect, text_edit);
+                let edit_resp = ui
+                    .scope(|ui| {
+                        let v = ui.visuals_mut();
+                        v.extreme_bg_color = Color32::WHITE;
+                        v.text_cursor.stroke.color = dark_ink;
+                        v.widgets.inactive.fg_stroke.color = dark_ink;
+                        v.widgets.hovered.fg_stroke.color = dark_ink;
+                        v.widgets.active.fg_stroke.color = dark_ink;
+                        ui.put(edit_rect, text_edit)
+                    })
+                    .inner;
                 if state.edit_just_opened {
                     edit_resp.request_focus();
                     state.edit_just_opened = false;
@@ -895,6 +908,7 @@ pub fn show_cad_canvas(
                     } else {
                         Some(trimmed.to_string())
                     };
+                    strip.end_plates_generated = false;
                     strip.recalculate_labels();
                 }
                 state.editing_tier = None;
@@ -976,6 +990,9 @@ pub fn show_cad_canvas(
                 selected.clear();
                 selected.insert(b_idx);
                 state.selection_anchor = Some(b_idx);
+                if !state.e_planer_mode {
+                    strip.end_plates_generated = false;
+                }
                 let tier = &strip.blocks[b_idx].tiers[t_idx];
                 state.edit_buffer = tier
                     .custom_override
@@ -1023,6 +1040,9 @@ pub fn show_cad_canvas(
                         }
                         if !next_sel.is_empty() {
                             *selected_end_bracket = None;
+                            if !state.e_planer_mode {
+                                strip.end_plates_generated = false;
+                            }
                         }
                         *selected = next_sel;
                     }
@@ -1094,6 +1114,7 @@ pub fn show_cad_canvas(
                     if let Some((target_idx, qa_rect)) = quick_add_target
                         && qa_rect.expand(4.0).contains(pos)
                     {
+                        strip.end_plates_generated = false;
                         result.quick_add_after_block = Some(target_idx);
                     } else if use_bridge {
                         *selected_end_bracket = None;
@@ -1126,6 +1147,9 @@ pub fn show_cad_canvas(
                         match hit {
                             Some(idx) => {
                                 *selected_end_bracket = None;
+                                if !state.e_planer_mode {
+                                    strip.end_plates_generated = false;
+                                }
                                 if shift_held {
                                     let anchor = state.selection_anchor.unwrap_or(idx);
                                     let (lo, hi) = if anchor <= idx {
