@@ -1421,8 +1421,8 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
                 18 // 1.8 mm (D-UK 4/10 / D-UK 4/10 BU)
             } else if id.contains("uk-") {
                 15 // 1.5 mm (D-UK 4/10 / D-UK 16)
-            } else if id.contains("stn-") {
-                20 // 2.0 mm (D-STN 2,5 / D-STN 4 / AB-STN 10 / AB-STN 16)
+            } else if id.contains("stn-") || id.contains("urtk") {
+                20 // 2.0 mm (D-STN / AB-STN / TS-K)
             } else {
                 22 // 2.2 mm (CLIPLINE complete D-PT / D-PTTB / D-PTI / D-PTN / D-ST / D-UT / AB-UTN / D-PTV / D-PTRV)
             }

@@ -18308,5 +18308,98 @@
     "article_number": "3038286",
     "product_url": "https://www.phoenixcontact.com/de-de/produkte/installationsklemme-stn-16-3038286",
     "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/108630/full/b408?format=jpg"
+  },
+  {
+    "id": "phoenix-urtk-sp",
+    "name": "URTK/SP (Messwandlertrennklemme 6 mm²)",
+    "manufacturer": "Phoenix Contact",
+    "series": "URTK",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messwandlertrennklemme 6 mm² (0,5–10 mm²), Schraubanschluss, mit Längstrennschieber und Prüfbuchsen, Breite 8,2 mm, Länge 99 mm, Höhe 51 mm, Grau",
+    "description_en": "Current transformer disconnect terminal block 6 mm² (0.5–10 mm²), screw connection, with disconnect slide and test sockets, width 8.2 mm, length 99 mm, height 51 mm, gray",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TS-K (1302215) Trennplatte",
+      "jumpers": "SB 2-8/13 (0202235) Schaltbrücke, FBI 10-8 (0203263) Festbrücke, EB 2-8 (0202154) Einlegebrücke",
+      "markers": "ZB 8 (1052002) / UC-TM 8 (0818072)",
+      "end_bracket": "CLIPFIX 35 (3022218) / CLIPFIX 35-5 (3022276)",
+      "extra": "KSS 8 (0311540) Kurzschlussbrücke, Prüfstecker PS-IH"
+    },
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10,
+    "article_number": "0311126",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/messwandlertrennklemme-urtksp-0311126",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/214308/full/b408?format=jpg",
+    "height_tenths_mm": 990,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "phoenix-urtk-6",
+    "name": "URTK 6 (Messwandlertrennklemme 6 mm²)",
+    "manufacturer": "Phoenix Contact",
+    "series": "URTK",
+    "levels": 1,
+    "width_tenths_mm": 82,
+    "numbering_order": "BottomToTop",
+    "description_de": "Messwandlertrennklemme 6 mm² (0,5–10 mm²), Schraubanschluss, mit integriertem Längstrennschieber, Breite 8,2 mm, Länge 72 mm, Höhe 51,5 mm, Grau",
+    "description_en": "Current transformer disconnect terminal block 6 mm² (0.5–10 mm²), screw connection, with integrated disconnect slide, width 8.2 mm, length 72 mm, height 51.5 mm, gray",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "TS-K (1302215) Trennplatte",
+      "jumpers": "SB 2-8/13 (0202235) Schaltbrücke, FBI 10-8 (0203263) Festbrücke, EB 2-8 (0202154) Einlegebrücke",
+      "markers": "ZB 8 (1052002) / UC-TM 8 (0818072)",
+      "end_bracket": "CLIPFIX 35 (3022218) / CLIPFIX 35-5 (3022276)",
+      "extra": "KSS 8 (0311540) Kurzschlussbrücke"
+    },
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10,
+    "article_number": "3026272",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/messwandlertrennklemme-urtk-6-3026272",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/267338/full/b408?format=jpg",
+    "height_tenths_mm": 720,
+    "rail_offset_tenths_mm": 0
+  },
+  {
+    "id": "phoenix-qtc-15-tg",
+    "name": "QTC 1,5-TG (Trennklemme 1,5 mm²)",
+    "manufacturer": "Phoenix Contact",
+    "series": "QTC 1,5",
+    "levels": 1,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Trenngrundklemme 1,5 mm² (0,25–1,5 mm²), Schnellanschluss (QUICKON), für Trenn-/Sicherungsstecker, Breite 5,2 mm, Länge 76,4 mm, Höhe 39,3 mm, Grau",
+    "description_en": "Disconnect terminal block 1.5 mm² (0.25–1.5 mm²), fast connection (QUICKON), for disconnect/fuse plugs, width 5.2 mm, length 76.4 mm, height 39.3 mm, gray",
+    "tiers": [
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "D-QTC 1,5-TWIN (3206571)",
+      "jumpers": "FBS 2-5 (3030161) .. FBS 10-5 (3030213)",
+      "markers": "ZB 5 (1050004) / UC-TM 5 (0818108)",
+      "end_bracket": "CLIPFIX 35 (3022218) / CLIPFIX 35-5 (3022276)",
+      "extra": "P-DI (3036783) Trennstecker, P-FU 5X20 (3036806) Sicherungsstecker, P-CO (3036796) Bauelementestecker"
+    },
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10,
+    "article_number": "3205145",
+    "product_url": "https://www.phoenixcontact.com/de-de/produkte/trennklemme-qtc-15-tg-3205145",
+    "image_url": "https://caas.phoenixcontact.com/caas/v1/stable/media/272930/full/b408?format=jpg",
+    "height_tenths_mm": 764,
+    "rail_offset_tenths_mm": 0
   }
 ]

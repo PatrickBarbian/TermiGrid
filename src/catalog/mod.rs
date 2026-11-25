@@ -3689,14 +3689,14 @@ mod tests {
             assert_eq!(spec.effective_rail_offset_tenths_mm(), 0);
         }
 
-        // Phoenix Contact 277-spec terminal block catalog verifications (incl. PTN, PTI 16/S, UTN, STN)
+        // Phoenix Contact 280-spec terminal block catalog verifications (incl. PTN, PTI 16/S, UTN, STN, URTK, QTC)
         assert_eq!(
             catalog
                 .all()
                 .iter()
                 .filter(|s| s.manufacturer == "Phoenix Contact" && !s.is_busbar_carrier())
                 .count(),
-            277
+            280
         );
         for ptn_id in [
             "phoenix-ptn-25",
@@ -4027,7 +4027,7 @@ mod tests {
     #[test]
     fn all_catalog_specs_and_end_brackets_have_valid_image_urls_and_unique_skus() {
         let catalog = TerminalCatalog::load_embedded();
-        assert_eq!(catalog.all().len(), 743);
+        assert_eq!(catalog.all().len(), 746);
 
         let mut seen_skus = std::collections::HashSet::new();
         for spec in catalog.all() {
@@ -4144,6 +4144,16 @@ mod tests {
         assert_eq!(w2002_3231.effective_height_tenths_mm(), 933);
         let acc_3231 = catalog.accessories_for(w2002_3231);
         assert!(acc_3231.end_plate.contains("2002-3291"));
+
+        for (id, art, w) in [
+            ("phoenix-urtk-sp", "0311126", 82u16),
+            ("phoenix-urtk-6", "3026272", 82u16),
+            ("phoenix-qtc-15-tg", "3205145", 52u16),
+        ] {
+            let sp = catalog.find_by_id(id).expect(id);
+            assert_eq!(sp.effective_article_number(), Some(art));
+            assert_eq!(sp.width_tenths_mm, w);
+        }
     }
 
     #[test]

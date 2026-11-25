@@ -508,22 +508,20 @@ mod tests {
         assert_eq!(gls.ignored_jumpers.len(), 2);
         assert_eq!(gls.ignored_misc.len(), 2);
 
-        // =SEA+SE-X6-CAN flags URTK/SP & UDK 4 via heuristics and separates D-URTK 6 + ATP-URTK/SP as end plates
+        // =SEA+SE-X6-CAN matches URTK/SP directly from catalog, flags UDK 4 via heuristics, and separates D-URTK 6 + ATP-URTK/SP as end plates
         let x6 = &plan.strips[5];
-        assert_eq!(x6.total_terminal_count, 0);
-        assert_eq!(x6.unknown_articles.len(), 2);
+        assert_eq!(x6.total_terminal_count, 4);
+        assert_eq!(x6.terminals[0].spec_id, "phoenix-urtk-sp");
+        assert_eq!(x6.unknown_articles.len(), 1);
         assert!(x6.unknown_articles.iter().all(|u| u.heuristic_matched));
         assert_eq!(x6.end_parts.pdf_end_plate_count, 2);
 
-        // User maps the two heuristic terminals and confirms instantiation
-        let mappings = vec![
-            Some("phoenix-pt-6-t".to_string()),
-            Some("phoenix-pttb-25".to_string()),
-        ];
+        // User maps the remaining heuristic terminal (UDK 4) and confirms instantiation
+        let mappings = vec![Some("phoenix-pttb-25".to_string())];
         let (inst, _) =
             instantiate_imported_strip_with_mappings(x6, 0, true, &mappings, &catalog).unwrap();
         assert_eq!(inst.blocks.len(), 6);
-        assert_eq!(inst.blocks[0].spec_id, "phoenix-pt-6-t");
+        assert_eq!(inst.blocks[0].spec_id, "phoenix-urtk-sp");
         assert_eq!(inst.blocks[4].spec_id, "phoenix-pttb-25");
 
         // =NSV+A04-X4.1 flags QTC 1,5 via heuristics
