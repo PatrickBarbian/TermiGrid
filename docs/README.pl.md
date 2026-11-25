@@ -4,7 +4,7 @@
 
 # TermiGrid
 
-**Konfigurator listew zaciskowych i eksporter etykiet do budowy szaf sterowniczych**
+**Konfigurator listew zaciskowych na szynę DIN, planer CAD, roundtrip EPLAN P8 & eksporter oznaczników do szaf sterowniczych**
 
 [![Release](https://img.shields.io/github/v/release/PatrickBarbian/TermiGrid)](https://github.com/PatrickBarbian/TermiGrid/releases)
 [![VibeCoded](https://img.shields.io/badge/VibeCoded-AI%20Assisted-blueviolet)](#przegląd-i-informacja-vibecoded)
@@ -26,35 +26,68 @@
 
 ## Przegląd i informacja VibeCoded
 
-**TermiGrid** to wieloplatformowe narzędzie (napisane w Rust z użyciem `egui` / `eframe 0.37`) do projektowania listew zaciskowych w szafach sterowniczych oraz eksportu gotowych do druku list opisowych dla przemysłowych drukarek oznaczników.
+**TermiGrid** to szybkie, wieloplatformowe narzędzie inżynieryjne (napisane w Rust Edycja 2024 z `egui` / `eframe 0.37`) do projektowania, wizualizacji i konfigurowania listew zaciskowych na szynie DIN w prefabrykacji szaf sterowniczych. Łączy ono świat projektowania CAD (EPLAN Electric P8), interaktywnego planowania 2D na warsztacie, precyzyjnego fizycznego doboru akcesoriów (płytki końcowe, mostki grzebieniowe z wyłamywanymi pinami, trzymacze końcowe) oraz przemysłowych systemów drukowania oznaczników (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded:** Ten projekt powstał jako **VibeCoded** – został zaprojektowany i stworzony z **pomocą AI** w ścisłej współpracy z autorem projektu.
+> **✨ VibeCoded:** Ten projekt powstał jako **VibeCoded** – został zaprojektowany, zaprogramowany i dopracowany z **pomocą AI** w ścisłej współpracy z autorem projektu.
 
 ---
 
 ## Główne funkcje
 
-- **277 wbudowanych typów złączek + własne złączki:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (z przyciskiem), `2102–2116` (dźwignia), `2022` X-COM, `2007` pomiarowe, `280/281` oraz `285` wysokoprądowe (`35–95 mm²`)
-  - **Phoenix Contact:** `PT 1,5/S` z `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` instalacyjne, `ST`, `UT` & `UK 5 N`
-  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` instalacyjne, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Własne złączki:** Twórz własne złączki w aplikacji z wyborem `1×` lub `2×` komór mostka
-- **Numeracja wielopoziomowa, tryby N/PE i znaki specjalne:**
-  - Złączki instalacyjne i wielopiętrowe (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` itd.): Zacisk **PE** jest zawsze wyrównany w osobnym wierszu **poniżej dolnego poziomu głównego**.
-  - **Numeracja N i PE:** Przełączana na listwę między stałym (`N`/`PE`), wspólnym licznikiem (`1, 2, …`), wspólnym `1N, 2N` / `1PE, 2PE` lub **własnym licznikiem N/PE (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Prefiks / Sufiks / Znaki specjalne dla zaznaczonych:** Zaznacz dowolne złączki i dodaj `+`, `-`, `~`, `=`, `.1`, `Ω` itd. przed lub po numerze (zachowywane przy zmianie numeracji).
-- **Tryb Mostków i obliczanie potencjałów:**
-  - Twórz kolorowe **potencjały** (`+24V`, `GND`, `L1` …) i klikaj/dotykaj poziomy złączek bezpośrednio w widoku CAD.
-  - **Automatyczne obliczanie:** Wylicza długość mostka grzebieniowego (np. `2002-405`, `FBS 5-5`, `ZQV`), oznacza **piny do wyłamania (`Wyłamać pin ×`)** przy pominiętych złączkach, planuje **mostki przewodowe (`DB`)** między poziomami (`E1 <-> E2`) lub różnymi rastrami oraz rozróżnia złączki **1-komorowe** (mostek przewodowy powyżej maks. pinów) i **2-komorowe** (kaskada na komorach 1 i 2).
-- **Interaktywny edytor CAD 2D (Desktop & Dotyk):**
-  - Czytelny widok CAD bez szyny DIN z logotypami producentów (**WAGO**, **Phoenix Contact**, **Weidmüller**), przełącznikiem narzędzi (**Przesuń**, **Zaznacz ramką**, **Tryb Mostków**), przesuwaniem dotykowym oraz środkowym/prawym przyciskiem myszy.
-  - **Wyświetlanie i edycja w miejscu:** Pionowo `-90°` lub grupowo poziomo; **dwuklik** pozwala od razu zmienić opis (`Enter` = zatwierdź, puste = auto, `Esc` = anuluj).
-- **Podgląd produktu, link producenta i pasujące akcesoria:**
-  - Pokazuje **zdjęcie produktu (jeśli dostępne) lub profil techniczny**, **liczbę komór**, **link do strony produktu producenta** oraz **płytki końcowe, mostki, oznaczniki, trzymacze końcowe i szyny N**.
-- **Eksport gotowy do druku (`.xlsx` i `.csv`) i Pliki projektu (`.termi` / `.json`):**
-  - **Excel (`.xlsx`):** 3 arkusze (`Druckfolge` / domyślnie `ByTierStrip`, `Ebenen-Spalten`, `Ebenen-Matrix`), wszystkie komórki jako **Tekst Excel (`@`)**.
-- **Kreator startowy, 7 języków i Motyw Systemowy:**
-  - Kreator krok po kroku: *Nowy projekt / Wczytaj* -> *Pierwsza listwa* -> *Edytor CAD*. **DE, EN, FR, IT, ES, PL, NL** – domyślnie używa **motywu Systemowego** (przełączanego System/Jasny/Ciemny), kontrastowe przyciski akcji, sprawdzanie GitHub na Desktop & Android, **GitHub** i **Buy Me a Coffee**.
+- **782+ zweryfikowanych typów złączek + 26 trzymaczy końcowych szyny DIN + własne złączki:**
+  - **WAGO:** TOPJOB S (`2000–2016` standardowe, `2200–2216` z przyciskiem, `2102–2116` z dźwignią), złączki trzypiętrowe `2002-32xx` z PE na dolnym piętrze, złączki instalacyjne (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` rozłączno-pomiarowe, `280/281` klasyczne oraz `285` wysokoprądowe (`35–95 mm²`).
+  - **Phoenix Contact:** COMPLETE line, Push-in od `PT 1,5/S` do `PT 35`, złączki czujnik/element wykonawczy `PTIO`, `PTPOWER 35–95`, dwupiętrowe `PTTB`/`PTTBS`, boczne wprowadzanie przewodu `PTV`, złączki instalacyjne `PTI` / `UTN` / `UTI`, rozłączne (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), sprężynowe `ST`, śrubowe `UT`, `UK 5 N`.
+  - **Weidmüller:** Klippon Connect Seria A (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), złączki instalacyjne `AITB`, Seria P rozdzielcza i potencjałowa (`PPV 4/8/16` & `PRV 4/8/16` z pojedynczym oznacznikiem na złączkę), Seria W (`WDU/WPE/WDK/WTR/WSI/DLI`), Seria Z (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 Trzymaczy końcowych na szynę TS 35:** Oryginalne trzymacze końcowe czołowych producentów (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2 itd.).
+  - **Własne złączki & Biblioteka szablonów listew:** Wizualny edytor złączek (`custom_specs.json`) oraz biblioteka szablonów listew (`strip_library.json`) do zapisywania i ponownego wykorzystywania częstych konfiguracji.
+
+- **Aktualizator bazy danych na żywo z GitHub (Hot-Reload bez restartu):**
+  - Automatyczne i nieblokujące sprawdzanie w tle dostępności nowej wersji bazy `terminal_specs.json` na GitHubie przy starcie.
+  - Wyraźny przycisk „Dostępna aktualizacja bazy danych”: pobieranie 1 kliknięciem, weryfikacja, zapis lokalny i natychmiastowe przeładowanie w trakcie pracy bez reinstalacji i przebudowywania aplikacji.
+
+- **Lokalny asystent szybkiego wprowadzania (Quick-Prompt, 100% offline bez chmurowego LLM):**
+  - Błyskawiczne wprowadzanie tekstem naturalnym: np. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Podgląd na żywo i natychmiastowe wstawianie partii złączek do aktywnej listwy jednym kliknięciem.
+
+- **Integracja EPLAN Electric P8 & Pełny Roundtrip:**
+  - **Import CSV z CLI:** Uruchamianie z linii poleceń `TermiGrid.exe --import-eplan-csv "export.csv"` lub z menu `Menu → Importuj CSV z EPLAN...` z automatycznym oczyszczaniem konfigurowalnych prefiksów producentów (`PXC.`, `WAG.`, `WDM.`).
+  - **Inteligentny import zestawień PDF z EPLAN:** Przeciągnij listę części PDF, automatyczne rozpoznawanie złączek instalacyjnych, szyn zbiorczych N i zasilań wraz z obliczaniem wsporników szyny N (co 200 mm).
+  - **Pakiet zwrotny EPLAN za 1 kliknięciem:** Generuje pliki `_EPLAN_Zubehoer_Import.csv` & `.xml` (z automatycznie przywróconymi prefiksami producentów, bez mieszania marek) oraz czyste rysunki DXF dla każdej listwy (`/DXF/<BMK>.dxf`) gotowe do importu stron DXF w EPLAN.
+  - **Skrypt mostka C# dla EPLAN:** Eksport skryptu `TermiGrid_EPLAN_Bridge.cs` jednym kliknięciem do bezproblemowej integracji w pasku narzędzi EPLAN P8.
+  - **Dyskretne okno ustawień:** Dostępne w `Menu → Interfejs EPLAN...` do konfiguracji prefiksów, separatorów i katalogów eksportu.
+
+- **Edytor CAD, Automatyczny tryb edycji & Generowanie płytek końcowych:**
+  - Widok CAD 2D w rzeczywistej skali z wyświetlaniem płytek końcowych (D) i przegród o ich faktycznej grubości.
+  - **Automatyczny tryb edycji:** Włącza się samoczynnie przy modyfikacji złączki w widoku CAD.
+  - **Automatyczne obliczanie płytek:** Płytki są generowane i aktualizowane podczas eksportu, w widoku e-Planera oraz w procesie powrotu do EPLAN.
+  - Edycja etykiet przez dwuklik (obsługa pustych oznaczników do zachowania odstępów w drukarce), przewijanie dotykowe i środkowym przyciskiem, płynny zoom Ctrl+kółko myszy.
+
+- **Tryb Mostków, Kaskada dwukomorowa & Instrukcje wyłamywania pinów:**
+  - Tworzenie kolorowych potencjałów (`+24V`, `GND`, `L1` …) i przypisywanie ich do poziomów przeciągnięciem myszy.
+  - Rzeczywiste obliczanie mostków grzebieniowych z kaskadą na komorach 1 i 2.
+  - Fizyczne instrukcje usuwania pinów (`PIN ENTFERNEN BEI`) dla omijanych złączek.
+  - Automatyczne mostki przewodowe (`DB`) przy zmianie poziomu lub rastra.
+
+- **Wbudowany podręcznik z wyszukiwarką & Generator promptu AI (Karta `Instrukcja`):**
+  - 13 szczegółowych tematów z wyszukiwaniem pełnotekstowym, filtrami kategorii i skrótami.
+  - Instrukcja krok po kroku dodawania własnych złączek lokalnie (wizualnie lub przez plik JSON).
+  - Gotowy szablon promptu dla modeli AI (ChatGPT, Claude...) do generowania bezbłędnych plików JSON ze złączkami.
+
+- **Eksport gotowy do druku (`.xlsx` i `.csv`):**
+  - 4 wyspecjalizowane arkusze Excel:
+    1. `Druckdaten (Flach)` (komórki ściśle jako tekst `@` dla WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (ciągłe taśmy oznaczników dla każdego poziomu E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (zbiorcza lista złączek, płytki końcowe, mostki z instrukcją wyłamywania pinów, trzymacze końcowe i całkowita długość szyny)
+
+- **Dyskowa pamięć podręczna zdjęć offline & Zweryfikowane CDN:**
+  - Oficjalne zdjęcia produktów pobierane z CDN bez blokad (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Trwała lokalna pamięć podręczna na dysku (`photo_cache`) – po pierwszym pobraniu działa w 100% offline.
+
+- **Wieloplatformowość, 7 języków i Motywy:**
+  - Windows (`.exe` przenośny), macOS (`.dmg` Uniwersalny), Android (`.apk` Uniwersalny), Linux.
+  - 7 języków: Niemiecki, Angielski, Francuski, Włoski, Hiszpański, Polski, Holenderski.
+  - Motyw Systemowy / Jasny / Ciemny, Cofnij/Ponów (`Ctrl+Z` / `Ctrl+Y`), skróty (`Alt+Lewo/Prawo`, `Ctrl+D`).
 
 ---
 
@@ -72,17 +105,17 @@ Wszystkie gotowe pakiety znajdują się na **[stronie Releases](https://github.c
 
 - **Windows:** Uruchom bezpośrednio dwuklikiem z pendrive'a lub folderu lokalnego – nie wymaga uprawnień administratora ani dodatkowych bibliotek uruchomieniowych.
 - **macOS (niepodpisana aplikacja):** Przy pierwszym uruchomieniu użyj **Prawy przycisk myszy -> Otwórz** lub zezwól na uruchomienie w *Ustawienia systemowe -> Prywatność i ochrona*.
-- **Android:** Pobierz APK i zezwól na instalację z nieznanych źródeł dla przeglądarki lub menedżera plików. Dzięki wyrównaniu stron 16 KB i `resizeableActivity` aplikacja działa także na nowych urządzeniach (np. Pixel 10 Pro XL) i ekranach składanych. Eksporty zapisują się w `/sdcard/Download/TermiGrid/`.
+- **Android:** Pobierz APK i zezwól na instalację z nieznanych źródeł dla przeglądarki lub menedżera plików. Dzięki wyrównaniu stron 16 KB i `resizeableActivity` aplikacja działa także na nowych urządzeniach (np. Pixel 10 Pro XL) i ekranach składanych. Eksporty zapisują się bezpośrednio w `/sdcard/Download/TermiGrid/`.
 
 ---
 
 ## Szybka instrukcja
 
-1. **Dodaj złączki:** W prawej kolumnie wybierz producenta i typ (lub użyj wyszukiwarki) i kliknij *Dodaj złączkę* albo *Wstaw przed/za*.
-2. **Ustaw numer startowy i wyświetlanie typu:** Ustaw numer początkowy na górze i w razie potrzeby przełącz między pionowym (`-90°`) a poziomym wyświetlaniem typu.
-3. **Edytuj opisy:** Kliknij dwukrotnie etykietę w edytorze CAD, aby wpisać własny tekst (`Enter` potwierdza, puste pole przywraca automatyczną numerację).
-4. **Sprawdź akcesoria:** Zaznacz złączki i odczytaj pasujące płytki końcowe, mostki, oznaczniki, trzymacze końcowe oraz szyny N w sekcji *Pasujące akcesoria*.
-5. **Eksportuj listę druku:** Wybierz kolejność druku (domyślnie *Poziomami / taśmowo*) oraz opcjonalnie `'PE' w eksporcie`, a następnie eksportuj jako `.xlsx` lub `.csv`.
+1. **Dodaj złączki:** W prawej kolumnie wybierz producenta i typ (lub użyj wyszukiwarki, szablonów listew albo asystenta szybkiego wprowadzania, np. `4x Drehstrom Abgang 2,5mm²`).
+2. **Import i Roundtrip EPLAN:** Importuj złączki przez parametr CLI (`--import-eplan-csv`), ręczny import CSV lub przeciągnij zestawienie PDF.
+3. **Edycja CAD & Tryb Mostków:** Kliknij dwukrotnie oznacznik, aby zmienić tekst, przełącz w Tryb Mostków, by malować potencjały przeciągnięciem myszy.
+4. **Automatyczne akcesoria & Płytki końcowe:** Płytki końcowe, przegrody, mostki z wyłamywanymi pinami i trzymacze końcowe są wyliczane automatycznie.
+5. **Eksport i Druk:** Eksportuj do 4-arkuszowego pliku Excel (`.xlsx`), CSV lub wygeneruj pakiet zwrotny EPLAN za 1 kliknięciem (`_EPLAN_Zubehoer_Import.csv` & `.xml` + rysunki DXF).
 
 ---
 

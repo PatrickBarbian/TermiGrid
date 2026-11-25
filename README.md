@@ -4,10 +4,10 @@
 
 # TermiGrid
 
-**Reihenklemmen-Konfigurator & Etiketten-Exporter für den Schaltschrankbau**
+**DIN-Schienen-Klemmenleisten-Konfigurator, CAD-Planer, EPLAN P8 Roundtrip & Etiketten-Exporter für den Schaltschrankbau**
 
 [![Release](https://img.shields.io/github/v/release/PatrickBarbian/TermiGrid)](https://github.com/PatrickBarbian/TermiGrid/releases)
-[![VibeCoded](https://img.shields.io/badge/VibeCoded-AI%20Assisted-blueviolet)](#vibe-coded)
+[![VibeCoded](https://img.shields.io/badge/VibeCoded-AI%20Assisted-blueviolet)](#überblick--vibecoded-hinweis)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/02eOWKzm5W)
 
 <p>
@@ -34,36 +34,68 @@
 
 ### Überblick & VibeCoded-Hinweis
 
-**TermiGrid** ist ein plattformübergreifendes Werkzeug (geschrieben in Rust mit `egui` / `eframe 0.37`) zum Planen von Klemmenleisten im Schaltschrankbau und zum Exportieren druckfertiger Beschriftungslisten für professionelle Etiketten- und Markierungsdrucker.
+**TermiGrid** ist ein schnelles, plattformübergreifendes Engineering-Werkzeug (geschrieben in Rust Edition 2024 mit `egui` / `eframe 0.37`) zum vollständigen Planen, Visualisieren und Konfigurieren von DIN-Schienen-Klemmenleisten im Schaltschrankbau. Es schließt nahtlos die Lücke zwischen Elektro-CAD (EPLAN Electric P8), interaktiver 2D-Werkstattplanung, physischer Zubehörberechnung (Abschlussplatten, Kammbrücken mit Pin-Kürzungsanweisungen, Endwinkel) und industriellen Beschriftungs- und Markierungsdruckern (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded:** Dieses Projekt wurde **VibeCoded** – vollständig entworfen und entwickelt mit **KI-Unterstützung** in enger Zusammenarbeit mit dem Projektautor.
+> **✨ VibeCoded:** Dieses Projekt wurde **VibeCoded** – vollständig entworfen, programmiert und iterativ verfeinert mit **KI-Unterstützung** in enger Zusammenarbeit mit dem Projektautor.
 
 ---
 
 ### Hauptfunktionen
 
-- **277 hinterlegte Klemmentypen + eigene Klemmen:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (mit Betätigungsdrücker), `2102–2116` (Hebel), `2022` X-COM, `2007` Stromwandler, `280/281` sowie `285` Hochstrom (`35–95 mm²`)
-  - **Phoenix Contact:** `PT 1,5/S` inkl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI` / `UTI` Installationsklemmen, `ST`, `UT` & `UK 5 N`
-  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` Installationsklemmen, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Eigene Klemmen:** Eigene Klemmentypen inkl. `1×` oder `2×` Brückerkammern direkt in der App anlegen
-- **Ebenen-basierte Nummerierung, N/PE-Modi & Sonderzeichen:**
-  - Installations- und Mehrstockklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` usw.): Ein vorhandener **PE-Anschluss** wird stets in einer eigenen PE-Zeile **unterhalb der unteren Hauptebene** ausgerichtet.
-  - **N- & PE-Nummerierung:** Umschaltbar pro Leiste zwischen fest (`N`/`PE`), mit der Hauptfolge mitgezählt (`1, 2, …`), mitgezählt als `1N, 2N` / `1PE, 2PE` oder mit **eigenem Zähler (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Präfix / Suffix / Sonderzeichen für Auswahl:** Beliebig viele Klemmen markieren und Sonderzeichen wie `+`, `-`, `~`, `=`, `.1`, `Ω` etc. vor oder nach der Zahl für alle oder gezielte Ebenen anwenden (bleibt beim Umnummerieren dynamisch erhalten).
-- **Brücken-Modus & Potentialberechnung:**
-  - Mehrere farbliche **Potentiale** anlegen (`+24V`, `GND`, `L1` …) und Klemmen-Ebenen direkt im CAD antippen/anklicken.
-  - **Automatische Berechnung:** Ermittelt benötigte Kammbrücken-Polzahlen (z. B. `2002-405`, `FBS 5-5`, `ZQV`), markiert **herauszubrechende Pins (`Pin entfernen ×`)** bei übersprungenen Klemmen, plant **Drahtbrücken (`DB`)** bei Mehrstock-Ebenenwechseln (`E1 <-> E2`) oder Rasterwechseln und unterscheidet automatisch zwischen **1-Kammer-Klemmen** (Drahtbrücke ab Überschreitung der max. Zubehör-Polzahl) und **Doppelkammer-Klemmen** (überlappende Kaskadierung in Kammer 1 & 2).
-- **Interaktiver 2D CAD-Editor (Desktop & Touch-optimiert):**
-  - Klare CAD-Ansicht ohne DIN-Schiene mit Hersteller-Logos (**WAGO**, **Phoenix Contact**, **Weidmüller**), Modus-Umschalter (**Verschieben**, **Rahmenauswahl**, **Brücken-Modus**), Touch-Panning sowie Mittel-/Rechtsklick-Drag.
-  - **Typ-Anzeige & Inline-Bearbeitung:** `-90°` vertikal oder horizontal gruppiert; **Doppelklick** auf Beschriftung zum direkten Editieren (`Enter` = übernehmen, leer = Auto, `Esc` = abbrechen).
-- **Produktvorschau, Hersteller-Link & Passendes Zubehör:**
-  - Im rechten Panel erscheinen zur gewählten Klemme automatisch **Produktfoto (wenn abrufbar) bzw. technische Profilvorschau**, **Kammeranzahl**, ein direkter **Link zur Hersteller-Produktseite** sowie **Enddeckel, Brücken, Marker, Endklammern und N-Sammelschienen**.
+- **782+ verifizierte Klemmentypen + 26 Hutschiene-Endwinkel + eigene Klemmen:**
+  - **WAGO:** TOPJOB S (`2000–2016` Standard, `2200–2216` mit Betätigungsdrücker, `2102–2116` mit Hebel), `2002-32xx` Dreistockklemmen mit PE auf unterster Ebene, Installationsklemmen (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` Messwandler-/Trennklemmen, `280/281` Klassiker sowie `285` Hochstrom (`35–95 mm²`).
+  - **Phoenix Contact:** COMPLETE line, Push-in `PT 1,5/S` bis `PT 35`, Sensor-/Aktorklemmen `PTIO`, `PTPOWER 35–95`, Doppelstock `PTTB`/`PTTBS`, seitlicher Leiteranschluss `PTV`, Installationsklemmen `PTI` / `UTN` / `UTI`, Trennklemmen (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), Federzug `ST`, Schraube `UT`, `UK 5 N`.
+  - **Weidmüller:** Klippon Connect A-Reihe (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), Installationsklemmen `AITB`, P-Reihe Rangier- und Potenzialverteiler (`PPV 4/8/16` & `PRV 4/8/16` mit 1-Schild-Beschriftung je Klemme), W-Reihe (`WDU/WPE/WDK/WTR/WSI/DLI`), Z-Reihe (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 TS 35 Endwinkel:** Passgenaue Endklammern führender Hersteller (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2 etc.).
+  - **Eigene Klemmen & Leisten-Bibliothek:** Visueller Klemmen-Editor (`custom_specs.json` PC-weit und projektgebunden) sowie Vorlagen-Bibliothek (`strip_library.json`) für wiederkehrende Leistenkombinationen.
+
+- **GitHub Live-Datenbank-Updater (Hot-Reload ohne App-Neustart):**
+  - Automatische, nicht-blockierende Hintergrundprüfung beim Start auf neuere Klemmen-Spezifikationen (`terminal_specs.json`) auf GitHub.
+  - Gut sichtbarer **„Datenbank-Update verfügbar“**-Button in der UI: 1-Klick-Download, Validierungsprüfung, lokale Speicherung und Live-Reload im laufenden Betrieb – ganz ohne Neuinstallation oder Programm-Rebuild.
+
+- **Lokaler Schnell-Eingabe-Assistent (Quick-Prompt, 100 % offline ohne Cloud-LLM):**
+  - Blitzschnelle Schaltungsgenerierung per Kurztext: z. B. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Live-Vorschau der generierten Klemmen und 1-Klick-Übernahme direkt in die aktuelle Klemmenleiste.
+
+- **EPLAN Electric P8 Schnittstelle & Vollständiger Roundtrip:**
+  - **CLI CSV-Import:** Start per Befehlszeile `TermiGrid.exe --import-eplan-csv "export.csv"` oder über `Menü → EPLAN CSV importieren...` mit automatischer Erkennung und Bereinigung von Hersteller-Präfixen (`PXC.`, `WAG.`, `WDM.`).
+  - **Intelligenter EPLAN PDF-Stücklistenimport:** Drag & Drop von EPLAN PDF-Plänen, automatische Zuweisung von Installationsklemmen, N-Sammelschienen und Einspeisungen inkl. Sammelschienenbock-Berechnung (alle 200 mm).
+  - **1-Klick EPLAN Rückimport-Paket:** Generiert `_EPLAN_Zubehoer_Import.csv` & `.xml` (mit automatisch wieder angehängten Hersteller-Präfixen, streng herstellerrein) und saubere Einzel-DXF-Dateien pro Leiste (`/DXF/<BMK>.dxf`) für den direkten EPLAN DXF-Seitenimport.
+  - **EPLAN C#-Bridge-Skript:** `TermiGrid_EPLAN_Bridge.cs` auf Knopfdruck exportierbar für direkte Menü- und Toolbar-Einbindung in EPLAN P8.
+  - **Aufgeräumter EPLAN-Einstellungsdialog:** Diskret integriert unter `Menü → EPLAN-Schnittstelle...` zur Konfiguration von Präfixen, Trennzeichen und Exportordnern.
+
+- **CAD-Editor, Automatischer Bearbeitungsmodus & Endplatten-Generierung:**
+  - Maßstabsgetreue 2D-CAD-Ansicht mit automatischer Anzeige von Abschluss- (D) und Trennplatten in realer Stärke.
+  - **Automatischer Bearbeitungsmodus:** Schaltet sich bei Bearbeitung im CAD selbstständig ein.
+  - **Automatische Endplatten-Generierung:** Werden bei Export, e-Planer-Ansicht oder Roundtrip automatisch berechnet und aktualisiert.
+  - Inline-Doppelklick-Beschriftung (inklusive `Leeres Schild` für freie Druckstellen in Markierungsstreifen), flüssiges Touch- & Maus-Panning (mittlere Maustaste), Zoom per Strg+Mausrad.
+
+- **Brücken-Modus, Doppelkammer-Kaskadierung & Pin-Abtrennung:**
+  - Farbige Potentiale anlegen (`+24V`, `GND`, `L1` …) und per Klick & Ziehen Klemmen ebenenweise zuweisen.
+  - Reale Kammbrückenberechnung mit 2-Kammer-Kaskadierung über Schacht 1 und 2.
+  - Konkrete Ausstanzanweisungen (`PIN ENTFERNEN BEI`) für übersprungene Klemmen.
+  - Automatische Drahtbrücken (`DB`) bei Ebenen- oder Rasterwechseln.
+
+- **Integrierte, durchsuchbare Anleitung & KI-Prompt-Generator (`Anleitung`-Reiter):**
+  - 13 detaillierte Themenbereiche mit Volltextsuche, Kategorie-Filtern und Schnellsuche.
+  - Schritt-für-Schritt-Anleitung zur lokalen Einbindung eigener Klemmen (visuell oder per JSON).
+  - Kopierfertiger Prompt-Template für KI-Tools (ChatGPT, Claude etc.) zum fehlerfreien Generieren passender Klemmen-JSON-Dateien.
+
 - **Druckerfertiger Export (`.xlsx` & `.csv`):**
-  - **Excel (`.xlsx`):** 3 Arbeitsblätter (`Druckfolge` mit `ByTierStrip`-Standard, `Ebenen-Spalten`, `Ebenen-Matrix`) – alle Zellen strikt als **Excel-Text (`@`)**.
-  - **CSV (`.csv`) & Projektdateien (`.termi` / `.json`)** inklusive Potentialen, Sonderzeichen und eigenen Klemmen.
-- **Geführter Projekt-Start („Projekt-Line“), 7 Sprachen & System-Theme:**
-  - Startbildschirm führt Schritt für Schritt von *Neues Projekt / Laden* -> *Erste Klemmleiste* -> *CAD-Editor*. **DE, EN, FR, IT, ES, PL, NL** – Theme folgt standardmäßig dem **System-Modus** (manuell auf Hell/Dunkel umschaltbar) mit klaren Kontrast-Aktionsfarben, nativem Update-Check auf Desktop & Android sowie **GitHub** & **Buy Me a Coffee**.
+  - 4 spezialisierte Excel-Tabellenblätter:
+    1. `Druckdaten (Flach)` (reine `@` Textzellen für WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (durchgehende Streifen je Etage E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (aggregierte Klemmen-Stückliste, Abschlussplatten, Kammbrücken mit Pin-Kürzungsanweisung, Endwinkel & Schienen-Gesamtlänge)
+
+- **Offline-Foto-Disk-Cache & Verifizierte CDNs:**
+  - Original-Hersteller-Produktfotos über blockadearme CDNs (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Persistenter lokaler Offline-Cache (`photo_cache`) – funktioniert nach dem ersten Laden vollständig ohne Internet.
+
+- **Plattformübergreifend, 7 Sprachen & Themes:**
+  - Windows (`.exe` portabel), macOS (`.dmg` Universal), Android (`.apk` Universal), Linux.
+  - 7 Sprachen: Deutsch, English, Français, Italiano, Español, Polski, Nederlands.
+  - System / Hell / Dunkel Theme, Undo/Redo (`Strg+Z` / `Strg+Y`), Tastenkürzel (`Alt+Links/Rechts`, `Strg+D`).
 
 ---
 
@@ -87,11 +119,11 @@ Alle fertigen Pakete sind auf der **[Releases-Seite](https://github.com/PatrickB
 
 ### Kurzanleitung
 
-1. **Klemmen hinzufügen:** In der rechten Spalte Hersteller und Typ wählen (oder Suchfeld nutzen) und auf *+ Klemme anhängen* bzw. *Davor/Dahinter einfügen* klicken.
-2. **Startnummer & Typ-Anzeige festlegen:** Oben die Startnummer einstellen und bei Bedarf zwischen vertikaler (`-90°`) und horizontaler Typ-Anzeige wechseln.
-3. **Texte anpassen:** Im CAD-Editor doppelt auf eine Beschriftung klicken, um einen manuellen Text zu vergeben (`Enter` zum Bestätigen, leeres Feld setzt die Automatik zurück).
-4. **Zubehör prüfen:** Klemmen markieren und im Bereich *Passendes Zubehör* direkt Enddeckel, Brücken, Marker, Endklammern und N-Sammelschienen ablesen.
-5. **Druckliste exportieren:** Druckreihenfolge (*Ebenenweise / Streifendruck* als Standard) sowie optional `'PE' im Export ausgeben` wählen und als `.xlsx` oder `.csv` exportieren.
+1. **Klemmen hinzufügen:** In der rechten Spalte Hersteller und Typ wählen (oder Suchfeld, Leistenvorlagen bzw. Schnell-Eingabe-Assistent nutzen, z. B. `4x Drehstrom Abgang 2,5mm²`).
+2. **EPLAN Import & Roundtrip:** Klemmen per CLI-Parameter (`--import-eplan-csv`), manuellem CSV-Import oder Drag & Drop von PDF-Stücklisten laden.
+3. **CAD-Bearbeitung & Brücken-Modus:** Doppelklick auf Beschriftungen zum Ändern von Texten, Umschalten in den Brücken-Modus für farbliche Potentiale per Klick & Ziehen.
+4. **Automatische Endplatten & Zubehör:** Abschlussplatten, Trennplatten, Kammbrücken mit Pin-Kürzungsanweisung und Endwinkel werden vollautomatisch ermittelt.
+5. **Export & Druck:** Export als 4-Blatt-Excel (`.xlsx`), CSV oder 1-Klick EPLAN Rückimport-Paket (`_EPLAN_Zubehoer_Import.csv` & `.xml` + DXF-Zeichnungen).
 
 ---
 
@@ -137,43 +169,74 @@ Klicke auf eine Sprache, um die vollständige Dokumentation direkt hier aufzukla
 
 <a id="lang-en"></a>
 <details>
-<summary><strong>🇬🇧 English — Complete Documentation (Click to expand / Zur vollständigen Datei: docs/README.en.md)</strong></summary>
+<summary><strong>🇬🇧 English — Complete Documentation (Click to expand / Standalone: docs/README.en.md)</strong></summary>
 
 ### Overview & VibeCoded Note
 
-**TermiGrid** is a cross-platform tool (written in Rust with `egui` / `eframe 0.37`) for planning DIN-rail terminal strips in control cabinet engineering and exporting printer-ready label lists for industrial marking systems.
+**TermiGrid** is a fast, cross-platform desktop and mobile engineering tool (written in Rust Edition 2024 with `egui` / `eframe 0.37`) for planning, visualizing, and configuring DIN-rail terminal strips in electrical control cabinet manufacturing. It bridges the gap between electrical CAD (EPLAN Electric P8), interactive 2D workshop layout planning, physical accessory calculation (end plates, comb jumpers with cut pins, end brackets), and industrial printer marking systems (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded:** This project is **VibeCoded** – designed and built with **AI assistance** in close collaboration with the project author.
+> **✨ VibeCoded:** This project is **VibeCoded** – designed, engineered, and continuously refined with **AI assistance** in close collaboration with the project author.
 
 *Standalone file:* [docs/README.en.md](docs/README.en.md)
 
 ### Key Features
 
-- **277 built-in terminal block specs + custom blocks:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (push-button), `2102–2116` (lever), `2022` X-COM, `2007` CT test, `280/281`, and `285` high-current (`35–95 mm²`)
-  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` installation terminals, `ST`, `UT`, & `UK 5 N`
-  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installation terminals, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`), & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Custom terminals:** Define custom blocks directly in the app including `1×` vs `2×` jumper chambers
-- **Multi-level numbering, N/PE modes & special characters:**
-  - Installation & multi-tier terminals (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Any existing **PE connection** is aligned on a dedicated PE row **below the bottom main tier**.
-  - **N & PE numbering:** Switch per strip between fixed (`N`/`PE`), shared sequential numbering (`1, 2, …`), shared `1N, 2N` / `1PE, 2PE`, or **separate N/PE counters (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Batch prefix / suffix / special characters:** Select any number of terminals and attach symbols (`+`, `-`, `~`, `=`, `.1`, `Ω`, etc.) before or after numbers across all or targeted tiers (preserved across renumbering).
-- **Bridge Mode & Potential Calculation:**
-  - Create color-coded **potentials** (`+24V`, `GND`, `L1` …) and tap/click terminal tiers directly in CAD.
-  - **Automatic calculation:** Computes required comb jumper poles (e.g. `2002-405`, `FBS 5-5`, `ZQV`), marks **cut-out pins (`Cut pin ×`)** over skipped blocks, inserts **wire bridges (`DB`)** across multi-tier jumps (`E1 <-> E2`) or pitch changes, and respects **single-chamber** (wire bridge beyond max poles) vs **double-chamber** terminals (overlapping slot-1/slot-2 cascades).
-- **Interactive 2D CAD Editor (Desktop & Touch-friendly):**
-  - Clean CAD canvas without DIN-rail clutter, embedded brand logos (**WAGO**, **Phoenix Contact**, **Weidmüller**), tool switcher (**Pan**, **Box Select**, **Bridge Mode**), touch panning & middle/right-drag scrolling.
-  - **Type display & inline editing:** `-90°` vertical or horizontal groups; **double-click** labels to edit inline (`Enter` = apply, empty = auto, `Esc` = cancel).
-- **Product Preview, Manufacturer Link & Matching Accessories:**
-  - Displays **product photo (when reachable) / technical profile preview**, **jumper chamber count**, clickable **manufacturer product page link**, plus **end plates, jumpers, markers, end brackets, and N-busbars**.
-- **Printer-ready Export (`.xlsx` & `.csv`) & Project files (`.termi` / `.json`):**
-  - **Excel (`.xlsx`):** 3 worksheets (`Druckfolge` / `ByTierStrip` default, `Ebenen-Spalten`, `Ebenen-Matrix`), strictly formatted as **Excel Text (`@`)**.
-- **Guided Project Start, 7 Languages & System Theme:**
-  - Startup pipeline guides from *New Project / Open* -> *First Terminal Strip* -> *CAD Editor*. **DE, EN, FR, IT, ES, PL, NL** – follows **OS System Theme** by default (toggle System/Light/Dark), high-contrast action buttons, live GitHub update check on Desktop & Android, plus **GitHub** and **Buy Me a Coffee**.
+- **782+ Verified Terminal Block Specs + 26 DIN-Rail End Brackets + Custom Blocks:**
+  - **WAGO:** TOPJOB S (`2000–2016` standard, `2200–2216` with push-button, `2102–2116` with lever), `2002-32xx` triple-deck with PE on the bottom level, installation terminals (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` CT test/disconnect, `280/281` classic, and `285` high-current (`35–95 mm²`).
+  - **Phoenix Contact:** COMPLETE line, Push-in `PT 1,5/S` to `PT 35`, `PTIO` sensor/actuator, `PTPOWER 35–95`, `PTTB`/`PTTBS` double-level, `PTV` lateral conductor connection, `PTI` / `UTN` / `UTI` installation terminals, disconnect terminals (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), `ST` spring-cage, `UT` screw, `UK 5 N`.
+  - **Weidmüller:** Klippon Connect A-Series (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installation terminals, P-Series marshalling and potential distribution terminals (`PPV 4/8/16` & `PRV 4/8/16` with single-marker labeling), W-Series (`WDU/WPE/WDK/WTR/WSI/DLI`), Z-Series (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 TS 35 End Brackets:** Dedicated end clamps from leading manufacturers (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2, etc.).
+  - **Custom Blocks & Strip Template Library:** Visual terminal block editor (`custom_specs.json` PC-wide and project-embedded) and template library (`strip_library.json`) for saving and reusing recurring strip assemblies.
+
+- **GitHub Live Database Updater (Hot-Reload without App Rebuild):**
+  - Automatic non-blocking background check on startup for terminal database updates on GitHub.
+  - Clear **"Database Update Available"** button in the UI: 1-click download, validation check, local persistence, and live hot-reload without restarting or rebuilding the app.
+
+- **Local Quick-Prompt Assistant (100% Offline, No Cloud LLM):**
+  - Fast plain-text circuit builder: e.g., `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Live preview of generated terminal blocks and instant 1-click batch insertion into the active strip.
+
+- **EPLAN Electric P8 Integration & Full Roundtrip:**
+  - **CLI CSV Import:** Launch via command line `TermiGrid.exe --import-eplan-csv "export.csv"` or `Menu → Import EPLAN CSV...` with automatic stripping of configurable vendor prefixes (`PXC.`, `WAG.`, `WDM.`).
+  - **Intelligent EPLAN PDF BOM Import:** Drag & drop PDF parts lists, automatic recognition of installation blocks, N-busbars, and feed-in blocks with busbar support bracket calculation (every 200 mm).
+  - **1-Click EPLAN Return Package:** Generates `_EPLAN_Zubehoer_Import.csv` & `.xml` (with automatically restored vendor prefixes, strictly brand-matched) and clean individual DXF drawings per strip (`/DXF/<BMK>.dxf`) for direct EPLAN DXF page import.
+  - **EPLAN C# Bridge Script:** Export `TermiGrid_EPLAN_Bridge.cs` at the click of a button for seamless menu/toolbar integration inside EPLAN P8.
+  - **Discreet EPLAN Settings Dialog:** Tucked away in `Menu → EPLAN Interface...` for configuring prefixes, delimiters, and export directories.
+
+- **CAD Canvas, Automated Edit Mode & End Plate Calculation:**
+  - True-to-scale 2D CAD canvas with end plates (D) and partition plates rendered in physical width.
+  - **Automated Edit Mode:** Automatically switches on when modifying blocks in the CAD view.
+  - **Automated End Plate Calculation:** End and partition plates are automatically computed and updated during export, e-Planer view, and EPLAN roundtrip.
+  - Inline double-click label editing (supports empty/blank labels to preserve printer gaps), smooth touch & middle-click panning, Ctrl+wheel zooming.
+
+- **Bridge Mode, Double-Chamber Cascading & Cut-Pin Instructions:**
+  - Define color-coded potentials (`+24V`, `GND`, `L1` …) and assign them across tiers by clicking and dragging.
+  - Real comb jumper calculation with overlapping 2-slot cascading.
+  - Physical cut-pin instructions (`PIN ENTFERNEN BEI`) for skipped blocks.
+  - Automatic wire bridge (`DB`) fallback on tier or pitch transitions.
+
+- **Integrated Searchable Guide & AI Prompt Generator (`Guide` Tab):**
+  - 13 detailed topics with multi-token full-text search, category filter tags, and quick-search shortcuts.
+  - Step-by-step instructions for adding custom terminals locally (visually or via JSON).
+  - Copy-ready AI prompt template for LLMs (ChatGPT, Claude, etc.) to generate validated terminal JSON files.
+
+- **Printer-Ready Export (`.xlsx` & `.csv`):**
+  - 4 specialized Excel sheets:
+    1. `Druckdaten (Flach)` (pure `@` text cells for WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (continuous strip per tier E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (aggregated parts list, end plates, comb jumpers with cut-pin instructions, end brackets & total DIN rail length)
+
+- **Offline Photo Disk Cache & Verified CDNs:**
+  - Official product photos via bot-block-free CDNs (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Persistent offline disk cache (`photo_cache`) – works completely offline after initial load.
+
+- **Cross-Platform, 7 Languages & Themes:**
+  - Windows (`.exe` portable), macOS (`.dmg` Universal), Android (`.apk` Universal), Linux.
+  - 7 languages: German, English, French, Italian, Spanish, Polish, Dutch.
+  - System / Light / Dark theme, Undo/Redo (`Ctrl+Z` / `Ctrl+Y`), keyboard shortcuts (`Alt+Left/Right`, `Ctrl+D`).
 
 ### Downloads & Portability
-
-All prebuilt binaries are available on the **[Releases page](https://github.com/PatrickBarbian/TermiGrid/releases)**:
 
 | Platform | Architecture / Target | File | Notes |
 | :--- | :--- | :--- | :--- |
@@ -181,49 +244,21 @@ All prebuilt binaries are available on the **[Releases page](https://github.com/
 | **macOS** | Universal (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Drag the `.app` bundle into Applications |
 | **Android** | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartphones, tablets & foldables (Android 7.0 – 15 / API 24–35, 16 KB page-aligned, v1/v2/v3 signed) |
 
-#### Platform Notes
-
-- **Windows:** Launch directly via double-click from a USB drive or local folder – no administrator rights or external runtimes required.
-- **macOS (unsigned `.app`):** On first launch, use **Right-click -> Open** or allow execution under *System Settings -> Privacy & Security*.
-- **Android:** Download the APK and allow installing from unknown sources for your browser/file manager. With 16 KB page alignment and `resizeableActivity`, it supports modern devices (e.g. Pixel 10 Pro XL) and foldables. Exports are saved to `/sdcard/Download/TermiGrid/`.
-
 ### Quick Guide
 
-1. **Add terminals:** Choose manufacturer and terminal type in the right panel (or use the search bar) and click *Append Terminal* or *Insert Before/After*.
-2. **Set start number & type display:** Adjust the starting number at the top and switch between vertical (`-90°`) and horizontal type labels as needed.
-3. **Edit labels:** Double-click any label in the CAD editor to enter custom text (`Enter` to confirm, clear input to revert to auto-numbering).
-4. **Check accessories:** Select terminals and inspect matching end plates, jumpers, markers, end brackets, and N-busbars in the *Matching Accessories* section.
-5. **Export label list:** Select print order (*Tier by Tier / Strip* by default) and whether to include `'PE'`, then export as `.xlsx` or `.csv`.
+1. **Add Terminals:** Choose manufacturer and terminal type in the right panel (or use search, strip templates, or the natural-language Quick-Prompt Assistant, e.g. `4x Drehstrom Abgang 2,5mm²`).
+2. **EPLAN Import & Roundtrip:** Import terminal data via CLI argument (`--import-eplan-csv`), manual CSV import, or PDF parts list drag & drop.
+3. **CAD Editing & Bridge Mode:** Double-click any label to modify text, switch to Bridge Mode to paint potentials across tiers by clicking and dragging.
+4. **Automatic Accessories & End Plates:** End and partition plates, comb jumpers with cut pins, and end brackets are automatically computed.
+5. **Export & Print:** Export 4-sheet Excel spreadsheets (`.xlsx`) or CSV, or generate a 1-click EPLAN Return Package (`_EPLAN_Zubehoer_Import.csv` & `.xml` + DXF drawings).
 
 ### Build from Source
 
-Requires a recent Rust toolchain (`rustup` / `cargo`).
-
 ```bash
-# Quality checks & tests
 cargo clippy --all-targets -- -D warnings
 cargo test
-
-# Desktop release build (native Windows / Linux / macOS)
 cargo build --release --bin termigrid
-
-# macOS Universal (Intel + Apple Silicon)
-cargo build --release --bin termigrid --target x86_64-apple-darwin
-cargo build --release --bin termigrid --target aarch64-apple-darwin
-
-# Android Universal APK (with cargo-apk & Android NDK installed)
-cargo apk build --release --lib
 ```
-
-### Links & Support
-
-- **GitHub Repository:** https://github.com/PatrickBarbian/TermiGrid
-- **Releases & Downloads:** https://github.com/PatrickBarbian/TermiGrid/releases
-- **Support / Buy Me a Coffee:** https://buymeacoffee.com/02eOWKzm5W
-
-### License
-
-Licensed under the **MIT License**.
 
 </details>
 
@@ -233,39 +268,70 @@ Licensed under the **MIT License**.
 
 ### Aperçu & Note VibeCoded
 
-**TermiGrid** est un outil multiplateforme (écrit en Rust avec `egui` / `eframe 0.37`) permettant de concevoir des borniers pour armoires électriques et d'exporter des listes de repérage prêtes à imprimer pour les imprimantes industrielles d'étiquettes.
+**TermiGrid** est un outil d'ingénierie rapide et multiplateforme (écrit en Rust Édition 2024 avec `egui` / `eframe 0.37`) pour planifier, visualiser et configurer des borniers sur rail DIN dans la construction d'armoires électriques. Il fait le lien entre la CAO électrique (EPLAN Electric P8), la planification 2D interactive d'atelier, le calcul physique précis des accessoires (flasques d'extrémité, peignes de pontage avec broches coupées, butées d'arrêt) et les systèmes industriels d'impression de repères (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded :** Ce projet est **VibeCoded** – conçu et développé avec l'**assistance de l'IA** en étroite collaboration avec l'auteur du projet.
+> **✨ VibeCoded :** Ce projet est **VibeCoded** – conçu, développé et perfectionné avec l'**assistance de l'IA** en étroite collaboration avec l'auteur du projet.
 
 *Fichier dédié :* [docs/README.fr.md](docs/README.fr.md)
 
 ### Fonctionnalités principales
 
-- **277 références de bornes intégrées + bornes personnalisées :**
-  - **WAGO :** TOPJOB S (`2000–2016`), `2200–2216` (bouton-poussoir), `2102–2116` (levier), `2022` X-COM, `2007` mesure/test, `280/281` et `285` fort courant (`35–95 mm²`)
-  - **Phoenix Contact :** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` bornes d'installation, `ST`, `UT` & `UK 5 N`
-  - **Weidmüller :** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installation, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Bornes personnalisées :** Créez vos propres bornes directement dans l'app avec `1×` ou `2×` chambres de pontage
-- **Numérotation multi-niveaux, modes N/PE & caractères spéciaux :**
-  - Bornes d'installation et multi-étages (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.) : Tout **raccordement PE** présent est toujours aligné sur une ligne dédiée **sous l'étage principal inférieur**.
-  - **Numérotation N & PE :** Basculez par bornier entre fixe (`N`/`PE`), compteur partagé (`1, 2, …`), `1N, 2N` / `1PE, 2PE` partagés ou **compteur N/PE propre (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Préfixe / Suffixe / Caractères spéciaux par lot :** Sélectionnez plusieurs bornes et ajoutez `+`, `-`, `~`, `=`, `.1`, `Ω`, etc. avant ou après le repère (conservé lors de la renumérotation).
-- **Mode Pontage & Calcul de potentiels :**
-  - Créez plusieurs **potentiels** colorés (`+24V`, `GND`, `L1` …) et touchez/cliquez les étages directement dans la vue CAO.
-  - **Calcul automatique :** Détermine le nombre de pôles de peigne requis (ex. `2002-405`, `FBS 5-5`, `ZQV`), signale les **broches à couper (`Couper broche ×`)**, planifie les **ponts filaires (`DB`)** entre étages (`E1 <-> E2`) ou changements de pas, et gère **1 chambre** (pont filaire si > pôles max) vs **2 chambres** (cascade superposée sur chambres 1 & 2).
-- **Éditeur CAO 2D interactif (Bureau & Tactile) :**
-  - Vue CAO sans rail DIN superflu, logos fabricants intégrés (**WAGO**, **Phoenix Contact**, **Weidmüller**), sélecteur d'outils (**Déplacer**, **Sélection**, **Mode Pontage**), déplacement tactile & bouton milieu/droit.
-  - **Affichage & édition directe :** Vertical `-90°` ou horizontal groupé ; **double-clic** pour éditer en direct (`Entrée` = valider, vide = auto, `Échap` = annuler).
-- **Aperçu produit, lien fabricant & accessoires compatibles :**
-  - Affiche **photo produit (si accessible) ou profil technique**, **nombre de chambres**, **lien direct vers la page produit fabricant**, plus **flasques, peignes, repères, butées et barres N**.
-- **Export prêt pour l'impression (`.xlsx` & `.csv`) & Fichiers projet (`.termi` / `.json`) :**
-  - **Excel (`.xlsx`) :** 3 feuilles (`Druckfolge` / `ByTierStrip` par défaut, `Ebenen-Spalten`, `Ebenen-Matrix`), toutes les cellules formatées en **Texte Excel (`@`)**.
-- **Démarrage guidé, 7 langues & Thème Système :**
-  - Assistant de démarrage *Nouveau projet / Charger* -> *Premier bornier* -> *Éditeur CAO*. **DE, EN, FR, IT, ES, PL, NL** – suit le **thème Système** par défaut (commutable Système/Clair/Sombre), boutons d'action contrastés, vérification GitHub sur Bureau & Android, **GitHub** & **Buy Me a Coffee**.
+- **782+ références de bornes vérifiées + 26 butées d'arrêt pour rail DIN + bornes personnalisées :**
+  - **WAGO :** TOPJOB S (`2000–2016` standard, `2200–2216` à poussoir, `2102–2116` à levier), bornes à trois étages `2002-32xx` avec PE au niveau inférieur, bornes d'installation (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` mesure/sectionnement, `280/281` classique et `285` fort courant (`35–95 mm²`).
+  - **Phoenix Contact :** COMPLETE line, Push-in `PT 1,5/S` à `PT 35`, bornes capteur/actionneur `PTIO`, `PTPOWER 35–95`, double étage `PTTB`/`PTTBS`, connexion latérale `PTV`, bornes d'installation `PTI` / `UTN` / `UTI`, sectionnables (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), ressort `ST`, vis `UT`, `UK 5 N`.
+  - **Weidmüller :** Klippon Connect Série A (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), bornes d'installation `AITB`, Série P de répartition et potentiel (`PPV 4/8/16` & `PRV 4/8/16` avec étiquette unique par borne), Série W (`WDU/WPE/WDK/WTR/WSI/DLI`), Série Z (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 butées d'arrêt pour rail TS 35 :** Butées de grands constructeurs (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2, etc.).
+  - **Bornes personnalisées & Bibliothèque de modèles :** Éditeur visuel de bornes (`custom_specs.json`) et bibliothèque de borniers modèles (`strip_library.json`) pour sauvegarder vos configurations récurrentes.
+
+- **Mise à jour directe de la base via GitHub (Hot-Reload sans redémarrer) :**
+  - Détection automatique et non bloquante au démarrage des mises à jour de la base `terminal_specs.json` sur GitHub.
+  - Bouton bien visible « Mise à jour de la base disponible » : téléchargement en 1 clic, validation, stockage local et rechargement à chaud immédiat sans réinstaller ni recompiler l'application.
+
+- **Assistant de saisie rapide local (Quick-Prompt, 100 % hors-ligne sans LLM cloud) :**
+  - Saisie intuitive en texte clair : ex. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Prévisualisation instantanée et insertion par lot dans le bornier actif en un clic.
+
+- **Passerelle EPLAN Electric P8 & Aller-retour complet :**
+  - **Import CSV en ligne de commande :** Lancement avec `TermiGrid.exe --import-eplan-csv "export.csv"` ou via `Menu → Importer CSV EPLAN...` avec nettoyage automatique des préfixes fabricants configurables (`PXC.`, `WAG.`, `WDM.`).
+  - **Import intelligent de nomenclatures PDF EPLAN :** Glisser-déposer de listes PDF, détection automatique des bornes d'installation, barres N et alimentations avec calcul des supports de barre collectrice (tous les 200 mm).
+  - **Paquet retour EPLAN en 1 clic :** Génération de `_EPLAN_Zubehoer_Import.csv` & `.xml` (avec réapplication automatique des préfixes fabricants, sans mélange de marques) et plans DXF individuels par bornier (`/DXF/<BMK>.dxf`) prêts pour l'import de pages EPLAN.
+  - **Script passerelle C# pour EPLAN :** Export de `TermiGrid_EPLAN_Bridge.cs` en un clic pour intégration directe dans les barres d'outils d'EPLAN P8.
+  - **Boîte de dialogue discrète :** Accessible sous `Menu → Interface EPLAN...` pour configurer préfixes, délimiteurs et dossiers d'export.
+
+- **Éditeur CAO, Mode d'édition automatique & Génération de flasques :**
+  - Vue CAO 2D à l'échelle avec affichage des flasques d'extrémité (D) et de séparation selon leur largeur réelle.
+  - **Mode d'édition automatique :** S'active automatiquement dès qu'une borne est modifiée dans la CAO.
+  - **Calcul automatique des flasques :** Générées et actualisées lors de l'export, de la vue e-Planer ou de l'aller-retour EPLAN.
+  - Édition des repères par double-clic (gestion des repères vides pour préserver les espacements d'impression), défilement tactile & clic milieu, zoom fluide Ctrl+molette.
+
+- **Mode Pontage, Cascade double chambre & Instructions de broches coupées :**
+  - Création de potentiels colorés (`+24V`, `GND`, `L1` …) et affectation par glisser-déposer sur les étages.
+  - Calcul réel des peignes de pontage avec cascade sur chambres 1 et 2.
+  - Instructions physiques de coupe de broches (`PIN ENTFERNEN BEI`) pour les bornes enjambées.
+  - Ponts filaires automatiques (`DB`) lors des changements d'étage ou de pas.
+
+- **Guide intégré avec recherche avancée & Générateur de prompt IA (Onglet `Guide`) :**
+  - 13 sections détaillées avec recherche plein texte multi-mots, filtres par catégorie et raccourcis.
+  - Procédure pas à pas pour ajouter des bornes localement (éditeur visuel ou JSON).
+  - Modèle de prompt prêt à copier pour les IA (ChatGPT, Claude...) afin de générer des fichiers JSON de bornes sans erreur.
+
+- **Export prêt pour l'impression (`.xlsx` & `.csv`) :**
+  - 4 feuilles Excel spécialisées :
+    1. `Druckdaten (Flach)` (cellules au format texte strict `@` pour WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (bandes continues par niveau E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (liste de pièces agrégée, flasques, peignes avec broches coupées, butées et longueur totale de rail DIN)
+
+- **Cache disque hors-ligne des photos & CDN vérifiés :**
+  - Photos fabricants officielles via CDN sans blocage (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Cache local persistant (`photo_cache`) – fonctionne entièrement hors-ligne après le premier chargement.
+
+- **Multiplateforme, 7 langues & Thèmes :**
+  - Windows (`.exe` portable), macOS (`.dmg` Universel), Android (`.apk` Universel), Linux.
+  - 7 langues : Allemand, Anglais, Français, Italien, Espagnol, Polonais, Néerlandais.
+  - Thème Système / Clair / Sombre, Annuler/Rétablir (`Ctrl+Z` / `Ctrl+Y`), raccourcis (`Alt+Gauche/Droite`, `Ctrl+D`).
 
 ### Téléchargements & Portabilité
-
-Tous les paquets prêts à l'emploi sont disponibles sur la **[page Releases](https://github.com/PatrickBarbian/TermiGrid/releases)** :
 
 | Plateforme | Architecture / Cible | Fichier | Remarques |
 | :--- | :--- | :--- | :--- |
@@ -273,49 +339,21 @@ Tous les paquets prêts à l'emploi sont disponibles sur la **[page Releases](ht
 | **macOS** | Universel (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Glisser le bundle `.app` dans Applications |
 | **Android** | Universel (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartphones, tablettes & pliables (Android 7.0 – 15 / API 24–35, alignement mémoire 16 Ko, signature v1/v2/v3) |
 
-#### Notes par plateforme
-
-- **Windows :** Lancer directement par double-clic depuis une clé USB ou un dossier local – aucun droit administrateur ni bibliothèque externe requis.
-- **macOS (application non signée) :** Au premier lancement, utiliser **Clic droit -> Ouvrir** ou autoriser l'ouverture dans *Réglages Système -> Confidentialité et sécurité*.
-- **Android :** Télécharger l'APK et autoriser l'installation depuis des sources inconnues pour votre navigateur/gestionnaire de fichiers. Grâce à l'alignement 16 Ko et à `resizeableActivity`, l'app fonctionne aussi sur les appareils récents (ex. Pixel 10 Pro XL) et les téléphones pliables. Les exports sont enregistrés dans `/sdcard/Download/TermiGrid/`.
-
 ### Guide rapide
 
-1. **Ajouter des bornes :** Choisir le fabricant et le modèle dans le panneau de droite (ou via la recherche), puis cliquer sur *Ajouter une borne* ou *Insérer avant/après*.
-2. **Définir le numéro de départ & l'affichage du type :** Régler le numéro initial en haut et basculer si besoin entre l'affichage vertical (`-90°`) et horizontal.
-3. **Modifier les repères :** Double-cliquer sur une étiquette dans l'éditeur CAO pour saisir un texte manuel (`Entrée` pour valider, champ vide pour revenir à la numérotation automatique).
-4. **Consulter les accessoires :** Sélectionner les bornes et lire directement flasques, ponts, repères, butées et barres N dans la section *Accessoires compatibles*.
-5. **Exporter la liste d'impression :** Choisir l'ordre d'impression (*Par niveau / en bande* par défaut) ainsi que l'option `'PE' dans l'export`, puis exporter en `.xlsx` ou `.csv`.
+1. **Ajouter des bornes :** Choisir le fabricant et le modèle dans le panneau de droite (ou utiliser la recherche, la bibliothèque de modèles ou l'assistant de saisie rapide, ex. `4x Drehstrom Abgang 2,5mm²`).
+2. **Import & Aller-retour EPLAN :** Importer les bornes par ligne de commande (`--import-eplan-csv`), import manuel CSV ou glisser-déposer de listes PDF.
+3. **Édition CAO & Mode Pontage :** Double-cliquer sur un repère pour éditer le texte, passer en Mode Pontage pour tracer des potentiels au clic-glisser.
+4. **Accessoires automatiques & Flasques :** Flasques d'extrémité, peignes avec broches coupées et butées sont calculés automatiquement.
+5. **Export & Impression :** Exporter en classeur Excel à 4 feuilles (`.xlsx`), CSV ou générer le paquet retour EPLAN en 1 clic (`_EPLAN_Zubehoer_Import.csv` & `.xml` + DXF).
 
 ### Compiler depuis les sources
 
-Prérequis : chaîne d'outils Rust récente (`rustup` / `cargo`).
-
 ```bash
-# Contrôles qualité & tests
 cargo clippy --all-targets -- -D warnings
 cargo test
-
-# Build Release bureau (Windows / Linux / macOS natif)
 cargo build --release --bin termigrid
-
-# macOS Universel (Intel + Apple Silicon)
-cargo build --release --bin termigrid --target x86_64-apple-darwin
-cargo build --release --bin termigrid --target aarch64-apple-darwin
-
-# Android Universal APK (avec cargo-apk & Android NDK installés)
-cargo apk build --release --lib
 ```
-
-### Liens & Soutien
-
-- **Dépôt GitHub :** https://github.com/PatrickBarbian/TermiGrid
-- **Releases & Téléchargements :** https://github.com/PatrickBarbian/TermiGrid/releases
-- **Soutien / Buy Me a Coffee :** https://buymeacoffee.com/02eOWKzm5W
-
-### Licence
-
-Publié sous **licence MIT**.
 
 </details>
 
@@ -325,39 +363,70 @@ Publié sous **licence MIT**.
 
 ### Panoramica & Nota VibeCoded
 
-**TermiGrid** è uno strumento multipiattaforma (scritto in Rust con `egui` / `eframe 0.37`) per progettare morsettiere nei quadri elettrici ed esportare liste di siglatura pronte per la stampa su stampanti industriali per etichette.
+**TermiGrid** è uno strumento di ingegneria rapido e multipiattaforma (sviluppato in Rust Edizione 2024 con `egui` / `eframe 0.37`) per progettare, visualizzare e configurare morsettiere su guida DIN nei quadri elettrici. Collega in modo fluido il CAD elettrico (EPLAN Electric P8), la pianificazione 2D interattiva da officina, il calcolo fisico preciso degli accessori (piastre terminali, ponticelli a pettine con pin rimossi, fermamorsetti) e i sistemi industriali di stampa siglature (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded:** Questo progetto è **VibeCoded** – ideato e sviluppato con il **supporto dell'IA** in stretta collaborazione con l'autore del progetto.
+> **✨ VibeCoded:** Questo progetto è **VibeCoded** – ideato, sviluppato e costantemente perfezionato con il **supporto dell'IA** in stretta collaborazione con l'autore del progetto.
 
 *File dedicato:* [docs/README.it.md](docs/README.it.md)
 
 ### Funzionalità principali
 
-- **277 modelli di morsetti integrati + morsetti personalizzati:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (pulsante), `2102–2116` (leva), `2022` X-COM, `2007` misura/test, `280/281` e `285` alta corrente (`35–95 mm²`)
-  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` morsetti per installazione, `ST`, `UT` & `UK 5 N`
-  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installazione, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Morsetti personalizzati:** Crea morsetti personalizzati direttamente nell'app incluse `1×` o `2×` camere ponticello
-- **Numerazione multilivello, modalità N/PE & simboli speciali:**
-  - Morsetti di installazione e multipiano (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, ecc.): Un **collegamento PE** presente viene sempre allineato su una riga dedicata **sotto il livello principale inferiore**.
-  - **Numerazione N & PE:** Impostabile per morsettiera tra fisso (`N`/`PE`), sequenza condivisa (`1, 2, …`), `1N, 2N` / `1PE, 2PE` condivisi o **contatore N/PE proprio (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Prefisso / Suffisso / Simboli su selezione:** Seleziona più morsetti e aggiungi `+`, `-`, `~`, `=`, `.1`, `Ω`, ecc. prima o dopo il numero su tutti i piani o un piano mirato (dinamico anche cambiando il numero iniziale).
-- **Modo Ponticelli & Calcolo Potenziali:**
-  - Crea **potenziali** a colori (`+24V`, `GND`, `L1` …) e tocca/clicca i piani direttamente nella vista CAD.
-  - **Calcolo automatico:** Calcola i poli del ponticello necessari (es. `2002-405`, `FBS 5-5`, `ZQV`), segnala i **pin da rimuovere (`Rimuovere pin ×`)**, pianifica **ponticelli a filo (`DB`)** tra piani (`E1 <-> E2`) o cambi di passo, e gestisce **1 camera** (ponticello a filo oltre i poli max) vs **2 camere** (cascata su camera 1 & 2).
-- **Editor CAD 2D interattivo (Desktop & Touch):**
-  - Vista CAD senza guida DIN superflua con loghi produttori (**WAGO**, **Phoenix Contact**, **Weidmüller**), selettore strumenti (**Sposta vista**, **Riquadro**, **Modo Ponticelli**), scorrimento touch e trascinamento tasto centrale/destro.
-  - **Visualizzazione & modifica diretta:** Verticale `-90°` o orizzontale raggruppata; **doppio clic** per modificare (`Invio` = applica, vuoto = auto, `Esc` = annulla).
-- **Anteprima prodotto, link produttore & accessori compatibili:**
-  - Mostra **foto prodotto (se raggiungibile) o profilo tecnico**, **numero camere**, **link diretto alla pagina prodotto del produttore**, più **piastre, ponticelli, targhette, fermamorsetti e barre N**.
-- **Esportazione pronta per la stampa (`.xlsx` & `.csv`) & File di progetto (`.termi` / `.json`):**
-  - **Excel (`.xlsx`):** 3 fogli (`Druckfolge` / `ByTierStrip` predefinito, `Ebenen-Spalten`, `Ebenen-Matrix`), tutte le celle formattate in **Testo Excel (`@`)**.
-- **Avvio guidato, 7 lingue & Tema di Sistema:**
-  - Procedura guidata *Nuovo progetto / Carica* -> *Prima morsettiera* -> *Editor CAD*. **DE, EN, FR, IT, ES, PL, NL** – segue il **tema di Sistema** predefinito (commutabile Sistema/Chiaro/Scuro), pulsanti ad alto contrasto, controllo GitHub su Desktop & Android, **GitHub** & **Buy Me a Coffee**.
+- **782+ specifiche di morsetti verificate + 26 fermamorsetti per guida DIN + morsetti personalizzati:**
+  - **WAGO:** TOPJOB S (`2000–2016` standard, `2200–2216` con pulsante, `2102–2116` con leva), morsetti a tre piani `2002-32xx` con PE al piano inferiore, morsetti per installazione (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` prova/sezionamento, `280/281` classico e `285` alta corrente (`35–95 mm²`).
+  - **Phoenix Contact:** COMPLETE line, Push-in da `PT 1,5/S` a `PT 35`, morsetti per sensori/attuatori `PTIO`, `PTPOWER 35–95`, doppio piano `PTTB`/`PTTBS`, connessione laterale `PTV`, morsetti per installazione `PTI` / `UTN` / `UTI`, sezionabili (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), molla `ST`, vite `UT`, `UK 5 N`.
+  - **Weidmüller:** Klippon Connect Serie A (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), morsetti per installazione `AITB`, Serie P di smistamento e potenziale (`PPV 4/8/16` & `PRV 4/8/16` con siglatura a targhetta singola per morsetto), Serie W (`WDU/WPE/WDK/WTR/WSI/DLI`), Serie Z (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 Fermamorsetti per guida TS 35:** Supporti terminali originali dei principali produttori (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2, ecc.).
+  - **Morsetti personalizzati & Libreria di modelli:** Editor visivo di morsetti (`custom_specs.json`) e libreria di morsettiere modello (`strip_library.json`) per salvare e riutilizzare configurazioni ricorrenti.
+
+- **Aggiornamento database live da GitHub (Hot-Reload senza riavvio):**
+  - Controllo automatico e non bloccante all'avvio degli aggiornamenti per `terminal_specs.json` su GitHub.
+  - Pulsante ben visibile «Aggiornamento database disponibile»: download in 1 clic, validazione, salvataggio locale e ricaricamento a caldo immediato senza reinstallare o ricompilare l'app.
+
+- **Assistente locale per inserimento rapido (Quick-Prompt, 100% offline senza cloud LLM):**
+  - Inserimento rapido in testo libero: es. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Anteprima in tempo reale e inserimento cumulativo nella morsettiera attiva con un solo clic.
+
+- **Integrazione EPLAN Electric P8 & Roundtrip completo:**
+  - **Importazione CSV da CLI:** Avvio da riga di comando con `TermiGrid.exe --import-eplan-csv "export.csv"` o da `Menu → Importa CSV EPLAN...` con rimozione automatica dei prefissi fornitore configurabili (`PXC.`, `WAG.`, `WDM.`).
+  - **Importazione intelligente distinte PDF da EPLAN:** Trascina elenchi parti PDF, riconoscimento automatico di morsetti per installazione, barre N e alimentazioni con calcolo dei supporti barra collettrice (ogni 200 mm).
+  - **Pacchetto di ritorno EPLAN in 1 clic:** Genera `_EPLAN_Zubehoer_Import.csv` & `.xml` (con prefissi fornitore riapplicati automaticamente, senza mischiare marchi) e disegni DXF individuali per ogni morsettiera (`/DXF/<BMK>.dxf`) pronti per l'import di pagine EPLAN.
+  - **Script bridge C# per EPLAN:** Esporta `TermiGrid_EPLAN_Bridge.cs` con un clic per l'integrazione diretta nelle barre degli strumenti di EPLAN P8.
+  - **Dialogo impostazioni pulito:** Accessibile da `Menu → Interfaccia EPLAN...` per configurare prefissi, separatori e cartelle di esportazione.
+
+- **Editor CAD, Modalità di modifica automatica & Generazione piastre terminali:**
+  - Vista CAD 2D in scala reale con rappresentazione di piastre terminali (D) e separatori con spessore fisico esatto.
+  - **Modalità di modifica automatica:** Si attiva da sola non appena un morsetto viene modificato nella vista CAD.
+  - **Calcolo automatico piastre terminali:** Generate e aggiornate durante l'esportazione, la vista e-Planer o il roundtrip EPLAN.
+  - Modifica testi con doppio clic (inclusa la conservazione di targhette vuote per spaziatori di stampa), scorrimento touch e clic centrale, zoom fluido Ctrl+rotellina.
+
+- **Modalità Ponticelli, Cascata a doppia camera & Istruzioni pin rimossi:**
+  - Creazione di potenziali colorati (`+24V`, `GND`, `L1` …) e assegnazione ai piani trascinando il mouse.
+  - Calcolo reale dei ponticelli a pettine con cascata su camere 1 e 2.
+  - Istruzioni fisiche per la rimozione dei pin (`PIN ENTFERNEN BEI`) sui morsetti saltati.
+  - Ponticelli a filo automatici (`DB`) nei salti di piano o di passo.
+
+- **Guida integrata con ricerca & Generatore di prompt IA (Scheda `Guida`):**
+  - 13 argomenti dettagliati con ricerca full-text multi-chiave, filtri per categoria e scorciatoie.
+  - Guida passo-passo per aggiungere morsetti personalizzati in locale (tramite editor o file JSON).
+  - Template di prompt per modelli di IA (ChatGPT, Claude...) pronto per generare specifiche JSON verificate senza errori.
+
+- **Esportazione pronta per la stampa (`.xlsx` & `.csv`):**
+  - 4 fogli di lavoro Excel specializzati:
+    1. `Druckdaten (Flach)` (celle rigorosamente in formato testo `@` per WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (strisce continue per ogni piano E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (distinta base aggregata, piastre terminali, ponticelli con istruzioni di taglio, fermamorsetti e lunghezza totale guida DIN)
+
+- **Cache disco offline per foto & CDN verificati:**
+  - Foto prodotto ufficiali tramite CDN senza blocchi anti-bot (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Cache disco locale persistente (`photo_cache`) – utilizzabile al 100% offline dopo il primo caricamento.
+
+- **Multipiattaforma, 7 lingue & Temi:**
+  - Windows (`.exe` portabile), macOS (`.dmg` Universale), Android (`.apk` Universale), Linux.
+  - 7 lingue: Tedesco, Inglese, Francese, Italiano, Spagnolo, Polacco, Olandese.
+  - Tema di Sistema / Chiaro / Scuro, Annulla/Ripeti (`Ctrl+Z` / `Ctrl+Y`), scorciatoie (`Alt+Sinistra/Destra`, `Ctrl+D`).
 
 ### Download & Portabilità
-
-Tutti i pacchetti pronti sono disponibili nella **[pagina Releases](https://github.com/PatrickBarbian/TermiGrid/releases)**:
 
 | Piattaforma | Architettura / Target | File | Note |
 | :--- | :--- | :--- | :--- |
@@ -365,49 +434,21 @@ Tutti i pacchetti pronti sono disponibili nella **[pagina Releases](https://gith
 | **macOS** | Universale (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Trascina il bundle `.app` in Applicazioni |
 | **Android** | Universale (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartphone, tablet & pieghevoli (Android 7.0 – 15 / API 24–35, allineamento pagine 16 KB, firma v1/v2/v3) |
 
-#### Note per piattaforma
-
-- **Windows:** Avviabile direttamente con doppio clic da chiavetta USB o cartella locale – non richiede diritti di amministratore né runtime esterni.
-- **macOS (app non firmata):** Al primo avvio usa **Clic destro -> Apri** oppure consenti l'esecuzione in *Impostazioni di Sistema -> Privacy e sicurezza*.
-- **Android:** Scarica l'APK e consenti l'installazione da origini sconosciute per il browser/file manager. Grazie all'allineamento a 16 KB e a `resizeableActivity`, è compatibile anche con dispositivi moderni (es. Pixel 10 Pro XL) e pieghevoli. I file esportati vengono salvati in `/sdcard/Download/TermiGrid/`.
-
 ### Guida rapida
 
-1. **Aggiungere morsetti:** Scegli produttore e modello nella colonna destra (o usa la ricerca) e clicca su *Aggiungi morsetto* oppure *Inserisci prima/dopo*.
-2. **Impostare numero iniziale & visualizzazione tipo:** Imposta il numero iniziale in alto e alterna tra visualizzazione verticale (`-90°`) e orizzontale.
-3. **Modificare i testi:** Fai doppio clic su una siglatura nell'editor CAD per inserire un testo manuale (`Invio` per confermare, campo vuoto per ripristinare l'automatico).
-4. **Verificare gli accessori:** Seleziona i morsetti e controlla subito piastre terminali, ponticelli, targhette, fermamorsetti e barre N nella sezione *Accessori compatibili*.
-5. **Esportare la lista di stampa:** Seleziona l'ordine di stampa (*Per piano / nastro* come predefinito) e l'opzione `'PE' nell'esportazione`, quindi esporta in `.xlsx` o `.csv`.
+1. **Aggiungere morsetti:** Scegli produttore e modello nella colonna destra (o usa la ricerca, i modelli di morsettiera o l'assistente per inserimento rapido, es. `4x Drehstrom Abgang 2,5mm²`).
+2. **Import & Roundtrip EPLAN:** Importa i morsetti tramite argomento CLI (`--import-eplan-csv`), importazione manuale CSV o trascina distinte PDF.
+3. **Modifica CAD & Modo Ponticelli:** Fai doppio clic su una siglatura per modificare il testo, passa alla modalità Ponticelli per tracciare potenziali trascinando il mouse.
+4. **Accessori automatici & Piastre terminali:** Piastre terminali, separatori, ponticelli con pin tagliati e fermamorsetti vengono calcolati automaticamente.
+5. **Esportazione & Stampa:** Esporta in cartelle di lavoro Excel a 4 fogli (`.xlsx`), CSV o crea il pacchetto di ritorno EPLAN in 1 clic (`_EPLAN_Zubehoer_Import.csv` & `.xml` + disegni DXF).
 
 ### Compilare dai sorgenti
 
-Prerequisito: toolchain Rust aggiornata (`rustup` / `cargo`).
-
 ```bash
-# Controlli qualità & test
 cargo clippy --all-targets -- -D warnings
 cargo test
-
-# Build Release desktop (Windows / Linux / macOS nativo)
 cargo build --release --bin termigrid
-
-# macOS Universale (Intel + Apple Silicon)
-cargo build --release --bin termigrid --target x86_64-apple-darwin
-cargo build --release --bin termigrid --target aarch64-apple-darwin
-
-# Android Universal APK (con cargo-apk & Android NDK installati)
-cargo apk build --release --lib
 ```
-
-### Link & Supporto
-
-- **Repository GitHub:** https://github.com/PatrickBarbian/TermiGrid
-- **Releases & Download:** https://github.com/PatrickBarbian/TermiGrid/releases
-- **Supporto / Buy Me a Coffee:** https://buymeacoffee.com/02eOWKzm5W
-
-### Licenza
-
-Distribuito con **licenza MIT**.
 
 </details>
 
@@ -417,39 +458,70 @@ Distribuito con **licenza MIT**.
 
 ### Descripción general y nota VibeCoded
 
-**TermiGrid** es una herramienta multiplataforma (escrita en Rust con `egui` / `eframe 0.37`) para planificar regleteros de bornes en cuadros eléctricos y exportar listas de etiquetado listas para imprimir en impresoras industriales de marcado.
+**TermiGrid** es una herramienta de ingeniería rápida y multiplataforma (escrita en Rust Edición 2024 con `egui` / `eframe 0.37`) para diseñar, visualizar y configurar regleteros de bornes para carril DIN en el montaje de cuadros eléctricos. Une de forma fluida el CAD eléctrico (EPLAN Electric P8), la planificación 2D interactiva de taller, el cálculo físico riguroso de accesorios (tapas finales, puentes peine con pines cortados, topes finales) y los sistemas industriales de impresión de etiquetas (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded:** Este proyecto ha sido **VibeCoded** – diseñado y desarrollado con **asistencia de IA** en estrecha colaboración con el autor del proyecto.
+> **✨ VibeCoded:** Este proyecto ha sido **VibeCoded** – diseñado, programado y perfeccionado con **asistencia de IA** en estrecha colaboración con el autor del proyecto.
 
 *Archivo independiente:* [docs/README.es.md](docs/README.es.md)
 
 ### Funciones principales
 
-- **277 tipos de bornes integrados + bornes personalizados:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (pulsador), `2102–2116` (palanca), `2022` X-COM, `2007` medida/prueba, `280/281` y `285` alta corriente (`35–95 mm²`)
-  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` instalación, `ST`, `UT` & `UK 5 N`
-  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` instalación, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Bornes personalizados:** Crea tus propios bornes en la app incluyendo `1×` o `2×` cámaras de puente
-- **Numeración multinivel, modos N/PE y símbolos especiales:**
-  - Bornes de instalación y multipiso (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, etc.): Cualquier **conexión PE** se alinea siempre en su propia fila **debajo del nivel principal inferior**.
-  - **Numeración N y PE:** Selecciona por regletero entre fijo (`N`/`PE`), contador compartido (`1, 2, …`), `1N, 2N` / `1PE, 2PE` compartidos o **contador propio N/PE (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Prefijo / Sufijo / Símbolos en lote:** Marca varios bornes y añade `+`, `-`, `~`, `=`, `.1`, `Ω`, etc. antes o después del número en todos o en un piso específico (se conserva al renumerar).
-- **Modo Puentes y Cálculo de Potenciales:**
-  - Crea **potenciales** por color (`+24V`, `GND`, `L1` …) y pulsa los niveles de bornes directamente en el CAD.
-  - **Cálculo automático:** Determina polos de puente peine (`2002-405`, `FBS 5-5`, `ZQV`), marca **pines a quitar (`Quitar pin ×`)**, planifica **puentes de cable (`DB`)** entre pisos (`E1 <-> E2`) o cambios de paso, y distingue **1 cámara** (puente de cable si supera polos máx.) vs **2 cámaras** (cascada en cámaras 1 y 2).
-- **Editor CAD 2D interactivo (Escritorio y Táctil):**
-  - Vista CAD sin carril DIN innecesario con logotipos integrados (**WAGO**, **Phoenix Contact**, **Weidmüller**), selector (**Mover vista**, **Selección**, **Modo Puentes**), desplazamiento táctil y arrastre con botón central/derecho.
-  - **Visualización y edición directa:** Vertical `-90°` o horizontal agrupada; **doble clic** para editar (`Enter` = aplicar, vacío = automático, `Esc` = cancelar).
-- **Vista previa del producto, enlace del fabricante y accesorios:**
-  - Muestra **foto del producto (cuando está disponible) o perfil técnico**, **número de cámaras**, **enlace directo a la página del fabricante**, además de **tapas, puentes, marcadores, topes finales y barras N**.
-- **Exportación lista para impresora (`.xlsx` & `.csv`) y Proyectos (`.termi` / `.json`):**
-  - **Excel (`.xlsx`):** 3 hojas (`Druckfolge` / `ByTierStrip` por defecto, `Ebenen-Spalten`, `Ebenen-Matrix`), todas las celdas formateadas como **Texto Excel (`@`)**.
-- **Inicio guiado, 7 idiomas y Tema del Sistema:**
-  - Asistente *Nuevo proyecto / Abrir* -> *Primer regletero* -> *Editor CAD*. **DE, EN, FR, IT, ES, PL, NL** – sigue el **tema del Sistema** por defecto (cambiable Sistema/Claro/Oscuro), botones destacados de alto contraste, comprobación de GitHub en Escritorio y Android, **GitHub** y **Buy Me a Coffee**.
+- **782+ tipos de bornes verificados + 26 topes finales para carril DIN + bornes personalizados:**
+  - **WAGO:** TOPJOB S (`2000–2016` estándar, `2200–2216` con pulsador, `2102–2116` con palanca), bornes de tres pisos `2002-32xx` con PE en el piso inferior, bornes de instalación (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` medida/seccionamiento, `280/281` clásico y `285` alta corriente (`35–95 mm²`).
+  - **Phoenix Contact:** COMPLETE line, Push-in de `PT 1,5/S` a `PT 35`, bornes para sensores/actuadores `PTIO`, `PTPOWER 35–95`, doble piso `PTTB`/`PTTBS`, conexión lateral `PTV`, bornes de instalación `PTI` / `UTN` / `UTI`, seccionables (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), resorte `ST`, tornillo `UT`, `UK 5 N`.
+  - **Weidmüller:** Klippon Connect Serie A (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), bornes de instalación `AITB`, Serie P de distribución y potencial (`PPV 4/8/16` & `PRV 4/8/16` con marcador único por borne), Serie W (`WDU/WPE/WDK/WTR/WSI/DLI`), Serie Z (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 Topes finales para carril TS 35:** Topes terminales originales de fabricantes líderes (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2, etc.).
+  - **Bornes personalizados & Biblioteca de plantillas:** Editor visual de bornes (`custom_specs.json`) y biblioteca de regleteros modelo (`strip_library.json`) para guardar y reutilizar configuraciones frecuentes.
+
+- **Actualizador de base de datos en vivo desde GitHub (Hot-Reload sin reiniciar):**
+  - Comprobación automática y no bloqueante al arrancar para detectar actualizaciones de `terminal_specs.json` en GitHub.
+  - Botón destacado «Actualización de base de datos disponible»: descarga en 1 clic, validación, almacenamiento local y recarga en caliente instantánea sin reinstalar ni recompilar la aplicación.
+
+- **Asistente local de entrada rápida (Quick-Prompt, 100% fuera de línea sin LLM en la nube):**
+  - Entrada rápida en texto natural: ej. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Vista previa en tiempo real e inserción por lote en el regletero activo con un solo clic.
+
+- **Integración con EPLAN Electric P8 & Roundtrip completo:**
+  - **Importación CSV por CLI:** Ejecución desde línea de comandos con `TermiGrid.exe --import-eplan-csv "export.csv"` o desde `Menú → Importar CSV de EPLAN...` con eliminación automática de prefijos configurables (`PXC.`, `WAG.`, `WDM.`).
+  - **Importación inteligente de listas de piezas PDF de EPLAN:** Arrastra archivos PDF, reconocimiento automático de bornes de instalación, barras colectoras de neutro y alimentaciones con cálculo de soportes (cada 200 mm).
+  - **Paquete de retorno EPLAN en 1 clic:** Genera `_EPLAN_Zubehoer_Import.csv` y `.xml` (con prefijos de fabricante restaurados automáticamente, sin mezclar marcas) y planos DXF individuales por regletero (`/DXF/<BMK>.dxf`) listos para importación de páginas DXF en EPLAN.
+  - **Script puente en C# para EPLAN:** Exportación de `TermiGrid_EPLAN_Bridge.cs` en un clic para integración directa en la barra de herramientas de EPLAN P8.
+  - **Ajustes de EPLAN ordenados:** Acceso discreto desde `Menú → Interfaz EPLAN...` para configurar prefijos, separadores y carpetas de destino.
+
+- **Editor CAD, Modo de edición automático & Generación de tapas finales:**
+  - Vista CAD 2D a escala real con representación de tapas finales (D) y placas separadoras con su grosor físico exacto.
+  - **Modo de edición automático:** Se activa automáticamente al realizar cualquier cambio en el CAD.
+  - **Cálculo automático de tapas:** Se calculan y actualizan al exportar, en la vista e-Planer o durante el roundtrip con EPLAN.
+  - Edición de textos con doble clic (admite etiquetas vacías para reservar espacio en impresoras), desplazamiento táctil y con botón central, zoom fluido Ctrl+rueda.
+
+- **Modo Puentes, Cascada de doble cámara & Instrucciones de corte de pines:**
+  - Crea potenciales por color (`+24V`, `GND`, `L1` …) y asígnalos arrastrando sobre los niveles de los bornes.
+  - Cálculo real de puentes peine con cascada en cámaras 1 y 2.
+  - Instrucciones físicas de corte de pines (`PIN ENTFERNEN BEI`) en bornes saltados.
+  - Puentes de cable automáticos (`DB`) al cambiar de piso o de paso entre bornes.
+
+- **Guía integrada con buscador & Generador de prompt para IA (Pestaña `Guía`):**
+  - 13 temas detallados con búsqueda de texto completo multitérmino, filtros por categoría y accesos rápidos.
+  - Instrucciones paso a paso para añadir bornes personalizados en local (editor visual o JSON).
+  - Plantilla de prompt lista para copiar en herramientas de IA (ChatGPT, Claude...) y generar archivos JSON de bornes sin fallos.
+
+- **Exportación lista para impresora (`.xlsx` y `.csv`):**
+  - 4 hojas de cálculo Excel especializadas:
+    1. `Druckdaten (Flach)` (celdas estrictamente en formato de texto `@` para WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (tiras continuas por piso E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (lista de piezas agregada, tapas finales, puentes peine con pines cortados, topes finales y longitud total de carril DIN)
+
+- **Caché en disco fuera de línea para fotos & CDN verificados:**
+  - Fotos oficiales de productos mediante CDN sin bloqueos anti-bot (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Caché local persistente en disco (`photo_cache`) – funciona al 100% sin conexión tras la primera descarga.
+
+- **Multiplataforma, 7 idiomas y Temas:**
+  - Windows (`.exe` portable), macOS (`.dmg` Universal), Android (`.apk` Universal), Linux.
+  - 7 idiomas: Alemán, Inglés, Francés, Italiano, Español, Polaco, Holandés.
+  - Tema del Sistema / Claro / Oscuro, Deshacer/Rehacer (`Ctrl+Z` / `Ctrl+Y`), atajos (`Alt+Izquierda/Derecha`, `Ctrl+D`).
 
 ### Descargas y portabilidad
-
-Todos los paquetes compilados están disponibles en la **[página de Releases](https://github.com/PatrickBarbian/TermiGrid/releases)**:
 
 | Plataforma | Arquitectura / Destino | Archivo | Notas |
 | :--- | :--- | :--- | :--- |
@@ -457,49 +529,21 @@ Todos los paquetes compilados están disponibles en la **[página de Releases](h
 | **macOS** | Universal (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Arrastra el paquete `.app` a Aplicaciones |
 | **Android** | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartphones, tablets y plegables (Android 7.0 – 15 / API 24–35, alineación de página de 16 KB, firma v1/v2/v3) |
 
-#### Notas por plataforma
-
-- **Windows:** Ejecutar directamente con doble clic desde una memoria USB o carpeta local – no requiere permisos de administrador ni librerías externas.
-- **macOS (aplicación sin firma):** En el primer inicio usa **Clic derecho -> Abrir** o autoriza la app en *Ajustes del Sistema -> Privacidad y seguridad*.
-- **Android:** Descarga el APK y permite la instalación desde orígenes desconocidos para tu navegador o gestor de archivos. Gracias a la alineación de 16 KB y `resizeableActivity`, es compatible con dispositivos actuales (p. ej. Pixel 10 Pro XL) y plegables. Las exportaciones se guardan en `/sdcard/Download/TermiGrid/`.
-
 ### Guía rápida
 
-1. **Añadir bornes:** Selecciona fabricante y modelo en el panel derecho (o usa la búsqueda) y haz clic en *Añadir borne* o *Insertar antes/después*.
-2. **Ajustar número inicial y visualización:** Configura el número inicial en la parte superior y alterna entre visualización vertical (`-90°`) y horizontal según prefieras.
-3. **Editar etiquetas:** Haz doble clic en cualquier etiqueta del editor CAD para escribir un texto manual (`Enter` para confirmar, dejar vacío para volver a la numeración automática).
-4. **Consultar accesorios:** Selecciona los bornes y consulta al instante tapas finales, puentes, marcadores, topes finales y barras N en *Accesorios compatibles*.
-5. **Exportar lista de impresión:** Elige el orden (*Por nivel / tira* por defecto) y si deseas incluir `'PE'`, y exporta en `.xlsx` o `.csv`.
+1. **Añadir bornes:** Selecciona fabricante y modelo en el panel derecho (o usa la búsqueda, plantillas de regleteros o el asistente de entrada rápida, ej. `4x Drehstrom Abgang 2,5mm²`).
+2. **Importación y Roundtrip EPLAN:** Importa bornes por argumento CLI (`--import-eplan-csv`), importación manual CSV o arrastra listas de piezas PDF.
+3. **Edición CAD y Modo Puentes:** Haz doble clic en una etiqueta para modificar el texto, cambia a Modo Puentes para trazar potenciales arrastrando con el ratón.
+4. **Accesorios automáticos y Tapas:** Tapas finales, separadores, puentes peine con pines cortados y topes terminales se calculan automáticamente.
+5. **Exportación e Impresión:** Exporta a hojas de cálculo Excel de 4 páginas (`.xlsx`), CSV o genera el paquete de retorno EPLAN en 1 clic (`_EPLAN_Zubehoer_Import.csv` y `.xml` + DXF).
 
 ### Compilar desde el código fuente
 
-Requisito: toolchain de Rust actualizada (`rustup` / `cargo`).
-
 ```bash
-# Comprobación de calidad y pruebas
 cargo clippy --all-targets -- -D warnings
 cargo test
-
-# Compilación Release de escritorio (Windows / Linux / macOS nativo)
 cargo build --release --bin termigrid
-
-# macOS Universal (Intel + Apple Silicon)
-cargo build --release --bin termigrid --target x86_64-apple-darwin
-cargo build --release --bin termigrid --target aarch64-apple-darwin
-
-# Android Universal APK (con cargo-apk y Android NDK instalados)
-cargo apk build --release --lib
 ```
-
-### Enlaces y apoyo
-
-- **Repositorio GitHub:** https://github.com/PatrickBarbian/TermiGrid
-- **Releases y descargas:** https://github.com/PatrickBarbian/TermiGrid/releases
-- **Apoyo / Buy Me a Coffee:** https://buymeacoffee.com/02eOWKzm5W
-
-### Licencia
-
-Publicado bajo la **licencia MIT**.
 
 </details>
 
@@ -509,39 +553,70 @@ Publicado bajo la **licencia MIT**.
 
 ### Przegląd i informacja VibeCoded
 
-**TermiGrid** to wieloplatformowe narzędzie (napisane w Rust z użyciem `egui` / `eframe 0.37`) do projektowania listew zaciskowych w szafach sterowniczych oraz eksportu gotowych do druku list opisowych dla przemysłowych drukarek oznaczników.
+**TermiGrid** to szybkie, wieloplatformowe narzędzie inżynieryjne (napisane w Rust Edycja 2024 z `egui` / `eframe 0.37`) do projektowania, wizualizacji i konfigurowania listew zaciskowych na szynie DIN w prefabrykacji szaf sterowniczych. Łączy ono świat projektowania CAD (EPLAN Electric P8), interaktywnego planowania 2D na warsztacie, precyzyjnego fizycznego doboru akcesoriów (płytki końcowe, mostki grzebieniowe z wyłamywanymi pinami, trzymacze końcowe) oraz przemysłowych systemów drukowania oznaczników (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded:** Ten projekt powstał jako **VibeCoded** – został zaprojektowany i stworzony z **pomocą AI** w ścisłej współpracy z autorem projektu.
+> **✨ VibeCoded:** Ten projekt powstał jako **VibeCoded** – został zaprojektowany, zaprogramowany i dopracowany z **pomocą AI** w ścisłej współpracy z autorem projektu.
 
 *Osobny plik:* [docs/README.pl.md](docs/README.pl.md)
 
 ### Główne funkcje
 
-- **277 wbudowanych typów złączek + własne złączki:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (z przyciskiem), `2102–2116` (dźwignia), `2022` X-COM, `2007` pomiarowe, `280/281` oraz `285` wysokoprądowe (`35–95 mm²`)
-  - **Phoenix Contact:** `PT 1,5/S` z `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` instalacyjne, `ST`, `UT` & `UK 5 N`
-  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` instalacyjne, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Własne złączki:** Twórz własne złączki w aplikacji z wyborem `1×` lub `2×` komór mostka
-- **Numeracja wielopoziomowa, tryby N/PE i znaki specjalne:**
-  - Złączki instalacyjne i wielopiętrowe (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI` itd.): Zacisk **PE** jest zawsze wyrównany w osobnym wierszu **poniżej dolnego poziomu głównego**.
-  - **Numeracja N i PE:** Przełączana na listwę między stałym (`N`/`PE`), wspólnym licznikiem (`1, 2, …`), wspólnym `1N, 2N` / `1PE, 2PE` lub **własnym licznikiem N/PE (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Prefiks / Sufiks / Znaki specjalne dla zaznaczonych:** Zaznacz dowolne złączki i dodaj `+`, `-`, `~`, `=`, `.1`, `Ω` itd. przed lub po numerze (zachowywane przy zmianie numeracji).
-- **Tryb Mostków i obliczanie potencjałów:**
-  - Twórz kolorowe **potencjały** (`+24V`, `GND`, `L1` …) i klikaj/dotykaj poziomy złączek bezpośrednio w widoku CAD.
-  - **Automatyczne obliczanie:** Wylicza długość mostka grzebieniowego (np. `2002-405`, `FBS 5-5`, `ZQV`), oznacza **piny do wyłamania (`Wyłamać pin ×`)** przy pominiętych złączkach, planuje **mostki przewodowe (`DB`)** między poziomami (`E1 <-> E2`) lub różnymi rastrami oraz rozróżnia złączki **1-komorowe** (mostek przewodowy powyżej maks. pinów) i **2-komorowe** (kaskada na komorach 1 i 2).
-- **Interaktywny edytor CAD 2D (Desktop & Dotyk):**
-  - Czytelny widok CAD bez szyny DIN z logotypami producentów (**WAGO**, **Phoenix Contact**, **Weidmüller**), przełącznikiem narzędzi (**Przesuń**, **Zaznacz ramką**, **Tryb Mostków**), przesuwaniem dotykowym oraz środkowym/prawym przyciskiem myszy.
-  - **Wyświetlanie i edycja w miejscu:** Pionowo `-90°` lub grupowo poziomo; **dwuklik** pozwala od razu zmienić opis (`Enter` = zatwierdź, puste = auto, `Esc` = anuluj).
-- **Podgląd produktu, link producenta i pasujące akcesoria:**
-  - Pokazuje **zdjęcie produktu (jeśli dostępne) lub profil techniczny**, **liczbę komór**, **link do strony produktu producenta** oraz **płytki końcowe, mostki, oznaczniki, trzymacze końcowe i szyny N**.
-- **Eksport gotowy do druku (`.xlsx` i `.csv`) i Pliki projektu (`.termi` / `.json`):**
-  - **Excel (`.xlsx`):** 3 arkusze (`Druckfolge` / domyślnie `ByTierStrip`, `Ebenen-Spalten`, `Ebenen-Matrix`), wszystkie komórki jako **Tekst Excel (`@`)**.
-- **Kreator startowy, 7 języków i Motyw Systemowy:**
-  - Kreator krok po kroku: *Nowy projekt / Wczytaj* -> *Pierwsza listwa* -> *Edytor CAD*. **DE, EN, FR, IT, ES, PL, NL** – domyślnie używa **motywu Systemowego** (przełączanego System/Jasny/Ciemny), kontrastowe przyciski akcji, sprawdzanie GitHub na Desktop & Android, **GitHub** i **Buy Me a Coffee**.
+- **782+ zweryfikowanych typów złączek + 26 trzymaczy końcowych szyny DIN + własne złączki:**
+  - **WAGO:** TOPJOB S (`2000–2016` standardowe, `2200–2216` z przyciskiem, `2102–2116` z dźwignią), złączki trzypiętrowe `2002-32xx` z PE na dolnym piętrze, złączki instalacyjne (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` rozłączno-pomiarowe, `280/281` klasyczne oraz `285` wysokoprądowe (`35–95 mm²`).
+  - **Phoenix Contact:** COMPLETE line, Push-in od `PT 1,5/S` do `PT 35`, złączki czujnik/element wykonawczy `PTIO`, `PTPOWER 35–95`, dwupiętrowe `PTTB`/`PTTBS`, boczne wprowadzanie przewodu `PTV`, złączki instalacyjne `PTI` / `UTN` / `UTI`, rozłączne (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), sprężynowe `ST`, śrubowe `UT`, `UK 5 N`.
+  - **Weidmüller:** Klippon Connect Seria A (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), złączki instalacyjne `AITB`, Seria P rozdzielcza i potencjałowa (`PPV 4/8/16` & `PRV 4/8/16` z pojedynczym oznacznikiem na złączkę), Seria W (`WDU/WPE/WDK/WTR/WSI/DLI`), Seria Z (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 Trzymaczy końcowych na szynę TS 35:** Oryginalne trzymacze końcowe czołowych producentów (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2 itd.).
+  - **Własne złączki & Biblioteka szablonów listew:** Wizualny edytor złączek (`custom_specs.json`) oraz biblioteka szablonów listew (`strip_library.json`) do zapisywania i ponownego wykorzystywania częstych konfiguracji.
+
+- **Aktualizator bazy danych na żywo z GitHub (Hot-Reload bez restartu):**
+  - Automatyczne i nieblokujące sprawdzanie w tle dostępności nowej wersji bazy `terminal_specs.json` na GitHubie przy starcie.
+  - Wyraźny przycisk „Dostępna aktualizacja bazy danych”: pobieranie 1 kliknięciem, weryfikacja, zapis lokalny i natychmiastowe przeładowanie w trakcie pracy bez reinstalacji i przebudowywania aplikacji.
+
+- **Lokalny asystent szybkiego wprowadzania (Quick-Prompt, 100% offline bez chmurowego LLM):**
+  - Błyskawiczne wprowadzanie tekstem naturalnym: np. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Podgląd na żywo i natychmiastowe wstawianie partii złączek do aktywnej listwy jednym kliknięciem.
+
+- **Integracja EPLAN Electric P8 & Pełny Roundtrip:**
+  - **Import CSV z CLI:** Uruchamianie z linii poleceń `TermiGrid.exe --import-eplan-csv "export.csv"` lub z menu `Menu → Importuj CSV z EPLAN...` z automatycznym oczyszczaniem konfigurowalnych prefiksów producentów (`PXC.`, `WAG.`, `WDM.`).
+  - **Inteligentny import zestawień PDF z EPLAN:** Przeciągnij listę części PDF, automatyczne rozpoznawanie złączek instalacyjnych, szyn zbiorczych N i zasilań wraz z obliczaniem wsporników szyny N (co 200 mm).
+  - **Pakiet zwrotny EPLAN za 1 kliknięciem:** Generuje pliki `_EPLAN_Zubehoer_Import.csv` & `.xml` (z automatycznie przywróconymi prefiksami producentów, bez mieszania marek) oraz czyste rysunki DXF dla każdej listwy (`/DXF/<BMK>.dxf`) gotowe do importu stron DXF w EPLAN.
+  - **Skrypt mostka C# dla EPLAN:** Eksport skryptu `TermiGrid_EPLAN_Bridge.cs` jednym kliknięciem do bezproblemowej integracji w pasku narzędzi EPLAN P8.
+  - **Dyskretne okno ustawień:** Dostępne w `Menu → Interfejs EPLAN...` do konfiguracji prefiksów, separatorów i katalogów eksportu.
+
+- **Edytor CAD, Automatyczny tryb edycji & Generowanie płytek końcowych:**
+  - Widok CAD 2D w rzeczywistej skali z wyświetlaniem płytek końcowych (D) i przegród o ich faktycznej grubości.
+  - **Automatyczny tryb edycji:** Włącza się samoczynnie przy modyfikacji złączki w widoku CAD.
+  - **Automatyczne obliczanie płytek:** Płytki są generowane i aktualizowane podczas eksportu, w widoku e-Planera oraz w procesie powrotu do EPLAN.
+  - Edycja etykiet przez dwuklik (obsługa pustych oznaczników do zachowania odstępów w drukarce), przewijanie dotykowe i środkowym przyciskiem, płynny zoom Ctrl+kółko myszy.
+
+- **Tryb Mostków, Kaskada dwukomorowa & Instrukcje wyłamywania pinów:**
+  - Tworzenie kolorowych potencjałów (`+24V`, `GND`, `L1` …) i przypisywanie ich do poziomów przeciągnięciem myszy.
+  - Rzeczywiste obliczanie mostków grzebieniowych z kaskadą na komorach 1 i 2.
+  - Fizyczne instrukcje usuwania pinów (`PIN ENTFERNEN BEI`) dla omijanych złączek.
+  - Automatyczne mostki przewodowe (`DB`) przy zmianie poziomu lub rastra.
+
+- **Wbudowany podręcznik z wyszukiwarką & Generator promptu AI (Karta `Instrukcja`):**
+  - 13 szczegółowych tematów z wyszukiwaniem pełnotekstowym, filtrami kategorii i skrótami.
+  - Instrukcja krok po kroku dodawania własnych złączek lokalnie (wizualnie lub przez plik JSON).
+  - Gotowy szablon promptu dla modeli AI (ChatGPT, Claude...) do generowania bezbłędnych plików JSON ze złączkami.
+
+- **Eksport gotowy do druku (`.xlsx` i `.csv`):**
+  - 4 wyspecjalizowane arkusze Excel:
+    1. `Druckdaten (Flach)` (komórki ściśle jako tekst `@` dla WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (ciągłe taśmy oznaczników dla każdego poziomu E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (zbiorcza lista złączek, płytki końcowe, mostki z instrukcją wyłamywania pinów, trzymacze końcowe i całkowita długość szyny)
+
+- **Dyskowa pamięć podręczna zdjęć offline & Zweryfikowane CDN:**
+  - Oficjalne zdjęcia produktów pobierane z CDN bez blokad (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Trwała lokalna pamięć podręczna na dysku (`photo_cache`) – po pierwszym pobraniu działa w 100% offline.
+
+- **Wieloplatformowość, 7 języków i Motywy:**
+  - Windows (`.exe` przenośny), macOS (`.dmg` Uniwersalny), Android (`.apk` Uniwersalny), Linux.
+  - 7 języków: Niemiecki, Angielski, Francuski, Włoski, Hiszpański, Polski, Holenderski.
+  - Motyw Systemowy / Jasny / Ciemny, Cofnij/Ponów (`Ctrl+Z` / `Ctrl+Y`), skróty (`Alt+Lewo/Prawo`, `Ctrl+D`).
 
 ### Pobieranie i przenośność
-
-Wszystkie gotowe pakiety znajdują się na **[stronie Releases](https://github.com/PatrickBarbian/TermiGrid/releases)**:
 
 | Platforma | Architektura / Cel | Plik | Uwagi |
 | :--- | :--- | :--- | :--- |
@@ -549,49 +624,21 @@ Wszystkie gotowe pakiety znajdują się na **[stronie Releases](https://github.c
 | **macOS** | Uniwersalny (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Przeciągnij pakiet `.app` do folderu Aplikacje |
 | **Android** | Uniwersalny (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartfony, tablety i urządzenia składane (Android 7.0 – 15 / API 24–35, wyrównanie stron 16 KB, podpis v1/v2/v3) |
 
-#### Wskazówki dla platform
-
-- **Windows:** Uruchom bezpośrednio dwuklikiem z pendrive'a lub folderu lokalnego – nie wymaga uprawnień administratora ani dodatkowych bibliotek uruchomieniowych.
-- **macOS (niepodpisana aplikacja):** Przy pierwszym uruchomieniu użyj **Prawy przycisk myszy -> Otwórz** lub zezwól na uruchomienie w *Ustawienia systemowe -> Prywatność i ochrona*.
-- **Android:** Pobierz APK i zezwól na instalację z nieznanych źródeł dla przeglądarki lub menedżera plików. Dzięki wyrównaniu stron 16 KB i `resizeableActivity` aplikacja działa także na nowych urządzeniach (np. Pixel 10 Pro XL) i ekranach składanych. Eksporty zapisują się w `/sdcard/Download/TermiGrid/`.
-
 ### Szybka instrukcja
 
-1. **Dodaj złączki:** W prawej kolumnie wybierz producenta i typ (lub użyj wyszukiwarki) i kliknij *Dodaj złączkę* albo *Wstaw przed/za*.
-2. **Ustaw numer startowy i wyświetlanie typu:** Ustaw numer początkowy na górze i w razie potrzeby przełącz między pionowym (`-90°`) a poziomym wyświetlaniem typu.
-3. **Edytuj opisy:** Kliknij dwukrotnie etykietę w edytorze CAD, aby wpisać własny tekst (`Enter` potwierdza, puste pole przywraca automatyczną numerację).
-4. **Sprawdź akcesoria:** Zaznacz złączki i odczytaj pasujące płytki końcowe, mostki, oznaczniki, trzymacze końcowe oraz szyny N w sekcji *Pasujące akcesoria*.
-5. **Eksportuj listę druku:** Wybierz kolejność druku (domyślnie *Poziomami / taśmowo*) oraz opcjonalnie `'PE' w eksporcie`, a następnie eksportuj jako `.xlsx` lub `.csv`.
+1. **Dodaj złączki:** W prawej kolumnie wybierz producenta i typ (lub użyj wyszukiwarki, szablonów listew albo asystenta szybkiego wprowadzania, np. `4x Drehstrom Abgang 2,5mm²`).
+2. **Import i Roundtrip EPLAN:** Importuj złączki przez parametr CLI (`--import-eplan-csv`), ręczny import CSV lub przeciągnij zestawienie PDF.
+3. **Edycja CAD & Tryb Mostków:** Kliknij dwukrotnie oznacznik, aby zmienić tekst, przełącz w Tryb Mostków, by malować potencjały przeciągnięciem myszy.
+4. **Automatyczne akcesoria & Płytki końcowe:** Płytki końcowe, przegrody, mostki z wyłamywanymi pinami i trzymacze końcowe są wyliczane automatycznie.
+5. **Eksport i Druk:** Eksportuj do 4-arkuszowego pliku Excel (`.xlsx`), CSV lub wygeneruj pakiet zwrotny EPLAN za 1 kliknięciem (`_EPLAN_Zubehoer_Import.csv` & `.xml` + rysunki DXF).
 
 ### Kompilacja ze źródeł
 
-Wymaganie: aktualny zestaw narzędzi Rust (`rustup` / `cargo`).
-
 ```bash
-# Kontrola jakości i testy
 cargo clippy --all-targets -- -D warnings
 cargo test
-
-# Budowanie Release na komputer (natywne Windows / Linux / macOS)
 cargo build --release --bin termigrid
-
-# macOS Universal (Intel + Apple Silicon)
-cargo build --release --bin termigrid --target x86_64-apple-darwin
-cargo build --release --bin termigrid --target aarch64-apple-darwin
-
-# Android Universal APK (z zainstalowanym cargo-apk i Android NDK)
-cargo apk build --release --lib
 ```
-
-### Linki i wsparcie
-
-- **Repozytorium GitHub:** https://github.com/PatrickBarbian/TermiGrid
-- **Releases i pobieranie:** https://github.com/PatrickBarbian/TermiGrid/releases
-- **Wsparcie / Buy Me a Coffee:** https://buymeacoffee.com/02eOWKzm5W
-
-### Licencja
-
-Udostępniono na **licencji MIT**.
 
 </details>
 
@@ -601,39 +648,70 @@ Udostępniono na **licencji MIT**.
 
 ### Overzicht & VibeCoded-vermelding
 
-**TermiGrid** is een platformonafhankelijke tool (geschreven in Rust met `egui` / `eframe 0.37`) voor het ontwerpen van klemmenstroken in de schakelkastbouw en het exporteren van printklare coderingslijsten voor professionele label- en markeringsprinters.
+**TermiGrid** is een snelle, platformonafhankelijke engineeringtool (geschreven in Rust Editie 2024 met `egui` / `eframe 0.37`) voor het ontwerpen, visualiseren en configureren van DIN-rail klemmenstroken in de schakelkastbouw. Het overbrugt naadloos het gat tussen elektrotechnisch CAD (EPLAN Electric P8), interactieve 2D-werkplaatsplanning, nauwkeurige fysieke accessoireberekening (eindplaten, kamverbinders met uitgebroken pinnen, eindsteunen) en industriële markeringsprinters (WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO).
 
-> **✨ VibeCoded:** Dit project is **VibeCoded** – ontworpen en ontwikkeld met **AI-ondersteuning** in nauwe samenwerking met de projectauteur.
+> **✨ VibeCoded:** Dit project is **VibeCoded** – ontworpen, geprogrammeerd en verfijnd met **AI-ondersteuning** in nauwe samenwerking met de projectauteur.
 
 *Los bestand:* [docs/README.nl.md](docs/README.nl.md)
 
 ### Belangrijkste functies
 
-- **277 ingebouwde klemtypes + eigen klemmen:**
-  - **WAGO:** TOPJOB S (`2000–2016`), `2200–2216` (drukknop), `2102–2116` (hendel), `2022` X-COM, `2007` meet/scheiding, `280/281` en `285` hoogstroom (`35–95 mm²`)
-  - **Phoenix Contact:** `PT 1,5/S` incl. `PTIO`, `PT 2,5–35`, `PTPOWER 35–95`, `PTTB`, `PTTBS`, `PTV`, `PTI`/`UTI` installatieklemmen, `ST`, `UT` & `UK 5 N`
-  - **Weidmüller:** `A-Series` (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), `AITB` installatie, `W-Series` (`WDU/WPE/WDK/WTR/WSI/DLI`) & `Z-Series` (`ZDU/ZPE/ZDK/ZDL`)
-  - **Eigen klemmen:** Maak eigen klemmen direct in de app incl. `1×` of `2×` brugkamers
-- **Meerniveaunummering, N/PE-modi & speciale tekens:**
-  - Installatie- en meeretageklemmen (`2003`, `2005`, `2203`, `2206`, `PTI`, `AITB`, `DLI`, enz.): Een aanwezige **PE-aansluiting** wordt altijd uitgelijnd op een eigen rij **onder het onderste hoofdniveau**.
-  - **N- & PE-nummering:** Per strook instelbaar tussen vast (`N`/`PE`), doorgenummerd (`1, 2, …`), gedeeld `1N, 2N` / `1PE, 2PE` of **eigen N/PE-teller (`1N, 2N …` / `1PE, 2PE …`)**.
-  - **Batch Prefix / Suffix / Speciale tekens:** Selecteer meerdere klemmen en voeg `+`, `-`, `~`, `=`, `.1`, `Ω`, enz. toe voor of na het nummer (blijft behouden bij hernummeren).
-- **Brug-modus & Potentiaalberekening:**
-  - Maak gekleurde **potentialen** (`+24V`, `GND`, `L1` …) en klik/tik op klemniveaus direct in het CAD-overzicht.
-  - **Automatische berekening:** Bepaalt het aantal polen van kamverbinders (bijv. `2002-405`, `FBS 5-5`, `ZQV`), markeert **uit te breken pinnen (`Pin verwijderen ×`)**, plant **draadbruggen (`DB`)** bij etagewissels (`E1 <-> E2`) of steekverschillen en onderscheidt **1-kamerklemmen** (draadbrug boven max. polen) van **2-kamerklemmen** (cascade in kamer 1 & 2).
-- **Interactieve 2D CAD-editor (Desktop & Touch):**
-  - Overzichtelijke CAD-weergave zonder DIN-rail met fabrikantlogo's (**WAGO**, **Phoenix Contact**, **Weidmüller**), gereedschapsknoppen (**Verschuiven**, **Kaderselectie**, **Brug-modus**), touch-verschuiving & midden-/rechtsklik-slepen.
-  - **Weergave & inline bewerken:** Verticaal `-90°` of horizontaal gegroepeerd; **dubbelklik** om direct aan te passen (`Enter` = toepassen, leeg = auto, `Esc` = annuleren).
-- **Productvoorbeeld, fabrikantlink & bijpassende accessoires:**
-  - Toont **productfoto (indien beschikbaar) of technisch profiel**, **aantal brugkamers**, **directe link naar de fabrikantpagina** en **eindplaten, bruggen, markers, eindsteunen en N-rails**.
-- **Printklare export (`.xlsx` & `.csv`) & Projectbestanden (`.termi` / `.json`):**
-  - **Excel (`.xlsx`):** 3 werkbladen (`Druckfolge` / `ByTierStrip` standaard, `Ebenen-Spalten`, `Ebenen-Matrix`), alle cellen strikt als **Excel-tekst (`@`)**.
-- **Begeleide start, 7 talen & Systeemthema:**
-  - Stappenplan bij openen: *Nieuw project / Laden* -> *Eerste klemmenstrook* -> *CAD-editor*. **DE, EN, FR, IT, ES, PL, NL** – volgt standaard het **Systeemthema** (handmatig Systeem/Licht/Donker), contrastrijke actieknoppen, live GitHub-check op Desktop & Android, **GitHub** & **Buy Me a Coffee**.
+- **782+ geverifieerde klemtypes + 26 DIN-rail eindsteunen + eigen klemmen:**
+  - **WAGO:** TOPJOB S (`2000–2016` standaard, `2200–2216` met drukknop, `2102–2116` met hendel), `2002-32xx` driepolige etageklemmen met PE op het onderste niveau, installatieklemmen (`2003`, `2005`, `2203`, `2205`), `2022` X-COM, `2007` meet-/scheidingsklemmen, `280/281` klassiek en `285` hoogstroom (`35–95 mm²`).
+  - **Phoenix Contact:** COMPLETE line, Push-in `PT 1,5/S` t/m `PT 35`, sensor/actorklemmen `PTIO`, `PTPOWER 35–95`, dubbeldeks `PTTB`/`PTTBS`, zijwaartse aansluiting `PTV`, installatieklemmen `PTI` / `UTN` / `UTI`, scheidingsklemmen (`QTC 1,5-TG`, `URTK/SP`, `URTK 6`), veerkracht `ST`, schroef `UT`, `UK 5 N`.
+  - **Weidmüller:** Klippon Connect A-serie (`A2C/A3C/A4C/A2T/A3T/ADT/AIO`), installatieklemmen `AITB`, P-serie ranger- en potentiaalverdelers (`PPV 4/8/16` & `PRV 4/8/16` met één coderingsplaatje per klem), W-serie (`WDU/WPE/WDK/WTR/WSI/DLI`), Z-serie (`ZDU/ZPE/ZDK/ZDL`).
+  - **26 TS 35 Eindsteunen:** Passende eindsteunen van toonaangevende fabrikanten (WAGO 249-116/117, Phoenix Contact CLIPFIX 35 / E/UK, Weidmüller WEW 35/2 enz.).
+  - **Eigen klemmen & Strooksjablonen-bibliotheek:** Visuele klemeditor (`custom_specs.json`) en sjablonenbibliotheek (`strip_library.json`) voor veelgebruikte klemmenstroken.
+
+- **GitHub Live Database-updater (Hot-Reload zonder herstarten):**
+  - Automatische en niet-blokkerende achtergrondcontrole bij het opstarten naar updates van `terminal_specs.json` op GitHub.
+  - Duidelijke knop «Database-update beschikbaar»: 1-klik download, validatie, lokale opslag en live hot-reload zonder de app opnieuw te installeren of te herbouwen.
+
+- **Lokale snel-invoerassistent (Quick-Prompt, 100% offline zonder cloud-LLM):**
+  - Snelle invoer in gewone taal: bijv. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
+  - Live-voorbeeld en directe invoeging in de actieve klemmenstrook met één klik.
+
+- **EPLAN Electric P8 Koppeling & Volledige Roundtrip:**
+  - **CLI CSV-import:** Opstarten via de opdrachtregel met `TermiGrid.exe --import-eplan-csv "export.csv"` of via `Menu → EPLAN CSV importeren...` met automatisch strippen van configureerbare fabrikantvoorvoegsels (`PXC.`, `WAG.`, `WDM.`).
+  - **Intelligente EPLAN PDF-stuklijstimport:** Drag & drop van PDF-stuklijsten, automatische herkenning van installatieklemmen, N-verzamelrails en voedingen inclusief verzamelrailsteunberekening (elke 200 mm).
+  - **1-Klik EPLAN Retourpakket:** Genereert `_EPLAN_Zubehoer_Import.csv` & `.xml` (met automatisch herstelde fabrikantvoorvoegsels, strikt merkzuiver) en nette afzonderlijke DXF-tekeningen per strook (`/DXF/<BMK>.dxf`) voor directe EPLAN DXF-pagina-import.
+  - **EPLAN C#-Bridge-script:** Exporteer `TermiGrid_EPLAN_Bridge.cs` met één klik voor naadloze integratie in de EPLAN P8 werkbalk.
+  - **Overzichtelijk instellingenvenster:** Discreet ondergebracht in `Menu → EPLAN-interface...` om voorvoegsels, scheidingstekens en exportmappen te beheren.
+
+- **CAD-editor, Automatische bewerkingsmodus & Eindplaten genereren:**
+  - Schaalgetrouwe 2D-CAD-weergave met weergave van eindplaten (D) en scheidingsplaten in hun werkelijke dikte.
+  - **Automatische bewerkingsmodus:** Schakelt zichzelf automatisch in bij wijzigingen in het CAD-venster.
+  - **Automatische eindplaatberekening:** Berekend en bijgewerkt bij export, in de e-Planer en tijdens de EPLAN roundtrip.
+  - Teksten bewerken met dubbelklik (inclusief behoud van lege plaatjes voor tussenruimtes bij printen), vloeiend pannen via touch en middelste muisknop, zoomen met Ctrl+muiswiel.
+
+- **Brug-modus, Dubbelkamer-cascade & Pin-afbreekaanwijzingen:**
+  - Gekleurde potentialen (`+24V`, `GND`, `L1` …) aanmaken en per niveau toewijzen door slepen.
+  - Reële kamverbinderberekening met trapsgewijze cascade over kamer 1 en 2.
+  - Fysieke aanwijzingen voor het verwijderen van pinnen (`PIN ENTFERNEN BEI`) bij overgeslagen klemmen.
+  - Automatische draadbruggen (`DB`) bij niveauwissels of steekverschillen.
+
+- **Geïntegreerde handleiding met zoekfunctie & AI-promptgenerator (Tabblad `Handleiding`):**
+  - 13 gedetailleerde onderwerpen met full-text zoeken op meerdere trefwoorden, categoriefilters en snelkoppelingen.
+  - Stapsgewijze handleiding om eigen klemmen lokaal toe te voegen (visueel of via JSON).
+  - Kopieerklare prompttemplate voor AI-modellen (ChatGPT, Claude...) om foutloze klemmen-JSON-bestanden te genereren.
+
+- **Printklare export (`.xlsx` & `.csv`):**
+  - 4 gespecialiseerde Excel-werkbladen:
+    1. `Druckdaten (Flach)` (cellen strikt als tekst `@` voor WAGO Smart Designer, Phoenix Contact Project Complete, Weidmüller M-Print PRO)
+    2. `Etagen-Druckstreifen` (doorlopende coderingsstroken per etage E1..E4)
+    3. `Bestückungsplan (Matrix)`
+    4. `Stückliste & Montage` (verzamelstuklijst, eindplaten, kamverbinders met afbreekinstructies, eindsteunen en totale raillengte)
+
+- **Offline fotocache op schijf & Geverifieerde CDN's:**
+  - Originele productfoto's via betrouwbare CDN's (WAGO, Phoenix Contact CaaS, Weidmüller DAM).
+  - Blijvende lokale schijfcache (`photo_cache`) – werkt na de eerste download 100% offline.
+
+- **Platformonafhankelijk, 7 talen & Thema's:**
+  - Windows (`.exe` portable), macOS (`.dmg` Universeel), Android (`.apk` Universeel), Linux.
+  - 7 talen: Duits, Engels, Frans, Italiaans, Spaans, Pools, Nederlands.
+  - Systeem / Licht / Donker thema, Ongedaan maken / Opnieuw (`Ctrl+Z` / `Ctrl+Y`), sneltoetsen (`Alt+Links/Rechts`, `Ctrl+D`).
 
 ### Downloads & Draagbaarheid
-
-Alle kant-en-klare pakketten staan op de **[Releases-pagina](https://github.com/PatrickBarbian/TermiGrid/releases)**:
 
 | Platform | Architectuur / Doel | Bestand | Opmerkingen |
 | :--- | :--- | :--- | :--- |
@@ -641,48 +719,20 @@ Alle kant-en-klare pakketten staan op de **[Releases-pagina](https://github.com/
 | **macOS** | Universeel (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Sleep de `.app`-bundel naar Programma's |
 | **Android** | Universeel (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartphones, tablets & foldables (Android 7.0 – 15 / API 24–35, 16 KB pagina-uitlijning, v1/v2/v3 ondertekend) |
 
-#### Platformopmerkingen
-
-- **Windows:** Direct starten met een dubbelklik vanaf USB-stick of lokale map – geen beheerdersrechten of externe runtimebibliotheken nodig.
-- **macOS (niet-ondertekende app):** Gebruik bij de eerste start **Rechtermuisklik -> Open** of sta openen toe via *Systeeminstellingen -> Privacy en beveiliging*.
-- **Android:** Download de APK en sta installeren vanuit onbekende bronnen toe voor je browser of bestandsbeheerder. Dankzij 16 KB pagina-uitlijning en `resizeableActivity` ook geschikt voor moderne toestellen (zoals Pixel 10 Pro XL) en foldables. Exports worden opgeslagen in `/sdcard/Download/TermiGrid/`.
-
 ### Snelstartgids
 
-1. **Klemmen toevoegen:** Kies fabrikant en type in de rechterkolom (of gebruik het zoekveld) en klik op *Klem toevoegen* of *Ervoor/Erna invoegen*.
-2. **Startnummer & typeweergave instellen:** Stel bovenaan het startnummer in en wissel desgewenst tussen verticale (`-90°`) en horizontale typeweergave.
-3. **Teksten aanpassen:** Dubbelklik op een codering in de CAD-editor om handmatige tekst in te voeren (`Enter` bevestigt, leeg veld herstelt automatische nummering).
-4. **Accessoires bekijken:** Selecteer klemmen en lees direct eindplaten, bruggen, markers, eindsteunen en N-rails af onder *Bijpassende accessoires*.
-5. **Printlijst exporteren:** Kies de printvolgorde (*Per niveau / strook* standaard) en optioneel `'PE' in export opnemen`, en exporteer als `.xlsx` of `.csv`.
+1. **Klemmen toevoegen:** Kies fabrikant en type in de rechterkolom (of gebruik het zoekveld, strooksjablonen of de snel-invoerassistent, bijv. `4x Drehstrom Abgang 2,5mm²`).
+2. **Import & Roundtrip EPLAN:** Importeer klemmen via CLI (`--import-eplan-csv`), handmatige CSV-import of sleep PDF-stuklijsten in het venster.
+3. **CAD bewerken & Brug-modus:** Dubbelklik op een codering om tekst aan te passen, schakel naar de Brug-modus om potentialen aan te brengen door te slepen.
+4. **Automatische accessoires & Eindplaten:** Eindplaten, scheidingsplaten, kamverbinders met afbreekbare pinnen en eindsteunen worden automatisch berekend.
+5. **Exporteren & Printen:** Exporteer naar 4-delige Excel-werkbladen (`.xlsx`), CSV of genereer het EPLAN retourpakket met 1 klik (`_EPLAN_Zubehoer_Import.csv` & `.xml` + DXF-tekeningen).
 
 ### Zelf compileren (Build from Source)
 
-Vereiste: recente Rust-toolchain (`rustup` / `cargo`).
-
 ```bash
-# Kwaliteitscontrole & tests
 cargo clippy --all-targets -- -D warnings
 cargo test
-
-# Desktop Release-build (native Windows / Linux / macOS)
 cargo build --release --bin termigrid
-
-# macOS Universeel (Intel + Apple Silicon)
-cargo build --release --bin termigrid --target x86_64-apple-darwin
-cargo build --release --bin termigrid --target aarch64-apple-darwin
-
-# Android Universal APK (met cargo-apk & Android NDK geïnstalleerd)
-cargo apk build --release --lib
 ```
-
-### Links & Ondersteuning
-
-- **GitHub Repository:** https://github.com/PatrickBarbian/TermiGrid
-- **Releases & Downloads:** https://github.com/PatrickBarbian/TermiGrid/releases
-- **Ondersteuning / Buy Me a Coffee:** https://buymeacoffee.com/02eOWKzm5W
-
-### Licentie
-
-Uitgebracht onder de **MIT-licentie**.
 
 </details>
