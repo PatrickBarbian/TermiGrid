@@ -415,12 +415,18 @@ impl TermiGridApp {
                         }
                     }
                 }
-                let _ = save_global_custom_specs(&self.global_custom_specs);
+                if let Err(err) = save_global_custom_specs(&self.global_custom_specs) {
+                    self.notify(
+                        ToastTone::Error,
+                        tr::json_batch_err(self.lang, &format!("Save failed: {err}")),
+                    );
+                } else {
+                    self.notify(
+                        ToastTone::Success,
+                        tr::toast_specs_imported(self.lang, count),
+                    );
+                }
                 self.reload_catalog_with_all_custom();
-                self.notify(
-                    ToastTone::Success,
-                    tr::toast_specs_imported(self.lang, count),
-                );
             }
             DatabaseAction::ResetOrDeleteSpec { id, is_builtin } => {
                 remove_custom_spec(&mut self.global_custom_specs, &id);
@@ -4223,6 +4229,7 @@ impl TermiGridApp {
         let mut deferred_single_insert: Option<(usize, String, bool)> = None;
         let mut deferred_convert: Option<bool> = None;
         let mut deferred_generate = false;
+        let mut deferred_group_base_types = false;
         let mut deferred_reedit = false;
         let mut deferred_step3_mode: Option<Step3ViewMode> = None;
         let mut deferred_export_xlsx = false;
@@ -4239,6 +4246,7 @@ impl TermiGridApp {
             }
         }
         let has_blocks = !self.project.strips[self.active_strip].blocks.is_empty();
+        let has_multiple_blocks = self.project.strips[self.active_strip].blocks.len() > 1;
         let plates_count = if is_generated {
             calculate_end_plates(&self.project.strips[self.active_strip], &self.catalog).len()
         } else {
@@ -4304,6 +4312,17 @@ impl TermiGridApp {
                             .on_disabled_hover_text(gen_tip);
                         if gen_btn.clicked() {
                             deferred_generate = true;
+                        }
+                        if has_multiple_blocks
+                            && icon_button(
+                                ui,
+                                UiIcon::FlipOrder,
+                                tr::group_base_types_btn(self.lang),
+                            )
+                            .on_hover_text(tr::group_base_types_tip(self.lang))
+                            .clicked()
+                        {
+                            deferred_group_base_types = true;
                         }
                     } else {
                         step_pill(ui, tr::step1_done_pill(self.lang), false, true);
@@ -4783,7 +4802,14 @@ impl TermiGridApp {
         if recalc_needed {
             self.project.strips[self.active_strip].recalculate_labels();
         }
-        if deferred_generate {
+        if deferred_group_base_types {
+            if self.project.strips[self.active_strip].group_blocks_by_base_type() {
+                self.selected_blocks.clear();
+                self.selected_end_bracket = None;
+                self.canvas_state.selection_anchor = None;
+            }
+            self.notify_undoable(ToastTone::Success, tr::toast_grouped_base_types(self.lang));
+        } else if deferred_generate {
             if self.canvas_state.interaction_mode == CanvasInteractionMode::BridgeAssign {
                 self.canvas_state.interaction_mode = CanvasInteractionMode::default();
             }

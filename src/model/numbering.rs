@@ -361,6 +361,38 @@ impl TerminalStrip {
         next_set
     }
 
+    /// Groups terminal blocks that share the same physical base type/profile (e.g., `PTTB 2,5` and `PTTB 2,5-PE`)
+    /// adjacently while keeping logical electrical order (L / N first, matching PE immediately after) within each group.
+    /// Returns `true` if block order changed.
+    pub fn group_blocks_by_base_type(&mut self) -> bool {
+        if self.blocks.len() <= 1 {
+            return false;
+        }
+        let before_ids: Vec<u64> = self.blocks.iter().map(|b| b.id).collect();
+        let mut group_order: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
+        for blk in &self.blocks {
+            let key = blk.base_type_group();
+            let next_idx = group_order.len();
+            group_order.entry(key).or_insert(next_idx);
+        }
+        self.blocks.sort_by_key(|blk| {
+            let g_idx = group_order
+                .get(&blk.base_type_group())
+                .copied()
+                .unwrap_or(usize::MAX);
+            (g_idx, blk.electrical_sort_rank())
+        });
+        let after_ids: Vec<u64> = self.blocks.iter().map(|b| b.id).collect();
+        if before_ids != after_ids {
+            self.end_plates_generated = false;
+            self.recalculate_labels();
+            true
+        } else {
+            false
+        }
+    }
+
     /// Duplicates all selected blocks immediately after the last selected block, allocating
     /// fresh block IDs and recalculating labels. Returns the indices of the newly created blocks.
     pub fn duplicate_selected_blocks(

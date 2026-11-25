@@ -159,6 +159,141 @@ impl TerminalBlock {
             .unwrap_or(&self.spec_name)
             .trim()
     }
+
+    /// Returns the normalized base terminal type/profile group (e.g., `"PTTB 2,5"` and `"PTTB 2,5-PE"` share `"Phoenix Contact:PTTB 2.5"`).
+    pub fn base_type_group(&self) -> String {
+        base_type_group_key(&self.spec_id, &self.spec_name, &self.manufacturer)
+    }
+
+    /// Electrical ordering rank within a base-type group (`0`: L/feed-through, `1`: N, `2`: hybrid PE, `3`: pure PE).
+    pub fn electrical_sort_rank(&self) -> u8 {
+        if !self.tiers.is_empty() && self.tiers.iter().all(|t| t.behavior.is_pe()) {
+            3
+        } else if self.tiers.iter().any(|t| t.behavior.is_pe()) {
+            2
+        } else if !self.tiers.is_empty() && self.tiers.iter().all(|t| t.behavior.is_neutral()) {
+            1
+        } else {
+            0
+        }
+    }
+}
+
+/// Derives a normalized physical base-type / profile group key so potential & color variants
+/// (such as `PTTB 2,5` + `PTTB 2,5-PE`, `PT 2,5` + `PT 2,5 BU` + `PT 2,5-PE`, `WDU 2.5` + `WPE 2.5`,
+/// or `2002-1201` + `2002-1204` + `2002-1207`) stay grouped together on mixed strips.
+pub fn base_type_group_key(spec_id: &str, spec_name: &str, manufacturer: &str) -> String {
+    let short = spec_name
+        .split(" (")
+        .next()
+        .unwrap_or(spec_name)
+        .trim()
+        .replace(',', ".")
+        .to_uppercase();
+
+    let mfg_norm = manufacturer.trim().to_uppercase();
+
+    // WAGO order codes (e.g. 2002-1201/1204/1207 -> 2002-120, 2002-3201/3217/3227 -> 2002-32)
+    if mfg_norm == "WAGO" || short.chars().take(4).all(|c| c.is_ascii_digit()) && short.get(4..5) == Some("-") {
+        let code = short.split('/').next().unwrap_or(&short).trim();
+        if let Some((series, suffix)) = code.split_once('-') {
+            if series == "2002" && suffix.starts_with("32") && suffix.len() == 4 {
+                return format!("WAGO:{series}-32");
+            }
+            if series == "2202" && suffix.starts_with("32") && suffix.len() == 4 {
+                return format!("WAGO:{series}-32");
+            }
+            if suffix.len() >= 3 {
+                let stem = &suffix[..suffix.len() - 1];
+                return format!("WAGO:{series}-{stem}");
+            }
+            return format!("WAGO:{code}");
+        }
+    }
+
+    let mut base = short;
+    // Weidmüller WPE/ZPE are PE counterparts of WDU/ZDU
+    if base.starts_with("WPE ") {
+        base = format!("WDU {}", &base[4..]);
+    } else if base.starts_with("ZPE ") {
+        base = format!("ZDU {}", &base[4..]);
+    }
+
+    // Check 3-level PT/ST/UT combinations that share the 3-level contour (e.g. PT 2.5-3L, PT 2.5-3PE, PT 2.5-PE/L/N)
+    let three_level_suffixes = [
+        "-PE/L/NT",
+        "-PE/L/LT",
+        "-PE/L/TG",
+        "-PE/L/N",
+        "-PE/L/L",
+        "-3PE",
+        "-3PV",
+        "-3L",
+    ];
+    for suf in three_level_suffixes {
+        if let Some(stripped) = base.strip_suffix(suf)
+            && !stripped.starts_with("PTI")
+            && !stripped.starts_with("STI")
+            && !stripped.starts_with("UTI")
+        {
+            return format!("{mfg_norm}:{stripped}-3LEVEL");
+        }
+    }
+
+    // Iteratively strip color / potential / function suffixes while preserving profile modifiers like -TWIN, -QUATTRO
+    let strip_suffixes = [
+        "-PE/L/NT",
+        "-PE/L/LT",
+        "-PE/L/TG",
+        "-PE/L/N",
+        "-PE/L/L",
+        "-PE/L",
+        "-L/NT",
+        "-L/N",
+        "-L/L",
+        "-NTLP",
+        "-FT-PE",
+        "-NLP",
+        "-PE",
+        "-PV",
+        "-NT",
+        "-NL",
+        "-N",
+        "-L",
+        " PE",
+        " BL",
+        " BU",
+        " GY",
+        " OG",
+        " RD",
+        " GN",
+        " BK",
+        " SW",
+        " YE",
+        " WH",
+    ];
+    loop {
+        let mut changed = false;
+        for suf in strip_suffixes {
+            if let Some(rest) = base.strip_suffix(suf) {
+                let r = rest.trim();
+                if !r.is_empty() {
+                    base = r.to_string();
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+
+    if base.is_empty() {
+        format!("{mfg_norm}:{spec_id}")
+    } else {
+        format!("{mfg_norm}:{base}")
+    }
 }
 
 /// Controls how Neutral (`N`) tiers are numbered along a terminal strip.

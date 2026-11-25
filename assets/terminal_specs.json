@@ -13146,6 +13146,84 @@
     "image_url": "https://www.wago.com/medias/1024-020000030000dfff000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3w3ODU4N3xpbWFnZS9qcGVnfGFHWTBMMmd4WVM4eE5qVTNPVGM0T0RnNU9ETXpOQzh4TURJMFh6QXlNREF3TURBek1EQXdNR1JtWm1Zd01EQXhNREJpTmw5RVJTNXFjR2N8YzMwNDk3Njc3ZTAxYzBmOThlYjg2YzNiZTY0ZTBlOTIyZjI4YWE4OWY5Yjc5MzFkNDA5ZGRmZTgwYmM0YWQ0Zg"
   },
   {
+    "id": "wago-2002-3217",
+    "name": "2002-3217 (3-Etagen PE/N/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2002",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Dreistockklemme 2,5 mm² (0,25–4 mm²), Push-in CAGE CLAMP, PE/N/L, Breite 5,2 mm, Länge 93,3 mm, Höhe 69,5 mm, Grau",
+    "description_en": "Triple-deck terminal block 2.5 mm² (0.25–4 mm²), Push-in CAGE CLAMP, PE/N/L, width 5.2 mm, length 93.3 mm, height 69.5 mm, gray",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": {
+          "Fixed": "N"
+        },
+        "color": "BlueNeutral"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "2002-3291 (grau) / 2002-3292 (orange)",
+      "jumpers": "2002-402 (2-fach) .. 2002-410 (10-fach), Stufenbrücker 2002-472",
+      "markers": "2009-115 (WMB) / 2009-110 (Beschriftungsstreifen)",
+      "end_bracket": "249-116 (grau) / 249-117 (schwarz)",
+      "extra": "2002-492 (Vertikalbrücker Etage-zu-Etage)"
+    },
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10,
+    "height_tenths_mm": 933,
+    "article_number": "2002-3217",
+    "product_url": "https://www.wago.com/de/reihenklemmen/dreistockklemme/p/2002-3217",
+    "image_url": "https://www.wago.com/medias/120-020000030000e098000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3wzNjEzfGltYWdlL2pwZWd8YURJd0wyZzJNQzh4TmpVMk1UQTVPRGcxTURNek5DOHhNakJmTURJd01EQXdNRE13TURBd1pUQTVPREF3TURFd01HSTJYMFJGTG1wd1p3fGEzZThmMjkwNzJjZTcwNWVjYWVhODVkNTRmMjk2OGM2ZjE0ZDhiMjFmNDU1NDUzNGNhNTlmYWI1MzJhMzM3NDA"
+  },
+  {
+    "id": "wago-2002-3227",
+    "name": "2002-3227 (3-Etagen PE/L/L)",
+    "manufacturer": "WAGO",
+    "series": "TOPJOB S 2002",
+    "levels": 3,
+    "width_tenths_mm": 52,
+    "numbering_order": "BottomToTop",
+    "description_de": "Dreistockklemme 2,5 mm² (0,25–4 mm²), Push-in CAGE CLAMP, PE/L/L, Breite 5,2 mm, Länge 93,3 mm, Höhe 69,5 mm, Grau",
+    "description_en": "Triple-deck terminal block 2.5 mm² (0.25–4 mm²), Push-in CAGE CLAMP, PE/L/L, width 5.2 mm, length 93.3 mm, height 69.5 mm, gray",
+    "tiers": [
+      {
+        "behavior": "ProtectiveEarth",
+        "color": "GreenYellowPe"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      },
+      {
+        "behavior": "Sequential",
+        "color": "StandardGray"
+      }
+    ],
+    "accessories": {
+      "end_plate": "2002-3291 (grau) / 2002-3292 (orange)",
+      "jumpers": "2002-402 (2-fach) .. 2002-410 (10-fach), Stufenbrücker 2002-472",
+      "markers": "2009-115 (WMB) / 2009-110 (Beschriftungsstreifen)",
+      "end_bracket": "249-116 (grau) / 249-117 (schwarz)",
+      "extra": "2002-492 (Vertikalbrücker Etage-zu-Etage)"
+    },
+    "jumper_slots_per_tier": 2,
+    "max_jumper_poles": 10,
+    "height_tenths_mm": 933,
+    "article_number": "2002-3227",
+    "product_url": "https://www.wago.com/de/reihenklemmen/dreistockklemme/p/2002-3227",
+    "image_url": "https://www.wago.com/medias/1024-020000030000df66000100b6-DE.jpg?context=bWFzdGVyfGltYWdlc3w2MDc4OXxpbWFnZS9qcGVnfGFHTXhMMmhpWVM4eE5qVTNNakV6TnpRM01qQXpNQzh4TURJMFh6QXlNREF3TURBek1EQXdNR1JtTmpZd01EQXhNREJpTmw5RVJTNXFjR2N8MGI2MzZhNzVlZWU0YTA3ZjFhOTk2MTdiZGQwM2FlMTFjNDE5ZjRiMDU5Y2ZjOGYzYWFiN2M3ODQxZjUzNjkyOA"
+  },
+  {
     "id": "wago-2002-3239",
     "name": "2002-3239 (3-Etagen Potentialverteiler PV)",
     "manufacturer": "WAGO",

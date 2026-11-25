@@ -3766,14 +3766,14 @@ mod tests {
         let pt15tg = catalog.find_by_id("phoenix-pt-15s-tg").unwrap();
         assert_eq!(end_plate_width_tenths_mm(pt15tg), 8);
 
-        // WAGO 261-spec terminal block catalog verifications (incl. 2202-2701)
+        // WAGO 263-spec terminal block catalog verifications (incl. 2002-3217, 2002-3227, 2202-2701)
         assert_eq!(
             catalog
                 .all()
                 .iter()
                 .filter(|s| s.manufacturer == "WAGO" && !s.is_busbar_carrier())
                 .count(),
-            261
+            263
         );
         let wago_2202_2701 = catalog.find_by_id("wago-2202-2701").unwrap();
         assert_eq!(wago_2202_2701.levels, 2);
@@ -4027,7 +4027,7 @@ mod tests {
     #[test]
     fn all_catalog_specs_and_end_brackets_have_valid_image_urls_and_unique_skus() {
         let catalog = TerminalCatalog::load_embedded();
-        assert_eq!(catalog.all().len(), 741);
+        assert_eq!(catalog.all().len(), 743);
 
         let mut seen_skus = std::collections::HashSet::new();
         for spec in catalog.all() {
@@ -4112,6 +4112,28 @@ mod tests {
                 .and_then(|eb| eb.image_url),
             Some("https://it.farnell.com/productimages/large/en_US/28K7529-40.jpg")
         );
+
+        let w2002_3217 = catalog.find_by_id("wago-2002-3217").expect("wago-2002-3217 must exist");
+        assert_eq!(w2002_3217.effective_article_number(), Some("2002-3217"));
+        assert_eq!(w2002_3217.levels, 3);
+        assert_eq!(w2002_3217.sequential_tier_count(), 1);
+        assert_eq!(w2002_3217.pattern_summary(), "PE / N / L");
+        assert_eq!(w2002_3217.width_tenths_mm, 52);
+        assert_eq!(w2002_3217.effective_height_tenths_mm(), 933);
+        let acc_3217 = catalog.accessories_for(w2002_3217);
+        assert!(acc_3217.end_plate.contains("2002-3291"));
+        assert!(acc_3217.markers.contains("2009-115"));
+        assert!(acc_3217.jumpers.contains("2002-402"));
+
+        let w2002_3227 = catalog.find_by_id("wago-2002-3227").expect("wago-2002-3227 must exist");
+        assert_eq!(w2002_3227.effective_article_number(), Some("2002-3227"));
+        assert_eq!(w2002_3227.levels, 3);
+        assert_eq!(w2002_3227.sequential_tier_count(), 2);
+        assert_eq!(w2002_3227.pattern_summary(), "PE / L / L");
+        assert_eq!(w2002_3227.width_tenths_mm, 52);
+        assert_eq!(w2002_3227.effective_height_tenths_mm(), 933);
+        let acc_3227 = catalog.accessories_for(w2002_3227);
+        assert!(acc_3227.end_plate.contains("2002-3291"));
     }
 
     #[test]

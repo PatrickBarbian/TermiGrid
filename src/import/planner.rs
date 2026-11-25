@@ -39,6 +39,10 @@ pub struct ImportedTerminalEntry {
     pub is_nt_disconnect: bool,
     pub is_pure_neutral: bool,
     pub is_pure_pe: bool,
+    /// Normalized physical base type/profile group (e.g. `PTTB 2,5` & `PTTB 2,5-PE` share one group).
+    pub base_type: String,
+    /// Logical electrical order within a base-type group (`0`: L/feed-through, `1`: N, `2`: hybrid PE, `3`: pure PE).
+    pub electrical_rank: u8,
 }
 
 /// Unknown terminal article detected via heuristic fallback (not in internal database).
@@ -260,6 +264,24 @@ pub fn build_import_plan(
                 if let Some(existing) = acc.terminal_counts.get_mut(&spec.id) {
                     existing.quantity += row.quantity;
                 } else {
+                    let is_pure_neutral = !spec.tiers.is_empty()
+                        && spec.tiers.iter().all(|t| t.behavior.is_neutral());
+                    let is_pure_pe = !spec.tiers.is_empty()
+                        && spec.tiers.iter().all(|t| t.behavior.is_pe());
+                    let electrical_rank = if is_pure_pe {
+                        3
+                    } else if spec.tiers.iter().any(|t| t.behavior.is_pe()) {
+                        2
+                    } else if is_pure_neutral {
+                        1
+                    } else {
+                        0
+                    };
+                    let base_type = crate::model::base_type_group_key(
+                        &spec.id,
+                        &spec.name,
+                        &spec.manufacturer,
+                    );
                     acc.terminal_order.push(spec.id.clone());
                     acc.terminal_counts.insert(
                         spec.id.clone(),
@@ -277,10 +299,10 @@ pub fn build_import_plan(
                             width_tenths_mm: spec.width_tenths_mm,
                             is_nt_or_install: spec.is_installation_or_nt_terminal(),
                             is_nt_disconnect: spec.is_nt_disconnect_terminal(),
-                            is_pure_neutral: !spec.tiers.is_empty()
-                                && spec.tiers.iter().all(|t| t.behavior.is_neutral()),
-                            is_pure_pe: !spec.tiers.is_empty()
-                                && spec.tiers.iter().all(|t| t.behavior.is_pe()),
+                            is_pure_neutral,
+                            is_pure_pe,
+                            base_type,
+                            electrical_rank,
                         },
                     );
                 }
@@ -466,8 +488,39 @@ pub fn build_import_plan(
     }
 }
 
+/// Groups residual terminal entries by normalized `base_type`, keeping first-seen group order
+/// and sorting within each group by electrical role (L / feed-through -> N -> hybrid PE -> pure PE).
+fn group_entries_by_base_type<'a>(
+    entries: &[&'a ImportedTerminalEntry],
+) -> Vec<Vec<&'a ImportedTerminalEntry>> {
+    let mut group_idx_by_key: HashMap<&str, usize> = HashMap::new();
+    let mut groups: Vec<Vec<&'a ImportedTerminalEntry>> = Vec::new();
+    for &e in entries {
+        let idx = if let Some(&i) = group_idx_by_key.get(e.base_type.as_str()) {
+            i
+        } else {
+            let i = groups.len();
+            group_idx_by_key.insert(e.base_type.as_str(), i);
+            groups.push(Vec::new());
+            i
+        };
+        groups[idx].push(e);
+    }
+    for g in &mut groups {
+        g.sort_by_key(|e| {
+            (
+                e.electrical_rank,
+                Reverse(e.levels),
+                Reverse(e.height_tenths_mm),
+            )
+        });
+    }
+    groups
+}
+
 /// Generates up to 3 deduplicated block-arrangement variants while strictly preserving
-/// exact PDF quantities AND keeping all NT/install terminals as one closed contiguous block.
+/// exact PDF quantities, keeping matching `base_type` profiles adjacent, and keeping all NT/install
+/// terminals as one closed contiguous block.
 fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVariant> {
     if terminals.is_empty() {
         return Vec::new();
@@ -503,10 +556,12 @@ fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVari
     }
     let nt_zone = (!nt_block.is_empty()).then_some((0, nt_block.len()));
 
+    let base_groups = group_entries_by_base_type(&rest_entries);
+
     let mut candidates: Vec<StripImportVariant> = Vec::new();
 
-    // Strategy 1: 3-phase feeders (3× L + 1× N + 1× PE)
-    if let Some(rest_seq) = build_feeder_pattern(&rest_entries, 3) {
+    // Strategy 1: 3-phase feeders (3× L + 1× N + 1× PE), strictly scoped per base_type group
+    if let Some(rest_seq) = build_grouped_feeder_pattern(&base_groups, 3) {
         let mut seq = nt_block.clone();
         seq.extend(rest_seq);
         let nt_note = if nt_block.is_empty() {
@@ -517,39 +572,41 @@ fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVari
         candidates.push(StripImportVariant {
             label: format!("Drehstrom-Abgänge (3×L + N + PE{nt_note})"),
             description:
-                "Gruppiert je 3 Außenleiter mit zugehörigem N & PE (NT-Block geschlossen links)"
+                "Gruppiert je 3 Außenleiter mit zugehörigem N & PE innerhalb jedes Grundtyps (NT-Block geschlossen links)"
                     .to_string(),
             block_spec_ids: seq,
             nt_zone,
         });
     }
 
-    // Strategy 2: Multi-level / height descending (with closed NT block first)
+    // Strategy 2: Grouped by base type & height/levels descending (with closed NT block first)
     {
-        let mut sorted_rest = rest_entries.clone();
-        sorted_rest.sort_by_key(|e| {
-            (
-                Reverse(e.levels),
-                Reverse(e.height_tenths_mm),
-                Reverse(e.width_tenths_mm),
-            )
+        let mut ranked_groups: Vec<(usize, &Vec<&ImportedTerminalEntry>)> =
+            base_groups.iter().enumerate().collect();
+        ranked_groups.sort_by_key(|(first_idx, g)| {
+            let max_lvl = g.iter().map(|e| e.levels).max().unwrap_or(0);
+            let max_h = g.iter().map(|e| e.height_tenths_mm).max().unwrap_or(0);
+            let max_w = g.iter().map(|e| e.width_tenths_mm).max().unwrap_or(0);
+            (Reverse(max_lvl), Reverse(max_h), Reverse(max_w), *first_idx)
         });
         let mut seq = nt_block.clone();
-        for e in &sorted_rest {
-            seq.extend(std::iter::repeat_n(e.spec_id.clone(), e.quantity));
+        for (_, g) in ranked_groups {
+            for e in g {
+                seq.extend(std::iter::repeat_n(e.spec_id.clone(), e.quantity));
+            }
         }
         candidates.push(StripImportVariant {
-            label: "Nach Etagen / Bauhöhe absteigend".to_string(),
+            label: "Nach Grundtyp & Bauhöhe gruppiert".to_string(),
             description:
-                "Größte Bauhöhe / meiste Etagen zuerst, abfallend bis Einzelklemme (NT-Block links)"
+                "Gruppiert zusammengehörige Grundtypen (inkl. -PE direkt daneben), größte Bauhöhe zuerst"
                     .to_string(),
             block_spec_ids: seq,
             nt_zone,
         });
     }
 
-    // Strategy 3: 1-phase feeders (1× L + 1× N + 1× PE)
-    if let Some(rest_seq) = build_feeder_pattern(&rest_entries, 1) {
+    // Strategy 3: 1-phase feeders (1× L + 1× N + 1× PE), strictly scoped per base_type group
+    if let Some(rest_seq) = build_grouped_feeder_pattern(&base_groups, 1) {
         let mut seq = nt_block.clone();
         seq.extend(rest_seq);
         let nt_note = if nt_block.is_empty() {
@@ -560,22 +617,26 @@ fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVari
         candidates.push(StripImportVariant {
             label: format!("Wechselstrom-Abgänge (1×L + N + PE{nt_note})"),
             description:
-                "Gruppiert 1× L mit N & PE je Abgang (NT-Block geschlossen links)".to_string(),
+                "Gruppiert 1× L mit N & PE je Abgang innerhalb jedes Grundtyps (NT-Block geschlossen links)"
+                    .to_string(),
             block_spec_ids: seq,
             nt_zone,
         });
     }
 
-    // Strategy 4: Blockwise by PDF type order
+    // Strategy 4: Blockwise by base-type group in PDF first-appearance order
     {
         let mut seq = nt_block.clone();
-        for e in &rest_entries {
-            seq.extend(std::iter::repeat_n(e.spec_id.clone(), e.quantity));
+        for g in &base_groups {
+            for e in g {
+                seq.extend(std::iter::repeat_n(e.spec_id.clone(), e.quantity));
+            }
         }
         candidates.push(StripImportVariant {
-            label: "Blockweise nach Klemmentyp".to_string(),
-            description: "Geschlossene Typ-Blöcke in Stücklisten-Reihenfolge (NT-Block links)"
-                .to_string(),
+            label: "Blockweise nach Grundtyp".to_string(),
+            description:
+                "Zusammengehörige Grundtypen (L / N vor -PE) in Stücklisten-Reihenfolge"
+                    .to_string(),
             block_spec_ids: seq,
             nt_zone,
         });
@@ -603,8 +664,27 @@ fn generate_variants(terminals: &[ImportedTerminalEntry]) -> Vec<StripImportVari
     unique
 }
 
-fn build_feeder_pattern(
-    rest_entries: &[&ImportedTerminalEntry],
+fn build_grouped_feeder_pattern(
+    base_groups: &[Vec<&ImportedTerminalEntry>],
+    l_per_circuit: usize,
+) -> Option<Vec<String>> {
+    let mut out = Vec::new();
+    let mut any_feeder_formed = false;
+    for group in base_groups {
+        if let Some(seq) = build_feeder_pattern_for_group(group, l_per_circuit) {
+            any_feeder_formed = true;
+            out.extend(seq);
+        } else {
+            for e in group {
+                out.extend(std::iter::repeat_n(e.spec_id.clone(), e.quantity));
+            }
+        }
+    }
+    any_feeder_formed.then_some(out)
+}
+
+fn build_feeder_pattern_for_group(
+    group_entries: &[&ImportedTerminalEntry],
     l_per_circuit: usize,
 ) -> Option<Vec<String>> {
     let mut l_queue: Vec<(String, usize)> = Vec::new();
@@ -612,7 +692,7 @@ fn build_feeder_pattern(
     let mut pe_queue: Vec<(String, usize)> = Vec::new();
     let mut other_queue: Vec<(String, usize)> = Vec::new();
 
-    for e in rest_entries {
+    for e in group_entries {
         if e.is_pure_pe {
             pe_queue.push((e.spec_id.clone(), e.quantity));
         } else if e.is_pure_neutral {
@@ -713,11 +793,13 @@ pub fn instantiate_imported_strip_with_mappings(
         nt_zone = variant.nt_zone;
     }
 
+    let mut has_mapped_unknowns = false;
     for (unk, mapped_opt) in plan.unknown_articles.iter().zip(unknown_mappings.iter()) {
         if let Some(spec_id) = mapped_opt
             && catalog.find_by_id(spec_id).is_some()
         {
             all_spec_ids.extend(std::iter::repeat_n(spec_id.clone(), unk.quantity));
+            has_mapped_unknowns = true;
         }
     }
 
@@ -758,6 +840,10 @@ pub fn instantiate_imported_strip_with_mappings(
             strip.blocks.push(spec.instantiate_block(blk_id));
         }
     }
-    strip.recalculate_labels();
+    if has_mapped_unknowns && !plan.has_nt_or_install {
+        strip.group_blocks_by_base_type();
+    } else {
+        strip.recalculate_labels();
+    }
     Some((strip, nt_zone))
 }

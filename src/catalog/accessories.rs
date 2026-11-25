@@ -1464,6 +1464,10 @@ pub fn end_plate_width_tenths_mm(spec: &TerminalSpec) -> u16 {
     }
 }
 
+fn primary_end_plate_code(desc: &str) -> &str {
+    desc.split(" (").next().unwrap_or(desc).trim()
+}
+
 fn shares_end_plate_contour(
     a: &TerminalSpec,
     a_end_plate: &str,
@@ -1474,6 +1478,11 @@ fn shares_end_plate_contour(
         return false;
     }
     if a_end_plate == b_end_plate {
+        return true;
+    }
+    let ca = primary_end_plate_code(a_end_plate);
+    let cb = primary_end_plate_code(b_end_plate);
+    if !ca.is_empty() && ca == cb {
         return true;
     }
     if a.manufacturer == "Phoenix Contact" && a.levels == 1 && b.levels == 1 {

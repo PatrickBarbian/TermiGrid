@@ -1758,6 +1758,83 @@ pub fn toast_specs_imported(l: Language, count: usize) -> String {
         Language::Nl => format!("{count} klemtype(n) in database geïmporteerd (custom_specs.json)."),
     }
 }
+pub const fn json_example_copy_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Beispiel-Klemme kopieren",
+        "Copy Example JSON",
+        "Copier l'exemple JSON",
+        "Copia esempio JSON",
+        "Copiar ejemplo JSON",
+        "Kopiuj przykład JSON",
+        "Voorbeeld-JSON kopiëren",
+    ])
+}
+pub const fn json_example_copied_hint(l: Language) -> &'static str {
+    pick(l, [
+        "✓ Beispiel-JSON kopiert",
+        "✓ Example JSON copied",
+        "✓ Exemple JSON copié",
+        "✓ Esempio JSON copiato",
+        "✓ Ejemplo JSON copiado",
+        "✓ Skopiowano przykład JSON",
+        "✓ Voorbeeld-JSON gekopieerd",
+    ])
+}
+pub const fn json_example_insert_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Beispiel einfügen",
+        "Insert Example",
+        "Insérer l'exemple",
+        "Inserisci esempio",
+        "Insertar ejemplo",
+        "Wstaw przykład",
+        "Voorbeeld invoegen",
+    ])
+}
+pub const fn json_example_preview_heading(l: Language) -> &'static str {
+    pick(l, [
+        "Vollständiges Beispiel-JSON (Schema-Vorlage) anzeigen",
+        "Show Complete Example JSON (Schema Template)",
+        "Afficher l'exemple JSON complet (modèle de schéma)",
+        "Mostra JSON di esempio completo (modello schema)",
+        "Mostrar JSON de ejemplo completo (plantilla)",
+        "Pokaż pełny przykład JSON (szablon schematu)",
+        "Volledig voorbeeld-JSON (schemasjabloon) tonen",
+    ])
+}
+pub const fn group_base_types_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Grundtypen gruppieren",
+        "Group by Base Type",
+        "Grouper par type de base",
+        "Raggruppa per tipo base",
+        "Agrupar por tipo base",
+        "Grupuj wg typu bazowego",
+        "Op basistype groeperen",
+    ])
+}
+pub const fn group_base_types_tip(l: Language) -> &'static str {
+    pick(l, [
+        "Gruppiert zusammengehörige Grundtypen (z. B. PTTB 2,5 und PTTB 2,5-PE) direkt nebeneinander.",
+        "Groups matching base terminal types (e.g. PTTB 2,5 and PTTB 2,5-PE) adjacent to each other.",
+        "Regroupe les bornes de même type de base (ex. PTTB 2,5 et PTTB 2,5-PE) côte à côte.",
+        "Raggruppa i morsetti dello stesso tipo base (es. PTTB 2,5 e PTTB 2,5-PE) uno accanto all'altro.",
+        "Agrupa las bornas del mismo tipo base (p. ej. PTTB 2,5 y PTTB 2,5-PE) juntas.",
+        "Grupuji pasujące typy bazowe zacisków (np. PTTB 2,5 i PTTB 2,5-PE) obok siebie.",
+        "Groepeert bijbehorende basistypen (bijv. PTTB 2,5 en PTTB 2,5-PE) naast elkaar.",
+    ])
+}
+pub const fn toast_grouped_base_types(l: Language) -> &'static str {
+    pick(l, [
+        "Klemmen nach Grundtyp gruppiert (inkl. zugehöriger -PE-Klemmen).",
+        "Terminals grouped by base type (including matching -PE terminals).",
+        "Bornes groupées par type de base (avec bornes -PE associées).",
+        "Morsetti raggruppati per tipo base (incl. morsetti -PE corrispondenti).",
+        "Bornas agrupadas por tipo base (incl. bornas -PE correspondientes).",
+        "Zaciski pogrupowane wg typu bazowego (z pasującymi -PE).",
+        "Klemmen gegroepeerd op basistype (incl. bijbehorende -PE-klemmen).",
+    ])
+}
 
 // ── Guided Tour & Onboarding (Basic + Advanced) ────────────────────────────
 

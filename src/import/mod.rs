@@ -678,4 +678,115 @@ mod tests {
         assert_eq!(gls.terminals[0].spec_id, "wago-285-135");
         assert_eq!(gls.terminals[0].quantity, 2);
     }
+
+    #[test]
+    fn mixed_strip_groups_matching_base_types_together_with_accurate_end_plates() {
+        use crate::catalog::accessories::calculate_end_plates;
+        use crate::import::planner::instantiate_imported_strip_with_mappings;
+        use crate::model::TerminalStrip;
+
+        let catalog = TerminalCatalog::load_embedded();
+        let rows = vec![
+            RawBomRow {
+                page: 1,
+                bmk: "-X1".to_string(),
+                quantity: 4,
+                description: "Doppelstockklemme".to_string(),
+                type_number: "PTTB 2,5".to_string(),
+                supplier: "PXC".to_string(),
+                article_number: "PXC.3210567".to_string(),
+            },
+            RawBomRow {
+                page: 1,
+                bmk: "-X1".to_string(),
+                quantity: 3,
+                description: "Mehrleiterklemme".to_string(),
+                type_number: "PT 2,5-TWIN".to_string(),
+                supplier: "PXC".to_string(),
+                article_number: "PXC.3209549".to_string(),
+            },
+            RawBomRow {
+                page: 1,
+                bmk: "-X1".to_string(),
+                quantity: 2,
+                description: "Schutzleiter-Doppelstockklemme".to_string(),
+                type_number: "PTTB 2,5-PE".to_string(),
+                supplier: "PXC".to_string(),
+                article_number: "PXC.3210596".to_string(),
+            },
+        ];
+
+        let plan = plan_from_bom_rows(&rows, &catalog);
+        assert_eq!(plan.strips.len(), 1);
+        let strip_plan = &plan.strips[0];
+
+        // Even in Feeder / Default variant, PTTB 2,5-PE must stay directly next to PTTB 2,5
+        // and NOT get separated behind PT 2,5-TWIN.
+        for variant in &strip_plan.variants {
+            let pttb_pe_indices: Vec<usize> = variant
+                .block_spec_ids
+                .iter()
+                .enumerate()
+                .filter(|(_, id)| id.as_str() == "phoenix-pttb-25-pe")
+                .map(|(i, _)| i)
+                .collect();
+            let twin_indices: Vec<usize> = variant
+                .block_spec_ids
+                .iter()
+                .enumerate()
+                .filter(|(_, id)| id.as_str() == "phoenix-pt-25-twin")
+                .map(|(i, _)| i)
+                .collect();
+            assert_eq!(pttb_pe_indices.len(), 2);
+            assert_eq!(twin_indices.len(), 3);
+            let max_pe = *pttb_pe_indices.iter().max().unwrap();
+            let min_twin = *twin_indices.iter().min().unwrap();
+            assert!(
+                max_pe < min_twin,
+                "variant {} separated PTTB 2,5-PE from PTTB 2,5: {:?}",
+                variant.label,
+                variant.block_spec_ids
+            );
+        }
+
+        // Also test TerminalStrip::group_blocks_by_base_type on a scrambled manual strip
+        let pttb = catalog.find_by_id("phoenix-pttb-25").unwrap();
+        let twin = catalog.find_by_id("phoenix-pt-25-twin").unwrap();
+        let pttb_pe = catalog.find_by_id("phoenix-pttb-25-pe").unwrap();
+        let mut strip = TerminalStrip::new("-X1", 1, 10, "phoenix-pttb-25");
+        strip.blocks = vec![
+            pttb.instantiate_block(1),
+            pttb.instantiate_block(2),
+            twin.instantiate_block(3),
+            twin.instantiate_block(4),
+            pttb_pe.instantiate_block(5),
+        ];
+
+        let changed = strip.group_blocks_by_base_type();
+        assert!(changed);
+        let ids: Vec<&str> = strip.blocks.iter().map(|b| b.spec_id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec![
+                "phoenix-pttb-25",
+                "phoenix-pttb-25",
+                "phoenix-pttb-25-pe",
+                "phoenix-pt-25-twin",
+                "phoenix-pt-25-twin",
+            ]
+        );
+
+        // End plates: 1 partition/end plate between PTTB 2,5 profile (index 2->3) + 1 end plate at strip end
+        let plates = calculate_end_plates(&strip, &catalog);
+        assert_eq!(plates.len(), 2);
+        assert_eq!(plates[0].after_block_idx, 2);
+        assert_eq!(plates[1].after_block_idx, 4);
+
+        // Also verify instantiation via planner helper produces a clean strip
+        let (inst, _) =
+            instantiate_imported_strip_with_mappings(strip_plan, 0, false, &[], &catalog)
+                .expect("instantiation should succeed");
+        assert_eq!(inst.blocks.len(), 9);
+    }
 }
+

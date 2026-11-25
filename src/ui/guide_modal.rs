@@ -34,6 +34,7 @@ pub struct CustomSpecDraft {
     pub tier_fixed: [String; 4],
     pub json_import_buf: String,
     pub json_import_error: Option<String>,
+    pub json_example_copied: bool,
 }
 
 impl Default for CustomSpecDraft {
@@ -58,8 +59,95 @@ impl Default for CustomSpecDraft {
             ],
             json_import_buf: String::new(),
             json_import_error: None,
+            json_example_copied: false,
         }
     }
+}
+
+/// Generates a complete, schema-exact example terminal JSON serialized dynamically from a real
+/// `TerminalSpec` struct (`wago-2002-3217` 3-level terminal) including accessories and dimensions.
+pub fn build_example_terminal_json(catalog: &TerminalCatalog) -> String {
+    let base = catalog
+        .find_by_id("wago-2002-3217")
+        .or_else(|| catalog.find_by_id("wago-2002-3209"))
+        .or_else(|| catalog.all().first());
+
+    if let Some(spec) = base {
+        let mut example = spec.clone();
+        example.id = "custom-beispiel-2002-3217".to_string();
+        example.accessories = Some(catalog.accessories_for(spec));
+        example.jumper_slots_per_tier = Some(spec.effective_jumper_slots());
+        example.max_jumper_poles = Some(spec.effective_max_jumper_poles());
+        example.article_number = spec.effective_article_number().map(str::to_string);
+        example.product_url = Some(spec.effective_product_url());
+        example.image_url = spec.effective_image_url();
+        example.height_tenths_mm = Some(spec.effective_height_tenths_mm());
+        example.rail_offset_tenths_mm = Some(spec.effective_rail_offset_tenths_mm());
+        example.user_modified = false;
+        if let Ok(pretty) = serde_json::to_string_pretty(&example) {
+            return pretty;
+        }
+    }
+    String::from("{}")
+}
+
+/// Parses either a single `TerminalSpec` JSON object `{ ... }` or an array `[{ ... }, ...]`
+/// cleanly, stripping optional UTF-8 BOM or markdown code fences and reporting the exact schema
+/// error for whichever JSON shape was provided.
+pub fn parse_terminal_specs_json(raw: &str) -> Result<Vec<TerminalSpec>, String> {
+    let mut trimmed = raw.trim().trim_start_matches('\u{feff}').trim();
+    if let Some(rest) = trimmed.strip_prefix("```") {
+        let without_lang = rest
+            .strip_prefix("json")
+            .or_else(|| rest.strip_prefix("JSON"))
+            .unwrap_or(rest)
+            .trim_start_matches(['\r', '\n']);
+        if let Some(end_idx) = without_lang.rfind("```") {
+            trimmed = without_lang[..end_idx].trim();
+        }
+    }
+
+    if trimmed.is_empty() {
+        return Err("Empty JSON input".to_string());
+    }
+
+    let mut specs = if trimmed.starts_with('{') {
+        let single = serde_json::from_str::<TerminalSpec>(trimmed).map_err(|e| e.to_string())?;
+        vec![single]
+    } else if trimmed.starts_with('[') {
+        serde_json::from_str::<Vec<TerminalSpec>>(trimmed).map_err(|e| e.to_string())?
+    } else {
+        match serde_json::from_str::<Vec<TerminalSpec>>(trimmed) {
+            Ok(arr) => arr,
+            Err(e_arr) => serde_json::from_str::<TerminalSpec>(trimmed)
+                .map(|single| vec![single])
+                .map_err(|e_obj| format!("{e_obj} / {e_arr}"))?,
+        }
+    };
+
+    if specs.is_empty() {
+        return Err("Empty JSON array".to_string());
+    }
+
+    for (idx, spec) in specs.iter_mut().enumerate() {
+        if spec.name.trim().is_empty() {
+            return Err(format!("Entry {}: missing non-empty \"name\"", idx + 1));
+        }
+        if spec.levels == 0 {
+            spec.levels = spec.tiers.len().max(1);
+        }
+        if spec.id.trim().is_empty() {
+            let slug: String = spec
+                .name
+                .to_lowercase()
+                .chars()
+                .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+                .collect();
+            spec.id = format!("custom-{}", slug.trim_matches('-'));
+        }
+    }
+
+    Ok(specs)
 }
 
 /// Renders the dedicated "Anleitung" (Instructions) tab explaining selection, multi-level logic,
@@ -615,13 +703,30 @@ pub fn show_database_tab(
                     .small(),
             );
             ui.add_space(4.0);
-            ui.add(
-                egui::TextEdit::multiline(&mut draft.json_import_buf)
-                    .font(egui::TextStyle::Monospace)
-                    .desired_rows(5)
-                    .desired_width(f32::INFINITY)
-                    .hint_text("[\n  {\n    \"id\": \"phoenix-ptn-25\",\n    \"name\": \"PTN 2,5 (2,5mm² N-Trennklemme Blau)\",\n    ...\n  }\n]"),
-            );
+            egui::Frame::NONE
+                .fill(tok.bg_recessed)
+                .stroke(egui::Stroke::new(1.0, tok.border_hairline))
+                .corner_radius(egui::CornerRadius::same(6))
+                .inner_margin(egui::Margin::same(6))
+                .show(ui, |ui| {
+                    egui::ScrollArea::vertical()
+                        .id_salt("json_batch_import_scroll")
+                        .max_height(260.0)
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            let resp = ui.add(
+                                egui::TextEdit::multiline(&mut draft.json_import_buf)
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_rows(10)
+                                    .desired_width(f32::INFINITY)
+                                    .frame(egui::Frame::NONE)
+                                    .hint_text("{\n  \"id\": \"custom-beispiel-2002-3217\",\n  \"name\": \"2002-3217 (2,5mm² Dreistockklemme PE/N/L)\",\n  \"manufacturer\": \"WAGO\",\n  ...\n}"),
+                            );
+                            if resp.changed() {
+                                draft.json_import_error = None;
+                            }
+                        });
+                });
             if let Some(err) = &draft.json_import_error {
                 ui.add_space(2.0);
                 ui.label(
@@ -630,7 +735,7 @@ pub fn show_database_tab(
                         .small(),
                 );
             }
-            ui.add_space(4.0);
+            ui.add_space(6.0);
             ui.horizontal_wrapped(|ui| {
                 let can_import = !draft.json_import_buf.trim().is_empty();
                 if ui
@@ -640,29 +745,69 @@ pub fn show_database_tab(
                     .inner
                     .clicked()
                 {
-                    let raw = draft.json_import_buf.trim();
-                    let parsed = serde_json::from_str::<Vec<TerminalSpec>>(raw).or_else(|e_arr| {
-                        serde_json::from_str::<TerminalSpec>(raw)
-                            .map(|single| vec![single])
-                            .map_err(|_| e_arr)
-                    });
-                    match parsed {
-                        Ok(specs) if !specs.is_empty() => {
+                    match parse_terminal_specs_json(&draft.json_import_buf) {
+                        Ok(specs) => {
                             draft.json_import_error = None;
                             draft.json_import_buf.clear();
+                            draft.json_example_copied = false;
                             action = Some(DatabaseAction::ImportSpecsBatch(specs));
                         }
-                        Ok(_) => {
-                            draft.json_import_error =
-                                Some(tr::json_batch_err(lang, "Empty JSON array"));
-                        }
-                        Err(e) => {
-                            draft.json_import_error =
-                                Some(tr::json_batch_err(lang, &e.to_string()));
+                        Err(err) => {
+                            draft.json_import_error = Some(tr::json_batch_err(lang, &err));
                         }
                     }
                 }
+
+                ui.separator();
+
+                if icon_button(ui, UiIcon::Duplicate, tr::json_example_copy_btn(lang)).clicked() {
+                    let example_json = build_example_terminal_json(catalog);
+                    ui.ctx().copy_text(example_json);
+                    draft.json_example_copied = true;
+                }
+                if ghost_icon_button(ui, UiIcon::Apply, tr::json_example_insert_btn(lang)).clicked()
+                {
+                    draft.json_import_buf = build_example_terminal_json(catalog);
+                    draft.json_import_error = None;
+                    draft.json_example_copied = false;
+                }
+                if draft.json_example_copied {
+                    ui.label(
+                        egui::RichText::new(tr::json_example_copied_hint(lang))
+                            .color(tok.success)
+                            .small()
+                            .strong(),
+                    );
+                }
             });
+
+            ui.add_space(4.0);
+            egui::CollapsingHeader::new(tr::json_example_preview_heading(lang))
+                .id_salt("json_example_preview_collapse")
+                .default_open(false)
+                .show(ui, |ui| {
+                    let mut preview = build_example_terminal_json(catalog);
+                    egui::Frame::NONE
+                        .fill(tok.bg_recessed)
+                        .stroke(egui::Stroke::new(1.0, tok.border_hairline))
+                        .corner_radius(egui::CornerRadius::same(6))
+                        .inner_margin(egui::Margin::same(6))
+                        .show(ui, |ui| {
+                            egui::ScrollArea::vertical()
+                                .id_salt("json_example_preview_scroll")
+                                .max_height(220.0)
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut preview)
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .frame(egui::Frame::NONE)
+                                            .interactive(true),
+                                    );
+                                });
+                        });
+                });
         });
 
     ui.add_space(6.0);
@@ -1124,4 +1269,59 @@ pub fn show_spec_editor_modal(
     state.open = open;
     action
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn example_terminal_json_serializes_complete_schema_and_round_trips() {
+        let catalog = TerminalCatalog::load_embedded();
+        let example = build_example_terminal_json(&catalog);
+        assert!(example.contains("\"custom-beispiel-2002-3217\""));
+        assert!(example.contains("\"accessories\""));
+        assert!(example.contains("\"2002-3291"));
+        assert!(example.contains("\"2009-115"));
+        assert!(example.contains("\"height_tenths_mm\": 933"));
+
+        let parsed = parse_terminal_specs_json(&example).expect("example JSON must parse cleanly");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].id, "custom-beispiel-2002-3217");
+        assert_eq!(parsed[0].manufacturer, "WAGO");
+        assert_eq!(parsed[0].levels, 3);
+        assert_eq!(parsed[0].tiers.len(), 3);
+        assert!(parsed[0].accessories.is_some());
+    }
+
+    #[test]
+    fn parse_terminal_specs_json_accepts_single_object_array_and_fences() {
+        let catalog = TerminalCatalog::load_embedded();
+        let single_json = build_example_terminal_json(&catalog);
+
+        // 1. Single `{ ... }` object
+        let one = parse_terminal_specs_json(&single_json).expect("single object should parse");
+        assert_eq!(one.len(), 1);
+
+        // 2. JSON array `[{ ... }, { ... }]`
+        let array_json = format!("[{}, {}]", single_json, single_json);
+        let two = parse_terminal_specs_json(&array_json).expect("array should parse");
+        assert_eq!(two.len(), 2);
+
+        // 3. Markdown fenced single object with UTF-8 BOM
+        let fenced = format!("\u{feff}```json\n{}\n```", single_json);
+        let fenced_parsed =
+            parse_terminal_specs_json(&fenced).expect("fenced single object should parse");
+        assert_eq!(fenced_parsed.len(), 1);
+
+        // 4. Invalid single `{ ... }` reports the real object error, NOT "expected a sequence"
+        let broken_single = r#"{ "id": "test", "name": "Test 2,5" }"#;
+        let err = parse_terminal_specs_json(broken_single).unwrap_err();
+        assert!(
+            !err.contains("expected a sequence"),
+            "single object error must not say expected a sequence: {err}"
+        );
+        assert!(err.contains("missing field"), "expected missing field error: {err}");
+    }
+}
+
 
