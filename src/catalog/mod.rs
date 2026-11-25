@@ -4134,6 +4134,16 @@ mod tests {
         assert_eq!(w2002_3227.effective_height_tenths_mm(), 933);
         let acc_3227 = catalog.accessories_for(w2002_3227);
         assert!(acc_3227.end_plate.contains("2002-3291"));
+
+        let w2002_3231 = catalog.find_by_id("wago-2002-3231").expect("wago-2002-3231 must exist");
+        assert_eq!(w2002_3231.effective_article_number(), Some("2002-3231"));
+        assert_eq!(w2002_3231.levels, 3);
+        assert_eq!(w2002_3231.sequential_tier_count(), 3);
+        assert_eq!(w2002_3231.pattern_summary(), "L / L / L");
+        assert_eq!(w2002_3231.width_tenths_mm, 52);
+        assert_eq!(w2002_3231.effective_height_tenths_mm(), 933);
+        let acc_3231 = catalog.accessories_for(w2002_3231);
+        assert!(acc_3231.end_plate.contains("2002-3291"));
     }
 
     #[test]
