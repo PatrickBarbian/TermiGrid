@@ -278,6 +278,8 @@ fn extract_row(
     let tier_level = if tier.behavior.is_pe() {
         if pe_count > 1 {
             format!("PE{}", tier_idx + 1)
+        } else if visual_row >= 0 {
+            format!("E{}", visual_row + 1)
         } else {
             "PE".to_string()
         }

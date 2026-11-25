@@ -1013,5 +1013,63 @@ mod tests {
         assert_eq!(mixed.blocks[2].tiers[1].computed_label, "4");
         assert_eq!(mixed.blocks[3].tiers[1].computed_label, "5");
     }
+
+    #[test]
+    fn wago_2002_32xx_pe_terminals_place_pe_in_e1_and_upper_tiers_in_e2_e3() {
+        use crate::export::{build_print_rows, build_tier_columns, ExportOptions};
+        use crate::model::Project;
+
+        let catalog = TerminalCatalog::load_embedded();
+        for id in [
+            "wago-2002-3208",
+            "wago-2002-3209",
+            "wago-2002-3217",
+            "wago-2002-3227",
+            "wago-2202-3227",
+        ] {
+            let spec = catalog.find_by_id(id).expect(id);
+            let block = spec.instantiate_block(1);
+            assert!(
+                block.tiers[0].behavior.is_pe(),
+                "{id} must have PE in physical tier 0 (E1)"
+            );
+            // E1 = visual_row 0 (PE), E2 = visual_row 1, E3 = visual_row 2
+            assert_eq!(block.tier_visual_row(0), 0, "{id} E1 must be visual_row 0");
+            assert_eq!(block.tier_visual_row(1), 1, "{id} E2 must be visual_row 1");
+            assert_eq!(block.tier_visual_row(2), 2, "{id} E3 must be visual_row 2");
+        }
+
+        // Verify 2002-3227 (E1: PE, E2: L, E3: L) numbering and export levels
+        let spec_3227 = catalog.find_by_id("wago-2002-3227").unwrap();
+        let strip = TerminalStrip::generate_with_block_count("-X1", 1, 4, 2, spec_3227);
+        assert_eq!(strip.blocks[0].tiers[0].cad_display_label, "PE");
+        assert_eq!(strip.blocks[0].tiers[1].computed_label, "1");
+        assert_eq!(strip.blocks[0].tiers[2].computed_label, "2");
+        assert_eq!(strip.blocks[1].tiers[0].cad_display_label, "PE");
+        assert_eq!(strip.blocks[1].tiers[1].computed_label, "3");
+        assert_eq!(strip.blocks[1].tiers[2].computed_label, "4");
+
+        let project = Project {
+            format_version: 1,
+            project_name: "Wago3227Test".to_string(),
+            strips: vec![strip],
+            ..Default::default()
+        };
+        let rows = build_print_rows(&project, 0, &ExportOptions::default());
+        let levels: Vec<&str> = rows.iter().map(|r| r.tier_level.as_str()).collect();
+        let labels: Vec<&str> = rows.iter().map(|r| r.label.as_str()).collect();
+        assert_eq!(levels, vec!["E2", "E2", "E3", "E3"]);
+        assert_eq!(labels, vec!["1", "3", "2", "4"]);
+
+        let cols = build_tier_columns(&project, 0, &ExportOptions::default(), true);
+        assert_eq!(cols.len(), 3);
+        assert_eq!(cols[0].0, "Ebene 1");
+        assert!(cols[0].1.is_empty());
+        assert_eq!(cols[1].0, "Ebene 2");
+        assert_eq!(cols[1].1, vec!["1", "3"]);
+        assert_eq!(cols[2].0, "Ebene 3");
+        assert_eq!(cols[2].1, vec!["2", "4"]);
+    }
 }
+
 

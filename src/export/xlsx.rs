@@ -353,15 +353,26 @@ pub fn export_to_xlsx(
 
             let mut col_cursor = 4u16;
             if has_non_pe {
+                let is_pure_multi_pe =
+                    block.tiers.len() >= 2 && block.tiers.iter().all(|t| t.behavior.is_pe());
                 for target_row in 0..=max_row {
                     let text = block
                         .tiers
                         .iter()
                         .enumerate()
                         .find(|(l, t)| {
-                            !t.behavior.is_pe() && block.tier_visual_row(*l) == target_row as isize
+                            block.tier_visual_row(*l) == target_row as isize
+                                && (!t.behavior.is_pe() || !is_pure_multi_pe)
                         })
-                        .map(|(_, t)| t.computed_label.as_str())
+                        .map(|(_, t)| {
+                            if !t.computed_label.is_empty() {
+                                t.computed_label.as_str()
+                            } else if t.behavior.is_pe() {
+                                "PE"
+                            } else {
+                                ""
+                            }
+                        })
                         .unwrap_or("");
                     ws_matrix.write_string_with_format(
                         row_idx,

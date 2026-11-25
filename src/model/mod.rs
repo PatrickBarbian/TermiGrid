@@ -132,19 +132,46 @@ impl TerminalBlock {
             .count()
     }
 
+    /// Returns true if this block is an asymmetric installation or sensor/actuator terminal
+    /// whose bottom PE foot sits below the E1 baseline (`visual_row = -1`) so its upper
+    /// L / N decks align with 2-level installation terminals.
+    pub fn has_below_baseline_pe_foot(&self) -> bool {
+        let id = self.spec_id.to_lowercase();
+        let name = self.spec_name.to_lowercase();
+        id.contains("2003-")
+            || id.contains("2203-")
+            || id.contains("2005-")
+            || id.contains("2205-")
+            || id.contains("pti-")
+            || id.contains("sti-")
+            || id.contains("uti-")
+            || id.contains("aitb-")
+            || id.contains("zdl-")
+            || id.contains("dli-")
+            || id.contains("ptio-")
+            || id.contains("aio")
+            || name.contains("install")
+            || name.contains("inst.")
+    }
+
     /// Computes the aligned visual/logical row index for tier `level_idx`.
     ///
-    /// Row `0` is the main lower numbered baseline ("Ebene 1"), row `1` is "Ebene 2", etc.
-    /// For single-tier PE blocks and hybrid blocks with a bottom PE tier (`PE/L`, `PE/L/N`, etc.),
-    /// the bottom-most PE tier is placed at row `-1` ("PE") so numbered tiers above it stay
-    /// horizontally aligned with feed-through blocks.
-    /// For pure multi-level PE blocks (`PE/PE`, `PE/PE/PE` where all >= 2 tiers are `PE`),
-    /// tiers stack upward cleanly at rows `0, 1, ...` aligned with 2/3-level terminal decks.
+    /// Row `0` is the main lower baseline ("Ebene 1" / `E1`), row `1` is "Ebene 2" (`E2`),
+    /// and row `2` is "Ebene 3" (`E3`).
+    /// - Standard 3-level multi-deck terminals (`2002-3...`, `2202-3...`, `PT 2,5-PE/L/L`,
+    ///   `PT 2,5-PE/L/N`, `A3T`, etc.) and pure multi-level PE terminals (`PE/PE`, `PE/PE/PE`)
+    ///   keep their physical levels at `0, 1, 2` (`E1: PE, E2: L/N, E3: L/N`), matching the
+    ///   3 physical decks of `2002-3201` (`L/L/L`).
+    /// - Single-tier PE blocks (`levels == 1`) and asymmetric installation terminals with a
+    ///   below-rail PE foot (`2003-*`, `2005-*`, `PTI`, `AITB`, etc.) place the bottom PE foot
+    ///   at row `-1` ("PE").
     pub fn tier_visual_row(&self, level_idx: usize) -> isize {
         let has_bottom_pe = self.tiers.first().is_some_and(|t| t.behavior.is_pe());
         let is_pure_multi_pe =
             self.tiers.len() >= 2 && self.tiers.iter().all(|t| t.behavior.is_pe());
-        if has_bottom_pe && !is_pure_multi_pe {
+        let is_standard_three_level_deck =
+            self.tiers.len() >= 3 && !self.has_below_baseline_pe_foot();
+        if has_bottom_pe && !is_pure_multi_pe && !is_standard_three_level_deck {
             (level_idx as isize) - 1
         } else {
             level_idx as isize

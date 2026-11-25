@@ -1271,14 +1271,17 @@ pub fn show_cad_canvas(
                         } else {
                             tier.computed_label.clone()
                         };
+                        let vrow = block.tier_visual_row(t_idx);
                         let prefix = if tier.behavior.is_pe() {
                             if pe_count > 1 {
                                 format!("PE{}", t_idx + 1)
+                            } else if vrow >= 0 {
+                                format!("E{}", vrow + 1)
                             } else {
                                 "PE".to_string()
                             }
                         } else {
-                            format!("E{}", block.tier_visual_row(t_idx).max(0) + 1)
+                            format!("E{}", vrow.max(0) + 1)
                         };
                         lines.push(format!("  {}: {}", prefix, lbl));
                     }
@@ -1611,6 +1614,8 @@ fn draw_terminal_block(
             } else if tier.behavior.is_pe() {
                 if pe_count > 1 {
                     format!("PE{}", level + 1)
+                } else if vrow >= 0 {
+                    format!("E{}", vrow + 1)
                 } else {
                     "PE".to_string()
                 }
