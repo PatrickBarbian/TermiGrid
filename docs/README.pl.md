@@ -95,11 +95,12 @@
 
 Wszystkie gotowe pakiety znajdują się na **[stronie Releases](https://github.com/PatrickBarbian/TermiGrid/releases)**:
 
-| Platforma | Architektura / Cel | Plik | Uwagi |
+| Platforma | Architektura / Cel | Plik (Release) | Uwagi |
 | :--- | :--- | :--- | :--- |
-| **Windows** | `x86_64` | `TermiGrid-windows-x86_64.exe` | **100% przenośny** (pojedynczy plik `.exe` z `+crt-static` – bez instalacji i bez VCRUNTIME) |
-| **macOS** | Uniwersalny (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Przeciągnij pakiet `.app` do folderu Aplikacje |
-| **Android** | Uniwersalny (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartfony, tablety i urządzenia składane (Android 7.0 – 15 / API 24–35, wyrównanie stron 16 KB, podpis v1/v2/v3) |
+| **Windows** | `x86_64` | `TermiGrid-v1.9.1-windows-x86_64.exe`<br/>*(lub `TermiGrid-windows-x86_64.exe`)* | **100% przenośny** (pojedynczy plik `.exe` z `+crt-static` – bez instalacji i bez VCRUNTIME) |
+| **macOS** | Uniwersalny (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-v1.9.1-macos-universal.dmg`<br/>*(lub `TermiGrid-macos-universal.dmg`)* | Przeciągnij pakiet `.app` do folderu Aplikacje |
+| **Android** | Uniwersalny (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-v1.9.1-android-universal.apk`<br/>*(lub `TermiGrid-android-universal.apk`)* | Smartfony, tablety i urządzenia składane (Android 7.0 – 15 / API 24–35, wyrównanie stron 16 KB, stabilny keystore, podpis v1/v2/v3) |
+
 
 ### Wskazówki dla platform
 

@@ -59,8 +59,11 @@ impl UpdateChecker {
 
 /// Opens a web URL in the system browser.
 pub fn open_external_url(ctx: &egui::Context, url: &str) {
-    ctx.open_url(egui::OpenUrl::new_tab(url));
+    if !crate::ui::android_insets::open_android_url(url) {
+        ctx.open_url(egui::OpenUrl::new_tab(url));
+    }
 }
+
 
 fn perform_update_check() -> UpdateStatus {
     let body = match http_get_text(LATEST_RELEASE_API) {

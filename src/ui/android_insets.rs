@@ -385,6 +385,58 @@ mod imp {
         clear_if_exception(env);
         px.max(0)
     }
+
+    pub fn open_android_url(url: &str) -> bool {
+        let Some(&vm_addr) = ANDROID_VM_PTR.get() else {
+            return false;
+        };
+        let Some(&act_addr) = ANDROID_ACTIVITY_PTR.get() else {
+            return false;
+        };
+        if vm_addr == 0 || act_addr == 0 {
+            return false;
+        }
+
+        let jvm = unsafe { JavaVM::from_raw(vm_addr as *mut jni::sys::JavaVM) };
+        let res = jvm.attach_current_thread(|env| -> jni::errors::Result<()> {
+            let activity = ManuallyDrop::new(unsafe { JObject::from_raw(env, act_addr as jni::sys::jobject) });
+            let jurl = env.new_string(url)?;
+            let uri = env.call_static_method(
+                jni_str!("android/net/Uri"),
+                jni_str!("parse"),
+                jni_sig!("(Ljava/lang/String;)Landroid/net/Uri;"),
+                &[JValue::Object(&jurl)],
+            )?.l()?;
+
+            let action_view = env.get_static_field(
+                jni_str!("android/content/Intent"),
+                jni_str!("ACTION_VIEW"),
+                jni_sig!("Ljava/lang/String;"),
+            )?.l()?;
+
+            let intent = env.new_object(
+                jni_str!("android/content/Intent"),
+                jni_sig!("(Ljava/lang/String;Landroid/net/Uri;)V"),
+                &[JValue::Object(&action_view), JValue::Object(&uri)],
+            )?;
+
+            let _ = env.call_method(
+                &intent,
+                jni_str!("addFlags"),
+                jni_sig!("(I)Landroid/content/Intent;"),
+                &[JValue::Int(0x1000_0000)],
+            );
+
+            env.call_method(
+                &*activity,
+                jni_str!("startActivity"),
+                jni_sig!("(Landroid/content/Intent;)V"),
+                &[JValue::Object(&intent)],
+            )?;
+            Ok(())
+        });
+        res.is_ok()
+    }
 }
 
 #[cfg(not(target_os = "android"))]
@@ -394,8 +446,13 @@ mod imp {
     pub fn current_safe_insets(_pixels_per_point: f32) -> SafeAreaInsets {
         SafeAreaInsets::default()
     }
+
+    pub fn open_android_url(_url: &str) -> bool {
+        false
+    }
 }
 
 #[cfg(target_os = "android")]
 pub use imp::{android_jvm, init_android_refs};
-pub use imp::current_safe_insets;
+pub use imp::{current_safe_insets, open_android_url};
+

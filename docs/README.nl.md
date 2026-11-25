@@ -95,11 +95,12 @@
 
 Alle kant-en-klare pakketten staan op de **[Releases-pagina](https://github.com/PatrickBarbian/TermiGrid/releases)**:
 
-| Platform | Architectuur / Doel | Bestand | Opmerkingen |
+| Platform | Architectuur / Doel | Bestand (Release) | Opmerkingen |
 | :--- | :--- | :--- | :--- |
-| **Windows** | `x86_64` | `TermiGrid-windows-x86_64.exe` | **100% portable** (los `.exe`-bestand met `+crt-static` – geen installatie en geen VCRUNTIME nodig) |
-| **macOS** | Universeel (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Sleep de `.app`-bundel naar Programma's |
-| **Android** | Universeel (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartphones, tablets & foldables (Android 7.0 – 15 / API 24–35, 16 KB pagina-uitlijning, v1/v2/v3 ondertekend) |
+| **Windows** | `x86_64` | `TermiGrid-v1.9.1-windows-x86_64.exe`<br/>*(of `TermiGrid-windows-x86_64.exe`)* | **100% portable** (los `.exe`-bestand met `+crt-static` – geen installatie en geen VCRUNTIME nodig) |
+| **macOS** | Universeel (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-v1.9.1-macos-universal.dmg`<br/>*(of `TermiGrid-macos-universal.dmg`)* | Sleep de `.app`-bundel naar Programma's |
+| **Android** | Universeel (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-v1.9.1-android-universal.apk`<br/>*(of `TermiGrid-android-universal.apk`)* | Smartphones, tablets & foldables (Android 7.0 – 15 / API 24–35, 16 KB pagina-uitlijning, stabiele release-keystore, v1/v2/v3 ondertekend) |
+
 
 ### Platformopmerkingen
 

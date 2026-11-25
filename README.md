@@ -57,12 +57,14 @@
   - Blitzschnelle Schaltungsgenerierung per Kurztext: z. B. `4x Drehstrom Abgang 2,5mm² Installationsklemmen`, `4x 3-pol PTI 2,5`, `6x +24V QUATTRO gebrückt`, `2x Reserve leer`.
   - Live-Vorschau der generierten Klemmen und 1-Klick-Übernahme direkt in die aktuelle Klemmenleiste.
 
-- **EPLAN Electric P8 Schnittstelle & Vollständiger Roundtrip:**
+- **EPLAN Electric P8 & EPLAN 2025 Schnittstelle & Vollständiger Roundtrip:**
   - **CLI CSV-Import:** Start per Befehlszeile `TermiGrid.exe --import-eplan-csv "export.csv"` oder über `Menü → EPLAN CSV importieren...` mit automatischer Erkennung und Bereinigung von Hersteller-Präfixen (`PXC.`, `WAG.`, `WDM.`).
+  - **EPLAN 2025 Menüband-Einbindung:** Fertiges C#-Bridge-Skript `TermiGrid_EPLAN_Bridge.cs` (direkt aus TermiGrid per Klick kopier-/exportierbar) zur 1-Klick-Ausführung per Menüband-Aktion `ExecuteScript`.
+  - **Zubehör-Rückimport (Wichtig: Modus „Hinzufügen“):** Generiert `_EPLAN_Zubehoer_Import.csv` & `.xml` (nur neu hinzugekommenes Zubehör mit wieder angehängten Hersteller-Präfixen, streng herstellerrein). In EPLAN über `Projektdaten → Geräte → Importieren...` im Modus **Hinzufügen** einlesen – bestehende Klemmen und Schaltpläne bleiben unberührt.
+  - **DXF-Aufbaubild ohne Seitenzerschuss:** Saubere Einzel-DXF-Dateien (`/DXF/<BMK>.dxf`) für den maßstabsgetreuen Schaltschrank-Aufbau – in EPLAN einfach über `Einfügen → Grafik → DXF/DWG` auf bestehende Aufbauseiten platzieren (nicht `Seite → Importieren`, um bestehende Grafiken nicht zu löschen).
   - **Intelligenter EPLAN PDF-Stücklistenimport:** Drag & Drop von EPLAN PDF-Plänen, automatische Zuweisung von Installationsklemmen, N-Sammelschienen und Einspeisungen inkl. Sammelschienenbock-Berechnung (alle 200 mm).
-  - **1-Klick EPLAN Rückimport-Paket:** Generiert `_EPLAN_Zubehoer_Import.csv` & `.xml` (mit automatisch wieder angehängten Hersteller-Präfixen, streng herstellerrein) und saubere Einzel-DXF-Dateien pro Leiste (`/DXF/<BMK>.dxf`) für den direkten EPLAN DXF-Seitenimport.
-  - **EPLAN C#-Bridge-Skript:** `TermiGrid_EPLAN_Bridge.cs` auf Knopfdruck exportierbar für direkte Menü- und Toolbar-Einbindung in EPLAN P8.
   - **Aufgeräumter EPLAN-Einstellungsdialog:** Diskret integriert unter `Menü → EPLAN-Schnittstelle...` zur Konfiguration von Präfixen, Trennzeichen und Exportordnern.
+
 
 - **CAD-Editor, Automatischer Bearbeitungsmodus & Endplatten-Generierung:**
   - Maßstabsgetreue 2D-CAD-Ansicht mit automatischer Anzeige von Abschluss- (D) und Trennplatten in realer Stärke.
@@ -101,19 +103,19 @@
 
 ### Downloads & Portabilität
 
-Alle fertigen Pakete sind auf der **[Releases-Seite](https://github.com/PatrickBarbian/TermiGrid/releases)** verfügbar:
+Alle fertigen Pakete sind auf der **[Releases-Seite](https://github.com/PatrickBarbian/TermiGrid/releases)** sowohl mit Versionsnummer im Dateinamen als auch unter den stabilen Standardnamen verfügbar:
 
-| Plattform | Architektur / Ziel | Datei | Hinweise |
+| Plattform | Architektur / Ziel | Dateinamen (Release) | Hinweise |
 | :--- | :--- | :--- | :--- |
-| **Windows** | `x86_64` | `TermiGrid-windows-x86_64.exe` | **100 % portabel** (Einzeldatei mit `+crt-static` – keine Installation, kein VCRUNTIME nötig) |
-| **macOS** | Universal (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | `.app`-Bundle in den Programme-Ordner ziehen |
-| **Android** | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Für Smartphones, Tablets & Foldables (Android 7.0 – 15 / API 24–35, 16-KB-Page-Alignment, v1/v2/v3 signiert) |
+| **Windows** | `x86_64` | `TermiGrid-v1.9.1-windows-x86_64.exe`<br/>*(oder `TermiGrid-windows-x86_64.exe`)* | **100 % portabel** (Einzeldatei mit `+crt-static` – keine Installation, kein VCRUNTIME nötig) |
+| **macOS** | Universal (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-v1.9.1-macos-universal.dmg`<br/>*(oder `TermiGrid-macos-universal.dmg`)* | `.app`-Bundle in den Programme-Ordner ziehen |
+| **Android** | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-v1.9.1-android-universal.apk`<br/>*(oder `TermiGrid-android-universal.apk`)* | Für Smartphones, Tablets & Foldables (Android 7.0 – 15 / API 24–35, 16-KB-Page-Alignment, stabiler Release-Keystore & v1/v2/v3 signiert) |
 
 #### Plattform-Hinweise
 
 - **Windows:** Direkt per Doppelklick von USB-Stick oder lokalem Ordner starten – benötigt keine Administratorrechte und keine Laufzeitbibliotheken.
 - **macOS (Unsigniertes App-Bundle):** Beim ersten Start ggf. **Rechtsklick -> Öffnen** verwenden oder unter *Systemeinstellungen -> Datenschutz & Sicherheit* freigeben.
-- **Android:** APK herunterladen und Installation aus unbekannten Quellen für den Browser/Dateimanager erlauben. Durch 16-KB-Page-Alignment und `resizeableActivity` auch mit aktuellen Geräten (z. B. Pixel 10 Pro XL) und Foldables kompatibel. Exporte landen direkt unter `/sdcard/Download/TermiGrid/`.
+- **Android:** APK herunterladen und Installation aus unbekannten Quellen für den Browser/Dateimanager erlauben. Durch den stabilen Signierschlüssel können künftige Updates nahtlos über die bestehende Installation installiert werden. Exporte landen direkt unter `/sdcard/Download/TermiGrid/`.
 
 ---
 
@@ -124,6 +126,119 @@ Alle fertigen Pakete sind auf der **[Releases-Seite](https://github.com/PatrickB
 3. **CAD-Bearbeitung & Brücken-Modus:** Doppelklick auf Beschriftungen zum Ändern von Texten, Umschalten in den Brücken-Modus für farbliche Potentiale per Klick & Ziehen.
 4. **Automatische Endplatten & Zubehör:** Abschlussplatten, Trennplatten, Kammbrücken mit Pin-Kürzungsanweisung und Endwinkel werden vollautomatisch ermittelt.
 5. **Export & Druck:** Export als 4-Blatt-Excel (`.xlsx`), CSV oder 1-Klick EPLAN Rückimport-Paket (`_EPLAN_Zubehoer_Import.csv` & `.xml` + DXF-Zeichnungen).
+
+---
+
+### ⚡ EPLAN 2025 & P8 Roundtrip: Schritt-für-Schritt-Anleitung
+
+Die nahtlose EPLAN-Anbindung erfordert nur zwei einmalige Konfigurationsschritte in EPLAN und läuft danach vollautomatisch per 1-Klick:
+
+#### 1. Einmalige Einrichtung: Menüband-Button in EPLAN 2025
+1. In EPLAN 2025: **`Datei → Einstellungen → Benutzer → Verwaltung → Menüband`** aufrufen.
+2. Eine neue Aktionsgruppe anlegen (z. B. `TermiGrid` innerhalb der Registerkarte `Klemmenleisten`).
+3. Einen neuen Menübefehl hinzufügen:
+   - **Aktion:** `ExecuteScript`
+   - **Parameter:** `/ScriptFile:"C:\Tools\TermiGrid\TermiGrid_EPLAN_Bridge.cs"`
+   - **Text / QuickInfo:** `Zu TermiGrid senden`
+4. Das fertige C#-Skript `TermiGrid_EPLAN_Bridge.cs` (siehe unten) an diesem Pfad abspeichern (oder in TermiGrid unter `Menü → EPLAN-Schnittstelle... → EPLAN C#-Skript exportieren` mit vorbefülltem Pfad speichern).
+
+#### 2. Einmalige Einrichtung: EPLAN-Beschriftungsschema (CSV)
+Unter **`Dienstprogramme → Beschriftung → Ausgeben...`** ein Klemmen-Schema anlegen (Semikolon `;` getrennt, UTF-8 mit/ohne BOM):
+- Benötigte Spalten: `BMK`, `Klemmennummer` (oder `TerminalNo`), `Etage` (oder `Level`), `Artikelnummer` (oder `ArticleNo`), `Typnummer` (oder `TypeNo`), `Menge` (oder `Qty`).
+- Konfigurierbare Hersteller-Präfixe wie `PXC.`, `WAG.`, `WDM.` werden von TermiGrid automatisch erkannt und beim Abgleich gegen die interne Datenbank entfernt.
+
+#### 3. Tägliches Arbeiten (1 Klick)
+- Klick auf den Menüband-Button ruft `TermiGrid.exe --import-eplan-csv "..."` auf.
+- TermiGrid öffnet sich sofort mit allen Klemmenleisten, exakter Klemmenreihenfolge und Klemmenbezeichnung.
+
+#### 4. Zubehör-Rückimport in EPLAN 2025 (Wichtig: Modus „Hinzufügen“)
+1. In TermiGrid: **`Menü → EPLAN-Schnittstelle... → EPLAN Rückimport-Paket erstellen`** klicken.
+2. TermiGrid berechnet automatisch alle fehlenden Abschluss-/Zwischenplatten und strikt markenreine Endhalter und speichert `_EPLAN_Zubehoer_Import.csv` & `.xml` (nur das neu hinzugekommene Zubehör mit wieder angehängten Hersteller-Präfixen).
+3. In EPLAN 2025: **`Projektdaten → Geräte → Importieren...`** aufrufen und die CSV/XML-Datei auswählen.
+4. **WICHTIGER PRAXIS-TIPP:** Als Importmodus zwingend **„Hinzufügen“** wählen (NICHT „Überschreiben“!). Dadurch bleiben bestehende Klemmen und Schaltpläne vollkommen unberührt, und EPLAN ordnet das Zubehör anhand des vollständigen BMK sauber der jeweiligen Klemmleiste zu.
+
+#### 5. DXF-Aufbaubild in EPLAN 2025 platzieren
+- TermiGrid erzeugt für jede Klemmleiste eine maßstabsgetreue 1:1 DXF-Datei im Unterordner `/DXF/<Sanitized_BMK>.dxf`.
+- **Tipp für Aufbauseiten:** Verwenden Sie in EPLAN **`Einfügen → Grafik → DXF/DWG`**, um das DXF direkt als Grafikblock auf jede bestehende Schaltschrank-Aufbauseite einzufügen! (Der Menüpunkt `Seite → Importieren → DXF/DWG` legt hingegen eine komplett neue Seite an).
+
+<details>
+<summary><strong>📄 Fertiges C#-Bridge-Skript: <code>TermiGrid_EPLAN_Bridge.cs</code> (Hier ausklappen zum Kopieren)</strong></summary>
+
+```csharp
+// TermiGrid <-> EPLAN Electric P8 Roundtrip Bridge Script
+// Automatisch generiert von TermiGrid.
+// In EPLAN unter Datei -> Einstellungen -> Benutzer -> Verwaltung -> Menüband als Aktion "ExecuteScript" einbinden.
+
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Windows.Forms;
+using Eplan.EplApi.ApplicationFramework;
+using Eplan.EplApi.Scripting;
+
+public class TermiGridEplanBridge
+{
+    private const string TermiGridExePath = @"C:\Tools\TermiGrid\TermiGrid.exe";
+    private const string DefaultRoundtripDir = @"";
+
+    [Start]
+    public void RunTermiGridRoundtrip()
+    {
+        try
+        {
+            if (!File.Exists(TermiGridExePath))
+            {
+                MessageBox.Show(
+                    "TermiGrid.exe wurde nicht gefunden:\n" + TermiGridExePath,
+                    "TermiGrid EPLAN Bridge",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+                return;
+            }
+
+            string csvPath = SelectOrFindExportCsv();
+            if (string.IsNullOrEmpty(csvPath))
+            {
+                return;
+            }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = TermiGridExePath,
+                Arguments = "--import-eplan-csv \"" + csvPath + "\"",
+                UseShellExecute = false
+            };
+            Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "Fehler beim Starten von TermiGrid:\n" + ex.Message,
+                "TermiGrid EPLAN Bridge",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+        }
+    }
+
+    private static string SelectOrFindExportCsv()
+    {
+        using (var dlg = new OpenFileDialog())
+        {
+            dlg.Title = "EPLAN Klemmen-Export CSV für TermiGrid auswählen";
+            dlg.Filter = "EPLAN CSV Export (*.csv)|*.csv|Alle Dateien (*.*)|*.*";
+            if (!string.IsNullOrEmpty(DefaultRoundtripDir) && Directory.Exists(DefaultRoundtripDir))
+            {
+                dlg.InitialDirectory = DefaultRoundtripDir;
+            }
+            return dlg.ShowDialog() == DialogResult.OK ? dlg.FileName : null;
+        }
+    }
+}
+```
+</details>
+
 
 ---
 

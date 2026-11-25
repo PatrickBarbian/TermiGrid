@@ -67,7 +67,11 @@ jobs:
         run: cargo build --release --bin termigrid
       - name: Stage artifact
         shell: pwsh
-        run: Copy-Item target\release\termigrid.exe TermiGrid-windows-x86_64.exe
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ("${{ github.ref_type }}" -ne "tag") { $tag = "${{ github.event.inputs.tag }}" }
+          Copy-Item target\release\termigrid.exe "TermiGrid-$tag-windows-x86_64.exe"
+          Copy-Item target\release\termigrid.exe TermiGrid-windows-x86_64.exe
       - name: Upload Windows asset immediately to Release
         shell: pwsh
         env:
@@ -75,11 +79,11 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           if ("${{ github.ref_type }}" -ne "tag") { $tag = "${{ github.event.inputs.tag }}" }
-          gh release upload "$tag" TermiGrid-windows-x86_64.exe --repo "${{ github.repository }}" --clobber
+          gh release upload "$tag" "TermiGrid-$tag-windows-x86_64.exe" TermiGrid-windows-x86_64.exe --repo "${{ github.repository }}" --clobber
       - uses: actions/upload-artifact@v4
         with:
           name: TermiGrid-windows
-          path: TermiGrid-windows-x86_64.exe
+          path: TermiGrid-*-windows-x86_64.exe
 
   build-macos:
     name: Build macOS Universal (Intel + Apple Silicon)
@@ -146,7 +150,12 @@ jobs:
           </plist>
           EOF
 
-          hdiutil create -volname "TermiGrid" -srcfolder TermiGrid.app -ov -format UDZO TermiGrid-macos-universal.dmg
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
+          fi
+          hdiutil create -volname "TermiGrid" -srcfolder TermiGrid.app -ov -format UDZO "TermiGrid-$TAG-macos-universal.dmg"
+          cp "TermiGrid-$TAG-macos-universal.dmg" TermiGrid-macos-universal.dmg
       - name: Upload macOS asset immediately to Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -155,11 +164,11 @@ jobs:
           if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
             TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
           fi
-          gh release upload "$TAG" TermiGrid-macos-universal.dmg --repo "${{ github.repository }}" --clobber
+          gh release upload "$TAG" "TermiGrid-$TAG-macos-universal.dmg" TermiGrid-macos-universal.dmg --repo "${{ github.repository }}" --clobber
       - uses: actions/upload-artifact@v4
         with:
           name: TermiGrid-macos
-          path: TermiGrid-macos-universal.dmg
+          path: TermiGrid-*-macos-universal.dmg
 
   build-android:
     name: Build Android (Phones, Foldables & Tablets .apk)
@@ -184,19 +193,16 @@ jobs:
         run: cargo install cargo-apk --locked
       - name: Build universal multi-ABI APK (16KB page-aligned + v2/v3 signed)
         run: |
-          keytool -genkeypair -v \
-            -keystore android-release.keystore \
-            -alias termigrid \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass termigrid_release -keypass termigrid_release \
-            -dname "CN=TermiGrid, O=PatrickBarbian, C=DE"
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
+          fi
 
-          cat >> Cargo.toml <<'EOF'
-
-          [package.metadata.android.signing.release]
-          path = "android-release.keystore"
-          keystore_password = "termigrid_release"
-          EOF
+          # Compute numeric Android versionCode (e.g. 1.9.1 -> 10901)
+          RAW_VER=$(grep '^version = ' Cargo.toml | head -n 1 | cut -d '"' -f 2)
+          IFS='.' read -r MAJ MIN PAT <<< "$RAW_VER"
+          VCODE=$(( MAJ * 10000 + MIN * 100 + PAT ))
+          sed -i "s/version_code = .*/version_code = $VCODE/" Cargo.toml
 
           RUSTFLAGS="-C link-arg=-Wl,-z,max-page-size=16384" cargo apk build --release --lib
           RAW_APK=$(find target -name "*.apk" | head -n 1)
@@ -205,15 +211,16 @@ jobs:
           BT="${ANDROID_HOME}/build-tools/35.0.0"
           "${BT}/zipalign" -P 16 -f -v 4 "$RAW_APK" TermiGrid-aligned.apk
           "${BT}/apksigner" sign \
-            --ks android-release.keystore \
+            --ks assets/android/release.keystore \
             --ks-pass pass:termigrid_release \
             --key-pass pass:termigrid_release \
             --v1-signing-enabled true \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out TermiGrid-android-universal.apk \
+            --out "TermiGrid-$TAG-android-universal.apk" \
             TermiGrid-aligned.apk
-          "${BT}/apksigner" verify --verbose TermiGrid-android-universal.apk
+          cp "TermiGrid-$TAG-android-universal.apk" TermiGrid-android-universal.apk
+          "${BT}/apksigner" verify --verbose "TermiGrid-$TAG-android-universal.apk"
       - name: Upload Android asset immediately to Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -222,8 +229,9 @@ jobs:
           if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
             TAG="${{ github.event.inputs.tag || 'v1.0.0' }}"
           fi
-          gh release upload "$TAG" TermiGrid-android-universal.apk --repo "${{ github.repository }}" --clobber
+          gh release upload "$TAG" "TermiGrid-$TAG-android-universal.apk" TermiGrid-android-universal.apk --repo "${{ github.repository }}" --clobber
       - uses: actions/upload-artifact@v4
         with:
           name: TermiGrid-android
-          path: TermiGrid-android-universal.apk
+          path: TermiGrid-*-android-universal.apk
+

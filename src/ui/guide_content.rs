@@ -54,7 +54,9 @@ pub enum GuideCodeKind {
     },
     AiTerminalPrompt,
     ExampleTerminalJson,
+    EplanBridgeCsScript,
 }
+
 
 /// One searchable handbook entry covering a complete TermiGrid feature area.
 #[derive(Debug, Clone, Copy)]
@@ -671,50 +673,62 @@ static GUIDE_ARTICLES: &[GuideArticle] = &[
     GuideArticle {
         id: "eplan-p8-roundtrip",
         category: GuideCategory::ExportAndEplan,
-        title_de: "12. EPLAN Electric P8 Roundtrip-Schnittstelle",
-        title_en: "12. EPLAN Electric P8 Roundtrip Integration",
-        summary_de: "Direkter Datenaustausch mit EPLAN P8: CLI-Aufruf, CSV-Import mit Präfix-Erkennung, Zubehör-Rückimport (CSV/XML) & DXF-Paket.",
-        summary_en: "Seamless EPLAN P8 roundtrip: CLI CSV launch, vendor prefix stripping/re-attaching, accessory CSV/XML + DXF package, and C# bridge.",
+        title_de: "12. EPLAN Electric P8 & EPLAN 2025 Roundtrip-Schnittstelle",
+        title_en: "12. EPLAN Electric P8 & EPLAN 2025 Roundtrip Integration",
+        summary_de: "Vollständige Schritt-für-Schritt-Anleitung für EPLAN 2025: Menüband-Button, CSV-Exportschema, 1-Klick-Roundtrip per C#-Skript, Zubehör-Rückimport (Modus Hinzufügen) & DXF-Aufbau.",
+        summary_en: "Complete step-by-step setup for EPLAN 2025: ribbon button, CSV export scheme, 1-click C# bridge script, accessory return import (Add mode), and DXF cabinet layout.",
         keywords: &[
-            "EPLAN", "P8", "Roundtrip", "CLI", "--import-eplan-csv", "PXC.", "WAG.", "WDM.",
+            "EPLAN", "2025", "P8", "Roundtrip", "CLI", "--import-eplan-csv", "PXC.", "WAG.", "WDM.",
             "Rückimport", "_EPLAN_Zubehoer_Import", "xml", "csv", "C#", "Bridge", "config.json",
-            "EPLAN-Schnittstelle",
+            "EPLAN-Schnittstelle", "Menüband", "ExecuteScript", "Hinzufügen", "Grafik", "DXF",
         ],
         steps_de: &[
             (
-                "Wo finde ich die EPLAN-Einstellungen?",
-                "Um die normale Werkstatt-Oberfläche schlank zu halten, liegen alle EPLAN-Funktionen dezent unter `Menü (oben links) → EPLAN-Schnittstelle...` (oder `Strg+K` → „EPLAN“).",
+                "Schritt 1: Menüband-Button in EPLAN 2025 anlegen (Einmalig)",
+                "1. In EPLAN 2025: `Datei → Einstellungen → Benutzer → Verwaltung → Menüband` öffnen.\n2. Eine neue Gruppe erstellen (z. B. „TermiGrid“ in der Registerkarte „Klemmenleisten“).\n3. Neuen Befehl hinzufügen:\n   • Aktion: `ExecuteScript`\n   • Parameter: `/ScriptFile:\"C:\\Tools\\TermiGrid\\TermiGrid_EPLAN_Bridge.cs\"`\n   • Text / QuickInfo: `Zu TermiGrid senden`\n4. Das fertige C#-Skript finden Sie unten als Kopiervorlage (oder in TermiGrid unter `Menü → EPLAN-Schnittstelle... → EPLAN C#-Skript exportieren`).",
             ),
             (
-                "Import aus EPLAN (manuell oder per CLI)",
-                "• Unterstützt Semikolon-getrennte EPLAN-CSVs (`BMK;Klemmennummer;Etage;Artikelnummer;Typnummer;Menge`, UTF-8 mit/ohne BOM).\n• Konfigurierbare Hersteller-Präfixe (`PXC.`, `WAG.`, `WDM.`) werden beim Abgleich entfernt und die exakte Klemmenreihenfolge & Nummerierung aus EPLAN übernommen.\n• Über „EPLAN C#-Skript exportieren“ erhalten Sie `TermiGrid_EPLAN_Bridge.cs` mit automatisch vorausgefülltem `.exe`-Pfad.",
+                "Schritt 2: EPLAN-Beschriftungsschema für CSV-Export anlegen (Einmalig)",
+                "Unter `Dienstprogramme → Beschriftung → Ausgeben...` ein neues Klemmen-Schema anlegen:\n• Dateityp: CSV (Semikolon `;` getrennt, Kodierung UTF-8).\n• Benötigte Spalten (Groß-/Kleinschreibung egal):\n  1. `BMK` (Vollständige Betriebsmittelkennzeichnung, z. B. `=NSV+A01-X1`)\n  2. `Klemmennummer` (oder `TerminalNo`, z. B. `1`, `2`, `PE`, `N`)\n  3. `Etage` (oder `Level`, 1 bis 4)\n  4. `Artikelnummer` (oder `ArticleNo`, mit Präfix z. B. `PXC.3210567`, `WAG.2002-3217`)\n  5. `Typnummer` (oder `TypeNo`, z. B. `PTTB 2,5`)\n  6. `Menge` (oder `Qty`, Standard: 1)",
             ),
             (
-                "1-Klick-Rückimport-Paket (TermiGrid → EPLAN)",
-                "„EPLAN Rückimport-Paket erstellen“ berechnet fehlende End-/Zwischenplatten und strikt markenreine Endhalter, hängt die konfigurierten EPLAN-Präfixe wieder an und schreibt:\n• `_EPLAN_Zubehoer_Import.csv` & `.xml` (optional nur das neu ergänzte Zubehör)\n• `/DXF/<Sanitized_BMK>.dxf` (z. B. `NSV_A01_X1.dxf`) je Klemmleiste.",
+                "Schritt 3: Tägliches Arbeiten (1-Klick-Übertragung)",
+                "1. In EPLAN 2025 auf den neu angelegten Menüband-Button klicken (oder CSV exportieren).\n2. TermiGrid öffnet sich automatisch, liest die CSV ein und stellt alle Klemmleisten mit exakter Klemmenreihenfolge und Beschriftung dar.\n3. Fehlende Klemmen ergänzen, PE-Klemmen prüfen, Brücken setzen oder Beschriftung anpassen.",
+            ),
+            (
+                "Schritt 4: Zubehör-Rückimport in EPLAN 2025 (Wichtig: Modus „Hinzufügen“)",
+                "1. In TermiGrid: `Menü → EPLAN-Schnittstelle... → EPLAN Rückimport-Paket erstellen` anklicken.\n2. TermiGrid berechnet automatisch alle fehlenden Abschluss-/Zwischenplatten und strikt markenreine Endhalter und speichert `_EPLAN_Zubehoer_Import.csv` & `.xml` (nur das neu hinzugekommene Zubehör mit wieder angehängten Hersteller-Präfixen wie `PXC.` / `WAG.` / `WDM.`).\n3. In EPLAN 2025: `Projektdaten → Geräte → Importieren...` aufrufen.\n4. WICHTIGER PRAXIS-TIPP: Als Importmodus zwingend **„Hinzufügen“** wählen (NICHT „Überschreiben“!). Dadurch bleiben bestehende Klemmen und Schaltpläne vollkommen unberührt, und EPLAN ordnet das Zubehör anhand des vollständigen BMK sauber der jeweiligen Klemmleiste zu.",
+            ),
+            (
+                "Schritt 5: DXF-Aufbaubild in EPLAN 2025 einfügen (Aufbauseiten)",
+                "TermiGrid erzeugt im Ordner `/DXF/` für jede Leiste eine maßstabsgetreue 1:1 DXF-Datei (`<Sanitized_BMK>.dxf`).\n• RICHTIG: Nutzen Sie in EPLAN **`Einfügen → Grafik → DXF/DWG`**, um die Leiste direkt auf eine bestehende Schaltschrank-Aufbauseite zu platzieren. Es wird nichts gelöscht oder überschrieben.\n• HINWEIS: Verwenden Sie nicht `Seite → Importieren → DXF/DWG`, da dieser Befehl eine komplett neue Seite anlegt bzw. eine bestehende Seite überschreibt.",
             ),
         ],
         steps_en: &[
             (
-                "Location (Unobtrusive UI)",
-                "All EPLAN settings and roundtrip actions live inside `Menu (top-left) → EPLAN Interface...` (or `Ctrl+K`).",
+                "Step 1: Create Ribbon Button in EPLAN 2025 (One-time)",
+                "1. In EPLAN 2025: Open `File → Settings → User → Management → Ribbon`.\n2. Create a new command group (e.g. 'TermiGrid' under 'Terminal Strips').\n3. Add new action `ExecuteScript` with parameter `/ScriptFile:\"C:\\Tools\\TermiGrid\\TermiGrid_EPLAN_Bridge.cs\"`.\n4. Copy the ready-to-use C# script below or export it directly via `Menu → EPLAN Interface...`.",
             ),
             (
-                "Importing EPLAN CSV & CLI",
-                "Supports `--import-eplan-csv \"path/to/export.csv\"` or manual import, stripping `PXC.` / `WAG.` / `WDM.` prefixes while preserving exact terminal order and numbering.",
+                "Step 2: Setup CSV Export Scheme (One-time)",
+                "Under `Utilities → Manufacturing Data / Labeling → Export...`, create a terminal scheme (semicolon `;` separated, UTF-8) with columns: `BMK`, `TerminalNo`, `Level`, `ArticleNo`, `TypeNo`, `Qty`.",
             ),
             (
-                "1-Click Return Package",
-                "Generates `_EPLAN_Zubehoer_Import.csv`, `.xml`, and per-strip `/DXF/<BMK>.dxf` files with vendor prefixes re-attached and strict brand matching.",
+                "Step 3: Daily Roundtrip Workflow",
+                "Click the ribbon button to launch TermiGrid with `--import-eplan-csv`. TermiGrid strips vendor prefixes (`PXC.`, `WAG.`, `WDM.`) and displays all strips with exact order and numbering.",
+            ),
+            (
+                "Step 4: Accessory Return Import (Crucial: 'Add' Mode)",
+                "Click 'Create EPLAN Return Package' in TermiGrid. In EPLAN 2025, choose `Project Data → Devices → Import...` and select mode **'Add'** (NOT 'Overwrite'!). EPLAN automatically assigns new end plates and end brackets to the strips via full BMK without altering schematics.",
+            ),
+            (
+                "Step 5: DXF Enclosure Placement",
+                "Use **`Insert → Graphic → DXF/DWG`** to drop the strip elevation onto existing mounting panel pages without wiping existing components.",
             ),
         ],
-        code: Some(GuideCodeKind::Static {
-            title_de: "CLI-Aufruf (z. B. aus EPLAN C#-Skript)",
-            title_en: "CLI invocation (e.g. from EPLAN C# script)",
-            body_de: "TermiGrid.exe --import-eplan-csv \"C:\\EPLAN\\Export\\Klemmleisten.csv\"",
-            body_en: "TermiGrid.exe --import-eplan-csv \"C:\\EPLAN\\Export\\Terminals.csv\"",
-        }),
+        code: Some(GuideCodeKind::EplanBridgeCsScript),
     },
+
     GuideArticle {
         id: "shortcuts-and-updates",
         category: GuideCategory::ShortcutsAndUpdates,

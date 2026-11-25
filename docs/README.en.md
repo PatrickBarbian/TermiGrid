@@ -93,13 +93,14 @@
 
 ## Downloads & Portability
 
-All prebuilt binaries are available on the **[Releases page](https://github.com/PatrickBarbian/TermiGrid/releases)**:
+All prebuilt binaries are available on the **[Releases page](https://github.com/PatrickBarbian/TermiGrid/releases)** both with version tags and standard static names:
 
-| Platform | Architecture / Target | File | Notes |
+| Platform | Architecture / Target | Filename (Release) | Notes |
 | :--- | :--- | :--- | :--- |
-| **Windows** | `x86_64` | `TermiGrid-windows-x86_64.exe` | **100% portable** (single `.exe` built with `+crt-static` – no installer, no VCRUNTIME needed) |
-| **macOS** | Universal (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-macos-universal.dmg` | Drag the `.app` bundle into Applications |
-| **Android** | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-android-universal.apk` | Smartphones, tablets & foldables (Android 7.0 – 15 / API 24–35, 16 KB page-aligned, v1/v2/v3 signed) |
+| **Windows** | `x86_64` | `TermiGrid-v1.9.1-windows-x86_64.exe`<br/>*(or `TermiGrid-windows-x86_64.exe`)* | **100% portable** (single `.exe` built with `+crt-static` – no installer, no VCRUNTIME needed) |
+| **macOS** | Universal (`Intel x86_64` + `Apple Silicon arm64`) | `TermiGrid-v1.9.1-macos-universal.dmg`<br/>*(or `TermiGrid-macos-universal.dmg`)* | Drag the `.app` bundle into Applications |
+| **Android** | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | `TermiGrid-v1.9.1-android-universal.apk`<br/>*(or `TermiGrid-android-universal.apk`)* | Smartphones, tablets & foldables (Android 7.0 – 15 / API 24–35, 16 KB page-aligned, permanent release keystore, v1/v2/v3 signed) |
+
 
 ### Platform Notes
 

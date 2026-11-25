@@ -347,7 +347,19 @@ pub fn show_guide_tab(
                             },
                             format!("[\n{}\n]", build_example_terminal_json(catalog)),
                         ),
+                        GuideCodeKind::EplanBridgeCsScript => (
+                            if de {
+                                "Fertiges C#-Skript: TermiGrid_EPLAN_Bridge.cs (EPLAN 2025 / P8)"
+                            } else {
+                                "Ready-to-use C# Script: TermiGrid_EPLAN_Bridge.cs (EPLAN 2025 / P8)"
+                            },
+                            crate::eplan::generate_eplan_bridge_cs_script(
+                                std::env::current_exe().ok().as_deref(),
+                                None,
+                            ),
+                        ),
                     };
+
 
                     recessed_card(ui, |ui| {
                         ui.set_width(ui.available_width());
