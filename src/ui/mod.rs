@@ -2,6 +2,7 @@ pub mod android_insets;
 pub mod cad_canvas;
 pub mod components;
 pub mod eplan_modal;
+pub mod guide_content;
 pub mod guide_modal;
 pub mod icons;
 pub mod library_modal;
@@ -62,6 +63,7 @@ use crate::ui::components::{
     CommandPaletteState, PaletteCommand, ToastActionKind, ToastQueue, ToastTone,
 };
 use crate::ui::eplan_modal::{show_eplan_interface_modal, EplanModalAction, EplanModalState};
+use crate::ui::guide_content::GuideSearchState;
 use crate::ui::guide_modal::{
     show_about_modal, show_database_tab, show_guide_tab, show_spec_editor_modal, CustomSpecDraft,
     DatabaseAction, SpecEditorModalState,
@@ -258,6 +260,7 @@ pub struct TermiGridApp {
     app_config: AppConfig,
     last_eplan_csv_dir: Option<PathBuf>,
     eplan_modal: EplanModalState,
+    guide_search: GuideSearchState,
 }
 
 impl TermiGridApp {
@@ -361,6 +364,7 @@ impl TermiGridApp {
             app_config,
             last_eplan_csv_dir: None,
             eplan_modal: EplanModalState::default(),
+            guide_search: GuideSearchState::default(),
         };
 
         if let Some(csv_path) = startup_args.import_eplan_csv {
@@ -1628,7 +1632,13 @@ impl eframe::App for TermiGridApp {
         match self.active_tab {
             ActiveTab::Guide => {
                 egui::CentralPanel::default().show(ui, |ui| {
-                    show_guide_tab(ui, &self.updater, s);
+                    show_guide_tab(
+                        ui,
+                        &self.catalog,
+                        &mut self.guide_search,
+                        &self.updater,
+                        s,
+                    );
                 });
             }
             ActiveTab::Database => {

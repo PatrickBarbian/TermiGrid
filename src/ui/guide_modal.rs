@@ -4,12 +4,16 @@ use crate::catalog::accessories::{all_end_brackets, TerminalAccessories};
 use crate::catalog::{TerminalCatalog, TerminalSpec, TierSpec};
 use crate::i18n::{tr, Language, Strings};
 use crate::model::{NumberingOrder, TierBehavior, TierColor};
+use crate::ui::guide_content::{
+    all_guide_articles, build_ai_terminal_prompt, search_guide_articles, GuideCategory,
+    GuideCodeKind, GuideSearchState,
+};
 use crate::ui::icons::{
     danger_icon_button, draw_icon, ghost_icon_button, icon_button, icon_only_button,
     primary_icon_button, show_responsive_modal, success_icon_button, UiIcon,
 };
 use crate::ui::logos::{logo_filter_button, show_logo_badge, BrandLogos};
-use crate::ui::theme::{pill_badge, secondary_text_color, section_card, tokens};
+use crate::ui::theme::{pill_badge, recessed_card, secondary_text_color, section_card, tokens};
 use crate::ui::updater::{
     open_external_url, UpdateChecker, UpdateStatus, BUYMEACOFFEE_URL, CURRENT_VERSION,
     GITHUB_REPO_URL,
@@ -150,27 +154,261 @@ pub fn parse_terminal_specs_json(raw: &str) -> Result<Vec<TerminalSpec>, String>
     Ok(specs)
 }
 
-/// Renders the dedicated "Anleitung" (Instructions) tab explaining selection, multi-level logic,
-/// export, updates, and project links.
-pub fn show_guide_tab(ui: &mut Ui, updater: &UpdateChecker, strings: &Strings) {
+/// Renders the searchable "Anleitung" (Instructions) tab covering every feature of TermiGrid,
+/// including local terminal integration and a copyable AI JSON prompt generator.
+pub fn show_guide_tab(
+    ui: &mut Ui,
+    catalog: &TerminalCatalog,
+    guide_state: &mut GuideSearchState,
+    updater: &UpdateChecker,
+    strings: &Strings,
+) {
+    let lang = strings.lang;
+    let de = lang == Language::De;
+    let t = tokens(ui);
+    let max_w = ui.available_width().min(960.0);
+    let total_articles = all_guide_articles().len();
+    let matches = search_guide_articles(lang, guide_state.category, &guide_state.query);
+
     egui::ScrollArea::vertical().show(ui, |ui| {
         ui.add_space(6.0);
-        ui.heading(strings.guide_title);
+        ui.horizontal_wrapped(|ui| {
+            ui.heading(strings.guide_title);
+            pill_badge(
+                ui,
+                &format!("{} / {total_articles}", matches.len()),
+                t.text_secondary,
+                t.bg_recessed,
+            );
+        });
+        ui.add_space(6.0);
+
+        // Search & Filter Bar
+        section_card(ui, |ui| {
+            ui.set_max_width(max_w);
+            ui.horizontal_wrapped(|ui| {
+                let (sr, _) = ui.allocate_exact_size(egui::Vec2::splat(16.0), egui::Sense::hover());
+                draw_icon(ui.painter(), sr, UiIcon::Search, t.text_muted);
+
+                let hint = if de {
+                    "Anleitung durchsuchen (z.B. JSON, KI-Prompt, EPLAN, Leeres Schild, Brücken, Shortcut)..."
+                } else {
+                    "Search manual (e.g. JSON, AI prompt, EPLAN, blank marker, bridges, shortcut)..."
+                };
+                let search_w = (ui.available_width() - 140.0).clamp(180.0, 520.0);
+                let dark = ui.ctx().theme() == egui::Theme::Dark;
+                let input_bg = if dark {
+                    t.bg_recessed
+                } else {
+                    egui::Color32::WHITE
+                };
+                egui::Frame::NONE
+                    .fill(input_bg)
+                    .stroke(egui::Stroke::new(1.0, t.border_strong))
+                    .corner_radius(egui::CornerRadius::same(6))
+                    .inner_margin(egui::Margin::symmetric(8, 4))
+                    .show(ui, |ui| {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut guide_state.query)
+                                .frame(egui::Frame::NONE)
+                                .hint_text(hint)
+                                .desired_width(search_w),
+                        );
+                    });
+
+                if !guide_state.query.is_empty()
+                    && icon_button(ui, UiIcon::Clear, tr::clear_search(lang)).clicked()
+                {
+                    guide_state.query.clear();
+                }
+            });
+
+            ui.add_space(6.0);
+            // Category filter chips
+            ui.horizontal_wrapped(|ui| {
+                for cat in GuideCategory::ALL {
+                    let active = guide_state.category == cat;
+                    if ui.selectable_label(active, cat.label(lang)).clicked() {
+                        guide_state.category = cat;
+                    }
+                }
+            });
+
+            ui.add_space(4.0);
+            // Quick-search tag pills
+            ui.horizontal_wrapped(|ui| {
+                ui.label(
+                    egui::RichText::new(if de { "Schnellsuche:" } else { "Quick tags:" })
+                        .size(11.5)
+                        .color(t.text_muted),
+                );
+                for tag in [
+                    "KI-Prompt",
+                    "JSON",
+                    "custom_specs.json",
+                    "Leeres Schild",
+                    "Quick-Prompt",
+                    "Brücken",
+                    "EPLAN",
+                    "Shortcut",
+                    "Update",
+                ] {
+                    if ui
+                        .small_button(tag)
+                        .clicked()
+                    {
+                        guide_state.category = GuideCategory::All;
+                        guide_state.query = tag.to_string();
+                    }
+                }
+            });
+        });
+
         ui.add_space(8.0);
 
-        for (title, body) in strings.guide_sections {
+        if matches.is_empty() {
             section_card(ui, |ui| {
-                ui.set_min_width(ui.available_width().min(860.0));
-                ui.label(egui::RichText::new(*title).strong().size(15.5));
-                ui.add_space(4.0);
-                ui.add(egui::Label::new(*body).wrap());
+                ui.set_max_width(max_w);
+                ui.label(
+                    egui::RichText::new(if de {
+                        "Keine passenden Themen gefunden. Leeren Sie die Suche oder wählen Sie „Alle Themen“."
+                    } else {
+                        "No matching topics found. Clear the search or select 'All Topics'."
+                    })
+                    .color(t.text_secondary),
+                );
+            });
+            ui.add_space(8.0);
+        }
+
+        for article in matches {
+            section_card(ui, |ui| {
+                ui.set_max_width(max_w);
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(
+                        egui::RichText::new(article.title(lang))
+                            .strong()
+                            .size(15.5)
+                            .color(t.text_primary),
+                    );
+                    pill_badge(
+                        ui,
+                        article.category.label(lang),
+                        t.accent_text,
+                        t.accent_soft,
+                    );
+                });
+                ui.add_space(3.0);
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(article.summary(lang))
+                            .size(12.5)
+                            .color(t.text_secondary),
+                    )
+                    .wrap(),
+                );
+                ui.add_space(6.0);
+
+                for (sub_title, body) in article.steps(lang) {
+                    ui.label(
+                        egui::RichText::new(*sub_title)
+                            .strong()
+                            .size(13.0)
+                            .color(t.text_primary),
+                    );
+                    ui.add(egui::Label::new(*body).wrap());
+                    ui.add_space(5.0);
+                }
+
+                if let Some(code_kind) = article.code {
+                    let (code_title, code_text): (&str, String) = match code_kind {
+                        GuideCodeKind::Static {
+                            title_de,
+                            title_en,
+                            body_de,
+                            body_en,
+                        } => (
+                            if de { title_de } else { title_en },
+                            if de { body_de } else { body_en }.to_string(),
+                        ),
+                        GuideCodeKind::AiTerminalPrompt => (
+                            if de {
+                                "Kopierfertiger KI-Prompt (ChatGPT / Claude / Gemini)"
+                            } else {
+                                "Copy-ready AI Prompt (ChatGPT / Claude / Gemini)"
+                            },
+                            build_ai_terminal_prompt(lang, catalog),
+                        ),
+                        GuideCodeKind::ExampleTerminalJson => (
+                            if de {
+                                "Vollständiges Beispiel-JSON einer Klemme (als Array-Vorlage)"
+                            } else {
+                                "Complete Example Terminal JSON (Array Template)"
+                            },
+                            format!("[\n{}\n]", build_example_terminal_json(catalog)),
+                        ),
+                    };
+
+                    recessed_card(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                egui::RichText::new(code_title)
+                                    .strong()
+                                    .size(12.0)
+                                    .color(t.text_primary),
+                            );
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| {
+                                    let is_copied = guide_state
+                                        .copied_feedback_id
+                                        .as_deref()
+                                        == Some(article.id);
+                                    let btn_lbl = if is_copied {
+                                        if de { "Kopiert!" } else { "Copied!" }
+                                    } else if de {
+                                        "Kopieren"
+                                    } else {
+                                        "Copy"
+                                    };
+                                    let clicked = if is_copied {
+                                        success_icon_button(ui, UiIcon::Check, btn_lbl).clicked()
+                                    } else {
+                                        primary_icon_button(ui, UiIcon::Duplicate, btn_lbl)
+                                            .clicked()
+                                    };
+                                    if clicked {
+                                        ui.ctx().copy_text(code_text.clone());
+                                        guide_state.copied_feedback_id =
+                                            Some(article.id.to_string());
+                                    }
+                                },
+                            );
+                        });
+                        ui.add_space(4.0);
+                        let mut preview = code_text;
+                        egui::ScrollArea::vertical()
+                            .id_salt(format!("guide_code_{}", article.id))
+                            .max_height(210.0)
+                            .show(ui, |ui| {
+                                ui.add(
+                                    egui::TextEdit::multiline(&mut preview)
+                                        .font(egui::TextStyle::Monospace)
+                                        .desired_width(ui.available_width())
+                                        .desired_rows(8)
+                                        .interactive(true),
+                                );
+                            });
+                    });
+                }
             });
             ui.add_space(8.0);
         }
 
         // About, Authors, Open-Source Licenses, Update Checker, GitHub & BuyMeACoffee card
         section_card(ui, |ui| {
-            ui.set_min_width(ui.available_width().min(860.0));
+            ui.set_max_width(max_w);
             show_about_license_contents(ui, updater, strings, false);
         });
     });
