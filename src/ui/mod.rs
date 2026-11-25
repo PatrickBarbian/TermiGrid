@@ -2772,7 +2772,14 @@ impl TermiGridApp {
 
         let mut delete_idx: Option<usize> = None;
         let sheet_w = ui.available_width().max(120.0);
-        let list_max_h = (ui.available_height() - 128.0).max(80.0);
+        let footer_reserve = if self.project.strips.is_empty() {
+            0.0
+        } else if sheet_w < 260.0 {
+            162.0
+        } else {
+            132.0
+        };
+        let list_max_h = (ui.available_height() - footer_reserve).max(48.0);
         egui::ScrollArea::vertical()
             .id_salt("strips_scroll")
             .max_height(list_max_h)
