@@ -685,7 +685,7 @@ impl CompiledImportRules {
     }
 }
 
-fn find_matching_end_bracket(
+pub fn find_matching_end_bracket(
     clean_article: &str,
     type_number: &str,
     mfg_hint: Option<&str>,

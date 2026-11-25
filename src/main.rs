@@ -1,11 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use eframe::egui;
+use termigrid_core::eplan::StartupArgs;
 use termigrid_core::load_app_icon;
 use termigrid_core::ui::TermiGridApp;
 
 #[cfg(not(target_os = "android"))]
 fn main() -> eframe::Result {
+    let startup_args = StartupArgs::from_env();
+
     let mut viewport = egui::ViewportBuilder::default()
         .with_title("TermiGrid – Reihenklemmen-Konfigurator")
         .with_inner_size([1360.0, 840.0])
@@ -23,7 +26,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "TermiGrid",
         options,
-        Box::new(|cc| Ok(Box::new(TermiGridApp::new(cc)))),
+        Box::new(move |cc| Ok(Box::new(TermiGridApp::new_with_args(cc, startup_args)))),
     )
 }
 

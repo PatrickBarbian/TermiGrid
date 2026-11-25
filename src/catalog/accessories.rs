@@ -1935,6 +1935,208 @@ pub fn find_end_bracket(id: &str) -> &'static EndBracketSpec {
         .unwrap_or(&END_BRACKETS[0])
 }
 
+/// Returns the dominant terminal manufacturer on a strip (used to enforce strict brand matching).
+pub fn dominant_strip_manufacturer(blocks: &[crate::model::TerminalBlock]) -> Option<String> {
+    let mut counts: Vec<(&str, usize)> = Vec::new();
+    for b in blocks {
+        let mfg = b.manufacturer.trim();
+        if mfg.is_empty() {
+            continue;
+        }
+        if let Some((_, c)) = counts.iter_mut().find(|(m, _)| m.eq_ignore_ascii_case(mfg)) {
+            *c += 1;
+        } else {
+            counts.push((mfg, 1));
+        }
+    }
+    counts
+        .into_iter()
+        .max_by_key(|(_, c)| *c)
+        .map(|(m, _)| m.to_string())
+}
+
+/// Returns the strictly brand-matching default DIN-rail end bracket for `manufacturer`.
+pub fn default_end_bracket_for_manufacturer(
+    manufacturer: &str,
+    blocks: &[crate::model::TerminalBlock],
+) -> &'static EndBracketSpec {
+    let mfg_lower = manufacturer.trim().to_lowercase();
+    if mfg_lower.contains("wago") {
+        // Use tall 249-197 for Power/high-current 285/2035 series, otherwise 249-117
+        let has_power = blocks
+            .iter()
+            .any(|b| b.spec_id.starts_with("wago-285") || b.spec_id.starts_with("wago-2035"));
+        if has_power {
+            return find_end_bracket("wago-249-197");
+        }
+        return find_end_bracket("wago-249-117");
+    }
+    if mfg_lower.contains("weidm") {
+        let has_a_series = blocks.iter().any(|b| {
+            let id = b.spec_id.as_str();
+            id.contains("a2c")
+                || id.contains("a3c")
+                || id.contains("a4c")
+                || id.contains("a2t")
+                || id.contains("a3t")
+                || id.contains("aitb")
+                || id.contains("amc")
+                || id.contains("adt")
+                || id.contains("afs")
+                || id.contains("aio")
+        });
+        if has_a_series {
+            return find_end_bracket("weidmuller-aeb-35-scl-1-v0");
+        }
+        return find_end_bracket("weidmuller-wew-35-2");
+    }
+    if mfg_lower.contains("phoenix") {
+        let has_power = blocks
+            .iter()
+            .any(|b| b.spec_id.contains("ptpower") || b.spec_id.contains("pt-35"));
+        if has_power {
+            return find_end_bracket("phoenix-e-al-ns-35");
+        }
+        return find_end_bracket("phoenix-clipfix-35-5");
+    }
+    find_end_bracket(DEFAULT_END_BRACKET_ID)
+}
+
+/// Returns the end bracket for `strip`, strictly enforcing manufacturer matching
+/// so a strip's end brackets never come from a different brand than its terminals.
+pub fn strict_end_bracket_for_strip(strip: &crate::model::TerminalStrip) -> &'static EndBracketSpec {
+    let selected = find_end_bracket(&strip.end_bracket_id);
+    if let Some(mfg) = dominant_strip_manufacturer(&strip.blocks)
+        && !selected.manufacturer.eq_ignore_ascii_case(&mfg)
+    {
+        return default_end_bracket_for_manufacturer(&mfg, &strip.blocks);
+    }
+    selected
+}
+
+/// Extracts the primary manufacturer article number from a TermiGrid accessory text string
+/// (e.g., `"D-PT 6 (3212044)" -> Some("3212044")`, `"2002-1291 (2-Leiter)" -> Some("2002-1291")`,
+/// `"WAP 2.5-10 (1050000000)" -> Some("1050000000")`).
+pub fn extract_accessory_article_number(manufacturer: &str, text: &str) -> Option<String> {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    // WAGO article numbers are always formatted like `2002-1291` or `249-116`
+    if manufacturer.eq_ignore_ascii_case("WAGO") {
+        for raw_tok in trimmed.split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '/' | ',' | ';')) {
+            let tok = raw_tok.trim();
+            if let Some((a, b)) = tok.split_once('-')
+                && (3..=4).contains(&a.len())
+                && (3..=4).contains(&b.len())
+                && a.chars().all(|c| c.is_ascii_digit())
+                && b.chars().all(|c| c.is_ascii_digit())
+            {
+                return Some(tok.to_string());
+            }
+        }
+    }
+
+    // Phoenix Contact (7 digits) & Weidmüller (6-10 digits): prefer digits inside parentheses first
+    let mut scan_paren = trimmed;
+    while let Some(open) = scan_paren.find('(') {
+        let after_open = &scan_paren[open + 1..];
+        let inside = match after_open.find(')') {
+            Some(close) => &after_open[..close],
+            None => after_open,
+        };
+        for raw_tok in inside.split(|c: char| !c.is_ascii_digit()) {
+            if (6..=10).contains(&raw_tok.len()) {
+                return Some(raw_tok.to_string());
+            }
+        }
+        match after_open.find(')') {
+            Some(close) => scan_paren = &after_open[close + 1..],
+            None => break,
+        }
+    }
+
+    // Fallback: standalone 6-10 digit numeric article token or WAGO `XXXX-XXXX` anywhere in text
+    for raw_tok in trimmed.split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '/' | ',' | ';')) {
+        let tok = raw_tok.trim();
+        if (6..=10).contains(&tok.len()) && tok.chars().all(|c| c.is_ascii_digit()) {
+            return Some(tok.to_string());
+        }
+        if let Some((a, b)) = tok.split_once('-')
+            && (3..=4).contains(&a.len())
+            && (3..=4).contains(&b.len())
+            && a.chars().all(|c| c.is_ascii_digit())
+            && b.chars().all(|c| c.is_ascii_digit())
+        {
+            return Some(tok.to_string());
+        }
+    }
+
+    None
+}
+
+/// Extracts or maps a manufacturer article number for a calculated comb jumper `part_hint`
+/// (e.g., `"2002-403 (3-fach)" -> Some("2002-403")`, `"FBS 2-5 (2-fach)" -> Some("3030161")`).
+pub fn extract_comb_jumper_article_number(manufacturer: &str, part_hint: &str) -> Option<String> {
+    if let Some(direct) = extract_accessory_article_number(manufacturer, part_hint) {
+        return Some(direct);
+    }
+    let clean = part_hint.split(" (").next().unwrap_or(part_hint).trim();
+    if manufacturer.eq_ignore_ascii_case("Phoenix Contact") {
+        let mapped = match clean {
+            "FBS 2-3,5" => Some("3213014"),
+            "FBS 3-3,5" => Some("3213027"),
+            "FBS 4-3,5" => Some("3213030"),
+            "FBS 5-3,5" => Some("3213043"),
+            "FBS 10-3,5" => Some("3213056"),
+            "FBS 2-5" => Some("3030161"),
+            "FBS 3-5" => Some("3030174"),
+            "FBS 4-5" => Some("3030187"),
+            "FBS 5-5" => Some("3030190"),
+            "FBS 10-5" => Some("3030213"),
+            "FBS 2-6" => Some("3030336"),
+            "FBS 3-6" => Some("3030242"),
+            "FBS 4-6" => Some("3030255"),
+            "FBS 5-6" => Some("3030349"),
+            "FBS 10-6" => Some("3030271"),
+            "FBS 2-8" => Some("3030284"),
+            "FBS 3-8" => Some("3030297"),
+            "FBS 4-8" => Some("3030300"),
+            "FBS 5-8" => Some("3030307"),
+            "FBS 10-8" => Some("3030323"),
+            "FBS 2-10" => Some("3005947"),
+            _ => None,
+        };
+        return mapped.map(str::to_string);
+    }
+    if manufacturer.eq_ignore_ascii_case("Weidmüller") {
+        let mapped = match clean {
+            "ZQV 2.5N/2" => Some("1527540000"),
+            "ZQV 2.5N/3" => Some("1527570000"),
+            "ZQV 2.5N/4" => Some("1527590000"),
+            "ZQV 2.5N/5" => Some("1527620000"),
+            "ZQV 2.5N/6" => Some("1527630000"),
+            "ZQV 2.5N/7" => Some("1527640000"),
+            "ZQV 2.5N/8" => Some("1527670000"),
+            "ZQV 2.5N/9" => Some("1527680000"),
+            "ZQV 2.5N/10" => Some("1527690000"),
+            "ZQV 4N/2" => Some("1527930000"),
+            "ZQV 4N/3" => Some("1527940000"),
+            "ZQV 4N/4" => Some("1527970000"),
+            "ZQV 4N/5" => Some("1527980000"),
+            "ZQV 4N/10" => Some("1528090000"),
+            "WQV 2.5/2" => Some("1053660000"),
+            "WQV 2.5/3" => Some("1053760000"),
+            "WQV 2.5/4" => Some("1053860000"),
+            "WQV 2.5/10" => Some("1054460000"),
+            _ => None,
+        };
+        return mapped.map(str::to_string);
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1958,6 +2160,41 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn extracts_accessory_article_numbers_across_all_manufacturers() {
+        assert_eq!(
+            extract_accessory_article_number("Phoenix Contact", "D-PT 6 (3212044)").as_deref(),
+            Some("3212044")
+        );
+        assert_eq!(
+            extract_accessory_article_number("Phoenix Contact", "TS-K (1302215) Trennplatte")
+                .as_deref(),
+            Some("1302215")
+        );
+        assert_eq!(
+            extract_accessory_article_number("WAGO", "2003-7692 (orange) / 2003-7691 (grau)")
+                .as_deref(),
+            Some("2003-7692")
+        );
+        assert_eq!(
+            extract_accessory_article_number("WAGO", "2002-1291 (2-Leiter)").as_deref(),
+            Some("2002-1291")
+        );
+        assert_eq!(
+            extract_accessory_article_number("Weidmüller", "WAP 2.5-10 (1050000000)").as_deref(),
+            Some("1050000000")
+        );
+        assert_eq!(
+            extract_comb_jumper_article_number("WAGO", "2002-403 (3-fach)").as_deref(),
+            Some("2002-403")
+        );
+        assert_eq!(
+            extract_comb_jumper_article_number("Phoenix Contact", "FBS 3-5 (3-fach)").as_deref(),
+            Some("3030174")
+        );
+    }
 }
+
 
 

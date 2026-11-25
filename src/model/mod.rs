@@ -2,6 +2,8 @@ pub mod bridging;
 pub mod library;
 pub mod numbering;
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::catalog::TerminalSpec;
@@ -441,6 +443,9 @@ pub struct TerminalStrip {
     /// Whether end/partition plates & NT check have been generated for the current block layout.
     #[serde(default = "default_true")]
     pub end_plates_generated: bool,
+    /// Pre-existing EPLAN accessory quantities (normalized clean article -> qty) from EPLAN CSV import.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub eplan_preexisting_accessories: BTreeMap<String, usize>,
 }
 
 impl TerminalStrip {
@@ -468,6 +473,7 @@ impl TerminalStrip {
             end_bracket_left: true,
             end_bracket_right: true,
             end_plates_generated: false,
+            eplan_preexisting_accessories: BTreeMap::new(),
         }
     }
 

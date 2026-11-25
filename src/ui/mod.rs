@@ -1,6 +1,7 @@
 pub mod android_insets;
 pub mod cad_canvas;
 pub mod components;
+pub mod eplan_modal;
 pub mod guide_modal;
 pub mod icons;
 pub mod library_modal;
@@ -15,7 +16,7 @@ pub mod tour;
 pub mod updater;
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use eframe::egui;
 
@@ -23,6 +24,10 @@ use crate::catalog::accessories::{
     calculate_end_plates, end_plate_width_tenths_mm, find_end_bracket,
 };
 use crate::catalog::{TerminalCatalog, TerminalSpec};
+use crate::eplan::{
+    export_eplan_roundtrip_package, generate_eplan_bridge_cs_script, import_eplan_csv_to_project,
+    AppConfig, EplanConfig, StartupArgs,
+};
 use crate::export::{
     csv::export_to_csv,
     dxf::{export_all_strips_to_dxf_dir, export_strip_to_dxf, sanitize_dxf_strip_filename},
@@ -56,6 +61,7 @@ use crate::ui::cad_canvas::{
 use crate::ui::components::{
     CommandPaletteState, PaletteCommand, ToastActionKind, ToastQueue, ToastTone,
 };
+use crate::ui::eplan_modal::{show_eplan_interface_modal, EplanModalAction, EplanModalState};
 use crate::ui::guide_modal::{
     show_about_modal, show_database_tab, show_guide_tab, show_spec_editor_modal, CustomSpecDraft,
     DatabaseAction, SpecEditorModalState,
@@ -80,8 +86,9 @@ use crate::ui::new_strip_modal::{
 };
 use crate::ui::pdf_import_modal::{show_pdf_import_modal, PdfImportDialogState};
 use crate::ui::platform_io::{
-    pick_export_csv_path, pick_export_dxf_dir, pick_export_dxf_path, pick_export_xlsx_path,
-    pick_import_pdf_path, pick_open_project_path, pick_save_project_path,
+    pick_eplan_export_dir, pick_export_csv_path, pick_export_dxf_dir, pick_export_dxf_path,
+    pick_export_xlsx_path, pick_import_eplan_csv_path, pick_import_pdf_path,
+    pick_open_project_path, pick_save_eplan_cs_path, pick_save_project_path,
 };
 use crate::ui::product_media::{
     show_end_bracket_preview_card, show_product_preview_card, ProductMediaCache,
@@ -246,10 +253,19 @@ pub struct TermiGridApp {
     ui_prefs: UiPrefs,
     tour: TourState,
     tour_stash: Option<StashedTourWorkspace>,
+
+    // EPLAN P8 Roundtrip Integration (tucked inside Menu -> EPLAN-Schnittstelle...)
+    app_config: AppConfig,
+    last_eplan_csv_dir: Option<PathBuf>,
+    eplan_modal: EplanModalState,
 }
 
 impl TermiGridApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        Self::new_with_args(cc, StartupArgs::default())
+    }
+
+    pub fn new_with_args(cc: &eframe::CreationContext<'_>, startup_args: StartupArgs) -> Self {
         let mut catalog = TerminalCatalog::load_active();
         let logos = BrandLogos::load(&cc.egui_ctx);
         let project = Project::default();
@@ -257,6 +273,7 @@ impl TermiGridApp {
         let clean_snapshot = project.clone();
         let strip_library = StripLibrary::load_default();
         let ui_prefs = UiPrefs::load_default();
+        let app_config = AppConfig::load_default();
         let global_custom_specs = load_global_custom_specs();
         if !global_custom_specs.is_empty() {
             catalog.reload_active_with_custom(&global_custom_specs);
@@ -271,6 +288,11 @@ impl TermiGridApp {
 
         let db_updater = DbUpdateChecker::default();
         db_updater.check_async(cc.egui_ctx.clone());
+
+        let export_options = ExportOptions {
+            csv_delimiter: app_config.eplan.csv_delimiter,
+            ..Default::default()
+        };
 
         let mut app = Self {
             catalog,
@@ -291,7 +313,7 @@ impl TermiGridApp {
             db_search: String::new(),
             custom_spec_draft: CustomSpecDraft::default(),
             spec_editor_modal: SpecEditorModalState::default(),
-            export_options: ExportOptions::default(),
+            export_options,
             current_file: None,
             status_message: strings(Language::De).status_ready.to_string(),
             lang: Language::De,
@@ -336,9 +358,16 @@ impl TermiGridApp {
             ui_prefs,
             tour: TourState::default(),
             tour_stash: None,
+            app_config,
+            last_eplan_csv_dir: None,
+            eplan_modal: EplanModalState::default(),
         };
 
-        if !app.ui_prefs.has_seen_onboarding {
+        if let Some(csv_path) = startup_args.import_eplan_csv {
+            // Open directly in the main CAD editor without blocking on onboarding overlay
+            app.tour.has_seen_onboarding = true;
+            app.import_eplan_csv_from_path(&csv_path);
+        } else if !app.ui_prefs.has_seen_onboarding {
             app.tour.has_seen_onboarding = false;
             app.start_tour(TourId::Basic);
         } else {
@@ -801,6 +830,144 @@ impl TermiGridApp {
             self.export_active_strip_dxf();
         }
     }
+
+    fn save_eplan_config(&mut self, mut new_cfg: EplanConfig) {
+        new_cfg.sanitize();
+        self.app_config.eplan = new_cfg;
+        self.export_options.csv_delimiter = self.app_config.eplan.csv_delimiter;
+        if let Err(err) = self.app_config.save_default() {
+            self.notify(
+                ToastTone::Error,
+                format!("{}: {err}", strings(self.lang).status_error),
+            );
+        }
+    }
+
+    fn import_eplan_csv_from_path(&mut self, path: &Path) {
+        let s = strings(self.lang);
+        match import_eplan_csv_to_project(path, &self.catalog, &self.app_config.eplan) {
+            Ok((proj, report)) => {
+                self.project = proj;
+                self.reload_catalog_with_all_custom();
+                self.undo_stack.clear();
+                self.redo_stack.clear();
+                self.last_snapshot = self.project.clone();
+                self.clean_snapshot = self.project.clone();
+                self.current_file = None;
+                self.active_strip = 0;
+                self.selected_blocks.clear();
+                self.selected_end_bracket = None;
+                self.show_welcome = false;
+                self.active_tab = ActiveTab::Editor;
+                self.mobile_pane = MobilePane::Cad;
+                self.last_eplan_csv_dir = path.parent().map(Path::to_path_buf);
+
+                let tone = if report.unknown_articles.is_empty() {
+                    ToastTone::Success
+                } else {
+                    ToastTone::Warning
+                };
+                self.notify(
+                    tone,
+                    tr::toast_eplan_csv_imported(
+                        self.lang,
+                        report.strips.len(),
+                        report.total_blocks,
+                        report.unknown_articles.len(),
+                    ),
+                );
+            }
+            Err(err) => {
+                self.notify(ToastTone::Error, format!("{}: {err}", s.status_error));
+            }
+        }
+    }
+
+    fn import_eplan_csv_dialog(&mut self) {
+        if let Some(path) = pick_import_eplan_csv_path() {
+            self.import_eplan_csv_from_path(&path);
+        }
+    }
+
+    fn export_eplan_roundtrip_package_ui(&mut self) {
+        let s = strings(self.lang);
+        self.finalize_edit_and_generate_all_strips();
+        let target_dir = self
+            .app_config
+            .eplan
+            .default_export_dir
+            .clone()
+            .or_else(|| self.last_eplan_csv_dir.clone())
+            .or_else(pick_eplan_export_dir);
+
+        let Some(dir) = target_dir else {
+            return;
+        };
+
+        match export_eplan_roundtrip_package(
+            &dir,
+            &mut self.project,
+            &self.catalog,
+            &self.app_config.eplan,
+        ) {
+            Ok(report) => {
+                let dir_name = report
+                    .output_dir
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .map(str::to_string)
+                    .unwrap_or_else(|| report.output_dir.display().to_string());
+                self.notify(
+                    ToastTone::Success,
+                    tr::toast_eplan_package_exported(
+                        self.lang,
+                        report.accessory_rows.len(),
+                        report.dxf_files.len(),
+                        &dir_name,
+                    ),
+                );
+            }
+            Err(err) => {
+                self.notify(ToastTone::Error, format!("{}: {err}", s.status_error));
+            }
+        }
+    }
+
+    fn export_eplan_csharp_script_ui(&mut self, ctx: &egui::Context) {
+        let s = strings(self.lang);
+        let exe_path = std::env::current_exe().ok();
+        let default_dir = self
+            .app_config
+            .eplan
+            .default_export_dir
+            .as_deref()
+            .or(self.last_eplan_csv_dir.as_deref());
+        let script = generate_eplan_bridge_cs_script(exe_path.as_deref(), default_dir);
+        ctx.copy_text(script.clone());
+
+        if let Some(path) = pick_save_eplan_cs_path("TermiGrid_EPLAN_Bridge.cs") {
+            match std::fs::write(&path, script.as_bytes()) {
+                Ok(()) => {
+                    let fname = path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("TermiGrid_EPLAN_Bridge.cs");
+                    self.notify(
+                        ToastTone::Success,
+                        tr::toast_eplan_cs_exported(self.lang, fname),
+                    );
+                }
+                Err(err) => {
+                    self.notify(ToastTone::Error, format!("{}: {err}", s.status_error));
+                }
+            }
+        } else {
+            self.notify(
+                ToastTone::Info,
+                tr::toast_eplan_cs_exported(self.lang, "Clipboard"),
+            );
+        }
+    }
 }
 
 impl eframe::App for TermiGridApp {
@@ -1003,12 +1170,21 @@ impl eframe::App for TermiGridApp {
                 let avail_w = ui.available_width();
                 let wide_header = avail_w >= 820.0;
 
+                #[derive(Clone, Copy)]
+                enum TopMenuEplanAction {
+                    OpenInterface,
+                    ImportCsv,
+                    ExportPackage,
+                }
                 let mut requested_tour: Option<TourId> = None;
+                let mut eplan_menu_action: Option<TopMenuEplanAction> = None;
+                let has_eplan_strips = !self.project.strips.is_empty();
                 let has_update = matches!(self.updater.status(), UpdateStatus::UpdateAvailable { .. })
                     || matches!(self.db_updater.status(), DbUpdateStatus::UpdateAvailable { .. });
                 let draw_top_left_menu = |ui: &mut egui::Ui,
                                           show_about: &mut bool,
                                           tour_req: &mut Option<TourId>,
+                                          eplan_req: &mut Option<TopMenuEplanAction>,
                                           updater: &UpdateChecker,
                                           db_updater: &DbUpdateChecker,
                                           s: &crate::i18n::Strings| {
@@ -1019,9 +1195,50 @@ impl eframe::App for TermiGridApp {
                             .on_hover_text(tr::about_tip(s.lang))
                     };
                     egui::Popup::menu(&menu_btn).show(|ui| {
-                        ui.set_min_width(240.0);
+                        ui.set_min_width(250.0);
                         if icon_button(ui, UiIcon::Info, tr::about_modal_title(s.lang)).clicked() {
                             *show_about = true;
+                            ui.close();
+                        }
+                        ui.separator();
+                        ui.label(
+                            egui::RichText::new(tr::eplan_menu_heading(s.lang))
+                                .size(11.5)
+                                .strong()
+                                .color(t.text_muted),
+                        );
+                        if icon_button(
+                            ui,
+                            UiIcon::Settings,
+                            tr::eplan_interface_menu_item(s.lang),
+                        )
+                        .clicked()
+                        {
+                            *eplan_req = Some(TopMenuEplanAction::OpenInterface);
+                            ui.close();
+                        }
+                        if icon_button(
+                            ui,
+                            UiIcon::ExportCsv,
+                            tr::eplan_import_csv_btn(s.lang),
+                        )
+                        .clicked()
+                        {
+                            *eplan_req = Some(TopMenuEplanAction::ImportCsv);
+                            ui.close();
+                        }
+                        if ui
+                            .add_enabled_ui(has_eplan_strips, |ui| {
+                                icon_button(
+                                    ui,
+                                    UiIcon::ExportDxf,
+                                    tr::eplan_export_package_btn(s.lang),
+                                )
+                            })
+                            .inner
+                            .clicked()
+                        {
+                            *eplan_req = Some(TopMenuEplanAction::ExportPackage);
                             ui.close();
                         }
                         ui.separator();
@@ -1131,6 +1348,7 @@ impl eframe::App for TermiGridApp {
                             ui,
                             &mut self.show_about_modal,
                             &mut requested_tour,
+                            &mut eplan_menu_action,
                             &self.updater,
                             &self.db_updater,
                             s,
@@ -1178,6 +1396,7 @@ impl eframe::App for TermiGridApp {
                             ui,
                             &mut self.show_about_modal,
                             &mut requested_tour,
+                            &mut eplan_menu_action,
                             &self.updater,
                             &self.db_updater,
                             s,
@@ -1263,6 +1482,19 @@ impl eframe::App for TermiGridApp {
 
                 if let Some(tour_id) = requested_tour {
                     self.start_tour(tour_id);
+                }
+                if let Some(ep_act) = eplan_menu_action {
+                    match ep_act {
+                        TopMenuEplanAction::OpenInterface => {
+                            self.eplan_modal.open_with(&self.app_config.eplan);
+                        }
+                        TopMenuEplanAction::ImportCsv => {
+                            self.import_eplan_csv_dialog();
+                        }
+                        TopMenuEplanAction::ExportPackage => {
+                            self.export_eplan_roundtrip_package_ui();
+                        }
+                    }
                 }
 
                     // Group 2: Undo / Redo (only in active CAD Editor with a project)
@@ -1595,6 +1827,39 @@ impl eframe::App for TermiGridApp {
         // Cross-platform Info & Open-Source Licenses modal dialog
         show_about_modal(ui.ctx(), &mut self.show_about_modal, &self.updater, s);
 
+        // EPLAN P8 Roundtrip Interface & Settings modal (tucked inside Menu -> EPLAN-Schnittstelle...)
+        if let Some(ep_action) = show_eplan_interface_modal(
+            ui.ctx(),
+            &mut self.eplan_modal,
+            !self.project.strips.is_empty(),
+            self.last_eplan_csv_dir.as_deref(),
+            s,
+        ) {
+            match ep_action {
+                EplanModalAction::SaveConfig(cfg) => {
+                    self.save_eplan_config(cfg);
+                    self.notify(ToastTone::Success, s.status_saved);
+                }
+                EplanModalAction::ImportCsv(cfg) => {
+                    self.save_eplan_config(cfg);
+                    self.import_eplan_csv_dialog();
+                }
+                EplanModalAction::ExportPackage(cfg) => {
+                    self.save_eplan_config(cfg);
+                    self.export_eplan_roundtrip_package_ui();
+                }
+                EplanModalAction::ExportCSharpScript(cfg) => {
+                    self.save_eplan_config(cfg);
+                    self.export_eplan_csharp_script_ui(ui.ctx());
+                }
+                EplanModalAction::PickDefaultDir => {
+                    if let Some(dir) = pick_eplan_export_dir() {
+                        self.eplan_modal.draft.default_export_dir = Some(dir);
+                    }
+                }
+            }
+        }
+
         // Unsaved changes confirmation dialog when closing the application
         self.show_close_confirm_dialog(ui.ctx());
 
@@ -1910,6 +2175,11 @@ impl TermiGridApp {
                 let _ = self.save_project();
             }
             PaletteCommand::ImportPdf => self.import_pdf_dialog(),
+            PaletteCommand::OpenEplanInterface => {
+                self.eplan_modal.open_with(&self.app_config.eplan);
+            }
+            PaletteCommand::ImportEplanCsv => self.import_eplan_csv_dialog(),
+            PaletteCommand::ExportEplanPackage => self.export_eplan_roundtrip_package_ui(),
             PaletteCommand::OpenLibrary => {
                 self.strip_library.refresh_from_default();
                 self.strip_library_modal.open_browser();

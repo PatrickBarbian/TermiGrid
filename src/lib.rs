@@ -1,4 +1,5 @@
 pub mod catalog;
+pub mod eplan;
 pub mod export;
 pub mod i18n;
 pub mod import;

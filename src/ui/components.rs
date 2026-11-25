@@ -208,6 +208,9 @@ pub enum PaletteCommand {
     OpenProject,
     SaveProject,
     ImportPdf,
+    OpenEplanInterface,
+    ImportEplanCsv,
+    ExportEplanPackage,
     OpenLibrary,
     ExportXlsx,
     ExportCsv,
@@ -369,6 +372,13 @@ impl CommandPaletteState {
                     PaletteCommand::ExportDxf,
                 ),
                 (
+                    tr::eplan_export_package_btn(lang),
+                    tr::eplan_modal_subtitle(lang),
+                    UiIcon::ExportDxf,
+                    "",
+                    PaletteCommand::ExportEplanPackage,
+                ),
+                (
                     tr::cmd_n_to_nt_title(lang),
                     tr::cmd_n_to_nt_sub(lang),
                     UiIcon::ConvertNt,
@@ -454,6 +464,18 @@ impl CommandPaletteState {
                 tr::pdf_bom_tip(lang),
                 UiIcon::ImportPdf,
                 PaletteCommand::ImportPdf,
+            ),
+            (
+                tr::eplan_import_csv_btn(lang),
+                tr::eplan_modal_subtitle(lang),
+                UiIcon::ExportCsv,
+                PaletteCommand::ImportEplanCsv,
+            ),
+            (
+                tr::eplan_interface_menu_item(lang),
+                tr::eplan_modal_subtitle(lang),
+                UiIcon::Settings,
+                PaletteCommand::OpenEplanInterface,
             ),
             (
                 tr::cmd_lib_title(lang),

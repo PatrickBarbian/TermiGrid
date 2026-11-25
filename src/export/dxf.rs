@@ -489,6 +489,41 @@ pub fn sanitize_dxf_strip_filename(strip_name: &str, used_lower: &mut Vec<String
     }
 }
 
+/// Sanitizes a full IEC 81346 terminal strip BMK into a clean EPLAN DXF filename
+/// (e.g., `"=NSV+A01-X1"` -> `"NSV_A01_X1.dxf"`), ensuring uniqueness within `used_lower`.
+pub fn sanitize_eplan_bmk_filename(bmk: &str, used_lower: &mut Vec<String>) -> String {
+    let trimmed = bmk.trim().trim_start_matches(['=', '+', '-', ' ']);
+    let mut stem = String::with_capacity(trimmed.len());
+    let mut prev_underscore = false;
+    for ch in trimmed.chars() {
+        if ch.is_ascii_alphanumeric() {
+            stem.push(ch);
+            prev_underscore = false;
+        } else if !prev_underscore && !stem.is_empty() {
+            stem.push('_');
+            prev_underscore = true;
+        }
+    }
+    let stem = stem.trim_end_matches('_');
+    let base = if stem.is_empty() { "Strip" } else { stem };
+
+    let first = format!("{base}.dxf");
+    if !used_lower.iter().any(|u| u == &first.to_lowercase()) {
+        used_lower.push(first.to_lowercase());
+        return first;
+    }
+
+    let mut suffix = 2usize;
+    loop {
+        let cand = format!("{base}_{suffix}.dxf");
+        if !used_lower.iter().any(|u| u == &cand.to_lowercase()) {
+            used_lower.push(cand.to_lowercase());
+            return cand;
+        }
+        suffix += 1;
+    }
+}
+
 /// Writes a 1:1 EPLAN DXF for a single `strip` to `path`.
 pub fn export_strip_to_dxf(
     path: &Path,
@@ -517,6 +552,33 @@ pub fn export_all_strips_to_dxf_dir(
         let filename = sanitize_dxf_strip_filename(&strip.name, &mut used_lower);
         let file_path = dir.join(filename);
         export_strip_to_dxf(&file_path, strip, &project.project_name, catalog)?;
+        written.push(file_path);
+    }
+    Ok(written)
+}
+
+/// Batch-exports every terminal strip of `project` into `dir` using EPLAN-sanitized BMK filenames
+/// (`<Sanitized_BMK>.dxf`, e.g., `NSV_A01_X1.dxf`) and strict brand-matched end brackets.
+pub fn export_all_strips_to_eplan_dxf_dir(
+    dir: &Path,
+    project: &Project,
+    catalog: &TerminalCatalog,
+) -> Result<Vec<PathBuf>, String> {
+    if project.strips.is_empty() {
+        return Ok(Vec::new());
+    }
+    std::fs::create_dir_all(dir).map_err(|e| format!("DXF directory create failed: {e}"))?;
+    let mut used_lower = Vec::new();
+    let mut written = Vec::with_capacity(project.strips.len());
+    for strip in &project.strips {
+        let mut normalized_strip = strip.clone();
+        let strict_eb = crate::catalog::accessories::strict_end_bracket_for_strip(&normalized_strip);
+        normalized_strip.end_bracket_id = strict_eb.id.to_string();
+        normalized_strip.end_plates_generated = true;
+
+        let filename = sanitize_eplan_bmk_filename(&strip.name, &mut used_lower);
+        let file_path = dir.join(filename);
+        export_strip_to_dxf(&file_path, &normalized_strip, &project.project_name, catalog)?;
         written.push(file_path);
     }
     Ok(written)

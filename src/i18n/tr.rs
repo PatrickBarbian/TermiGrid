@@ -2624,3 +2624,270 @@ pub fn toast_db_update_failed(l: Language, err: &str) -> String {
     }
 }
 
+// --- EPLAN P8 Roundtrip Interface (Menu + Settings Modal) ---
+
+pub const fn eplan_menu_heading(l: Language) -> &'static str {
+    pick(l, [
+        "EPLAN P8 Schnittstelle",
+        "EPLAN P8 Interface",
+        "Interface EPLAN P8",
+        "Interfaccia EPLAN P8",
+        "Interfaz EPLAN P8",
+        "Interfejs EPLAN P8",
+        "EPLAN P8-interface",
+    ])
+}
+
+pub const fn eplan_interface_menu_item(l: Language) -> &'static str {
+    pick(l, [
+        "EPLAN-Schnittstelle...",
+        "EPLAN Interface...",
+        "Interface EPLAN...",
+        "Interfaccia EPLAN...",
+        "Interfaz EPLAN...",
+        "Interfejs EPLAN...",
+        "EPLAN-interface...",
+    ])
+}
+
+pub const fn eplan_import_csv_btn(l: Language) -> &'static str {
+    pick(l, [
+        "EPLAN CSV importieren...",
+        "Import EPLAN CSV...",
+        "Importer CSV EPLAN...",
+        "Importa CSV EPLAN...",
+        "Importar CSV EPLAN...",
+        "Importuj CSV EPLAN...",
+        "EPLAN CSV importeren...",
+    ])
+}
+
+pub const fn eplan_export_package_btn(l: Language) -> &'static str {
+    pick(l, [
+        "EPLAN Rückimport-Paket erstellen",
+        "Create EPLAN Return Package",
+        "Créer le pack de réimport EPLAN",
+        "Crea pacchetto di ritorno EPLAN",
+        "Crear paquete de retorno EPLAN",
+        "Utwórz pakiet powrotny EPLAN",
+        "EPLAN-retourpakket maken",
+    ])
+}
+
+pub const fn eplan_modal_title(l: Language) -> &'static str {
+    pick(l, [
+        "EPLAN P8-Schnittstelle & Roundtrip",
+        "EPLAN P8 Interface & Roundtrip",
+        "Interface EPLAN P8 & Roundtrip",
+        "Interfaccia EPLAN P8 & Roundtrip",
+        "Interfaz EPLAN P8 & Roundtrip",
+        "Interfejs EPLAN P8 & Roundtrip",
+        "EPLAN P8-interface & Roundtrip",
+    ])
+}
+
+pub const fn eplan_modal_subtitle(l: Language) -> &'static str {
+    pick(l, [
+        "Hersteller-Präfixe, CSV-Optionen und 1-Klick-Rückimport-Paket (Zubehörliste + 1:1 DXF) für EPLAN Electric P8.",
+        "Vendor prefixes, CSV options, and 1-click return-import package (accessory list + 1:1 DXF) for EPLAN Electric P8.",
+        "Préfixes fabricant, options CSV et pack de réimport en 1 clic (liste d'accessoires + DXF 1:1) pour EPLAN Electric P8.",
+        "Prefissi produttore, opzioni CSV e pacchetto di ritorno con 1 clic (lista accessori + DXF 1:1) per EPLAN Electric P8.",
+        "Prefijos de fabricante, opciones CSV y paquete de retorno en 1 clic (lista de accesorios + DXF 1:1) para EPLAN Electric P8.",
+        "Prefiksy producentów, opcje CSV i pakiet powrotny 1 kliknięciem (lista akcesoriów + DXF 1:1) dla EPLAN Electric P8.",
+        "Fabrikantvoorvoegsels, CSV-opties en 1-klik-retourpakket (accessoirelijst + 1:1 DXF) voor EPLAN Electric P8.",
+    ])
+}
+
+pub const fn eplan_prefixes_heading(l: Language) -> &'static str {
+    pick(l, [
+        "Hersteller-Präfixe (EPLAN Artikelnummern)",
+        "Vendor Prefixes (EPLAN Article Numbers)",
+        "Préfixes fabricant (Références EPLAN)",
+        "Prefissi produttore (Codici EPLAN)",
+        "Prefijos de fabricante (Artículos EPLAN)",
+        "Prefiksy producentów (Numery artykułów EPLAN)",
+        "Fabrikantvoorvoegsels (EPLAN-artikelnummers)",
+    ])
+}
+
+pub const fn eplan_options_heading(l: Language) -> &'static str {
+    pick(l, [
+        "CSV- & Rückimport-Optionen",
+        "CSV & Return-Import Options",
+        "Options CSV & Réimport",
+        "Opzioni CSV & Reimportazione",
+        "Opciones CSV y Retorno",
+        "Opcje CSV i eksportu powrotnego",
+        "CSV- & retourimportopties",
+    ])
+}
+
+pub const fn eplan_delimiter_label(l: Language) -> &'static str {
+    pick(l, [
+        "CSV-Trennzeichen",
+        "CSV Delimiter",
+        "Séparateur CSV",
+        "Separatore CSV",
+        "Delimitador CSV",
+        "Separator CSV",
+        "CSV-scheidingsteken",
+    ])
+}
+
+pub const fn eplan_only_added_checkbox(l: Language) -> &'static str {
+    pick(l, [
+        "Nur ergänztes Zubehör exportieren (Endplatten, Zwischenplatten, Endhalter)",
+        "Export only newly added accessories (end plates, partition plates, end brackets)",
+        "Exporter uniquement les accessoires ajoutés (flasques, séparateurs, butées)",
+        "Esporta solo accessori aggiunti (piastre terminali, separatori, blocchetti)",
+        "Exportar solo accesorios añadidos (tapas finales, separadores, topes)",
+        "Eksportuj tylko dodane akcesoria (płytki końcowe, przegrody, trzymacze)",
+        "Alleen toegevoegde accessoires exporteren (eindplaten, scheidingsplaten, eindsteunen)",
+    ])
+}
+
+pub const fn eplan_default_dir_label(l: Language) -> &'static str {
+    pick(l, [
+        "Standard-Exportordner",
+        "Default Export Folder",
+        "Dossier d'export par défaut",
+        "Cartella di esportazione predefinita",
+        "Carpeta de exportación predeterminada",
+        "Domyślny folder eksportu",
+        "Standaard exportmap",
+    ])
+}
+
+pub const fn eplan_default_dir_auto(l: Language) -> &'static str {
+    pick(l, [
+        "Automatisch (Ordner der importierten EPLAN-CSV oder Nachfrage)",
+        "Automatic (folder of imported EPLAN CSV or prompt)",
+        "Automatique (dossier du CSV EPLAN importé ou demander)",
+        "Automatico (cartella del CSV EPLAN importato o richiesta)",
+        "Automático (carpeta del CSV EPLAN importado o preguntar)",
+        "Automatycznie (folder zaimportowanego CSV EPLAN lub zapytaj)",
+        "Automatisch (map van geïmporteerde EPLAN-CSV of vragen)",
+    ])
+}
+
+pub const fn eplan_choose_folder(l: Language) -> &'static str {
+    pick(l, [
+        "Ordner wählen...",
+        "Choose Folder...",
+        "Choisir dossier...",
+        "Scegli cartella...",
+        "Elegir carpeta...",
+        "Wybierz folder...",
+        "Map kiezen...",
+    ])
+}
+
+pub const fn eplan_actions_heading(l: Language) -> &'static str {
+    pick(l, [
+        "Roundtrip-Aktionen & EPLAN-Skript",
+        "Roundtrip Actions & EPLAN Script",
+        "Actions Roundtrip & Script EPLAN",
+        "Azioni Roundtrip & Script EPLAN",
+        "Acciones Roundtrip y Script EPLAN",
+        "Akcje Roundtrip i skrypt EPLAN",
+        "Roundtrip-acties & EPLAN-script",
+    ])
+}
+
+pub const fn eplan_export_cs_btn(l: Language) -> &'static str {
+    pick(l, [
+        "EPLAN C#-Skript exportieren",
+        "Export EPLAN C# Script",
+        "Exporter le script C# EPLAN",
+        "Esporta script C# EPLAN",
+        "Exportar script C# EPLAN",
+        "Eksportuj skrypt C# EPLAN",
+        "EPLAN C#-script exporteren",
+    ])
+}
+
+pub const fn eplan_save_close_btn(l: Language) -> &'static str {
+    pick(l, [
+        "Einstellungen speichern",
+        "Save Settings",
+        "Enregistrer",
+        "Salva impostazioni",
+        "Guardar ajustes",
+        "Zapisz ustawienia",
+        "Instellingen opslaan",
+    ])
+}
+
+pub fn toast_eplan_csv_imported(
+    l: Language,
+    strips: usize,
+    blocks: usize,
+    unknown_count: usize,
+) -> String {
+    match l {
+        Language::De => {
+            if unknown_count > 0 {
+                format!("EPLAN CSV importiert: {strips} Leiste(n), {blocks} Klemmen ({unknown_count} unbekannte Artikel als Platzhalter angelegt).")
+            } else {
+                format!("EPLAN CSV importiert: {strips} Leiste(n), {blocks} Klemmen geladen.")
+            }
+        }
+        Language::En => {
+            if unknown_count > 0 {
+                format!("EPLAN CSV imported: {strips} strip(s), {blocks} block(s) ({unknown_count} unknown articles added as placeholders).")
+            } else {
+                format!("EPLAN CSV imported: {strips} strip(s), {blocks} block(s) loaded.")
+            }
+        }
+        Language::Fr => format!("CSV EPLAN importé : {strips} bornier(s), {blocks} borne(s)."),
+        Language::It => format!("CSV EPLAN importato: {strips} morsettiera/e, {blocks} morsetti."),
+        Language::Es => format!("CSV EPLAN importado: {strips} bornero(s), {blocks} borna(s)."),
+        Language::Pl => format!("Zaimportowano CSV EPLAN: {strips} listew, {blocks} zacisków."),
+        Language::Nl => format!("EPLAN CSV geïmporteerd: {strips} strook/stroken, {blocks} klemmen."),
+    }
+}
+
+pub fn toast_eplan_package_exported(
+    l: Language,
+    acc_rows: usize,
+    dxf_count: usize,
+    dir_name: &str,
+) -> String {
+    match l {
+        Language::De => format!(
+            "EPLAN Rückimport-Paket erstellt in „{dir_name}“: {acc_rows} Zubehör-Positionen (CSV/XML) + {dxf_count} DXF-Dateien."
+        ),
+        Language::En => format!(
+            "EPLAN return package created in \"{dir_name}\": {acc_rows} accessory rows (CSV/XML) + {dxf_count} DXF files."
+        ),
+        Language::Fr => format!(
+            "Pack EPLAN créé dans « {dir_name} » : {acc_rows} lignes accessoires (CSV/XML) + {dxf_count} fichiers DXF."
+        ),
+        Language::It => format!(
+            "Pacchetto EPLAN creato in «{dir_name}»: {acc_rows} righe accessori (CSV/XML) + {dxf_count} file DXF."
+        ),
+        Language::Es => format!(
+            "Paquete EPLAN creado en «{dir_name}»: {acc_rows} filas de accesorios (CSV/XML) + {dxf_count} archivos DXF."
+        ),
+        Language::Pl => format!(
+            "Utworzono pakiet EPLAN w „{dir_name}”: {acc_rows} pozycji akcesoriów (CSV/XML) + {dxf_count} plików DXF."
+        ),
+        Language::Nl => format!(
+            "EPLAN-retourpakket opgeslagen in \"{dir_name}\": {acc_rows} accessoire-regels (CSV/XML) + {dxf_count} DXF-bestanden."
+        ),
+    }
+}
+
+pub fn toast_eplan_cs_exported(l: Language, filename: &str) -> String {
+    match l {
+        Language::De => format!("EPLAN C#-Skript gespeichert & in Zwischenablage kopiert: {filename}"),
+        Language::En => format!("EPLAN C# script saved & copied to clipboard: {filename}"),
+        Language::Fr => format!("Script C# EPLAN enregistré et copié : {filename}"),
+        Language::It => format!("Script C# EPLAN salvato e copiato negli appunti: {filename}"),
+        Language::Es => format!("Script C# EPLAN guardado y copiado al portapapeles: {filename}"),
+        Language::Pl => format!("Skrypt C# EPLAN zapisany i skopiowany do schowka: {filename}"),
+        Language::Nl => format!("EPLAN C#-script opgeslagen en gekopieerd naar klembord: {filename}"),
+    }
+}
+
+

@@ -130,6 +130,60 @@ pub fn pick_import_pdf_path() -> Option<PathBuf> {
     }
 }
 
+/// Prompts for an EPLAN CSV file to import on desktop, or picks the first `.csv` in Android Downloads.
+pub fn pick_import_eplan_csv_path() -> Option<PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        rfd::FileDialog::new()
+            .add_filter("EPLAN CSV Export", &["csv"])
+            .pick_file()
+    }
+    #[cfg(target_os = "android")]
+    {
+        let dir = android_export_dir();
+        let entries = std::fs::read_dir(&dir).ok()?;
+        entries
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .find(|p| {
+                p.extension()
+                    .and_then(|s| s.to_str())
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("csv"))
+            })
+    }
+}
+
+/// Prompts for a target folder for EPLAN roundtrip return-import packages.
+pub fn pick_eplan_export_dir() -> Option<PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        rfd::FileDialog::new().pick_folder()
+    }
+    #[cfg(target_os = "android")]
+    {
+        let dir = android_export_dir().join("EPLAN_Roundtrip");
+        let _ = std::fs::create_dir_all(&dir);
+        Some(dir)
+    }
+}
+
+/// Prompts for a save path for `TermiGrid_EPLAN_Bridge.cs`.
+pub fn pick_save_eplan_cs_path(default_filename: &str) -> Option<PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        rfd::FileDialog::new()
+            .set_file_name(default_filename)
+            .add_filter("EPLAN C# Script", &["cs"])
+            .save_file()
+    }
+    #[cfg(target_os = "android")]
+    {
+        let dir = android_export_dir();
+        let _ = std::fs::create_dir_all(&dir);
+        Some(dir.join(default_filename))
+    }
+}
+
 #[cfg(target_os = "android")]
 fn android_export_dir() -> PathBuf {
     PathBuf::from("/sdcard/Download/TermiGrid")
